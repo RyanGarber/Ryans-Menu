@@ -14,7 +14,7 @@ async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/VERSIO
         util.toast("You're up to date! Enjoy :)")
     end
 end, function()
-    util.toast("Failed to get the latest version. Go to Settings and press Update to check for a new version.")
+    util.toast("Failed to get the latest version. Go to Settings and press Get Latest Version to check manually.")
 end)
 async_http.dispatch()
 
@@ -90,12 +90,13 @@ function teleport_to_blip(blip)
 end
 
 
--- Main Menu
+-- Main Menu --
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
 session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling options for the entire session.")
 settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Settings for Ryan's Menu.")
 
--- World Menu
+
+-- World Menu --
 
 -- -- Into Closest Vehicle
 menu.action(world_root, "Enter Closest Vehicle", {"ryanclosestvehicle"}, "Teleports into the closest vehicle.", function()
@@ -123,7 +124,8 @@ menu.action(world_root, "Enter Closest Vehicle", {"ryanclosestvehicle"}, "Telepo
     end
 end)
 
--- Session Menu
+
+-- Session Menu --
 session_spam_chat_root = menu.list(session_root, "Spam Chat...", {"ryanspam"}, "Spams the chat with a message from all players.")
 session_terrorist_attack_root = menu.list(session_root, "Terrorist Attack...", {"ryanterrorist"}, "Plays a siren, timer, and bomb with additional earrape.")
 
@@ -187,7 +189,8 @@ menu.action(session_terrorist_attack_root, "Start Attack", {"ryanterroriststart"
     end
 end)
 
--- Settings Menu
+
+-- Settings Menu --
 
 -- -- Check for Updates
 menu.action(settings_root, "Version: " .. version, {}, "The currently installed version.", function() end)
