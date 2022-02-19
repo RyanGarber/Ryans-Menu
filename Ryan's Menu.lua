@@ -1,15 +1,20 @@
-version = "0.2.0-dev"
+version = "0.2.0"
 
 -- Requirements
 util.keep_running()
 require("natives-1640181023")
 
 -- Check for Updates
-util.toast("Welcome to Ryan's Menu. Checking for updates...")
-async_http.init("github.com", "/RyanGarber/Ryans-Menu/raw/main/VERSION", function(version)
-    util.toast(version)
+util.toast("Welcome to Ryan's Menu v" .. version ..". Checking for updates...")
+async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/VERSION", function(latest_version)
+    if latest_version ~= version then
+        util.toast("The version you are using is outdated! Press Get Latest Version to get v" .. latest_version .. ".")
+        menu.trigger_commands("ryansettings")
+    else
+        util.toast("You're up to date! Enjoy :)")
+    end
 end, function()
-    util.toast("Failed to get latest version.")
+    util.toast("Failed to get the latest version. Go to Settings and press Update to check for a new version.")
 end)
 async_http.dispatch()
 
@@ -91,9 +96,6 @@ session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling o
 settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Settings for Ryan's Menu.")
 
 -- World Menu
--- -- Personal Locations
-world_personal_root = menu.list(world_root, "Personal Locations...", {"ryanpersonal"}, "Teleports to personal locations, such as apartments.")
-world_personal_add_root = menu.list(world_personal_root, "Add Locations...", {"ryanpersonaladd"}, "Adds a location to the personal teleport list.")
 
 -- -- Into Closest Vehicle
 menu.action(world_root, "Enter Closest Vehicle", {"ryanclosestvehicle"}, "Teleports into the closest vehicle.", function()
@@ -185,5 +187,8 @@ menu.action(session_terrorist_attack_root, "Start Attack", {"ryanterroriststart"
     end
 end)
 
+-- Settings Menu
+
 -- -- Check for Updates
-menu.hyperlink(settings_root, "Update", "https://github.com/RyanGarber/Ryans-Menu/raw/main/Ryan's Menu.lua", "Opens the latest version of the menu for downloading.")
+menu.action(settings_root, "Version: " .. version, {}, "The currently installed version.", function() end)
+menu.hyperlink(settings_root, "Get Latest Version", "https://github.com/RyanGarber/Ryans-Menu/raw/main/Ryan's Menu.lua", "Opens the latest version of the menu for downloading.")
