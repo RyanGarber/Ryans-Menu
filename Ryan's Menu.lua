@@ -1,10 +1,10 @@
-version = "0.2.0"
+version = "0.2.1"
 
--- Requirements
+-- Requirements --
 util.keep_running()
 require("natives-1640181023")
 
--- Check for Updates
+-- Check for Updates --
 util.toast("Welcome to Ryan's Menu v" .. version ..". Checking for updates...")
 async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/VERSION", function(latest_version)
     if latest_version ~= version then
@@ -13,12 +13,13 @@ async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/VERSIO
     else
         util.toast("You're up to date! Enjoy :)")
     end
+    AUDIO.PLAY_SOUND_FROM_ENTITY(-1, "Object_Dropped_Remote", PLAYER.PLAYER_PED_ID(), "GTAO_FM_Events_Soundset", true, 20)
 end, function()
     util.toast("Failed to get the latest version. Go to Settings and press Get Latest Version to check manually.")
 end)
 async_http.dispatch()
 
--- Helper Functions
+-- Helper Functions --
 function get_closest_vehicle(entity)
     local location = ENTITY.GET_ENTITY_COORDS(entity, true)
     local vehicles = entities.get_all_vehicles_as_handles()
@@ -61,20 +62,23 @@ end
 function play_all(sound, sound_group, wait_for)
     for i=0, 31, 1 do
         player_ped = PLAYER.GET_PLAYER_PED(i)
-        AUDIO.PLAY_SOUND_FROM_ENTITY(-1, sound, player_ped, sound_group, true, true)
+        AUDIO.PLAY_SOUND_FROM_ENTITY(-1, sound, player_ped, sound_group, true, 20)
     end
     util.yield(wait_for)
 end
 
+EARRAPE_NONE = 0
+EARRAPE_BED = 1
+EARRAPE_FLASH = 2
 function explode_all(earrape_type, wait_for)
     for i=0, 31, 1 do
         player_ped = PLAYER.GET_PLAYER_PED(i)
         position = ENTITY.GET_ENTITY_COORDS(player_ped)
         FIRE.ADD_EXPLOSION(position.x, position.y, position.z, 0, 100, true, false, 150, false)
-        if earrape_type == 1 then
+        if earrape_type == EARRAPE_BED then
             AUDIO.PLAY_SOUND_FROM_COORD(-1, "Bed", position.x, position.y, position.z, "WastedSounds", true, 999999999, true)
         end
-        if earrape_type == 2 then
+        if earrape_type == EARRAPE_FLASH then
             AUDIO.PLAY_SOUND_FROM_COORD(-1, "MP_Flash", position.x, position.y, position.z, "WastedSounds", true, 999999999, true)
             AUDIO.PLAY_SOUND_FROM_COORD(-1, "MP_Flash", position.x, position.y, position.z, "WastedSounds", true, 999999999, true)
             AUDIO.PLAY_SOUND_FROM_COORD(-1, "MP_Flash", position.x, position.y, position.z, "WastedSounds", true, 999999999, true)
@@ -127,7 +131,7 @@ end)
 
 -- Session Menu --
 session_spam_chat_root = menu.list(session_root, "Spam Chat...", {"ryanspam"}, "Spams the chat with a message from all players.")
-session_terrorist_attack_root = menu.list(session_root, "Terrorist Attack...", {"ryanterrorist"}, "Plays a siren, timer, and bomb with additional earrape.")
+session_nuke_attack_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
 
 -- -- Spam Chat
 spam_chat_all_players = true
@@ -159,14 +163,14 @@ menu.action(session_spam_chat_root, "Spam: Once", {"ryanspamonce"}, "Spams the m
     spam_chat(spam_chat_message, spam_chat_all_players, spam_chat_delay, 0)
 end)
 
--- -- Terrorist Attack
-terrorist_spam_enabled = false
+-- -- Nuke
+nuke_spam_enabled = false
 
-menu.toggle(session_terrorist_attack_root, "Spam Chat", {"ryanterroristspam"}, "If enabled, triggers Spam Chat once upon impact.", function(value)
-    terrorist_spam_enabled = value
+menu.toggle(session_nuke_attack_root, "Spam Chat", {"ryannukespam"}, "If enabled, triggers Spam Chat once upon impact.", function(value)
+    nuke_spam_enabled = value
 end)
-menu.action(session_terrorist_attack_root, "Start Attack", {"ryanterroriststart"}, "Starts the attack.", function()
-    util.toast("Terrorist attack incoming.")
+menu.action(session_nuke_attack_root, "Start Nuke", {"ryannukestart"}, "Starts the nuke.", function()
+    util.toast("Nuke incoming.")
     play_all("Air_Defences_Activated", "DLC_sum20_Business_Battle_AC_Sounds", 3000)
     play_all("5_SEC_WARNING", "HUD_MINI_GAME_SOUNDSET", 1000)
     play_all("5_SEC_WARNING", "HUD_MINI_GAME_SOUNDSET", 1000)
@@ -180,14 +184,58 @@ menu.action(session_terrorist_attack_root, "Start Attack", {"ryanterroriststart"
     play_all("5_SEC_WARNING", "HUD_MINI_GAME_SOUNDSET", 125)
     play_all("5_SEC_WARNING", "HUD_MINI_GAME_SOUNDSET", 125)
     play_all("5_SEC_WARNING", "HUD_MINI_GAME_SOUNDSET", 125)
-    explode_all(2, 0)
-    explode_all(2, 150)
-    explode_all(1, 0)
-    explode_all(0, 0)
-    if terrorist_spam_enabled then
+    explode_all(EARRAPE_FLASH, 0)
+    explode_all(EARRAPE_FLASH, 150)
+    explode_all(EARRAPE_BED, 0)
+    explode_all(EARRAPE_NONE, 0)
+    if nuke_spam_enabled then
         spam_chat(spam_chat_message, true, spam_chat_delay, 0)
     end
 end)
+
+
+-- Player Options --
+function setup_player(player_id)
+    -- -- Divorce Kick
+    menu.divider(menu.player_root(player_id), "Ryan's Menu")
+    menu.action(menu.player_root(player_id), "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
+        local player = players.get_name(player_id)
+        
+        local ref
+        local possible_tags = {" [Offline/Story Mode]", " [Public]", " [Solo/Invite-Only]", ""}
+        local success = false
+        for i = 1, #possible_tags do
+            if pcall(function()
+                ref = menu.ref_by_path("Online>Player History>" .. player .. possible_tags[i] .. ">Player Join Reactions>Block Join")
+            end) then
+                menu.focus(menu.my_root())
+                menu.focus(ref)
+                menu.trigger_command(ref, "true")
+                success = true
+                break
+            else
+
+            end
+        end
+        if success then
+            util.toast("Blocked all future joins by that player.")
+        else
+            util.toast("Failed to block joins.")
+        end
+        
+        menu.trigger_commands("players")
+        menu.trigger_commands("breakup" .. player)
+        menu.trigger_commands("kick" .. player)
+    end)
+end
+
+-- -- Initialize
+players.on_join(function(player_id)
+    setup_player(player_id)
+end)
+for k, v in pairs(players.list(false, true, true)) do
+    setup_player(v)
+end
 
 
 -- Settings Menu --
