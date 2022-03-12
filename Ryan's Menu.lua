@@ -424,13 +424,13 @@ function setup_player(player_id)
     
     -- -- Text & Kick
     local text_kick_root = menu.list(player_root, "Text & Kick", {"ryantextkick"}, "Kicks the player after spamming them with texts.")
-    local text_kick_duration = 4000
+    local text_kick_duration = 6000
     local text_kick_block_joins = false
     local text_kick_message = "See you later, child baiter."
     menu.text_input(text_kick_root, "Message", {"ryantextkickmessage"}, "The message to spam before kicking.", function(value)
         text_kick_message = value
     end, text_kick_message)
-    menu.slider(text_kick_root, "Text Spam Duration", {"ryantextkickduration"}, "Duration in milliseconds of text spam.", 0, 10000, 4000, 500, function(value)
+    menu.slider(text_kick_root, "Text Spam Duration", {"ryantextkickduration"}, "Duration in milliseconds of text spam.", 5000, 10000, 6000, 500, function(value)
         text_kick_duration = value
     end)
     menu.toggle(text_kick_root, "Block Joins", {"ryantextkickblockjoins"}, "Block joins by this player.", function(value)
