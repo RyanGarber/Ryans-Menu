@@ -1,4 +1,4 @@
-version = "0.2.3"
+version = "0.3.1"
 
 
 -- Requirements --
@@ -116,6 +116,30 @@ function run_all(commands)
     end
 end
 
+function block_joins(player)
+    local ref
+    local possible_tags = {" [Offline/Story Mode]", " [Public]", " [Solo/Invite-Only]", ""}
+    local success = false
+    for i = 1, #possible_tags do
+        if pcall(function()
+            ref = menu.ref_by_path("Online>Player History>" .. player .. possible_tags[i] .. ">Player Join Reactions>Block Join")
+        end) then
+            menu.focus(menu.my_root())
+            menu.focus(ref)
+            menu.trigger_command(ref, "true")
+            success = true
+            break
+        else
+
+        end
+    end
+    if success then
+        util.toast("Blocked all future joins by that player.")
+    else
+        util.toast("Failed to block joins.")
+    end
+end
+
 RUSSIAN_ALPHABET = {
     ["A"] = "A", ["a"] = "a", ["Б"] = "B", ["б"] = "b",
     ["В"] = "V", ["в"] = "v", ["Г"] = "G", ["г"] = "g",
@@ -136,13 +160,15 @@ RUSSIAN_ALPHABET = {
     ["Я"] = "Ya", ["я"] = "ya"
 }
 
-function send_translated(message, language)
-    async_http.init("api-free.deepl.com", "/v2/translate?auth_key=5b295d7c-ee3a-e158-caaa-6ec2eeeed90f:fx&text=" .. message .. "&target_lang=" .. language, function(result)
-        result = result:match("\"text\":\"(.+)\"")
-        for from, to in pairs(RUSSIAN_ALPHABET) do
-            result = result:gsub(from, to)
+function send_translated(message, language, latin)
+    async_http.init("ryan.gq", "/menu/translate?text=" .. message .. "&language=" .. language, function(result)
+        if latin then
+            for from, to in pairs(RUSSIAN_ALPHABET) do
+                result = result:gsub(from, to)
+            end
         end
         chat.send_message(result, false, true, true)
+        util.toast("Sent!")
     end, function()
         util.toast("Failed to translate message.")
     end)
@@ -174,19 +200,23 @@ end, "")
 translate_send_root = menu.list(translate_root, "Send...", {"ryantranslatesend"}, "Translate and send the message.")
 menu.action(translate_send_root, "Spanish", {"ryantranslatespanish"}, "Translate to Spanish.", function()
     util.toast("Translating message to Spanish...")
-    send_translated(translate_message, "ES")
+    send_translated(translate_message, "ES", false)
 end)
 menu.action(translate_send_root, "Russian", {"ryantranslaterussian"}, "Translate to Russian.", function()
     util.toast("Translating message to Russian...")
-    send_translated(translate_message, "RU")
+    send_translated(translate_message, "RU", true)
+end)
+menu.action(translate_send_root, "Russian (Cyrillic)", {"ryantranslatecyrillic"}, "Translate to Russian (Cyrillic).", function()
+    util.toast("Translating message to Russian (Cyrillic)...")
+    send_translated(translate_message, "RU", false)
 end)
 menu.action(translate_send_root, "French", {"ryantranslatefrench"}, "Translate to French.", function()
     util.toast("Translating message to French...")
-    send_translated(translate_message, "FR")
+    send_translated(translate_message, "FR", false)
 end)
 menu.action(translate_send_root, "German", {"ryantranslategerman"}, "Translate to German.", function()
     util.toast("Translating message to German...")
-    send_translated(translate_message, "DE")
+    send_translated(translate_message, "DE", false)
 end)
 
 -- -- Action Figures
@@ -386,32 +416,40 @@ function setup_player(player_id)
     menu.divider(player_root, "Ryan's Menu")
     menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
         local player = players.get_name(player_id)
-        
-        local ref
-        local possible_tags = {" [Offline/Story Mode]", " [Public]", " [Solo/Invite-Only]", ""}
-        local success = false
-        for i = 1, #possible_tags do
-            if pcall(function()
-                ref = menu.ref_by_path("Online>Player History>" .. player .. possible_tags[i] .. ">Player Join Reactions>Block Join")
-            end) then
-                menu.focus(menu.my_root())
-                menu.focus(ref)
-                menu.trigger_command(ref, "true")
-                success = true
-                break
-            else
-
-            end
-        end
-        if success then
-            util.toast("Blocked all future joins by that player.")
-        else
-            util.toast("Failed to block joins.")
-        end
-        
-        menu.trigger_commands("players")
-        menu.trigger_commands("breakup" .. player)
+        block_joins(player)
         menu.trigger_commands("kick" .. player)
+        menu.trigger_commands("breakup" .. player)
+        menu.trigger_commands("players")
+    end)
+    
+    -- -- Text & Kick
+    local text_kick_root = menu.list(player_root, "Text & Kick", {"ryantextkick"}, "Kicks the player after spamming them with texts.")
+    local text_kick_duration = 4000
+    local text_kick_block_joins = false
+    local text_kick_message = "See you later, child baiter."
+    menu.text_input(text_kick_root, "Message", {"ryantextkickmessage"}, "The message to spam before kicking.", function(value)
+        text_kick_message = value
+    end, text_kick_message)
+    menu.slider(text_kick_root, "Text Spam Duration", {"ryantextkickduration"}, "Duration in milliseconds of text spam.", 0, 10000, 4000, 500, function(value)
+        text_kick_duration = value
+    end)
+    menu.toggle(text_kick_root, "Block Joins", {"ryantextkickblockjoins"}, "Block joins by this player.", function(value)
+        text_kick_block_joins = value
+    end)
+    menu.action(text_kick_root, "Go", {"ryantextkickgo"}, "Start the text & kick.", function()
+        local player = players.get_name(player_id)
+        util.toast("Spamming " .. player .. " with texts...")
+        menu.trigger_commands("smsrandomsender" .. player .. " on")
+        menu.trigger_commands("smstext" .. player .. " " .. text_kick_message)
+        menu.trigger_commands("smsspam" .. player .. " on")
+        util.yield(text_kick_duration)
+        util.toast("Kicking " .. player .. "!")
+        if text_kick_block_joins then
+            block_joins(player)
+        end
+        menu.trigger_commands("kick" .. player)
+        menu.trigger_commands("breakup" .. player)
+        menu.trigger_commands("players")
     end)
 end
 
