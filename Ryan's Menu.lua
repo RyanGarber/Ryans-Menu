@@ -1,7 +1,9 @@
-version = "0.2.2"
+version = "0.2.3"
+
 
 -- Requirements --
 require("natives-1640181023")
+
 
 -- Check for Updates --
 util.toast("Welcome to Ryan's Menu v" .. version ..". Checking for updates...")
@@ -18,6 +20,7 @@ end, function()
     util.toast("Failed to get the latest version. Go to Settings and press Get Latest Version to check manually.")
 end)
 async_http.dispatch()
+
 
 -- Helper Functions --
 function get_closest_vehicle(entity)
@@ -104,22 +107,90 @@ function teleport_vehicle_to(x, y, z)
     end
 end
 
+function run_all(commands)
+    for k, player in pairs(players.list(true, true, true)) do
+        local name = PLAYER.GET_PLAYER_NAME(player)
+        for i = 1, #commands do
+            menu.trigger_commands(commands[i]:gsub("{name}", name))
+        end
+    end
+end
+
+RUSSIAN_ALPHABET = {
+    ["A"] = "A", ["a"] = "a", ["Б"] = "B", ["б"] = "b",
+    ["В"] = "V", ["в"] = "v", ["Г"] = "G", ["г"] = "g",
+    ["Д"] = "D", ["д"] = "d", ["Е"] = "E", ["e"] = "e",
+    ["Ё"] = "Yo", ["ё"] = "yo", ["Ж"] = "Zh", ["ж"] = "zh",
+    ["З"] = "Z", ["з"] = "z", ["И"] = "I", ["и"] = "i",
+    ["Й"] = "J", ["й"] = "j", ["К"] = "K", ["к"] = "k",
+    ["Л"] = "L", ["л"] = "l", ["М"] = "M", ["м"] = "m",
+    ["Н"] = "N", ["н"] = "n", ["О"] = "O", ["о"] = "o",
+    ["П"] = "P", ["п"] = "p", ["Р"] = "R", ["р"] = "r",
+    ["С"] = "S", ["с"] = "s", ["Т"] = "T", ["т"] = "t",
+    ["У"] = "U", ["у"] = "u", ["Ф"] = "F", ["ф"] = "f",
+    ["Х"] = "H", ["х"] = "h", ["Ц"] = "Ts", ["ц"] = "ts",
+    ["Ч"] = "Ch", ["ч"] = "ch", ["Ш"] = "Sh", ["ш"] = "sh",
+    ["Щ"] = "Shch", ["щ"] = "shch", ["Ъ"] = "'", ["ъ"] = "'",
+    ["Ы"] = "Y", ["ы"] = "y", ["Ь"] = "'", ["ь"] = "'",
+    ["Э"] = "E", ["э"] = "e", ["Ю"] = "Yu", ["ю"] = "yu",
+    ["Я"] = "Ya", ["я"] = "ya"
+}
+
+function send_translated(message, language)
+    async_http.init("api-free.deepl.com", "/v2/translate?auth_key=5b295d7c-ee3a-e158-caaa-6ec2eeeed90f:fx&text=" .. message .. "&target_lang=" .. language, function(result)
+        result = result:match("\"text\":\"(.+)\"")
+        for from, to in pairs(RUSSIAN_ALPHABET) do
+            result = result:gsub(from, to)
+        end
+        chat.send_message(result, false, true, true)
+    end, function()
+        util.toast("Failed to translate message.")
+    end)
+    async_http.dispatch()
+end
 
 
 -- Main Menu --
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
 session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling options for the entire session.")
+translate_root = menu.list(menu.my_root(), "Translate", {"ryantranslate"}, "Translate chat messages.")
 settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Settings for Ryan's Menu.")
 
 
 -- World Menu --
-world_teleports_root = menu.list(world_root, "Teleports...", {"ryanteleports"}, "Useful presets to teleport to.")
-world_action_figures_root = menu.list(world_teleports_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
-world_signal_jammers_root = menu.list(world_teleports_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
-world_playing_cards_root = menu.list(world_teleports_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
+world_teleport_root = menu.list(world_root, "Teleport To...", {"ryanteleport"}, "Useful presets to teleport to.")
+world_action_figures_root = menu.list(world_teleport_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
+world_signal_jammers_root = menu.list(world_teleport_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
+world_playing_cards_root = menu.list(world_teleport_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
+
+
+-- Translate Menu --
+translate_message = ""
+menu.text_input(translate_root, "Message", {"ryantranslatemessage"}, "The message to send in chat.", function(value)
+    translate_message = value
+end, "")
+
+-- -- Send Message
+translate_send_root = menu.list(translate_root, "Send...", {"ryantranslatesend"}, "Translate and send the message.")
+menu.action(translate_send_root, "Spanish", {"ryantranslatespanish"}, "Translate to Spanish.", function()
+    util.toast("Translating message to Spanish...")
+    send_translated(translate_message, "ES")
+end)
+menu.action(translate_send_root, "Russian", {"ryantranslaterussian"}, "Translate to Russian.", function()
+    util.toast("Translating message to Russian...")
+    send_translated(translate_message, "RU")
+end)
+menu.action(translate_send_root, "French", {"ryantranslatefrench"}, "Translate to French.", function()
+    util.toast("Translating message to French...")
+    send_translated(translate_message, "FR")
+end)
+menu.action(translate_send_root, "German", {"ryantranslategerman"}, "Translate to German.", function()
+    util.toast("Translating message to German...")
+    send_translated(translate_message, "DE")
+end)
 
 -- -- Action Figures
-action_figures = {
+ACTION_FIGURES = {
     {3514,3754,35}, {3799,4473,7}, {3306,5194,18}, {2937,4620,48}, {2725,4142,44},
     {2487,3759,43}, {1886,3913,33}, {1702,3290,48}, {1390,3608,34}, {1298,4306,37},
     {1714,4791,41}, {2416,4994,46}, {2221,5612,55}, {1540,6323,24}, {1310,6545,5},
@@ -141,14 +212,14 @@ action_figures = {
     {63,3683,39}, {543,3074,40}, {387,2570,44}, {852,2166,52}, {1408,2157,98},
     {1189,2641,38}, {1848,2700,63}, {2635,2931,44}, {2399,3063,54}, {2394,3062,52}
 }
-for i = 1, #action_figures do
+for i = 1, #ACTION_FIGURES do
     menu.action(world_action_figures_root, "Action Figure " .. i, {"ryanactionfigure" .. i}, "Teleports to action figure #" .. i, function()
-        teleport_to(action_figures[i][1], action_figures[i][2], action_figures[i][3])
+        teleport_to(ACTION_FIGURES[i][1], ACTION_FIGURES[i][2], ACTION_FIGURES[i][3])
     end)
 end
 
 -- -- Signal Jammers
-signal_jammers = {
+SIGNAL_JAMMERS = {
     {-3096,783,33}, {-2273,325,195}, {-1280,304,91}, {-1310,-445,108}, {-1226,-866,82},
     {-1648,-1125,29}, {-686,-1381,24}, {-265,-1897,54}, {-988,-2647,89}, {-250,-2390,124},
     {554,-2244,74}, {978,-2881,33}, {1586,-2245,130}, {1110,-1542,55}, {405,-1387,75},
@@ -160,14 +231,14 @@ signal_jammers = {
     {1595,6431,32}, {-119,6217,62}, {449,5595,793}, {1736,4821,60}, {732,4099,37},
     {-492,4428,86}, {-1018,4855,301}, {-2206,4299,54}, {-2367,3233,103}, {-1870,2069,154}
 }
-for i = 1, #signal_jammers do
+for i = 1, #SIGNAL_JAMMERS do
     menu.action(world_signal_jammers_root, "Signal Jammer " .. i, {"ryansignaljammer" .. i}, "Teleports to signal jammer #" .. i, function()
-        teleport_vehicle_to(action_figures[i][1], action_figures[i][2], action_figures[i][3])
+        teleport_vehicle_to(SIGNAL_JAMMERS[i][1], SIGNAL_JAMMERS[i][2], SIGNAL_JAMMERS[i][3])
     end)
 end
 
 -- -- Playing Cards
-playing_cards = {
+PLAYING_CARDS = {
     {-1028,-2747,14}, {-74,-2005,18}, {202,-1645,29}, {120,-1298,29}, {11,-1102,29},
     {-539,-1279,27}, {-1205,-1560,4}, {-1288,-1119,7}, {-1841,-1235,13}, {-1155,-528,31},
     {-1167,-234,37}, {-971,104,55}, {-1513,-105,54}, {-3048,585,7}, {-3150,1115,20},
@@ -180,9 +251,9 @@ playing_cards = {
     {1690,3588,35}, {1991,3045,47}, {2747,3465,55}, {2341,2571,47}, {2565,297,108}, 
     {1325,-1652,52}, {989,-1801,31}, {827,-2159,29}, {810,-2979,6} 
 }
-for i = 1, #playing_cards do
+for i = 1, #PLAYING_CARDS do
     menu.action(world_playing_cards_root, "Playing Card " .. i, {"ryanplayingcard" .. i}, "Teleports to playing card #" .. i, function()
-        teleport_vehicle_to(playing_cards[i][1], playing_cards[i][2], playing_cards[i][3])
+        teleport_vehicle_to(PLAYING_CARDS[i][1], PLAYING_CARDS[i][2], PLAYING_CARDS[i][3])
     end)
 end
 
@@ -209,6 +280,7 @@ menu.action(world_root, "Enter Closest Vehicle", {"ryanclosestvehicle"}, "Telepo
         else
             util.toast("No nearby vehicles found.")
         end
+        --menu.run_commands("copyvehicler")
     end
 end)
 
@@ -216,6 +288,7 @@ end)
 -- Session Menu --
 session_spam_chat_root = menu.list(session_root, "Spam Chat...", {"ryanspam"}, "Spams the chat with a message from all players.")
 session_nuke_attack_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
+session_trolling_root = menu.list(session_root, "Trolling...", {"ryantrolling"}, "Trolling options on all players.")
 
 -- -- Spam Chat
 spam_chat_all_players = true
@@ -277,12 +350,41 @@ menu.action(session_nuke_attack_root, "Start Nuke", {"ryannukestart"}, "Starts t
     end
 end)
 
+-- -- Send Attacker
+session_send_attacker_root = menu.list(session_trolling_root, "Send Attacker...", {"ryanattackall"}, "Attackers to send to all players.")
+menu.action(session_send_attacker_root, "Random", {"ryanattackallrandom"}, "Sends random NPCs to attack all players.", function()
+    run_all({"attacker{name}"})
+end)
+menu.action(session_send_attacker_root, "Clone", {"ryanattackallclone"}, "Sends an angry clone to attack all players.", function()
+    run_all({"enemyclone{name}"})
+end)
+menu.action(session_send_attacker_root, "Chop", {"ryanattackallchop"}, "Sends Chop to attack all players.", function()
+    run_all({"sendchop{name}"})
+end)
+menu.action(session_send_attacker_root, "Police", {"ryanattackallpolice"}, "Sends the law to attack all players.", function()
+    run_all({"sendpolicecar{name}"})
+end)
+
+
+-- -- Send Vehicle
+menu.action(session_trolling_root, "Send Go-Karts", {"ryangokartall"}, "Sends Go-Karts to annoy all players.", function()
+    run_all({"sendgokart{name}", "sendbandito{name}"})
+end)
+menu.action(session_trolling_root, "Ram", {"ryanramall"}, "Sends a phantom wedge into all players' heads.", function()
+    run_all({"ram{name}"})
+end)
+menu.action(session_trolling_root, "Tow", {"ryantowall"}, "Sends a tow truck to all players.", function()
+    run_all({"towtruck{name}"})
+end)
+
 
 -- Player Options --
 function setup_player(player_id)
+    local player_root = menu.player_root(player_id)
+    
     -- -- Divorce Kick
-    menu.divider(menu.player_root(player_id), "Ryan's Menu")
-    menu.action(menu.player_root(player_id), "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
+    menu.divider(player_root, "Ryan's Menu")
+    menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
         local player = players.get_name(player_id)
         
         local ref
