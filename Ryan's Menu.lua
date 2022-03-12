@@ -7,7 +7,7 @@ require("natives-1640181023")
 
 -- Check for Updates --
 util.toast("Welcome to Ryan's Menu v" .. version ..". Checking for updates...")
-async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/VERSION", function(latest_version)
+async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/VERSION?nocache=" .. math.random(0, 1000000), function(latest_version)
     latest_version = latest_version:gsub("\n", "")
     if latest_version ~= version then
         util.toast("The version you are using is outdated! Press Get Latest Version to get v" .. latest_version .. ".")
