@@ -1,4 +1,4 @@
-version = "0.3.1"
+version = "0.4.0"
 
 
 -- Requirements --
@@ -23,6 +23,7 @@ async_http.dispatch()
 
 
 -- Helper Functions --
+-- Stolen from LanceScript
 function get_closest_vehicle(entity)
     local location = ENTITY.GET_ENTITY_COORDS(entity, true)
     local vehicles = entities.get_all_vehicles_as_handles()
@@ -45,7 +46,7 @@ function spam_chat(message, all_players, time_between, wait_for)
     local sent = 0
     while sent < 32 do
         if all_players then
-            for k, player in pairs(players.list(true, true, true)) do
+            for k, player in pairs(players.list()) do
                 local name = PLAYER.GET_PLAYER_NAME(player)
                 menu.trigger_commands("chatas" .. name .. " on")
                 chat.send_message(message, false, true, true)
@@ -107,8 +108,24 @@ function teleport_vehicle_to(x, y, z)
     end
 end
 
+-- Stolen from WiriScript
+function vehicle_control_loop(vehicle)
+    local tick = 0
+	while not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) and tick < 25 do
+		util.yield()
+		NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
+		tick = tick + 1
+	end
+	if NETWORK.NETWORK_IS_SESSION_STARTED() then
+		local network_id = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity)
+		NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
+		NETWORK.SET_NETWORK_ID_CAN_MIGRATE(network_id, true)
+        util.toast("Taking control of a vehicle...")
+	end
+end
+
 function run_all(commands)
-    for k, player in pairs(players.list(true, true, true)) do
+    for k, player in pairs(players.list()) do
         local name = PLAYER.GET_PLAYER_NAME(player)
         for i = 1, #commands do
             menu.trigger_commands(commands[i]:gsub("{name}", name))
@@ -175,6 +192,134 @@ function send_translated(message, language, latin)
     async_http.dispatch()
 end
 
+function format_int(number)
+    local i, j, minus, int, fraction = tostring(number):find('([-]?)(%d+)([.]?%d*)')
+    int = int:reverse():gsub("(%d%d%d)", "%1,")
+    return minus .. int:reverse():gsub("^,", "") .. fraction
+end
+
+function get_highest_and_lowest(get_value)
+    local highest_amount = 0
+    local highest_player = 0
+    local lowest_amount = 2100000000
+    local lowest_player = 0
+
+    for k, pid in pairs(players.list()) do
+        amount = get_value(pid)
+        if amount > highest_amount and amount < 2100000000 then
+            highest_amount = amount
+            highest_player = pid
+        end
+        if amount < lowest_amount and amount > 0 then
+            lowest_amount = amount
+            lowest_player = pid
+        end
+    end
+
+    return {highest_player, highest_amount, lowest_player, lowest_amount}
+end
+
+function get_booleans(get_value)
+    local player_names = ""
+    for k, pid in pairs(players.list()) do
+        if get_value(pid) then
+            player_names = player_names .. PLAYER.GET_PLAYER_NAME(pid) .. ", "
+        end
+    end
+    
+    if player_names ~= "" then
+        player_names = string.sub(player_names, 1, -3)
+    end
+
+    return player_names
+end
+
+function get_combined_money(pid)
+    return players.get_wallet(pid) + players.get_bank(pid)
+end
+
+function get_players_by_money()
+    data = get_highest_and_lowest(get_combined_money)
+
+    message = ""
+    if data[1] ~= 0 then
+        message = PLAYER.GET_PLAYER_NAME(data[1]) .. " is the richest player here ($" .. format_int(data[2]) .. ")."
+    end
+    if data[1] ~= data[3] then
+        message = message .. " " .. PLAYER.GET_PLAYER_NAME(data[3]) .. " is the poorest ($" .. format_int(data[4]) .. ")."
+    end
+    if message ~= "" then
+        chat.send_message(message, false, true, true)
+        return
+    end
+end
+
+function get_players_by_kd()
+    data = get_highest_and_lowest(players.get_kd)
+    
+    message = ""
+    if data[1] ~= 0 then
+        message = players.get_name(data[1]) .. " has the highest K/D here (" .. string.format("%.1f", data[2]) .. ")."
+    end
+    if data[1] ~= data[3] then
+        message = message .. " " .. players.get_name(data[3]) .. " has the lowest (" .. string.format("%.1f", data[4]) .. ")."
+    end
+    if message ~= "" then
+        chat.send_message(message, false, true, true)
+        return
+    end
+end
+
+function get_godmode(pid)
+    return not players.is_in_interior(pid) and players.is_godmode(pid)
+end
+
+function get_players_by_godmode()
+    local player_names = get_booleans(get_godmode)
+
+    if player_names ~= "" then
+        chat.send_message("Players likely in godmode: " .. player_names .. ".", false, true, true)
+        return
+    end
+
+    chat.send_message("No players are in godmode.", false, true, true)
+end
+
+function get_offradar(pid)
+    return players.is_otr(pid)
+end
+
+function get_players_by_offradar()
+    local player_names = get_booleans(get_offradar)
+
+    if player_names ~= "" then
+        chat.send_message("Players off-the-radar: " .. player_names .. ".", false, true, true)
+        return
+    end
+
+    chat.send_message("No players are off-the-radar.", false, true, true)
+end
+
+function get_oppressor2(pid)
+    local ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid)
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(ped, true)
+    if vehicle ~= 0 then
+        local hash = util.joaat("oppressor2")
+        return VEHICLE.IS_VEHICLE_MODEL(vehicle, hash)
+    end
+    return false
+end
+
+function get_players_by_oppressor2()
+    local player_names = get_booleans(get_oppressor2)
+
+    if player_names ~= "" then
+        chat.send_message("Players on Oppressors: " .. player_names .. ".", false, true, true)
+        return
+    end
+
+    chat.send_message("No players are on Oppressors.", false, true, true)
+end
 
 -- Main Menu --
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
@@ -217,6 +362,10 @@ end)
 menu.action(translate_send_root, "German", {"ryantranslategerman"}, "Translate to German.", function()
     util.toast("Translating message to German...")
     send_translated(translate_message, "DE", false)
+end)
+menu.action(translate_send_root, "Italian", {"ryantranslateitalian"}, "Translate to Italian.", function()
+    util.toast("Translating message to Italian...")
+    send_translated(translate_message, "IT", false)
 end)
 
 -- -- Action Figures
@@ -310,7 +459,6 @@ menu.action(world_root, "Enter Closest Vehicle", {"ryanclosestvehicle"}, "Telepo
         else
             util.toast("No nearby vehicles found.")
         end
-        --menu.run_commands("copyvehicler")
     end
 end)
 
@@ -382,29 +530,53 @@ end)
 
 -- -- Send Attacker
 session_send_attacker_root = menu.list(session_trolling_root, "Send Attacker...", {"ryanattackall"}, "Attackers to send to all players.")
-menu.action(session_send_attacker_root, "Random", {"ryanattackallrandom"}, "Sends random NPCs to attack all players.", function()
-    run_all({"attacker{name}"})
-end)
 menu.action(session_send_attacker_root, "Clone", {"ryanattackallclone"}, "Sends an angry clone to attack all players.", function()
+    util.toast("Sending a clone after all players...")
     run_all({"enemyclone{name}"})
 end)
 menu.action(session_send_attacker_root, "Chop", {"ryanattackallchop"}, "Sends Chop to attack all players.", function()
+    util.toast("Sending Chop after all players...")
     run_all({"sendchop{name}"})
 end)
 menu.action(session_send_attacker_root, "Police", {"ryanattackallpolice"}, "Sends the law to attack all players.", function()
+    util.toast("Sending a police car after all players...")
     run_all({"sendpolicecar{name}"})
 end)
 
-
 -- -- Send Vehicle
-menu.action(session_trolling_root, "Send Go-Karts", {"ryangokartall"}, "Sends Go-Karts to annoy all players.", function()
-    run_all({"sendgokart{name}", "sendbandito{name}"})
-end)
-menu.action(session_trolling_root, "Ram", {"ryanramall"}, "Sends a phantom wedge into all players' heads.", function()
-    run_all({"ram{name}"})
-end)
 menu.action(session_trolling_root, "Tow", {"ryantowall"}, "Sends a tow truck to all players.", function()
+    util.toast("Sending a tow truck after all players...")
     run_all({"towtruck{name}"})
+end)
+menu.action(session_trolling_root, "Kill Engine", {"ryankillengineall"}, "Kills every vehicle's engine.", function()
+    util.toast("Attempting to kill all vehicles...")
+    local player_count = 0
+    for k, player in pairs(players.list()) do
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player), false)
+        if vehicle == NULL then return end
+        vehicle_control_loop(vehicle)
+        VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+        player_count = player_count + 1
+    end
+    util.toast("Killed " .. player_count .. " vehicle(s)!")
+end)
+
+-- -- Dox Players
+session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
+menu.action(session_dox_root, "Richest & Poorest", {"ryanrichest"}, "Shares the name of the richest and poorest players.", function()
+    get_players_by_money()
+end)
+menu.action(session_dox_root, "K/D Ratio", {"ryankd"}, "Shares the name of the highest and lowest K/D players.", function()
+    get_players_by_kd()
+end)
+menu.action(session_dox_root, "Godmode", {"ryangodmode"}, "Shares the name of the players in godmode.", function()
+    get_players_by_godmode()
+end)
+menu.action(session_dox_root, "Off Radar", {"ryanoffradar"}, "Shares the name of the players off the radar.", function()
+    get_players_by_offradar()
+end)
+menu.action(session_dox_root, "Oppressor", {"ryanoppressor"}, "Shares the name of the players in Oppressors.", function()
+    get_players_by_oppressor2()
 end)
 
 
@@ -453,6 +625,7 @@ function setup_player(player_id)
     end)
 end
 
+
 -- Settings Menu --
 
 -- -- Check for Updates
@@ -461,9 +634,7 @@ menu.hyperlink(settings_root, "Get Latest Version", "https://github.com/RyanGarb
 
 
 -- Initialize --
-players.on_join(function(player_id)
-    setup_player(player_id)
-end)
+players.on_join(function(player_id) setup_player(player_id) end)
 players.dispatch_on_join()
 
 util.keep_running()
