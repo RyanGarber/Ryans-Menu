@@ -1,4 +1,4 @@
-version = "0.4.1"
+version = "0.4.2"
 notify_requirements = false
 
 -- Requirements --
@@ -8,7 +8,7 @@ while not filesystem.exists(filesystem.scripts_dir() .. "lib\\natives-1640181023
         menu.focus(ref)
         notify_requirements = true
     end
-    
+
     util.toast("Ryan's Menu requires LanceScript and WiriScript to function. Please enable them to continue.")
     util.yield(2000)
 end
@@ -166,13 +166,15 @@ function block_joins(player) -- Credit: Block Joins Script
     end
 end
 
-function remove_godmode(player_id) -- Credit: KeramiScript
+function remove_godmode(player_id, vehicle) -- Credit: KeramiScript
     if NETWORK.NETWORK_IS_PLAYER_CONNECTED(player_id) then
-        local player_ped = PLAYER.GET_PLAYER_PED(player_id)
-        if PED.IS_PED_IN_ANY_VEHICLE(player_ped, false) then
-            local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
-            ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
-            ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
+        if vehicle then
+            local player_ped = PLAYER.GET_PLAYER_PED(player_id)
+            if PED.IS_PED_IN_ANY_VEHICLE(player_ped, false) then
+                local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
+                ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
+                ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
+            end
         end
         util.trigger_script_event(1 << player_id, {801199324, player_id, 869796886})
     end
@@ -274,9 +276,9 @@ end
 
 function get_players_highest_and_lowest(get_value)
     local highest_amount = 0
-    local highest_player = 0
+    local highest_player = -1
     local lowest_amount = 2100000000
-    local lowest_player = 0
+    local lowest_player = -1
 
     for k, player_id in pairs(players.list()) do
         amount = get_value(player_id)
@@ -334,13 +336,13 @@ end
 -- Player Sorting --
 function get_players_by_money()
     data = get_players_highest_and_lowest(get_money)
-
+    
     message = ""
-    if data[1] ~= 0 then
-        message = PLAYER.GET_PLAYER_NAME(data[1]) .. " is the richest player here ($" .. format_int(data[2]) .. ")."
+    if data[1] ~= -1 then
+        message = players.get_name(data[1]) .. " is the richest player here ($" .. format_int(data[2]) .. ")."
     end
     if data[1] ~= data[3] then
-        message = message .. " " .. PLAYER.GET_PLAYER_NAME(data[3]) .. " is the poorest ($" .. format_int(data[4]) .. ")."
+        message = message .. " " .. players.get_name(data[3]) .. " is the poorest ($" .. format_int(data[4]) .. ")."
     end
     if message ~= "" then
         chat.send_message(message, false, true, true)
@@ -352,7 +354,7 @@ function get_players_by_kd()
     data = get_players_highest_and_lowest(players.get_kd)
     
     message = ""
-    if data[1] ~= 0 then
+    if data[1] ~= -1 then
         message = players.get_name(data[1]) .. " has the highest K/D here (" .. string.format("%.1f", data[2]) .. ")."
     end
     if data[1] ~= data[3] then
@@ -609,6 +611,12 @@ menu.action(session_dox_root, "Oppressor", {"ryanoppressor"}, "Shares the name o
     get_players_by_oppressor2()
 end)
 
+-- -- No Godmode
+menu.toggle_loop(session_root, "No Godmode", {"ryannogodmodeall"}, "Removes godmode from all Kiddions users in the session.", function()
+    for k, player_id in pairs(players.list(false, true, true)) do
+        remove_godmode(player_id)
+    end
+end, false)
 
 -- Player Options --
 function setup_player(player_id)
@@ -648,9 +656,9 @@ function setup_player(player_id)
     -- -- No Godmode
     local remove_godmode_notice = 0
     menu.toggle_loop(player_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
-        remove_godmode(player_id)
+        remove_godmode(player_id, true)
         if util.current_time_millis() - remove_godmode_notice >= 10000 then
-            util.toast("Still trying to remove godmode from " .. players.get_name(player_id) .. ".")
+            util.toast("Still removing godmode from " .. players.get_name(player_id) .. ".")
             remove_godmode_notice = util.current_time_millis()
         end
     end, false)
