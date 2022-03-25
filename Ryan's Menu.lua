@@ -1,4 +1,4 @@
-version = "0.4.3"
+version = "0.4.4"
 notify_requirements = false
 
 -- Requirements --
@@ -257,13 +257,19 @@ function run_all(commands, modders, wait_for)
     menu.trigger_commands("invisibility on")
     menu.trigger_commands("levitation on")
     for k, player_id in pairs(players.list()) do
-        if modders or not players.is_marked_as_modder(player_id) then
-            menu.trigger_commands("tp" .. players.get_name(player_id))
-            util.yield(500)
-            for i = 1, #commands do
-                menu.trigger_commands(commands[i]:gsub("{name}", PLAYER.GET_PLAYER_NAME(player_id)))
+        if player_id ~= 0 then
+            if modders or not players.is_marked_as_modder(player_id) then
+                util.toast("Trolling player: " .. players.get_name(player_id) .. "...")
+                menu.trigger_commands("tp" .. players.get_name(player_id))
+                util.yield(750)
+                local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+                if player_name ~= "**invalid**" then
+                    for i = 1, #commands do
+                        menu.trigger_commands(commands[i]:gsub("{name}", player_name))
+                    end
+                end
+                util.yield(wait_for)
             end
-            util.yield(wait_for)
         end
     end
     teleport_to(starting_coords['x'], starting_coords['y'], starting_coords['z'])
@@ -274,8 +280,9 @@ end
 
 function takeover_vehicle(action, player_id, wait_for)
     local player_name = players.get_name(player_id)
+    util.toast("Trolling player: " .. players.get_name(player_id) .. "...")
     menu.trigger_commands("tpveh" .. player_name)
-    util.yield(500)
+    util.yield(750)
 
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), false)
     if vehicle ~= NULL then
@@ -292,8 +299,10 @@ function takeover_vehicle_all(action, modders, wait_for)
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
     for k, player_id in pairs(players.list()) do
-        if modders or not players.is_marked_as_modder(player_id) then
-            takeover_vehicle(action, player_id, wait_for)
+        if player_id ~= 0 then
+            if modders or not players.is_marked_as_modder(player_id) then
+                takeover_vehicle(action, player_id, wait_for)
+            end
         end
     end
     teleport_to(starting_coords['x'], starting_coords['y'], starting_coords['z'])
