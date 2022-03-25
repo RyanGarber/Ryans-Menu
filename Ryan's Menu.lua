@@ -252,11 +252,12 @@ function explode_all(earrape_type, wait_for)
 end
 
 function run_all(commands, modders, wait_for)
+    local starting_coords = ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true)
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
     menu.trigger_commands("levitation on")
     for k, player_id in pairs(players.list()) do
-        if players.is_marked_as_modder(player_id) then
+        if modders or not players.is_marked_as_modder(player_id) then
             menu.trigger_commands("tp" .. players.get_name(player_id))
             util.yield(500)
             for i = 1, #commands do
@@ -265,6 +266,7 @@ function run_all(commands, modders, wait_for)
             util.yield(wait_for)
         end
     end
+    teleport_to(starting_coords['x'], starting_coords['y'], starting_coords['z'])
     menu.trigger_commands("otr off")
     menu.trigger_commands("invisibility off")
     menu.trigger_commands("levitation off")
@@ -286,13 +288,15 @@ function takeover_vehicle(action, player_id, wait_for)
 end
 
 function takeover_vehicle_all(action, modders, wait_for)
+    local starting_coords = ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true)
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
-    for k, player_id in pairs(players.list(true, true, true)) do
+    for k, player_id in pairs(players.list()) do
         if modders or not players.is_marked_as_modder(player_id) then
             takeover_vehicle(action, player_id, wait_for)
         end
     end
+    teleport_to(starting_coords['x'], starting_coords['y'], starting_coords['z'])
     menu.trigger_commands("otr off")
     menu.trigger_commands("invisibility off")
 end
