@@ -1,4 +1,4 @@
-version = "0.4.4"
+version = "0.4.5"
 notify_requirements = false
 
 -- Requirements --
@@ -616,6 +616,15 @@ menu.action(session_trolling_root, "Catapult", {"ryancatapultall"}, "Catapults e
         if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
             ENTITY.APPLY_FORCE_TO_ENTITY(vehicle, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
         end
+    end, trolling_include_modders, trolling_watch_time)
+end)
+menu.action(session_trolling_root, "Burst Tires", {"ryanbursttiresall"}, "Bursts everyone's tires.", function()
+    util.toast("Bursting all tires...")
+    takeover_vehicle_all(function(vehicle)
+        VEHICLE.SET_VEHICLE_TYRES_CAN_BURST(vehicle, true)
+		for i=0, 7 do
+			VEHICLE.SET_VEHICLE_TYRE_BURST(vehicle, i, true, 1000.0)
+		end
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Kill Engine", {"ryankillengineall"}, "Kills everyone's engine.", function()
