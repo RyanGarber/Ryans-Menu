@@ -1,4 +1,4 @@
-version = "0.4.2"
+version = "0.4.3"
 notify_requirements = false
 
 -- Requirements --
@@ -127,7 +127,7 @@ function get_closest_vehicle(coords) -- Credit: Lance Script
     return closest_vehicle
 end
 
-function vehicle_control_loop(vehicle) -- Credit: WiriScript
+function vehicle_control_loop(entity) -- Credit: WiriScript
     local tick = 0
     while not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) and tick < 25 do
         util.yield()
@@ -138,7 +138,7 @@ function vehicle_control_loop(vehicle) -- Credit: WiriScript
         local network_id = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity)
         NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
         NETWORK.SET_NETWORK_ID_CAN_MIGRATE(network_id, true)
-        util.toast("Taking control of a vehicle...")
+        util.toast("Took control of a vehicle.")
     end
 end
 
@@ -251,12 +251,50 @@ function explode_all(earrape_type, wait_for)
     util.yield(wait_for)
 end
 
-function run_all(commands)
+function run_all(commands, modders, wait_for)
+    menu.trigger_commands("otr on")
+    menu.trigger_commands("invisibility on")
+    menu.trigger_commands("levitation on")
     for k, player_id in pairs(players.list()) do
-        for i = 1, #commands do
-            menu.trigger_commands(commands[i]:gsub("{name}", PLAYER.GET_PLAYER_NAME(player_id)))
+        if players.is_marked_as_modder(player_id) then
+            menu.trigger_commands("tp" .. players.get_name(player_id))
+            util.yield(500)
+            for i = 1, #commands do
+                menu.trigger_commands(commands[i]:gsub("{name}", PLAYER.GET_PLAYER_NAME(player_id)))
+            end
+            util.yield(wait_for)
         end
     end
+    menu.trigger_commands("otr off")
+    menu.trigger_commands("invisibility off")
+    menu.trigger_commands("levitation off")
+end
+
+function takeover_vehicle(action, player_id, wait_for)
+    local player_name = players.get_name(player_id)
+    menu.trigger_commands("tpveh" .. player_name)
+    util.yield(500)
+
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), false)
+    if vehicle ~= NULL then
+        vehicle_control_loop(vehicle)
+        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+            action(vehicle)
+            util.yield(wait_for)
+        end
+    end
+end
+
+function takeover_vehicle_all(action, modders, wait_for)
+    menu.trigger_commands("otr on")
+    menu.trigger_commands("invisibility on")
+    for k, player_id in pairs(players.list(true, true, true)) do
+        if modders or not players.is_marked_as_modder(player_id) then
+            takeover_vehicle(action, player_id, wait_for)
+        end
+    end
+    menu.trigger_commands("otr off")
+    menu.trigger_commands("invisibility off")
 end
 
 function send_translated(message, language, latin)
@@ -399,7 +437,6 @@ function get_players_by_oppressor2()
     chat.send_message("No players are on Oppressors.", false, true, true)
 end
 
-
 -- Main Menu --
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
 session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling options for the entire session.")
@@ -497,8 +534,9 @@ end)
 
 -- Session Menu --
 session_spam_chat_root = menu.list(session_root, "Spam Chat...", {"ryanspam"}, "Spams the chat with a message from all players.")
-session_nuke_attack_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
 session_trolling_root = menu.list(session_root, "Trolling...", {"ryantrolling"}, "Trolling options on all players.")
+session_nuke_attack_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
+session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
 
 -- -- Spam Chat
 spam_chat_all_players = true
@@ -528,6 +566,50 @@ menu.action(session_spam_chat_root, "Spam: Once", {"ryanspamonce"}, "Spams the m
     end
     util.toast("Spamming chat using " .. spam_chat_type .. ".")
     spam_chat(spam_chat_message, spam_chat_all_players, spam_chat_delay, 0)
+end)
+
+-- -- Vehicle
+trolling_watch_time = 5000
+trolling_include_modders = false
+menu.slider(session_trolling_root, "Watch Time", {"ryanwatchtime"}, "Seconds to watch the chaos unfold per player.", 1, 15, 5, 1, function(value)
+    trolling_watch_time = value * 1000
+end)
+menu.toggle(session_trolling_root, "Include Modders", {"ryanincludemodders"}, "Whether to include modders in the mass trolling.", function(value)
+    trolling_include_modders = value
+end)
+
+menu.divider(session_trolling_root, "Attacker")
+menu.action(session_trolling_root, "Clone", {"ryanattackallclone"}, "Sends an angry clone to attack all players.", function()
+    util.toast("Sending a clone after all players...")
+    run_all({"enemyclone{name}"}, trolling_include_modders, trolling_watch_time)
+end)
+menu.action(session_trolling_root, "Chop", {"ryanattackallchop"}, "Sends Chop to attack all players.", function()
+    util.toast("Sending Chop after all players...")
+    run_all({"sendchop{name}"}, trolling_include_modders, trolling_watch_time)
+end)
+menu.action(session_trolling_root, "Police", {"ryanattackallpolice"}, "Sends the law to attack all players.", function()
+    util.toast("Sending a police car after all players...")
+    run_all({"sendpolicecar{name}"}, trolling_include_modders, trolling_watch_time)
+end)
+
+menu.divider(session_trolling_root, "Vehicle")
+menu.action(session_trolling_root, "Tow", {"ryantowall"}, "Sends a tow truck to all players.", function()
+    util.toast("Towing all players...")
+    run_all({"towtruck{name}"}, trolling_include_modders, trolling_watch_time)
+end)
+menu.action(session_trolling_root, "Catapult", {"ryancatapultall"}, "Catapults everyone's vehicles.", function()
+    util.toast("Catapulting all players...")
+    takeover_vehicle_all(function(vehicle)
+        if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
+            ENTITY.APPLY_FORCE_TO_ENTITY(vehicle, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
+        end
+    end, trolling_include_modders, trolling_watch_time)
+end)
+menu.action(session_trolling_root, "Kill Engine", {"ryankillengineall"}, "Kills everyone's engine.", function()
+    util.toast("Killing all engines...")
+    takeover_vehicle_all(function(vehicle)
+        VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+    end, trolling_include_modders, trolling_watch_time)
 end)
 
 -- -- Nuke
@@ -560,41 +642,7 @@ menu.action(session_nuke_attack_root, "Start Nuke", {"ryannukestart"}, "Starts t
     end
 end)
 
--- -- Send Attacker
-session_send_attacker_root = menu.list(session_trolling_root, "Send Attacker...", {"ryanattackall"}, "Attackers to send to all players.")
-menu.action(session_send_attacker_root, "Clone", {"ryanattackallclone"}, "Sends an angry clone to attack all players.", function()
-    util.toast("Sending a clone after all players...")
-    run_all({"enemyclone{name}"})
-end)
-menu.action(session_send_attacker_root, "Chop", {"ryanattackallchop"}, "Sends Chop to attack all players.", function()
-    util.toast("Sending Chop after all players...")
-    run_all({"sendchop{name}"})
-end)
-menu.action(session_send_attacker_root, "Police", {"ryanattackallpolice"}, "Sends the law to attack all players.", function()
-    util.toast("Sending a police car after all players...")
-    run_all({"sendpolicecar{name}"})
-end)
-
--- -- Send Vehicle
-menu.action(session_trolling_root, "Tow", {"ryantowall"}, "Sends a tow truck to all players.", function()
-    util.toast("Sending a tow truck after all players...")
-    run_all({"towtruck{name}"})
-end)
-menu.action(session_trolling_root, "Kill Engine", {"ryankillengineall"}, "Kills every vehicle's engine.", function()
-    util.toast("Attempting to kill all vehicles...")
-    local player_count = 0
-    for k, player in pairs(players.list()) do
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player), false)
-        if vehicle == NULL then return end
-        vehicle_control_loop(vehicle)
-        VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-        player_count = player_count + 1
-    end
-    util.toast("Killed " .. player_count .. " vehicle(s)!")
-end)
-
 -- -- Dox Players
-session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
 menu.action(session_dox_root, "Richest & Poorest", {"ryanrichest"}, "Shares the name of the richest and poorest players.", function()
     get_players_by_money()
 end)
