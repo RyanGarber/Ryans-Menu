@@ -1,4 +1,4 @@
-version = "0.4.5"
+version = "0.4.6"
 notify_requirements = false
 
 -- Requirements --
@@ -259,10 +259,10 @@ function run_all(commands, modders, wait_for)
     for k, player_id in pairs(players.list()) do
         if player_id ~= 0 then
             if modders or not players.is_marked_as_modder(player_id) then
-                util.toast("Trolling player: " .. players.get_name(player_id) .. "...")
-                menu.trigger_commands("tp" .. players.get_name(player_id))
+                local player_name = players.get_name(player_id)
+                util.toast("Trolling player: " .. player_name .. "...")
+                menu.trigger_commands("tp" .. player_name)
                 util.yield(750)
-                local player_name = PLAYER.GET_PLAYER_NAME(player_id)
                 if player_name ~= "**invalid**" then
                     for i = 1, #commands do
                         menu.trigger_commands(commands[i]:gsub("{name}", player_name))
@@ -450,12 +450,77 @@ function get_players_by_oppressor2()
     chat.send_message("No players are on Oppressors.", false, true, true)
 end
 
+function do_office_money(amount)
+    if not office_money_notice then
+        util.toast("Make sure you have at least 1 crate of cargo, and run this option again.")
+        office_money_notice = true
+    else
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BUY_COMPLETE"), 1000, true)
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_SELL_COMPLETE"), 1000, true)
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BUY_UNDERTAKEN"), 1000, true)
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BUY_UNDERTAKEN"), 1000, true)
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_CONTRA_EARNINGS"), amount, true)
+
+        util.toast("Switch sessions and start a cargo sale to apply changes.")
+        office_money_notice = false
+    end
+end
+
+function do_mc_clutter(amount)
+    if not mc_clutter_notice then
+        util.toast("Make sure you have at least 1 unit to sell in each business, and run this option again.")
+        mc_clutter_notice = true
+    else
+        for i=0, 5 do
+            if i == 0 then i = "" end
+            STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_BUY_COMPLET" .. i), 1000, true)
+            STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_BUY_UNDERTA" .. i), 1000, true)
+            STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_SELL_COMPLET" .. i), 1000, true)
+            STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_SELL_UNDERTA" .. i), 1000, true)
+        end
+
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS0"), 1000, true)
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS1"), 1000, true)
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS2"), 1000, true)
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS3"), 1000, true)
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS4"), 1000, true)
+        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS5"), 1000, true)
+
+        util.toast("Switch sessions and start a sale in every business to apply changes.")
+        mc_clutter_notice = false
+    end
+end
+
+--menu.action(menu.my_root(), "Test", {"test"}, "Test", function() end)
+
 -- Main Menu --
+self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Self options not commonly found in other scripts.")
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
 session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling options for the entire session.")
 translate_root = menu.list(menu.my_root(), "Translate", {"ryantranslate"}, "Translate chat messages.")
 settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Settings for Ryan's Menu.")
 
+
+-- Self Menu --
+self_office_money_root = menu.list(self_root, "CEO Office Money", {"ryanofficemoney"}, "Controls the amount of money in your CEO office.")
+
+-- -- CEO Office Money
+office_money_notice = false
+menu.action(self_office_money_root, "25% Full", {"ryanofficemoney25"}, "Makes the office 25% full with money.", function()
+    do_office_money(5000000)
+end)
+menu.action(self_office_money_root, "50% Full", {"ryanofficemoney50"}, "Makes the office 50% full with money.", function()
+    do_office_money(10000000)
+end)
+menu.action(self_office_money_root, "100% Full", {"ryanofficemoney100"}, "Makes the office 100% full with money.", function()
+    do_office_money(20000000)
+end)
+
+-- -- MC Clubhouse Clutter
+mc_clutter_notice = false
+menu.action(self_root, "M.C. Clutter", {"ryanmcclutter"}, "Adds drugs, money, and other clutter to your M.C. clubhouse.", function()
+    do_mc_clutter()
+end)
 
 -- World Menu --
 world_teleport_root = menu.list(world_root, "Teleport To...", {"ryanteleport"}, "Useful presets to teleport to.")
