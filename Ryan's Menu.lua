@@ -1,4 +1,4 @@
-version = "0.4.6"
+version = "0.4.7"
 notify_requirements = false
 
 -- Requirements --
@@ -524,6 +524,8 @@ end)
 
 -- World Menu --
 world_teleport_root = menu.list(world_root, "Teleport To...", {"ryanteleport"}, "Useful presets to teleport to.")
+world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
+
 world_action_figures_root = menu.list(world_teleport_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
 world_signal_jammers_root = menu.list(world_teleport_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
 world_playing_cards_root = menu.list(world_teleport_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
@@ -550,7 +552,7 @@ for i = 1, #PLAYING_CARDS do
 end
 
 -- -- Enter Closest Vehicle
-menu.action(world_root, "Enter Closest Vehicle", {"ryanclosestvehicle"}, "Teleports into the closest vehicle.", function()
+menu.action(world_closest_vehicle_root, "Drive", {"ryandrivevehicle"}, "Teleports into the closest vehicle.", function()
     local closest_vehicle = get_closest_vehicle(ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true))
     local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(closest_vehicle, -1)
     
@@ -576,13 +578,14 @@ menu.action(world_root, "Enter Closest Vehicle", {"ryanclosestvehicle"}, "Telepo
 end)
 
 -- -- Downgrade Closest Vehicle
-menu.action(world_root, "Downgrade Closest Vehicle", {"ryandowngradevehicle"}, "Downgrades the closest vehicle.", function()
+menu.action(world_closest_vehicle_root, "Downgrade", {"ryandowngradevehicle"}, "Downgrades the closest vehicle.", function()
     local closest_vehicle = get_closest_vehicle(ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true))
     vehicle_control_loop(closest_vehicle)
     VEHICLE.SET_VEHICLE_MOD_KIT(closest_vehicle, 0)
     for i=0, 50 do
-        VEHICLE.SET_VEHICLE_MOD(closest_vehicle, i, 0, false)
+        VEHICLE.SET_VEHICLE_MOD(closest_vehicle, i, -1, false)
     end
+    util.toast("Downgraded the nearest car!")
 end)
 
 
@@ -767,9 +770,10 @@ end, false)
 function setup_player(player_id)
     local player_root = menu.player_root(player_id)
     menu.divider(player_root, "Ryan's Menu")
+    local player_trolling_root = menu.list(player_root, "Trolling...", {"ryantrolling"}, "Options that players may not like.")
 
     -- -- Text & Kick
-    local text_kick_root = menu.list(player_root, "Text & Kick", {"ryantextkick"}, "Kicks the player after spamming them with texts.")
+    local text_kick_root = menu.list(player_trolling_root, "Text & Kick...", {"ryantextkick"}, "Kicks the player after spamming them with texts.")
     local text_kick_duration = 6000
     local text_kick_block_joins = false
     local text_kick_message = "See you later, child baiter."
@@ -800,13 +804,24 @@ function setup_player(player_id)
 
     -- -- No Godmode
     local remove_godmode_notice = 0
-    menu.toggle_loop(player_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
+    menu.toggle_loop(player_trolling_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
         remove_godmode(player_id, true)
         if util.current_time_millis() - remove_godmode_notice >= 10000 then
             util.toast("Still removing godmode from " .. players.get_name(player_id) .. ".")
             remove_godmode_notice = util.current_time_millis()
         end
     end, false)
+
+    -- -- Downgrade Vehicle
+    menu.action(player_trolling_root, "Downgrade Vehicle", {"ryandowngrade"}, "Downgrades the car they are in.", function()
+        takeover_vehicle(function(vehicle)
+            VEHICLE.SET_VEHICLE_MOD_KIT(vehicle, 0)
+            for i=0, 50 do
+                VEHICLE.SET_VEHICLE_MOD(vehicle, i, -1, false)
+            end
+        end, player_id, 0)
+        util.toast("Downgraded " .. players.get_name(player_id) .. "'s car!")
+    end)
 
     -- -- Divorce Kick
     menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
