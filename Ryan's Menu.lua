@@ -549,7 +549,7 @@ for i = 1, #PLAYING_CARDS do
     end)
 end
 
--- -- Into Closest Vehicle
+-- -- Enter Closest Vehicle
 menu.action(world_root, "Enter Closest Vehicle", {"ryanclosestvehicle"}, "Teleports into the closest vehicle.", function()
     local closest_vehicle = get_closest_vehicle(ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true))
     local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(closest_vehicle, -1)
@@ -572,6 +572,16 @@ menu.action(world_root, "Enter Closest Vehicle", {"ryanclosestvehicle"}, "Telepo
         else
             util.toast("No nearby vehicles found.")
         end
+    end
+end)
+
+-- -- Downgrade Closest Vehicle
+menu.action(world_root, "Downgrade Closest Vehicle", {"ryandowngradevehicle"}, "Downgrades the closest vehicle.", function()
+    local closest_vehicle = get_closest_vehicle(ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true))
+    vehicle_control_loop(closest_vehicle)
+    VEHICLE.SET_VEHICLE_MOD_KIT(closest_vehicle, 0)
+    for i=0, 50 do
+        VEHICLE.SET_VEHICLE_MOD(closest_vehicle, i, 0, false)
     end
 end)
 
