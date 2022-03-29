@@ -1,4 +1,4 @@
-version = "0.4.7"
+version = "0.4.8"
 notify_requirements = false
 
 -- Requirements --
@@ -257,7 +257,7 @@ function run_all(commands, modders, wait_for)
     menu.trigger_commands("invisibility on")
     menu.trigger_commands("levitation on")
     for k, player_id in pairs(players.list()) do
-        if player_id ~= 0 then
+        if PLAYER.PLAYER_PED_ID() ~= PLAYER.PLAYER_PED_ID(player_id) then
             if modders or not players.is_marked_as_modder(player_id) then
                 local player_name = players.get_name(player_id)
                 util.toast("Trolling player: " .. player_name .. "...")
@@ -299,7 +299,8 @@ function takeover_vehicle_all(action, modders, wait_for)
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
     for k, player_id in pairs(players.list()) do
-        if player_id ~= 0 then
+        -- this makes me want to puke
+        if PLAYER.PLAYER_PED_ID() ~= PLAYER.PLAYER_PED_ID(player_id) then
             if modders or not players.is_marked_as_modder(player_id) then
                 takeover_vehicle(action, player_id, wait_for)
             end
@@ -376,11 +377,8 @@ end
 function get_oppressor2(player_id)
     local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, true)
-    if vehicle ~= 0 then
-        local hash = util.joaat("oppressor2")
-        return VEHICLE.IS_VEHICLE_MODEL(vehicle, hash)
-    end
-    return false
+    local hash = util.joaat("oppressor2")
+    return VEHICLE.IS_VEHICLE_MODEL(vehicle, hash)
 end
 
 
