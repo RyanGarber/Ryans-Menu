@@ -299,8 +299,7 @@ function takeover_vehicle_all(action, modders, wait_for)
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
     for k, player_id in pairs(players.list()) do
-        -- this makes me want to puke
-        if PLAYER.PLAYER_PED_ID() ~= PLAYER.PLAYER_PED_ID(player_id) then
+        if player_id ~= players.user() then
             if modders or not players.is_marked_as_modder(player_id) then
                 takeover_vehicle(action, player_id, wait_for)
             end
