@@ -1,4 +1,4 @@
-version = "0.4.8"
+version = "0.4.9"
 notify_requirements = false
 
 -- Requirements --
@@ -557,7 +557,7 @@ menu.action(world_closest_vehicle_root, "Drive", {"ryandrivevehicle"}, "Teleport
         PED.SET_PED_INTO_VEHICLE(PLAYER.PLAYER_PED_ID(), closest_vehicle, -1)
         util.toast("Teleported into the closest vehicle.")
     else
-        if PED.GET_PED_TYPE(ped) < 4 then
+        if PED.GET_PED_TYPE(driver) < 4 then
             entities.delete(driver)
             PED.SET_PED_INTO_VEHICLE(PLAYER.PLAYER_PED_ID(), closest_vehicle, -1)
             util.toast("Teleported into the closest vehicle.")
