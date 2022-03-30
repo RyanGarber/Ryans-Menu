@@ -520,8 +520,8 @@ menu.action(self_root, "M.C. Clutter", {"ryanmcclutter"}, "Adds drugs, money, an
 end)
 
 -- World Menu --
-world_teleport_root = menu.list(world_root, "Teleport To...", {"ryanteleport"}, "Useful presets to teleport to.")
 world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
+world_teleport_root = menu.list(world_root, "Teleport To...", {"ryanteleport"}, "Useful presets to teleport to.")
 
 world_action_figures_root = menu.list(world_teleport_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
 world_signal_jammers_root = menu.list(world_teleport_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
@@ -549,7 +549,7 @@ for i = 1, #PLAYING_CARDS do
 end
 
 -- -- Enter Closest Vehicle
-menu.action(world_closest_vehicle_root, "Drive", {"ryandrivevehicle"}, "Teleports into the closest vehicle.", function()
+menu.action(world_closest_vehicle_root, "Enter", {"ryandrivevehicle"}, "Teleports into the closest vehicle.", function()
     local closest_vehicle = get_closest_vehicle(ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true))
     local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(closest_vehicle, -1)
     
@@ -557,7 +557,7 @@ menu.action(world_closest_vehicle_root, "Drive", {"ryandrivevehicle"}, "Teleport
         PED.SET_PED_INTO_VEHICLE(PLAYER.PLAYER_PED_ID(), closest_vehicle, -1)
         util.toast("Teleported into the closest vehicle.")
     else
-        if PED.GET_PED_TYPE(driver) < 4 then
+        if PED.GET_PED_TYPE(driver) >= 4 then
             entities.delete(driver)
             PED.SET_PED_INTO_VEHICLE(PLAYER.PLAYER_PED_ID(), closest_vehicle, -1)
             util.toast("Teleported into the closest vehicle.")
