@@ -1,4 +1,4 @@
-version = "0.4.9"
+version = "0.4.10"
 notify_requirements = false
 
 -- Requirements --
@@ -257,12 +257,12 @@ function run_all(commands, modders, wait_for)
     menu.trigger_commands("invisibility on")
     menu.trigger_commands("levitation on")
     for k, player_id in pairs(players.list()) do
-        if PLAYER.PLAYER_PED_ID() ~= PLAYER.PLAYER_PED_ID(player_id) then
+        if player_id ~= players.user() and not players.is_in_interior(player_id) then
             if modders or not players.is_marked_as_modder(player_id) then
                 local player_name = players.get_name(player_id)
                 util.toast("Trolling player: " .. player_name .. "...")
                 menu.trigger_commands("tp" .. player_name)
-                util.yield(750)
+                util.yield(1250)
                 if player_name ~= "**invalid**" then
                     for i = 1, #commands do
                         menu.trigger_commands(commands[i]:gsub("{name}", player_name))
@@ -299,7 +299,7 @@ function takeover_vehicle_all(action, modders, wait_for)
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
     for k, player_id in pairs(players.list()) do
-        if player_id ~= players.user() then
+        if player_id ~= players.user() and not players.is_in_interior(player_id) then
             if modders or not players.is_marked_as_modder(player_id) then
                 takeover_vehicle(action, player_id, wait_for)
             end
@@ -308,6 +308,10 @@ function takeover_vehicle_all(action, modders, wait_for)
     teleport_to(starting_coords['x'], starting_coords['y'], starting_coords['z'])
     menu.trigger_commands("otr off")
     menu.trigger_commands("invisibility off")
+end
+
+function trash_pickup(player_id)
+    
 end
 
 function send_translated(message, language, latin)
