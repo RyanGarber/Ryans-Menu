@@ -1,4 +1,4 @@
-version = "0.4.10"
+version = "0.4.11"
 notify_requirements = false
 
 -- Requirements --
@@ -111,7 +111,7 @@ function get_closest_vehicle(coords) -- Credit: Lance Script
     local vehicles = entities.get_all_vehicles_as_handles()
     local closest_distance = 1000000
     local closest_vehicle = 0
-    for k, vehicle in pairs(vehicles) do
+    for _, vehicle in pairs(vehicles) do
         if vehicle ~= PED.GET_VEHICLE_PED_IS_IN(PLAYER.PLAYER_PED_ID(), false) then
             local vehicle_coords = get_coords(vehicle)
             local distance = MISC.GET_DISTANCE_BETWEEN_COORDS(
@@ -140,6 +140,22 @@ function vehicle_control_loop(entity) -- Credit: WiriScript
         NETWORK.SET_NETWORK_ID_CAN_MIGRATE(network_id, true)
         util.toast("Took control of a vehicle.")
     end
+end
+
+function random(t) -- Credit: WiriScript
+	if rawget(t, 1) ~= nil then return t[math.random(1, #t)] end
+	local list = {}
+	for _, value in pairs(t) do table.insert(list, value) end
+	return list[math.random(1, #list)]
+end
+
+function face_entity(ent1, ent2) -- Credit: WiriScript
+	local a = ENTITY.GET_ENTITY_COORDS(ent1)
+	local b = ENTITY.GET_ENTITY_COORDS(ent2)
+	local dx = b.x - a.x
+	local dy = b.y - a.y
+	local heading = MISC.GET_HEADING_FROM_VECTOR_2D(dx, dy)
+	return ENTITY.SET_ENTITY_HEADING(ent1, heading)
 end
 
 function block_joins(player) -- Credit: Block Joins Script
@@ -211,7 +227,7 @@ function spam_chat(message, all_players, time_between, wait_for)
     local sent = 0
     while sent < 32 do
         if all_players then
-            for k, player_id in pairs(players.list()) do
+            for _, player_id in pairs(players.list()) do
                 local name = PLAYER.GET_PLAYER_NAME(player_id)
                 menu.trigger_commands("chatas" .. name .. " on")
                 chat.send_message(message, false, true, true)
@@ -256,7 +272,7 @@ function run_all(commands, modders, wait_for)
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
     menu.trigger_commands("levitation on")
-    for k, player_id in pairs(players.list()) do
+    for _, player_id in pairs(players.list()) do
         if player_id ~= players.user() and not players.is_in_interior(player_id) then
             if modders or not players.is_marked_as_modder(player_id) then
                 local player_name = players.get_name(player_id)
@@ -298,7 +314,7 @@ function takeover_vehicle_all(action, modders, wait_for)
     local starting_coords = ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true)
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
-    for k, player_id in pairs(players.list()) do
+    for _, player_id in pairs(players.list()) do
         if player_id ~= players.user() and not players.is_in_interior(player_id) then
             if modders or not players.is_marked_as_modder(player_id) then
                 takeover_vehicle(action, player_id, wait_for)
@@ -310,8 +326,71 @@ function takeover_vehicle_all(action, modders, wait_for)
     menu.trigger_commands("invisibility off")
 end
 
+function request_model(model)
+    if STREAMING.IS_MODEL_VALID(model) then
+        STREAMING.REQUEST_MODEL(model)
+        while not STREAMING.HAS_MODEL_LOADED(model) do
+            util.yield()
+        end
+        util.toast("Model '" .. model .. "' has successfully loaded.")
+    else
+        util.toast("Invalid model '" .. model .."', please report this issue to Ryan.")
+    end
+end
+
 function trash_pickup(player_id)
+    sms_spam(player_id, "It's trash day! Time to take it out.", 6000)
+    util.toast("Sending the trash man to " .. players.get_name(player_id) .. "...")
+    local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
+    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+
+    local trash_truck = util.joaat("trash")
+    request_model(trash_truck)
+    local trash_man = util.joaat("s_m_y_garbage")
+    request_model(trash_man)
+
+    local weapons = {"weapon_pistol", "weapon_pumpshotgun"}
+    local coords_ptr = memory.alloc()
+    local node_ptr = memory.alloc()
     
+    if not PATHFIND.GET_RANDOM_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, 80, 0, 0, 0, coords_ptr, node_ptr) then
+        pos.x = pos.x + math.random(-7, 7)
+        pos.y = pos.y + math.random(-7, 7)
+        PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords_ptr, 1, 100, 2.5)
+    end
+
+    local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
+    local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    face_entity(vehicle, player_ped)
+    VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
+    ENTITY.SET_ENTITY_INVINCIBLE(vehicle, true)
+
+    for seat = -1, 2 do
+        local npc = entities.create_ped(5, trash_man, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        local weapon = random(weapons)
+
+        PED.SET_PED_RANDOM_COMPONENT_VARIATION(npc, 0)
+        WEAPON.GIVE_WEAPON_TO_PED(npc, util.joaat(weapon) , -1, false, true)
+        PED.SET_PED_NEVER_LEAVES_GROUP(npc, true)
+        PED.SET_PED_COMBAT_ATTRIBUTES(npc, 1, true)
+        PED.SET_PED_INTO_VEHICLE(npc, vehicle, seat)
+        ENTITY.SET_ENTITY_INVINCIBLE(npc, true)
+        TASK.TASK_COMBAT_PED(npc, player_ped, 0, 16)
+        PED.SET_PED_KEEP_TASK(npc, true)
+
+        util.create_tick_handler(function()
+            if TASK.GET_SCRIPT_TASK_STATUS(npc, 0x2E85A751) == 7 then
+                TASK.CLEAR_PED_TASKS(npc)
+                TASK.TASK_SMART_FLEE_PED(npc, PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(pid), 1000.0, -1, false, false)
+                PED.SET_PED_KEEP_TASK(npc, true)
+                return false
+            end
+            return true
+        end)
+    end
+    
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_truck)
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_man)
 end
 
 function send_translated(message, language, latin)
@@ -335,7 +414,7 @@ function get_players_highest_and_lowest(get_value)
     local lowest_amount = 2100000000
     local lowest_player = -1
 
-    for k, player_id in pairs(players.list()) do
+    for _, player_id in pairs(players.list()) do
         amount = get_value(player_id)
         if amount > highest_amount and amount < 2100000000 then
             highest_amount = amount
@@ -352,7 +431,7 @@ end
 
 function get_players_boolean(get_value)
     local player_names = ""
-    for k, player_id in pairs(players.list()) do
+    for _, player_id in pairs(players.list()) do
         if get_value(player_id) then
             player_names = player_names .. PLAYER.GET_PLAYER_NAME(player_id) .. ", "
         end
@@ -492,6 +571,15 @@ function do_mc_clutter(amount)
     end
 end
 
+function sms_spam(player_id, message, duration)
+    local player_name = players.get_name(player_id)
+    menu.trigger_commands("smsrandomsender" .. player_name .. " on")
+    menu.trigger_commands("smstext" .. player_name .. " " .. message)
+    menu.trigger_commands("smsspam" .. player_name .. " on")
+    util.yield(duration)
+    menu.trigger_commands("smsspam" .. player_name .. " off")
+end
+
 --menu.action(menu.my_root(), "Test", {"test"}, "Test", function() end)
 
 -- Main Menu --
@@ -569,6 +657,7 @@ menu.action(world_closest_vehicle_root, "Enter", {"ryandrivevehicle"}, "Teleport
             for i=0, 10 do
                 if VEHICLE.IS_VEHICLE_SEAT_FREE(closest_vehicle, i) then
                     PED.SET_PED_INTO_VEHICLE(PLAYER.PLAYER_PED_ID(), closest_vehicle, i)
+                    break
                 end
             end
             util.toast("Teleported into the closest vehicle.")
@@ -760,10 +849,29 @@ menu.action(session_dox_root, "Oppressor", {"ryanoppressor"}, "Shares the name o
     get_players_by_oppressor2()
 end)
 
--- -- No Godmode
-menu.toggle_loop(session_root, "No Godmode", {"ryannogodmodeall"}, "Removes godmode from all Kiddions users in the session.", function()
-    for k, player_id in pairs(players.list(false, true, true)) do
-        remove_godmode(player_id)
+-- -- Anti-Hermit
+hermits = {}
+menu.toggle_loop(session_root, "Anti-Hermit", {"ryanantihermit"}, "Kicks players who stay inside buildings for too long.", function()
+    for _, player_id in pairs(players.list()) do
+        if players.is_in_interior(player_id) then
+            if hermits[player_id] == nil then
+                hermits[player_id] = util.current_time_millis()
+            end
+            if util.current_time_millis() - hermits[player_id] >= 600000 then
+                util.toast(players.get_name(player_id) .. " has been inside for more than 10 minutes. Time to demand they leave.")
+                sms_spam(player_id, "You have 60 seconds to leave the building, weirdo", 10000)
+                util.yield(20000)
+                sms_spam(player_id, "30 more seconds to leave the building!", 10000)
+                util.yield(20000)
+                menu.trigger_commands("kick" .. player_name)
+                menu.trigger_commands("breakup" .. player_name)
+            elseif util.current_time_millis() - hermits[player_id] >= 300000 then
+                util.toast(players.get_name(player_id) .. " has been inside for more than 5 minutes. Letting them know we miss them.")
+                sms_spam(player_id, "Stop being a hermit - come outside like and play the game", 10000)
+            end
+        elseif hermits[player_id] ~= nil then
+            hermits[player_id] = nil
+        end
     end
 end, false)
 
@@ -788,18 +896,17 @@ function setup_player(player_id)
         text_kick_block_joins = value
     end)
     menu.action(text_kick_root, "Go", {"ryantextkickgo"}, "Start the text & kick.", function()
-        local player = players.get_name(player_id)
-        util.toast("Spamming " .. player .. " with texts...")
-        menu.trigger_commands("smsrandomsender" .. player .. " on")
-        menu.trigger_commands("smstext" .. player .. " " .. text_kick_message)
-        menu.trigger_commands("smsspam" .. player .. " on")
-        util.yield(text_kick_duration)
-        util.toast("Kicking " .. player .. "!")
+        local player_name = players.get_name(player_id)
+        
+        util.toast("Spamming " .. player_name .. " with texts...")
+        sms_spam(player_id, text_kick_message, text_kick_duration)
+
+        util.toast("Kicking " .. player_name .. "!")
         if text_kick_block_joins then
-            block_joins(player)
+            block_joins(player_name)
         end
-        menu.trigger_commands("kick" .. player)
-        menu.trigger_commands("breakup" .. player)
+        menu.trigger_commands("kick" .. player_name)
+        menu.trigger_commands("breakup" .. player_name)
         menu.trigger_commands("players")
     end)
 
@@ -822,6 +929,11 @@ function setup_player(player_id)
             end
         end, player_id, 0)
         util.toast("Downgraded " .. players.get_name(player_id) .. "'s car!")
+    end)
+
+    -- -- Trash Pickup
+    menu.action(player_trolling_root, "Send Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
+        trash_pickup(player_id)
     end)
 
     -- -- Divorce Kick
