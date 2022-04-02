@@ -1,15 +1,19 @@
-version = "0.4.11"
+version = "0.4.12"
 notify_requirements = false
 
+function lib_exists(name)
+    return filesystem.exists(filesystem.scripts_dir() .. "lib\\" .. name .. ".lua")
+end
+
 -- Requirements --
-while not filesystem.exists(filesystem.scripts_dir() .. "lib\\natives-1640181023.lua") do
+while not lib_exists("natives-1640181023") or not lib_exists("natives-1627063482") do
     if not notify_requirements then
         local ref = menu.ref_by_path("Stand>Lua Scripts>Repository>WiriScript")
         menu.focus(ref)
         notify_requirements = true
     end
 
-    util.toast("Ryan's Menu requires LanceScript and WiriScript to function. Please enable them to continue.")
+    util.toast("Ryan's Menu requires WiriScript and LanceScript to function. Please enable them to continue.")
     util.yield(2000)
 end
 
@@ -57,57 +61,65 @@ RUSSIAN_ALPHABET = {
     ["Я"] = "Ya", ["я"] = "ya"
 }
 
-ACTION_FIGURES = {
-    {3514,3754,35}, {3799,4473,7}, {3306,5194,18}, {2937,4620,48}, {2725,4142,44},
-    {2487,3759,43}, {1886,3913,33}, {1702,3290,48}, {1390,3608,34}, {1298,4306,37},
-    {1714,4791,41}, {2416,4994,46}, {2221,5612,55}, {1540,6323,24}, {1310,6545,5},
-    {457,5573,781}, {178,6394,31}, {-312,6314,32}, {-689,5829,17}, {-552,5330,75},
-    {-263,4729,138}, {-1121,4977,186}, {-2169,5192,17}, {-2186,4250,48}, {-2172,3441,31},
-    {-1649,3018,32}, {-1281,2550,18}, {-1514,1517,111}, {-1895,2043,142}, {-2558,2316,33},
-    {-3244,996,13}, {-2959,386,14}, {-3020,41,10}, {-2238,249,176}, {-1807,427,132},
-    {-1502,813,181}, {-770,877,204}, {-507,393,97}, {-487,-55,39}, {-294,-343,10},
-    {-180,-632,49}, {-108,-857,39}, {-710,-906,19}, {-909,-1149,2}, {-1213,-960,1},
-    {-1051,-523,36},{-989,-102,40}, {-1024,190,62}, {-1462,182,55}, {-1720,-234,55},
-    {-1547,-449,40}, {-1905,-710,8}, {-1648,-1095,13}, {-1351,-1547,4}, {-887,-2097,9},
-    {-929,-2939,13}, {153,-3078,7}, {483,-3111,6}, {-56,-2521,7}, {368,-2114,17},
-    {875,-2165,32}, {1244,-2573,43}, {1498,-2134,76}, {1207,-1480,34}, {679,-1523,9},
-    {379,-1510,29}, {-44,-1749,29}, {-66,-1453,32}, {173,-1209,30}, {657,-1047,22},
-    {462,-766,27}, {171,-564,22},{621,-410,-1}, {1136,-667,57}, {988,-138,73},
-    {1667,0,166}, {2500,-390,95}, {2549,385,108}, {2618,1692,31}, {1414,1162,114},
-    {693,1201,345}, {660,549,130}, {219,97,97}, {-141,234,99}, {87,812,211},
-    {-91,939,233}, {-441,1596,358}, {-58,1939,190}, {-601,2088,132}, {-300,2847,55},
-    {63,3683,39}, {543,3074,40}, {387,2570,44}, {852,2166,52}, {1408,2157,98},
-    {1189,2641,38}, {1848,2700,63}, {2635,2931,44}, {2399,3063,54}, {2394,3062,52}
+ACTION_FIGURES = { -- Credit: Collectibles Script
+    {3514, 3754, 35}, {3799, 4473, 7}, {3306, 5194, 18}, {2937, 4620, 48}, {2725, 4142, 44},
+    {2487, 3759, 43}, {1886, 3913, 33}, {1702, 3290, 48}, {1390, 3608, 34}, {1298, 4306, 37},
+    {1714, 4791, 41}, {2416, 4994, 46}, {2221, 5612, 55}, {1540, 6323, 24}, {1310, 6545, 5},
+    {457, 5573, 781}, {178, 6394, 31}, {-312, 6314, 32}, {-689, 5829, 17}, {-552, 5330, 75},
+    {-263, 4729, 138}, {-1121, 4977, 186}, {-2169, 5192, 17}, {-2186, 4250, 48}, {-2172, 3441, 31},
+    {-1649, 3018, 32}, {-1281, 2550, 18}, {-1514, 1517, 111}, {-1895, 2043, 142}, {-2558, 2316, 33},
+    {-3244, 996, 13}, {-2959, 386, 14}, {-3020, 41, 10}, {-2238, 249, 176}, {-1807, 427, 132},
+    {-1502, 813, 181}, {-770, 877, 204}, {-507, 393, 97}, {-487, -55, 39}, {-294, -343, 10},
+    {-180, -632, 49}, {-108, -857, 39}, {-710, -906, 19}, {-909, -1149, 2}, {-1213, -960, 1},
+    {-1051, -523, 36},{-989, -102, 40}, {-1024, 190, 62}, {-1462, 182, 55}, {-1720, -234, 55},
+    {-1547, -449, 40}, {-1905, -710, 8}, {-1648, -1095, 13}, {-1351, -1547, 4}, {-887, -2097, 9},
+    {-929, -2939, 13}, {153, -3078, 7}, {483, -3111, 6}, {-56, -2521, 7}, {368, -2114, 17},
+    {875, -2165, 32}, {1244, -2573, 43}, {1498, -2134, 76}, {1207, -1480, 34}, {679, -1523, 9},
+    {379, -1510, 29}, {-44, -1749, 29}, {-66, -1453, 32}, {173, -1209, 30}, {657, -1047, 22},
+    {462, -766, 27}, {171, -564, 22}, {621, -410, -1}, {1136, -667, 57}, {988, -138, 73},
+    {1667, 0, 166}, {2500, -390, 95}, {2549, 385, 108}, {2618, 1692, 31}, {1414, 1162, 114},
+    {693, 1201, 345}, {660, 549, 130}, {219, 97, 97}, {-141, 234, 99}, {87, 812, 211},
+    {-91, 939, 233}, {-441, 1596, 358}, {-58, 1939, 190}, {-601, 2088, 132}, {-300, 2847, 55},
+    {63, 3683, 39}, {543, 3074, 40}, {387, 2570, 44}, {852, 2166, 52}, {1408, 2157, 98},
+    {1189, 2641, 38}, {1848, 2700, 63}, {2635, 2931, 44}, {2399, 3063, 54}, {2394, 3062, 52}
 }
-SIGNAL_JAMMERS = {
-    {-3096,783,33}, {-2273,325,195}, {-1280,304,91}, {-1310,-445,108}, {-1226,-866,82},
-    {-1648,-1125,29}, {-686,-1381,24}, {-265,-1897,54}, {-988,-2647,89}, {-250,-2390,124},
-    {554,-2244,74}, {978,-2881,33}, {1586,-2245,130}, {1110,-1542,55}, {405,-1387,75},
-    {-1,-1018,95}, {-182,-589,210}, {-541,-213,82}, {-682,228,154}, {-421,1142,339},
-    {-296,2839,68}, {753,2596,133}, {1234,1869,92}, {760,1263,444}, {677,556,153},
-    {220,224,168}, {485,-109,136}, {781,-705,47}, {1641,-33,178}, {2442,-383,112},
-    {2580,444,115}, {2721,1519,85}, {2103,1754,138}, {1709,2658,60}, {1859,3730,116},
-    {2767,3468,67}, {3544,3686,60}, {2895,4332,101}, {3296,5159,29}, {2793,5984,366},
-    {1595,6431,32}, {-119,6217,62}, {449,5595,793}, {1736,4821,60}, {732,4099,37},
-    {-492,4428,86}, {-1018,4855,301}, {-2206,4299,54}, {-2367,3233,103}, {-1870,2069,154}
+SIGNAL_JAMMERS = { -- Credit: Collectibles Script
+    {-3096, 783, 33}, {-2273, 325, 195}, {-1280, 304, 91}, {-1310, -445, 108}, {-1226, -866, 82},
+    {-1648, -1125, 29}, {-686, -1381, 24}, {-265, -1897, 54}, {-988, -2647, 89}, {-250, -2390, 124},
+    {554, -2244, 74}, {978, -2881, 33}, {1586, -2245, 130}, {1110, -1542, 55}, {405, -1387, 75},
+    {-1, -1018, 95}, {-182, -589, 210}, {-541, -213, 82}, {-682, 228, 154}, {-421, 1142, 339},
+    {-296, 2839, 68}, {753, 2596, 133}, {1234, 1869, 92}, {760, 1263, 444}, {677, 556, 153},
+    {220, 224, 168}, {485, -109, 136}, {781, -705, 47}, {1641, -33, 178}, {2442, -383, 112},
+    {2580, 444, 115}, {2721, 1519, 85}, {2103, 1754, 138}, {1709, 2658, 60}, {1859, 3730, 116},
+    {2767, 3468, 67}, {3544, 3686, 60}, {2895, 4332, 101}, {3296, 5159, 29}, {2793, 5984, 366},
+    {1595, 6431, 32}, {-119, 6217, 62}, {449, 5595, 793}, {1736, 4821, 60}, {732, 4099, 37},
+    {-492, 4428, 86}, {-1018, 4855, 301}, {-2206, 4299, 54}, {-2367, 3233, 103}, {-1870, 2069, 154}
 }
-PLAYING_CARDS = {
-    {-1028,-2747,14}, {-74,-2005,18}, {202,-1645,29}, {120,-1298,29}, {11,-1102,29},
-    {-539,-1279,27}, {-1205,-1560,4}, {-1288,-1119,7}, {-1841,-1235,13}, {-1155,-528,31},
-    {-1167,-234,37}, {-971,104,55}, {-1513,-105,54}, {-3048,585,7}, {-3150,1115,20},
-    {-1829,798,138}, {-430,1214,325}, {-409,585,125}, {-103,368,112}, {253,215,106},
-    {-168,-298,40}, {183,-686,43}, {1131,-983,46}, {1159,-317,69}, {548,-190,54}, 
-    {1487,1128,114}, {730,2514,73}, {188,3075,43}, {-288,2545,75}, {-1103,2714,19}, 
-    {-2306,3388,31}, {-1583,5204,4}, {-749,5599,41}, {-283,6225,31}, {99,6620,32}, 
-    {1876,6410,46}, {2938,5325,101}, {3688,4569,25}, {2694,4324,45}, {2120,4784,40}, 
-    {1707,4920,42}, {727,4189,41}, {-524,4193,193}, {79,3704,41}, {900,3557,33}, 
-    {1690,3588,35}, {1991,3045,47}, {2747,3465,55}, {2341,2571,47}, {2565,297,108}, 
-    {1325,-1652,52}, {989,-1801,31}, {827,-2159,29}, {810,-2979,6} 
+PLAYING_CARDS = { -- Credit: Collectibles Script
+    {-1028, -2747, 14}, {-74, -2005, 18}, {202, -1645, 29}, {120, -1298, 29}, {11, -1102, 29},
+    {-539, -1279, 27}, {-1205, -1560, 4}, {-1288, -1119, 7}, {-1841, -1235, 13}, {-1155, -528, 31},
+    {-1167, -234, 37}, {-971, 104, 55}, {-1513, -105, 54}, {-3048, 585, 7}, {-3150, 1115, 20},
+    {-1829, 798, 138}, {-430, 1214, 325}, {-409, 585, 125}, {-103, 368, 112}, {253, 215, 106},
+    {-168, -298, 40}, {183, -686, 43}, {1131, -983, 46}, {1159, -317, 69}, {548, -190, 54}, 
+    {1487, 1128, 114}, {730, 2514, 73}, {188, 3075, 43}, {-288, 2545, 75}, {-1103, 2714, 19}, 
+    {-2306, 3388, 31}, {-1583, 5204, 4}, {-749, 5599, 41}, {-283, 6225, 31}, {99, 6620, 32}, 
+    {1876, 6410, 46}, {2938, 5325, 101}, {3688, 4569, 25}, {2694, 4324, 45}, {2120, 4784, 40}, 
+    {1707, 4920, 42}, {727, 4189, 41}, {-524, 4193, 193}, {79, 3704, 41}, {900, 3557, 33}, 
+    {1690, 3588, 35}, {1991, 3045, 47}, {2747, 3465, 55}, {2341, 2571, 47}, {2565, 297, 108}, 
+    {1325, -1652, 52}, {989, -1801, 31}, {827, -2159, 29}, {810, -2979, 6} 
 }
+
+PTFX = {
+    ["Forcefield"] = {"scr_ie_tw", "scr_impexp_tw_take_zone", 500},
+    ["Alien"] = {"scr_rcbarry1", "scr_alien_disintegrate", 500},
+    ["Fire"] = {"core", "ent_dst_elec_fire_sp", 200}
+}
+
+WHEEL_BONES = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"}
 
 
 -- Helper Functions --
-function get_closest_vehicle(coords) -- Credit: Lance Script
+function get_closest_vehicle(coords) -- Credit: LanceScript
     local vehicles = entities.get_all_vehicles_as_handles()
     local closest_distance = 1000000
     local closest_vehicle = 0
@@ -127,7 +139,7 @@ function get_closest_vehicle(coords) -- Credit: Lance Script
     return closest_vehicle
 end
 
-function vehicle_control_loop(entity) -- Credit: WiriScript
+function request_control(entity) -- Credit: WiriScript
     local tick = 0
     while not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) and tick < 25 do
         util.yield()
@@ -142,10 +154,10 @@ function vehicle_control_loop(entity) -- Credit: WiriScript
     end
 end
 
-function random(t) -- Credit: WiriScript
-	if rawget(t, 1) ~= nil then return t[math.random(1, #t)] end
+function get_random(table) -- Credit: WiriScript
+	if rawget(table, 1) ~= nil then return table[math.random(1, #table)] end
 	local list = {}
-	for _, value in pairs(t) do table.insert(list, value) end
+	for _, value in pairs(table) do table.insert(list, value) end
 	return list[math.random(1, #list)]
 end
 
@@ -171,8 +183,6 @@ function block_joins(player) -- Credit: Block Joins Script
             menu.trigger_command(ref, "true")
             success = true
             break
-        else
-
         end
     end
     if success then
@@ -185,7 +195,7 @@ end
 function remove_godmode(player_id, vehicle) -- Credit: KeramiScript
     if NETWORK.NETWORK_IS_PLAYER_CONNECTED(player_id) then
         if vehicle then
-            local player_ped = PLAYER.GET_PLAYER_PED(player_id)
+            local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
             if PED.IS_PED_IN_ANY_VEHICLE(player_ped, false) then
                 local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
                 ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
@@ -223,6 +233,17 @@ function teleport_vehicle_to(x, y, z)
     end
 end
 
+function mod_vehicle(vehicle, maxed)
+    VEHICLE.SET_VEHICLE_MOD_KIT(vehicle, 0)
+    for i=0, 50 do
+        local mod = -1
+        if maxed then
+            mod = VEHICLE.GET_NUM_VEHICLE_MODS(vehicle, i) - 1
+        end
+        VEHICLE.SET_VEHICLE_MOD(vehicle, i, mod, false)
+    end
+end
+
 function spam_chat(message, all_players, time_between, wait_for)
     local sent = 0
     while sent < 32 do
@@ -246,14 +267,14 @@ end
 
 function play_all(sound, sound_group, wait_for)
     for i=0, 31, 1 do
-        AUDIO.PLAY_SOUND_FROM_ENTITY(-1, sound, PLAYER.GET_PLAYER_PED(i), sound_group, true, 20)
+        AUDIO.PLAY_SOUND_FROM_ENTITY(-1, sound, PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(i), sound_group, true, 20)
     end
     util.yield(wait_for)
 end
 
 function explode_all(earrape_type, wait_for)
     for i=0, 31, 1 do
-        coords = get_coords(PLAYER.GET_PLAYER_PED(i))
+        coords = get_coords(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(i))
         FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z, 0, 100, true, false, 150, false)
         if earrape_type == EARRAPE_BED then
             AUDIO.PLAY_SOUND_FROM_COORD(-1, "Bed", coords.x, coords.y, coords.z, "WastedSounds", true, 999999999, true)
@@ -302,7 +323,7 @@ function takeover_vehicle(action, player_id, wait_for)
 
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), false)
     if vehicle ~= NULL then
-        vehicle_control_loop(vehicle)
+        request_control(vehicle)
         if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
             action(vehicle)
             util.yield(wait_for)
@@ -332,33 +353,38 @@ function request_model(model)
         while not STREAMING.HAS_MODEL_LOADED(model) do
             util.yield()
         end
-        util.toast("Model '" .. model .. "' has successfully loaded.")
     else
         util.toast("Invalid model '" .. model .."', please report this issue to Ryan.")
     end
 end
 
+function request_ptfx(ptfx)
+    STREAMING.REQUEST_NAMED_PTFX_ASSET(ptfx)
+	while not STREAMING.HAS_NAMED_PTFX_ASSET_LOADED(ptfx) do
+		util.yield()
+	end
+end
+
 function trash_pickup(player_id)
-    sms_spam(player_id, "It's trash day! Time to take it out.", 6000)
     util.toast("Sending the trash man to " .. players.get_name(player_id) .. "...")
+
     local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
-    local trash_truck = util.joaat("trash")
-    request_model(trash_truck)
-    local trash_man = util.joaat("s_m_y_garbage")
-    request_model(trash_man)
+    local trash_truck = util.joaat("trash"); request_model(trash_truck)
+    local trash_man = util.joaat("s_m_y_garbage"); request_model(trash_man)
 
     local weapons = {"weapon_pistol", "weapon_pumpshotgun"}
     local coords_ptr = memory.alloc()
     local node_ptr = memory.alloc()
     
     if not PATHFIND.GET_RANDOM_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, 80, 0, 0, 0, coords_ptr, node_ptr) then
-        pos.x = pos.x + math.random(-7, 7)
-        pos.y = pos.y + math.random(-7, 7)
+        player_coords.x = player_coords.x + math.random(-7, 7)
+        player_coords.y = player_coords.y + math.random(-7, 7)
         PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords_ptr, 1, 100, 2.5)
     end
 
+    sms_spam(player_id, "It's trash day! Time to take it out.", 5000)
     local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
     local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
     face_entity(vehicle, player_ped)
@@ -367,7 +393,7 @@ function trash_pickup(player_id)
 
     for seat = -1, 2 do
         local npc = entities.create_ped(5, trash_man, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-        local weapon = random(weapons)
+        local weapon = get_random(weapons)
 
         PED.SET_PED_RANDOM_COMPONENT_VARIATION(npc, 0)
         WEAPON.GIVE_WEAPON_TO_PED(npc, util.joaat(weapon) , -1, false, true)
@@ -530,7 +556,7 @@ function get_players_by_oppressor2()
     chat.send_message("No players are on Oppressors.", false, true, true)
 end
 
-function do_office_money(amount)
+function set_office_money(amount)
     if not office_money_notice then
         util.toast("Make sure you have at least 1 crate of cargo, and run this option again.")
         office_money_notice = true
@@ -546,7 +572,7 @@ function do_office_money(amount)
     end
 end
 
-function do_mc_clutter(amount)
+function set_mc_clutter(amount)
     if not mc_clutter_notice then
         util.toast("Make sure you have at least 1 unit to sell in each business, and run this option again.")
         mc_clutter_notice = true
@@ -580,6 +606,39 @@ function sms_spam(player_id, message, duration)
     menu.trigger_commands("smsspam" .. player_name .. " off")
 end
 
+function do_ptfx_on_player(ped, asset, name)
+    request_ptfx(asset)
+    GRAPHICS.USE_PARTICLE_FX_ASSET(asset)
+    GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(0.5, 0, 0.5)
+    GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY(
+        name, ped, 
+		0.0, 0.0, -0.9, 0.0, 0.0, 0.0, 1.0, 
+		false, false, false
+	)
+end
+
+function do_ptfx_on_vehicle(vehicle, asset, name)
+    request_ptfx(asset)
+    GRAPHICS.USE_PARTICLE_FX_ASSET(asset)
+    for _, bone in pairs(WHEEL_BONES) do
+        GRAPHICS.USE_PARTICLE_FX_ASSET(asset)
+        GRAPHICS._START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY_BONE(
+            name, vehicle,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, bone),
+            1.0,
+            false, false, false
+        )
+    end
+
+    GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(0.5, 0, 0.5)
+    GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY(
+        name, ped, 
+		0.0, 0.0, -0.9, 0.0, 0.0, 0.0, 1.0, 
+		false, false, false
+	)
+end
+
 --menu.action(menu.my_root(), "Test", {"test"}, "Test", function() end)
 
 -- Main Menu --
@@ -591,25 +650,39 @@ settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Setting
 
 
 -- Self Menu --
-self_office_money_root = menu.list(self_root, "CEO Office Money", {"ryanofficemoney"}, "Controls the amount of money in your CEO office.")
+self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX on your body other players can see.")
+self_office_money_root = menu.list(self_root, "CEO Office Money...", {"ryanofficemoney"}, "Controls the amount of money in your CEO office.")
 
 -- -- CEO Office Money
 office_money_notice = false
 menu.action(self_office_money_root, "25% Full", {"ryanofficemoney25"}, "Makes the office 25% full with money.", function()
-    do_office_money(5000000)
+    set_office_money(5000000)
 end)
 menu.action(self_office_money_root, "50% Full", {"ryanofficemoney50"}, "Makes the office 50% full with money.", function()
-    do_office_money(10000000)
+    set_office_money(10000000)
 end)
 menu.action(self_office_money_root, "100% Full", {"ryanofficemoney100"}, "Makes the office 100% full with money.", function()
-    do_office_money(20000000)
+    set_office_money(20000000)
 end)
 
 -- -- MC Clubhouse Clutter
 mc_clutter_notice = false
 menu.action(self_root, "M.C. Clutter", {"ryanmcclutter"}, "Adds drugs, money, and other clutter to your M.C. clubhouse.", function()
-    do_mc_clutter()
+    set_mc_clutter()
 end)
+
+-- -- PTFX
+for name, ptfx in pairs(PTFX) do
+    menu.toggle_loop(self_ptfx_root, name, {"ryan" .. name:lower()}, "Plays the " .. name .. " effect on your character and vehicle.", function()
+        local player_ped = PLAYER.PLAYER_PED_ID()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, true)
+        if vehicle ~= NULL then
+            do_ptfx_on_vehicle(vehicle, ptfx[1], ptfx[2])
+        end
+        do_ptfx_on_player(player_ped, ptfx[1], ptfx[2])
+        util.yield(ptfx[3])
+    end, false)
+end
 
 -- World Menu --
 world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
@@ -667,14 +740,19 @@ menu.action(world_closest_vehicle_root, "Enter", {"ryandrivevehicle"}, "Teleport
     end
 end)
 
+-- -- Upgrade Closest Vehicle
+menu.action(world_closest_vehicle_root, "Upgrade", {"ryanupgradevehicle"}, "Upgrades the closest vehicle.", function()
+    local closest_vehicle = get_closest_vehicle(ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true))
+    request_control(closest_vehicle)
+    mod_vehicle(closest_vehicle, true)
+    util.toast("Upgraded the nearest car!")
+end)
+
 -- -- Downgrade Closest Vehicle
 menu.action(world_closest_vehicle_root, "Downgrade", {"ryandowngradevehicle"}, "Downgrades the closest vehicle.", function()
     local closest_vehicle = get_closest_vehicle(ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true))
-    vehicle_control_loop(closest_vehicle)
-    VEHICLE.SET_VEHICLE_MOD_KIT(closest_vehicle, 0)
-    for i=0, 50 do
-        VEHICLE.SET_VEHICLE_MOD(closest_vehicle, i, -1, false)
-    end
+    request_control(closest_vehicle)
+    mod_vehicle(closest_vehicle, false)
     util.toast("Downgraded the nearest car!")
 end)
 
@@ -849,6 +927,23 @@ menu.action(session_dox_root, "Oppressor", {"ryanoppressor"}, "Shares the name o
     get_players_by_oppressor2()
 end)
 
+-- -- Chaos Mode
+menu.action(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and requests them to duel.", function()
+    local oppressor2 = util.joaat("oppressor2")
+    request_model(oppressor2)
+    for _, player_id in pairs(players.list()) do
+        local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
+        local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0.0, 5.0, 0.0)
+        local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
+        mod_vehicle(vehicle, true)
+        ENTITY.SET_ENTITY_INVINCIBLE(vehicle, true)
+        VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
+        VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
+    end
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(oppressor2)
+    chat.send_message("Everyone has just received an Oppressor Mk 2 with missiles. Battle it out!", false, true, true)
+end)
+
 -- -- Anti-Hermit
 hermits = {}
 menu.toggle_loop(session_root, "Anti-Hermit", {"ryanantihermit"}, "Kicks players who stay inside buildings for too long.", function()
@@ -859,15 +954,16 @@ menu.toggle_loop(session_root, "Anti-Hermit", {"ryanantihermit"}, "Kicks players
             end
             if util.current_time_millis() - hermits[player_id] >= 600000 then
                 util.toast(players.get_name(player_id) .. " has been inside for more than 10 minutes. Time to demand they leave.")
-                sms_spam(player_id, "You have 60 seconds to leave the building, weirdo", 10000)
+                sms_spam(player_id, "You have 60 seconds to leave the building.", 10000)
                 util.yield(20000)
                 sms_spam(player_id, "30 more seconds to leave the building!", 10000)
                 util.yield(20000)
                 menu.trigger_commands("kick" .. player_name)
+                util.yield()
                 menu.trigger_commands("breakup" .. player_name)
             elseif util.current_time_millis() - hermits[player_id] >= 300000 then
                 util.toast(players.get_name(player_id) .. " has been inside for more than 5 minutes. Letting them know we miss them.")
-                sms_spam(player_id, "Stop being a hermit - come outside like and play the game", 10000)
+                sms_spam(player_id, "Stop being a hermit - come outside like and play the game.", 10000)
             end
         elseif hermits[player_id] ~= nil then
             hermits[player_id] = nil
@@ -880,6 +976,7 @@ function setup_player(player_id)
     local player_root = menu.player_root(player_id)
     menu.divider(player_root, "Ryan's Menu")
     local player_trolling_root = menu.list(player_root, "Trolling...", {"ryantrolling"}, "Options that players may not like.")
+    local player_ptfx_root = menu.list(player_trolling_root, "PTFX...", {"ryanptfx"}, "PTFX on players.")
 
     -- -- Text & Kick
     local text_kick_root = menu.list(player_trolling_root, "Text & Kick...", {"ryantextkick"}, "Kicks the player after spamming them with texts.")
@@ -906,10 +1003,11 @@ function setup_player(player_id)
             block_joins(player_name)
         end
         menu.trigger_commands("kick" .. player_name)
+        util.yield()
         menu.trigger_commands("breakup" .. player_name)
         menu.trigger_commands("players")
     end)
-
+    
     -- -- No Godmode
     local remove_godmode_notice = 0
     menu.toggle_loop(player_trolling_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
@@ -923,10 +1021,7 @@ function setup_player(player_id)
     -- -- Downgrade Vehicle
     menu.action(player_trolling_root, "Downgrade Vehicle", {"ryandowngrade"}, "Downgrades the car they are in.", function()
         takeover_vehicle(function(vehicle)
-            VEHICLE.SET_VEHICLE_MOD_KIT(vehicle, 0)
-            for i=0, 50 do
-                VEHICLE.SET_VEHICLE_MOD(vehicle, i, -1, false)
-            end
+            mod_vehicle(vehicle, false)
         end, player_id, 0)
         util.toast("Downgraded " .. players.get_name(player_id) .. "'s car!")
     end)
@@ -941,6 +1036,7 @@ function setup_player(player_id)
         local player = players.get_name(player_id)
         block_joins(player)
         menu.trigger_commands("kick" .. player)
+        util.yield()
         menu.trigger_commands("breakup" .. player)
         menu.trigger_commands("players")
     end)
