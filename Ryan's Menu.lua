@@ -976,7 +976,6 @@ function setup_player(player_id)
     local player_root = menu.player_root(player_id)
     menu.divider(player_root, "Ryan's Menu")
     local player_trolling_root = menu.list(player_root, "Trolling...", {"ryantrolling"}, "Options that players may not like.")
-    local player_ptfx_root = menu.list(player_trolling_root, "PTFX...", {"ryanptfx"}, "PTFX on players.")
 
     -- -- Text & Kick
     local text_kick_root = menu.list(player_trolling_root, "Text & Kick...", {"ryantextkick"}, "Kicks the player after spamming them with texts.")
