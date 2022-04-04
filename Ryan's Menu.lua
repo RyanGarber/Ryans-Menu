@@ -396,7 +396,7 @@ function trash_pickup(player_id)
     local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
     face_entity(vehicle, player_ped)
     VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
-    ENTITY.SET_ENTITY_INVINCIBLE(vehicle, true)
+    ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
 
     for seat = -1, 2 do
         local npc = entities.create_ped(5, trash_man, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
@@ -407,7 +407,7 @@ function trash_pickup(player_id)
         PED.SET_PED_NEVER_LEAVES_GROUP(npc, true)
         PED.SET_PED_COMBAT_ATTRIBUTES(npc, 1, true)
         PED.SET_PED_INTO_VEHICLE(npc, vehicle, seat)
-        ENTITY.SET_ENTITY_INVINCIBLE(npc, true)
+        ENTITY.SET_ENTITY_INVINCIBLE(npc, false)
         TASK.TASK_COMBAT_PED(npc, player_ped, 0, 16)
         PED.SET_PED_KEEP_TASK(npc, true)
 
@@ -1061,7 +1061,7 @@ menu.action(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 
         local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0.0, 5.0, 0.0)
         local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
         mod_vehicle(vehicle, true)
-        ENTITY.SET_ENTITY_INVINCIBLE(vehicle, true)
+        ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
         VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
         VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
     end
