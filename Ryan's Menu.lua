@@ -712,8 +712,6 @@ function get_nearby_entities(coords, range)
     return nearby_entities
 end
 
---menu.action(menu.my_root(), "Test", {"test"}, "Test", function() end)
-
 -- Main Menu --
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
 session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling options for the entire session.")
@@ -965,6 +963,18 @@ menu.toggle_loop(world_root, "All Players Visible", {"ryannoinvisible"}, "Makes 
         ENTITY.SET_ENTITY_VISIBLE(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), true, 0)
     end
 end, false)
+
+-- -- Tiny People
+tiny_people = false
+menu.toggle(world_root, "Tiny People", {"ryantinypeople"}, "Makes everyone tiny (only for you.)", function()
+    tiny_people = not tiny_people
+end)
+util.create_tick_handler(function()
+    for _, ped in pairs(entities.get_all_peds_as_handles()) do
+        PED.SET_PED_CONFIG_FLAG(ped, 223, tiny_people)
+    end
+    util.yield(100)
+end)
 
 
 -- Session Menu --
