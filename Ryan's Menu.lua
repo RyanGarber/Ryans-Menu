@@ -1,4 +1,4 @@
-version = "0.4.12"
+version = "0.5.0"
 notify_requirements = false
 
 function lib_exists(name)
@@ -110,13 +110,20 @@ PLAYING_CARDS = { -- Credit: Collectibles Script
 }
 
 PTFX = {
-    ["Forcefield"] = {"scr_ie_tw", "scr_impexp_tw_take_zone", 500},
-    ["Alien"] = {"scr_rcbarry1", "scr_alien_disintegrate", 500},
-    ["Fire"] = {"core", "ent_dst_elec_fire_sp", 200}
+    ["Take Zone"] = {"scr_ie_tw", "scr_impexp_tw_take_zone", 500},
+    ["Alien Disintegrate"] = {"scr_rcbarry1", "scr_alien_disintegrate", 500},
+    ["Electrical Fire"] = {"core", "ent_dst_elec_fire_sp", 200},
+    ["Firework Trail (Short)"] = {"scr_rcpaparazzo1", "scr_mich4_firework_sparkle_spawn", 60000},
+    ["Firework Trail (Long)"] = {"scr_indep_fireworks", "scr_indep_firework_sparkle_spawn", 60000},
+    ["Firework Burst"] = {"scr_indep_fireworks", "scr_indep_firework_trailburst_spawn", 500}
 }
 
-WHEEL_BONES = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"}
-
+PTFX_BODY_HEAD_BONES = {"IK_Head"}
+PTFX_BODY_HANDS_BONES = {"IK_L_Hand", "IK_R_Hand"}
+PTFX_BODY_FEET_BONES = {"IK_L_Foot", "IK_R_Foot"}
+PTFX_VEHICLE_WHEEL_BONES = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"}
+PTFX_VEHICLE_EXHAUST_BONES = {"exhaust", "exhaust_2", "exhaust_3", "exhaust_4", "exhaust_5", "exhaust_6", "exhaust_7", "exhaust_8"}
+PTFX_WEAPON_MUZZLE_BONES = {"gun_vfx_eject"}
 
 -- Helper Functions --
 function get_closest_vehicle(coords) -- Credit: LanceScript
@@ -578,20 +585,13 @@ function set_mc_clutter(amount)
         mc_clutter_notice = true
     else
         for i=0, 5 do
+            STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS" .. i), amount, true)
             if i == 0 then i = "" end
             STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_BUY_COMPLET" .. i), 1000, true)
             STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_BUY_UNDERTA" .. i), 1000, true)
             STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_SELL_COMPLET" .. i), 1000, true)
             STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_SELL_UNDERTA" .. i), 1000, true)
         end
-
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS0"), 1000, true)
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS1"), 1000, true)
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS2"), 1000, true)
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS3"), 1000, true)
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS4"), 1000, true)
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS5"), 1000, true)
-
         util.toast("Switch sessions and start a sale in every business to apply changes.")
         mc_clutter_notice = false
     end
@@ -606,37 +606,68 @@ function sms_spam(player_id, message, duration)
     menu.trigger_commands("smsspam" .. player_name .. " off")
 end
 
-function do_ptfx_on_player(ped, asset, name)
+function get_magnitude_of_coords(coords)
+    return coords['x'] + coords['y'] + coords['z']
+end
+
+function do_ptfx_at_coords(x, y, z, asset, name)
     request_ptfx(asset)
     GRAPHICS.USE_PARTICLE_FX_ASSET(asset)
-    GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(0.5, 0, 0.5)
-    GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY(
-        name, ped, 
-		0.0, 0.0, -0.9, 0.0, 0.0, 0.0, 1.0, 
+    GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(ptfx_r, ptfx_g, ptfx_b)
+    GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(
+        name, x, y, z,
+        0.0, 0.0, 0.0, 1.0, 
 		false, false, false
 	)
 end
 
-function do_ptfx_on_vehicle(vehicle, asset, name)
+function do_ptfx_on_entity(entity, asset, name)
     request_ptfx(asset)
     GRAPHICS.USE_PARTICLE_FX_ASSET(asset)
-    for _, bone in pairs(WHEEL_BONES) do
-        GRAPHICS.USE_PARTICLE_FX_ASSET(asset)
-        GRAPHICS._START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY_BONE(
-            name, vehicle,
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, bone),
-            1.0,
-            false, false, false
-        )
-    end
-
-    GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(0.5, 0, 0.5)
+    GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(ptfx_r, ptfx_g, ptfx_b)
     GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY(
-        name, ped, 
-		0.0, 0.0, -0.9, 0.0, 0.0, 0.0, 1.0, 
+        name, entity, 
+		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 
 		false, false, false
 	)
+end
+
+function do_ptfx_on_entity_bones(entity, bones, asset, name)
+    request_ptfx(asset)
+    GRAPHICS.USE_PARTICLE_FX_ASSET(asset)
+    for _, bone in pairs(bones) do
+        local bone_index = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
+        local coords = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(entity, bone_index)
+        if get_magnitude_of_coords(coords) > 0.0 then
+            GRAPHICS.USE_PARTICLE_FX_ASSET(asset)
+            GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(ptfx_r, ptfx_g, ptfx_b)
+            GRAPHICS._START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY_BONE(
+                name, entity,
+                0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone),
+                1.0,
+                false, false, false
+            )
+        end
+    end
+end
+
+function do_ptfx_at_entity_bone_coords(entity, bones, asset, name)
+    for _, bone in pairs(bones) do
+        local bone_index = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
+        local coords = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(entity, bone_index)
+        if get_magnitude_of_coords(coords) > 0.0 then
+            do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], asset, name)
+        end
+    end
+end
+
+function create_ptfx_list(root, loop)
+    for name, ptfx in pairs(PTFX) do
+        menu.toggle_loop(root, name, {"ryan" .. name:lower()}, "Plays the " .. name .. " effect.", function()
+            loop(ptfx)
+        end, false)
+    end
 end
 
 --menu.action(menu.my_root(), "Test", {"test"}, "Test", function() end)
@@ -650,16 +681,112 @@ settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Setting
 
 
 -- Self Menu --
-self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX on your body other players can see.")
+self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 self_office_money_root = menu.list(self_root, "CEO Office Money...", {"ryanofficemoney"}, "Controls the amount of money in your CEO office.")
+self_mc_clutter_root = menu.list(self_root, "MC Clubhouse Clutter...", {"ryanmcclutter"}, "Controls the amount of clutter in your clubhouse.")
+
+
+-- -- PTFX
+ptfx_r = 1.0; ptfx_g = 1.0; ptfx_b = 1.0
+menu.colour(self_ptfx_root, "Color", {"ryanptfxcolor"}, "Some PTFX options allow for custom colors.", 1.0, 1.0, 1.0, 1.0, false, function(color)
+    ptfx_r = color['r']
+    ptfx_g = color['g']
+    ptfx_b = color['b']
+end)
+menu.divider(self_ptfx_root, "Enable On")
+self_ptfx_body_root = menu.list(self_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body other players can see.")
+self_ptfx_weapon_root = menu.list(self_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon other players can see.")
+self_ptfx_vehicle_root = menu.list(self_ptfx_root, "Vehicle...", {"ryanptfxvehicle"}, "Special FX on your vehicle other players can see.")
+
+
+-- -- Body PTFX
+self_ptfx_body_head_root = menu.list(self_ptfx_body_root, "Head...", {"ryanptfxhead"}, "Special FX on your head.")
+self_ptfx_body_hands_root = menu.list(self_ptfx_body_root, "Hands...", {"ryanptfxhands"}, "Special FX on your hands.")
+self_ptfx_body_feet_root = menu.list(self_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
+
+create_ptfx_list(self_ptfx_body_head_root, function(ptfx)
+    do_ptfx_on_entity_bones(PLAYER.PLAYER_PED_ID(), PTFX_BODY_HEAD_BONES, ptfx[1], ptfx[2])
+    util.yield(ptfx[3])
+end)
+
+create_ptfx_list(self_ptfx_body_hands_root, function(ptfx)
+    do_ptfx_on_entity_bones(PLAYER.PLAYER_PED_ID(), PTFX_BODY_HANDS_BONES, ptfx[1], ptfx[2])
+    util.yield(ptfx[3])
+end)
+
+create_ptfx_list(self_ptfx_body_feet_root, function(ptfx)
+    do_ptfx_on_entity_bones(PLAYER.PLAYER_PED_ID(), PTFX_BODY_FEET_BONES, ptfx[1], ptfx[2])
+    util.yield(ptfx[3])
+end)
+
+
+-- -- Vehicle PTFX
+self_ptfx_vehicle_wheels_root = menu.list(self_ptfx_vehicle_root, "Wheels...", {"ryanptfxwheels"}, "Special FX on the wheels of your vehicle.")
+self_ptfx_vehicle_exhaust_root = menu.list(self_ptfx_vehicle_root, "Exhaust...", {"ryanptfxexhaust"}, "Speicla FX on the exhaust of your vehicle.")
+
+create_ptfx_list(self_ptfx_vehicle_wheels_root, function(ptfx)
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.PLAYER_PED_ID(), true)
+    if vehicle ~= NULL then
+        do_ptfx_on_entity_bones(vehicle, PTFX_VEHICLE_WHEEL_BONES, ptfx[1], ptfx[2])
+        util.yield(ptfx[3])
+    end
+end)
+
+create_ptfx_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.PLAYER_PED_ID(), true)
+    if vehicle ~= NULL then
+        do_ptfx_on_entity_bones(vehicle, PTFX_VEHICLE_EXHAUST_BONES, ptfx[1], ptfx[2])
+        util.yield(ptfx[3])
+    end
+end)
+
+
+-- -- Weapon PTFX
+self_ptfx_weapon_muzzle_root = menu.list(self_ptfx_weapon_root, "Muzzle...", {"ryanptfxmuzzle"}, "Special FX on the end of your weapon's barrel.")
+self_ptfx_weapon_muzzle_flash_root = menu.list(self_ptfx_weapon_root, "Muzzle Flash...", {"ryanptfxmuzzleflash"}, "Special FX on the end of your weapon's barrel when firing.")
+self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
+
+create_ptfx_list(self_ptfx_weapon_muzzle_root, function(ptfx)
+    local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(PLAYER.PLAYER_PED_ID())
+    if weapon ~= NULL then
+        do_ptfx_at_entity_bone_coords(weapon, PTFX_WEAPON_MUZZLE_BONES, ptfx[1], ptfx[2])
+        util.yield(ptfx[3])
+    end
+end)
+
+create_ptfx_list(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
+    if PED.IS_PED_SHOOTING(PLAYER.PLAYER_PED_ID()) then
+        local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(PLAYER.PLAYER_PED_ID())
+        if weapon ~= NULL then
+            do_ptfx_at_entity_bone_coords(weapon, PTFX_WEAPON_MUZZLE_BONES, ptfx[1], ptfx[2])
+            util.yield(ptfx[3])
+        end
+    end
+end)
+
+create_ptfx_list(self_ptfx_weapon_impact_root, function(ptfx)
+    local player_ped = PLAYER.PLAYER_PED_ID()
+    local impact_ptr = memory.alloc()
+    if WEAPON.GET_PED_LAST_WEAPON_IMPACT_COORD(player_ped, impact_ptr) then
+        local coords = memory.read_vector3(impact_ptr)
+        do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
+        memory.free(impact_ptr)
+    end
+end)
 
 -- -- CEO Office Money
 office_money_notice = false
+menu.action(self_office_money_root, "0% Full", {"ryanofficemoney0"}, "Makes the office 0% full with money.", function()
+    set_office_money(0)
+end)
 menu.action(self_office_money_root, "25% Full", {"ryanofficemoney25"}, "Makes the office 25% full with money.", function()
     set_office_money(5000000)
 end)
 menu.action(self_office_money_root, "50% Full", {"ryanofficemoney50"}, "Makes the office 50% full with money.", function()
     set_office_money(10000000)
+end)
+menu.action(self_office_money_root, "75% Full", {"ryanofficemoney75"}, "Makes the office 75% full with money.", function()
+    set_office_money(15000000)
 end)
 menu.action(self_office_money_root, "100% Full", {"ryanofficemoney100"}, "Makes the office 100% full with money.", function()
     set_office_money(20000000)
@@ -667,22 +794,13 @@ end)
 
 -- -- MC Clubhouse Clutter
 mc_clutter_notice = false
-menu.action(self_root, "M.C. Clutter", {"ryanmcclutter"}, "Adds drugs, money, and other clutter to your M.C. clubhouse.", function()
-    set_mc_clutter()
+menu.action(self_mc_clutter_root, "0% Full", {"ryanmcclutter0"}, "Removes drugs, money, and other clutter to your M.C. clubhouse.", function()
+    set_mc_clutter(0)
+end)
+menu.action(self_mc_clutter_root, "100% Full", {"ryanmcclutter100"}, "Adds drugs, money, and other clutter to your M.C. clubhouse.", function()
+    set_mc_clutter(20000000)
 end)
 
--- -- PTFX
-for name, ptfx in pairs(PTFX) do
-    menu.toggle_loop(self_ptfx_root, name, {"ryan" .. name:lower()}, "Plays the " .. name .. " effect on your character and vehicle.", function()
-        local player_ped = PLAYER.PLAYER_PED_ID()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, true)
-        if vehicle ~= NULL then
-            do_ptfx_on_vehicle(vehicle, ptfx[1], ptfx[2])
-        end
-        do_ptfx_on_player(player_ped, ptfx[1], ptfx[2])
-        util.yield(ptfx[3])
-    end, false)
-end
 
 -- World Menu --
 world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
@@ -927,7 +1045,14 @@ menu.action(session_dox_root, "Oppressor", {"ryanoppressor"}, "Shares the name o
     get_players_by_oppressor2()
 end)
 
--- -- Chaos Mode
+-- -- All Players Visible
+menu.toggle_loop(session_root, "All Players Visible", {"ryannoinvisible"}, "Makes all invisible players visible again.", function()
+    for _, player_id in pairs(players.list()) do
+        ENTITY.SET_ENTITY_VISIBLE(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), true, 0)
+    end
+end, false)
+
+-- -- Mk II Chaos
 menu.action(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and requests them to duel.", function()
     local oppressor2 = util.joaat("oppressor2")
     request_model(oppressor2)
@@ -943,33 +1068,6 @@ menu.action(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 
     STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(oppressor2)
     chat.send_message("Everyone has just received an Oppressor Mk 2 with missiles. Battle it out!", false, true, true)
 end)
-
--- -- Anti-Hermit
-hermits = {}
-menu.toggle_loop(session_root, "Anti-Hermit", {"ryanantihermit"}, "Kicks players who stay inside buildings for too long.", function()
-    for _, player_id in pairs(players.list()) do
-        if players.is_in_interior(player_id) then
-            if hermits[player_id] == nil then
-                hermits[player_id] = util.current_time_millis()
-            end
-            if util.current_time_millis() - hermits[player_id] >= 600000 then
-                util.toast(players.get_name(player_id) .. " has been inside for more than 10 minutes. Time to demand they leave.")
-                sms_spam(player_id, "You have 60 seconds to leave the building.", 10000)
-                util.yield(20000)
-                sms_spam(player_id, "30 more seconds to leave the building!", 10000)
-                util.yield(20000)
-                menu.trigger_commands("kick" .. player_name)
-                util.yield()
-                menu.trigger_commands("breakup" .. player_name)
-            elseif util.current_time_millis() - hermits[player_id] >= 300000 then
-                util.toast(players.get_name(player_id) .. " has been inside for more than 5 minutes. Letting them know we miss them.")
-                sms_spam(player_id, "Stop being a hermit - come outside like and play the game.", 10000)
-            end
-        elseif hermits[player_id] ~= nil then
-            hermits[player_id] = nil
-        end
-    end
-end, false)
 
 -- Player Options --
 function setup_player(player_id)
