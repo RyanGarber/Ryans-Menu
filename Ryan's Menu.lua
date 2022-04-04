@@ -1,4 +1,4 @@
-version = "0.5.0"
+version = "0.5.1"
 notify_requirements = false
 
 function lib_exists(name)
@@ -125,6 +125,8 @@ PTFX_VEHICLE_WHEEL_BONES = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"}
 PTFX_VEHICLE_EXHAUST_BONES = {"exhaust", "exhaust_2", "exhaust_3", "exhaust_4", "exhaust_5", "exhaust_6", "exhaust_7", "exhaust_8"}
 PTFX_WEAPON_MUZZLE_BONES = {"gun_vfx_eject"}
 
+FORCEFIELD_MODES = {"Disabled", "Push Out", "Destroy"}
+
 -- Helper Functions --
 function get_closest_vehicle(coords) -- Credit: LanceScript
     local vehicles = entities.get_all_vehicles_as_handles()
@@ -132,7 +134,7 @@ function get_closest_vehicle(coords) -- Credit: LanceScript
     local closest_vehicle = 0
     for _, vehicle in pairs(vehicles) do
         if vehicle ~= PED.GET_VEHICLE_PED_IS_IN(PLAYER.PLAYER_PED_ID(), false) then
-            local vehicle_coords = get_coords(vehicle)
+            local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
             local distance = MISC.GET_DISTANCE_BETWEEN_COORDS(
                 coords['x'], coords['y'], coords['z'],
                 vehicle_coords['x'], vehicle_coords['y'], vehicle_coords['z'], true
@@ -219,19 +221,14 @@ function format_int(number)
     return minus .. int:reverse():gsub("^,", "") .. fraction
 end
 
-function get_coords(entity)
-    entity = entity or PLAYER.PLAYER_PED_ID()
-    return ENTITY.GET_ENTITY_COORDS(entity, true)
-end
-
 function teleport_to(x, y, z)
     util.toast("Teleporting...")
-    ENTITY.SET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), x, y, z)
+    ENTITY.SET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user()), x, y, z)
 end
 
 function teleport_vehicle_to(x, y, z)
     util.toast("Teleporting...")
-    local player_ped = PLAYER.PLAYER_PED_ID()
+    local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
     if PED.IS_PED_IN_ANY_VEHICLE(player_ped, true) then
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
         ENTITY.SET_ENTITY_COORDS(vehicle, x, y, z)
@@ -281,7 +278,7 @@ end
 
 function explode_all(earrape_type, wait_for)
     for i=0, 31, 1 do
-        coords = get_coords(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(i))
+        coords = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(i))
         FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z, 0, 100, true, false, 150, false)
         if earrape_type == EARRAPE_BED then
             AUDIO.PLAY_SOUND_FROM_COORD(-1, "Bed", coords.x, coords.y, coords.z, "WastedSounds", true, 999999999, true)
@@ -296,7 +293,7 @@ function explode_all(earrape_type, wait_for)
 end
 
 function run_all(commands, modders, wait_for)
-    local starting_coords = ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true)
+    local starting_coords = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user()), true)
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
     menu.trigger_commands("levitation on")
@@ -339,7 +336,7 @@ function takeover_vehicle(action, player_id, wait_for)
 end
 
 function takeover_vehicle_all(action, modders, wait_for)
-    local starting_coords = ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true)
+    local starting_coords = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user()), true)
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
     for _, player_id in pairs(players.list()) do
@@ -391,7 +388,6 @@ function trash_pickup(player_id)
         PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords_ptr, 1, 100, 2.5)
     end
 
-    sms_spam(player_id, "It's trash day! Time to take it out.", 5000)
     local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
     local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
     face_entity(vehicle, player_ped)
@@ -424,6 +420,8 @@ function trash_pickup(player_id)
     
     STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_truck)
     STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_man)
+
+    sms_spam(player_id, "It's trash day! Time to take it out.", 5000)
 end
 
 function send_translated(message, language, latin)
@@ -606,8 +604,24 @@ function sms_spam(player_id, message, duration)
     menu.trigger_commands("smsspam" .. player_name .. " off")
 end
 
-function get_magnitude_of_coords(coords)
-    return math.abs(coords['x'] + coords['y'] + coords['z'])
+function coords_substract(coords_a, coords_b)
+    return {x = coords_a['x'] - coords_b['x'], y = coords_a['y'] - coords_b['y'], z = coords_a['z'] - coords_b['z']}
+end
+
+function coords_multiply(coords, amount)
+    return {x = coords['x'] * amount, y = coords['y'] * amount, z = coords['z'] * amount}
+end
+
+function coords_distance(coords_a, coords_b)
+    return coords_magnitude(coords_substract(coords_a, coords_b))
+end
+
+function coords_magnitude(coords)
+    return math.sqrt(coords['x'] ^ 2 + coords['y'] ^ 2 + coords['z'] ^ 2)
+end
+
+function coords_normalize(coords)
+    return coords_multiply(coords, 1 / coords_magnitude(coords))
 end
 
 function do_ptfx_at_coords(x, y, z, asset, name)
@@ -638,7 +652,7 @@ function do_ptfx_on_entity_bones(entity, bones, asset, name)
     for _, bone in pairs(bones) do
         local bone_index = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
         local coords = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(entity, bone_index)
-        if get_magnitude_of_coords(coords) > 0.0 then
+        if coords_magnitude(coords) > 0.0 then
             GRAPHICS.USE_PARTICLE_FX_ASSET(asset)
             GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(ptfx_r, ptfx_g, ptfx_b)
             GRAPHICS._START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY_BONE(
@@ -656,7 +670,7 @@ function do_ptfx_at_entity_bone_coords(entity, bones, asset, name)
     for _, bone in pairs(bones) do
         local bone_index = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
         local coords = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(entity, bone_index)
-        if get_magnitude_of_coords(coords) > 0.0 then
+        if coords_magnitude(coords) > 0.0 then
             do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], asset, name)
         end
     end
@@ -670,145 +684,51 @@ function create_ptfx_list(root, loop)
     end
 end
 
+function get_nearby_entities(coords, range)
+    local nearby_entities = {}
+    
+    local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
+
+    for _, ped in pairs(entities.get_all_peds_as_handles()) do
+        if ped ~= player_ped then
+            local entity_coords = ENTITY.GET_ENTITY_COORDS(ped)
+            if coords_distance(player_coords, entity_coords) <= range then
+                table.insert(nearby_entities, ped)
+            end
+        end
+    end
+
+    for _, vehicle in ipairs(entities.get_all_vehicles_as_handles()) do
+        if vehicle ~= player_vehicle then
+            local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+            if coords_distance(player_coords, vehicle_coords) <= range then
+                table.insert(nearby_entities, vehicle)
+            end
+        end
+    end
+
+    return nearby_entities
+end
+
 --menu.action(menu.my_root(), "Test", {"test"}, "Test", function() end)
 
 -- Main Menu --
-self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Self options not commonly found in other scripts.")
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
 session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling options for the entire session.")
+stats_root = menu.list(menu.my_root(), "Stats", {"ryanstats"}, "Common stats you may want to edit.")
 translate_root = menu.list(menu.my_root(), "Translate", {"ryantranslate"}, "Translate chat messages.")
 settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Settings for Ryan's Menu.")
 
 
--- Self Menu --
-self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
-self_office_money_root = menu.list(self_root, "CEO Office Money...", {"ryanofficemoney"}, "Controls the amount of money in your CEO office.")
-self_mc_clutter_root = menu.list(self_root, "MC Clubhouse Clutter...", {"ryanmcclutter"}, "Controls the amount of clutter in your clubhouse.")
-
-
--- -- PTFX
-ptfx_r = 1.0; ptfx_g = 1.0; ptfx_b = 1.0
-menu.colour(self_ptfx_root, "Color", {"ryanptfxcolor"}, "Some PTFX options allow for custom colors.", 1.0, 1.0, 1.0, 1.0, false, function(color)
-    ptfx_r = color['r']
-    ptfx_g = color['g']
-    ptfx_b = color['b']
-end)
-menu.divider(self_ptfx_root, "Enable On")
-self_ptfx_body_root = menu.list(self_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body other players can see.")
-self_ptfx_weapon_root = menu.list(self_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon other players can see.")
-self_ptfx_vehicle_root = menu.list(self_ptfx_root, "Vehicle...", {"ryanptfxvehicle"}, "Special FX on your vehicle other players can see.")
-
-
--- -- Body PTFX
-self_ptfx_body_head_root = menu.list(self_ptfx_body_root, "Head...", {"ryanptfxhead"}, "Special FX on your head.")
-self_ptfx_body_hands_root = menu.list(self_ptfx_body_root, "Hands...", {"ryanptfxhands"}, "Special FX on your hands.")
-self_ptfx_body_feet_root = menu.list(self_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
-
-create_ptfx_list(self_ptfx_body_head_root, function(ptfx)
-    do_ptfx_on_entity_bones(PLAYER.PLAYER_PED_ID(), PTFX_BODY_HEAD_BONES, ptfx[1], ptfx[2])
-    util.yield(ptfx[3])
-end)
-
-create_ptfx_list(self_ptfx_body_hands_root, function(ptfx)
-    do_ptfx_on_entity_bones(PLAYER.PLAYER_PED_ID(), PTFX_BODY_HANDS_BONES, ptfx[1], ptfx[2])
-    util.yield(ptfx[3])
-end)
-
-create_ptfx_list(self_ptfx_body_feet_root, function(ptfx)
-    do_ptfx_on_entity_bones(PLAYER.PLAYER_PED_ID(), PTFX_BODY_FEET_BONES, ptfx[1], ptfx[2])
-    util.yield(ptfx[3])
-end)
-
-
--- -- Vehicle PTFX
-self_ptfx_vehicle_wheels_root = menu.list(self_ptfx_vehicle_root, "Wheels...", {"ryanptfxwheels"}, "Special FX on the wheels of your vehicle.")
-self_ptfx_vehicle_exhaust_root = menu.list(self_ptfx_vehicle_root, "Exhaust...", {"ryanptfxexhaust"}, "Speicla FX on the exhaust of your vehicle.")
-
-create_ptfx_list(self_ptfx_vehicle_wheels_root, function(ptfx)
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.PLAYER_PED_ID(), true)
-    if vehicle ~= NULL then
-        do_ptfx_on_entity_bones(vehicle, PTFX_VEHICLE_WHEEL_BONES, ptfx[1], ptfx[2])
-        util.yield(ptfx[3])
-    end
-end)
-
-create_ptfx_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.PLAYER_PED_ID(), true)
-    if vehicle ~= NULL then
-        do_ptfx_on_entity_bones(vehicle, PTFX_VEHICLE_EXHAUST_BONES, ptfx[1], ptfx[2])
-        util.yield(ptfx[3])
-    end
-end)
-
-
--- -- Weapon PTFX
-self_ptfx_weapon_muzzle_root = menu.list(self_ptfx_weapon_root, "Muzzle...", {"ryanptfxmuzzle"}, "Special FX on the end of your weapon's barrel.")
-self_ptfx_weapon_muzzle_flash_root = menu.list(self_ptfx_weapon_root, "Muzzle Flash...", {"ryanptfxmuzzleflash"}, "Special FX on the end of your weapon's barrel when firing.")
-self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
-
-create_ptfx_list(self_ptfx_weapon_muzzle_root, function(ptfx)
-    local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(PLAYER.PLAYER_PED_ID())
-    if weapon ~= NULL then
-        do_ptfx_at_entity_bone_coords(weapon, PTFX_WEAPON_MUZZLE_BONES, ptfx[1], ptfx[2])
-        util.yield(ptfx[3])
-    end
-end)
-
-create_ptfx_list(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
-    if PED.IS_PED_SHOOTING(PLAYER.PLAYER_PED_ID()) then
-        local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(PLAYER.PLAYER_PED_ID())
-        if weapon ~= NULL then
-            do_ptfx_at_entity_bone_coords(weapon, PTFX_WEAPON_MUZZLE_BONES, ptfx[1], ptfx[2])
-            util.yield(ptfx[3])
-        end
-    end
-end)
-
-create_ptfx_list(self_ptfx_weapon_impact_root, function(ptfx)
-    local player_ped = PLAYER.PLAYER_PED_ID()
-    local impact_ptr = memory.alloc()
-    if WEAPON.GET_PED_LAST_WEAPON_IMPACT_COORD(player_ped, impact_ptr) then
-        local coords = memory.read_vector3(impact_ptr)
-        do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
-        memory.free(impact_ptr)
-    end
-end)
-
--- -- CEO Office Money
-office_money_notice = false
-menu.action(self_office_money_root, "0% Full", {"ryanofficemoney0"}, "Makes the office 0% full with money.", function()
-    set_office_money(0)
-end)
-menu.action(self_office_money_root, "25% Full", {"ryanofficemoney25"}, "Makes the office 25% full with money.", function()
-    set_office_money(5000000)
-end)
-menu.action(self_office_money_root, "50% Full", {"ryanofficemoney50"}, "Makes the office 50% full with money.", function()
-    set_office_money(10000000)
-end)
-menu.action(self_office_money_root, "75% Full", {"ryanofficemoney75"}, "Makes the office 75% full with money.", function()
-    set_office_money(15000000)
-end)
-menu.action(self_office_money_root, "100% Full", {"ryanofficemoney100"}, "Makes the office 100% full with money.", function()
-    set_office_money(20000000)
-end)
-
--- -- MC Clubhouse Clutter
-mc_clutter_notice = false
-menu.action(self_mc_clutter_root, "0% Full", {"ryanmcclutter0"}, "Removes drugs, money, and other clutter to your M.C. clubhouse.", function()
-    set_mc_clutter(0)
-end)
-menu.action(self_mc_clutter_root, "100% Full", {"ryanmcclutter100"}, "Adds drugs, money, and other clutter to your M.C. clubhouse.", function()
-    set_mc_clutter(20000000)
-end)
-
-
 -- World Menu --
 world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
-world_teleport_root = menu.list(world_root, "Teleport To...", {"ryanteleport"}, "Useful presets to teleport to.")
+world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
 
-world_action_figures_root = menu.list(world_teleport_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
-world_signal_jammers_root = menu.list(world_teleport_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
-world_playing_cards_root = menu.list(world_teleport_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
+world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
+world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
+world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
 
 -- -- Action Figures
 for i = 1, #ACTION_FIGURES do
@@ -875,38 +795,178 @@ menu.action(world_closest_vehicle_root, "Downgrade", {"ryandowngradevehicle"}, "
 end)
 
 
--- Translate Menu --
-translate_message = ""
-menu.text_input(translate_root, "Message", {"ryantranslatemessage"}, "The message to send in chat.", function(value)
-    translate_message = value
-end, "")
+world_forcefield_root = menu.list(world_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
+world_ptfx_root = menu.list(world_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 
--- -- Send Message
-translate_send_root = menu.list(translate_root, "Send...", {"ryantranslatesend"}, "Translate and send the message.")
-menu.action(translate_send_root, "Spanish", {"ryantranslatespanish"}, "Translate to Spanish.", function()
-    util.toast("Translating message to Spanish...")
-    send_translated(translate_message, "ES", false)
+-- -- Forcefield
+forcefield_mode = "Disabled"
+forcefield_size = 10
+forcefield_force = 1
+
+self_forcefield_mode_root = menu.list(world_forcefield_root, "Mode: " .. forcefield_mode, {"ryanforcefieldmode"}, "Forcefield mode.")
+for _, mode in pairs(FORCEFIELD_MODES) do
+    menu.action(self_forcefield_mode_root, mode, {"ryanforcefield" .. mode:lower()}, "No forcefield.", function()
+        forcefield_mode = mode
+        menu.set_menu_name(self_forcefield_mode_root, "Mode: " .. mode)
+        menu.focus(self_forcefield_mode_root)
+    end)
+end
+
+menu.divider(world_forcefield_root, "Options")
+menu.slider(world_forcefield_root, "Size", {"ryanforcefieldsize"}, "Diameter of the forcefield sphere.", 10, 250, 10, 10, function(value)
+    forcefield_size = value
 end)
-menu.action(translate_send_root, "Russian", {"ryantranslaterussian"}, "Translate to Russian.", function()
-    util.toast("Translating message to Russian...")
-    send_translated(translate_message, "RU", true)
+menu.slider(world_forcefield_root, "Force", {"ryanforcefieldforce"}, "Force applied by the forcefield.", 1, 100, 1, 1, function(value)
+    forcefield_force = value
 end)
-menu.action(translate_send_root, "Russian (Cyrillic)", {"ryantranslatecyrillic"}, "Translate to Russian (Cyrillic).", function()
-    util.toast("Translating message to Russian (Cyrillic)...")
-    send_translated(translate_message, "RU", false)
+
+util.create_tick_handler(function()
+    if forcefield_mode == FORCEFIELD_MODES[2] then -- Push Out
+        local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+		local entities = get_nearby_entities(player_coords, forcefield_size)
+		for _, entity in pairs(entities) do
+			local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
+			local force = coords_normalize(coords_substract(entity_coords, player_coords))
+            force = coords_multiply(force, forcefield_force)
+			if ENTITY.IS_ENTITY_A_PED(entity)  then
+				if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+					request_control(entity)
+					PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+					ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+				end
+			else
+				request_control(entity)
+				ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+			end
+		end
+    elseif forcefield_mode == FORCEFIELD_MODES[3] then -- Destroy
+        for side=0, 4 do
+            local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+            local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+            
+            if side == 1 then
+                player_coords['x'] = player_coords['x'] + forcefield_size * 0.66
+                player_coords['y'] = player_coords['y'] + forcefield_size * 0.66
+            elseif side == 2 then
+                player_coords['x'] = player_coords['x'] + forcefield_size * 0.66
+                player_coords['y'] = player_coords['y'] - forcefield_size * 0.66
+            elseif side == 3 then
+                player_coords['x'] = player_coords['x'] - forcefield_size * 0.66
+                player_coords['y'] = player_coords['y'] - forcefield_size * 0.66
+            elseif side == 4 then
+                player_coords['x'] = player_coords['x'] - forcefield_size * 0.66
+                player_coords['y'] = player_coords['y'] + forcefield_size * 0.66
+            end
+
+            FIRE.ADD_EXPLOSION(
+                player_coords['x'], player_coords['y'], player_coords['z'],
+                29, 5.0, false, true, 0.0
+            )
+        end
+    end
+    return true
 end)
-menu.action(translate_send_root, "French", {"ryantranslatefrench"}, "Translate to French.", function()
-    util.toast("Translating message to French...")
-    send_translated(translate_message, "FR", false)
+
+-- -- PTFX
+ptfx_r = 1.0; ptfx_g = 1.0; ptfx_b = 1.0
+
+world_ptfx_body_root = menu.list(world_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body other players can see.")
+world_ptfx_weapon_root = menu.list(world_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon other players can see.")
+world_ptfx_vehicle_root = menu.list(world_ptfx_root, "Vehicle...", {"ryanptfxvehicle"}, "Special FX on your vehicle other players can see.")
+
+menu.divider(world_ptfx_root, "Options")
+menu.colour(world_ptfx_root, "Color", {"ryanptfxcolor"}, "Some PTFX options allow for custom colors.", 1.0, 1.0, 1.0, 1.0, false, function(color)
+    ptfx_r = color['r']
+    ptfx_g = color['g']
+    ptfx_b = color['b']
 end)
-menu.action(translate_send_root, "German", {"ryantranslategerman"}, "Translate to German.", function()
-    util.toast("Translating message to German...")
-    send_translated(translate_message, "DE", false)
+
+-- -- Body PTFX
+self_ptfx_body_head_root = menu.list(world_ptfx_body_root, "Head...", {"ryanptfxhead"}, "Special FX on your head.")
+self_ptfx_body_hands_root = menu.list(world_ptfx_body_root, "Hands...", {"ryanptfxhands"}, "Special FX on your hands.")
+self_ptfx_body_feet_root = menu.list(world_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
+
+create_ptfx_list(self_ptfx_body_head_root, function(ptfx)
+    local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+    do_ptfx_on_entity_bones(player_ped, PTFX_BODY_HEAD_BONES, ptfx[1], ptfx[2])
+    util.yield(ptfx[3])
 end)
-menu.action(translate_send_root, "Italian", {"ryantranslateitalian"}, "Translate to Italian.", function()
-    util.toast("Translating message to Italian...")
-    send_translated(translate_message, "IT", false)
+
+create_ptfx_list(self_ptfx_body_hands_root, function(ptfx)
+    local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+    do_ptfx_on_entity_bones(player_ped, PTFX_BODY_HANDS_BONES, ptfx[1], ptfx[2])
+    util.yield(ptfx[3])
 end)
+
+create_ptfx_list(self_ptfx_body_feet_root, function(ptfx)
+    local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+    do_ptfx_on_entity_bones(player_ped, PTFX_BODY_FEET_BONES, ptfx[1], ptfx[2])
+    util.yield(ptfx[3])
+end)
+
+-- -- Vehicle PTFX
+self_ptfx_vehicle_wheels_root = menu.list(world_ptfx_vehicle_root, "Wheels...", {"ryanptfxwheels"}, "Special FX on the wheels of your vehicle.")
+self_ptfx_vehicle_exhaust_root = menu.list(world_ptfx_vehicle_root, "Exhaust...", {"ryanptfxexhaust"}, "Speicla FX on the exhaust of your vehicle.")
+
+create_ptfx_list(self_ptfx_vehicle_wheels_root, function(ptfx)
+    local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, true)
+    if vehicle ~= NULL then
+        do_ptfx_on_entity_bones(vehicle, PTFX_VEHICLE_WHEEL_BONES, ptfx[1], ptfx[2])
+        util.yield(ptfx[3])
+    end
+end)
+
+create_ptfx_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
+    local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, true)
+    if vehicle ~= NULL then
+        do_ptfx_on_entity_bones(vehicle, PTFX_VEHICLE_EXHAUST_BONES, ptfx[1], ptfx[2])
+        util.yield(ptfx[3])
+    end
+end)
+
+-- -- Weapon PTFX
+self_ptfx_weapon_muzzle_root = menu.list(world_ptfx_weapon_root, "Muzzle...", {"ryanptfxmuzzle"}, "Special FX on the end of your weapon's barrel.")
+self_ptfx_weapon_muzzle_flash_root = menu.list(world_ptfx_weapon_root, "Muzzle Flash...", {"ryanptfxmuzzleflash"}, "Special FX on the end of your weapon's barrel when firing.")
+self_ptfx_weapon_impact_root = menu.list(world_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
+
+create_ptfx_list(self_ptfx_weapon_muzzle_root, function(ptfx)
+    local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user()))
+    if weapon ~= NULL then
+        do_ptfx_at_entity_bone_coords(weapon, PTFX_WEAPON_MUZZLE_BONES, ptfx[1], ptfx[2])
+        util.yield(ptfx[3])
+    end
+end)
+
+create_ptfx_list(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
+    local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+    if PED.IS_PED_SHOOTING(player_ped) then
+        local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_ped)
+        if weapon ~= NULL then
+            do_ptfx_at_entity_bone_coords(weapon, PTFX_WEAPON_MUZZLE_BONES, ptfx[1], ptfx[2])
+            util.yield(ptfx[3])
+        end
+    end
+end)
+
+create_ptfx_list(self_ptfx_weapon_impact_root, function(ptfx)
+    local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+    local impact_ptr = memory.alloc()
+    if WEAPON.GET_PED_LAST_WEAPON_IMPACT_COORD(player_ped, impact_ptr) then
+        local coords = memory.read_vector3(impact_ptr)
+        do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
+        memory.free(impact_ptr)
+    end
+end)
+
+-- -- All Players Visible
+menu.toggle_loop(world_root, "All Players Visible", {"ryannoinvisible"}, "Makes all invisible players visible again.", function()
+    for _, player_id in pairs(players.list()) do
+        ENTITY.SET_ENTITY_VISIBLE(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), true, 0)
+    end
+end, false)
 
 
 -- Session Menu --
@@ -921,15 +981,6 @@ spam_chat_delay = 100
 spam_chat_message = "Get Ryan's Menu for Stand!"
 spam_chat_last = 0
 
-menu.toggle(session_spam_chat_root, "All Players Spam", {"ryanspamall"}, "If enabled, all players spam. Otherwise your real name is used.", function(value)
-    spam_chat_all_players = value
-end, true)
-menu.slider(session_spam_chat_root, "Delay Between Messages", {"ryanspamdelay"}, "Delay in milliseconds between each message.", 0, 1000, 25, 25, function(value)
-    spam_chat_delay = value
-end)
-menu.text_input(session_spam_chat_root, "Message", {"ryanspammessage"}, "The message that will be spammed.", function(value)
-    spam_chat_message = value
-end, "Get Ryan's Menu for Stand!")
 menu.toggle_loop(session_spam_chat_root, "Spam: Loop", {"ryanspamloop"}, "If enabled, the message will be spammed continuously.", function()
     if util.current_time_millis() - spam_chat_last >= spam_chat_delay * 32 then
         spam_chat(spam_chat_message, spam_chat_all_players, spam_chat_delay, 0)
@@ -944,6 +995,17 @@ menu.action(session_spam_chat_root, "Spam: Once", {"ryanspamonce"}, "Spams the m
     util.toast("Spamming chat using " .. spam_chat_type .. ".")
     spam_chat(spam_chat_message, spam_chat_all_players, spam_chat_delay, 0)
 end)
+
+menu.divider(session_spam_chat_root, "Options")
+menu.toggle(session_spam_chat_root, "All Players Spam", {"ryanspamall"}, "If enabled, all players spam. Otherwise your real name is used.", function(value)
+    spam_chat_all_players = value
+end, true)
+menu.slider(session_spam_chat_root, "Delay Between Messages", {"ryanspamdelay"}, "Delay in milliseconds between each message.", 0, 1000, 25, 25, function(value)
+    spam_chat_delay = value
+end)
+menu.text_input(session_spam_chat_root, "Message", {"ryanspammessage"}, "The message that will be spammed.", function(value)
+    spam_chat_message = value
+end, "Get Ryan's Menu for Stand!")
 
 -- -- Vehicle
 trolling_watch_time = 5000
@@ -1045,13 +1107,6 @@ menu.action(session_dox_root, "Oppressor", {"ryanoppressor"}, "Shares the name o
     get_players_by_oppressor2()
 end)
 
--- -- All Players Visible
-menu.toggle_loop(session_root, "All Players Visible", {"ryannoinvisible"}, "Makes all invisible players visible again.", function()
-    for _, player_id in pairs(players.list()) do
-        ENTITY.SET_ENTITY_VISIBLE(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), true, 0)
-    end
-end, false)
-
 -- -- Mk II Chaos
 menu.action(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and requests them to duel.", function()
     local oppressor2 = util.joaat("oppressor2")
@@ -1068,6 +1123,39 @@ menu.action(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 
     STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(oppressor2)
     chat.send_message("Everyone has just received an Oppressor Mk 2 with missiles. Battle it out!", false, true, true)
 end)
+
+
+-- Stats Menu --
+stats_office_money_root = menu.list(stats_root, "CEO Office Money...", {"ryanofficemoney"}, "Controls the amount of money in your CEO office.")
+stats_mc_clutter_root = menu.list(stats_root, "MC Clubhouse Clutter...", {"ryanmcclutter"}, "Controls the amount of clutter in your clubhouse.")
+
+-- -- CEO Office Money
+office_money_notice = false
+menu.action(stats_office_money_root, "0% Full", {"ryanofficemoney0"}, "Makes the office 0% full with money.", function()
+    set_office_money(0)
+end)
+menu.action(stats_office_money_root, "25% Full", {"ryanofficemoney25"}, "Makes the office 25% full with money.", function()
+    set_office_money(5000000)
+end)
+menu.action(stats_office_money_root, "50% Full", {"ryanofficemoney50"}, "Makes the office 50% full with money.", function()
+    set_office_money(10000000)
+end)
+menu.action(stats_office_money_root, "75% Full", {"ryanofficemoney75"}, "Makes the office 75% full with money.", function()
+    set_office_money(15000000)
+end)
+menu.action(stats_office_money_root, "100% Full", {"ryanofficemoney100"}, "Makes the office 100% full with money.", function()
+    set_office_money(20000000)
+end)
+
+-- -- MC Clubhouse Clutter
+mc_clutter_notice = false
+menu.action(stats_mc_clutter_root, "0% Full", {"ryanmcclutter0"}, "Removes drugs, money, and other clutter to your M.C. clubhouse.", function()
+    set_mc_clutter(0)
+end)
+menu.action(stats_mc_clutter_root, "100% Full", {"ryanmcclutter100"}, "Adds drugs, money, and other clutter to your M.C. clubhouse.", function()
+    set_mc_clutter(20000000)
+end)
+
 
 -- Player Options --
 function setup_player(player_id)
@@ -1138,6 +1226,40 @@ function setup_player(player_id)
         menu.trigger_commands("players")
     end)
 end
+
+
+-- Translate Menu --
+translate_message = ""
+menu.text_input(translate_root, "Message", {"ryantranslatemessage"}, "The message to send in chat.", function(value)
+    translate_message = value
+end, "")
+
+-- -- Send Message
+translate_send_root = menu.list(translate_root, "Send...", {"ryantranslatesend"}, "Translate and send the message.")
+menu.action(translate_send_root, "Spanish", {"ryantranslatespanish"}, "Translate to Spanish.", function()
+    util.toast("Translating message to Spanish...")
+    send_translated(translate_message, "ES", false)
+end)
+menu.action(translate_send_root, "Russian", {"ryantranslaterussian"}, "Translate to Russian.", function()
+    util.toast("Translating message to Russian...")
+    send_translated(translate_message, "RU", true)
+end)
+menu.action(translate_send_root, "Russian (Cyrillic)", {"ryantranslatecyrillic"}, "Translate to Russian (Cyrillic).", function()
+    util.toast("Translating message to Russian (Cyrillic)...")
+    send_translated(translate_message, "RU", false)
+end)
+menu.action(translate_send_root, "French", {"ryantranslatefrench"}, "Translate to French.", function()
+    util.toast("Translating message to French...")
+    send_translated(translate_message, "FR", false)
+end)
+menu.action(translate_send_root, "German", {"ryantranslategerman"}, "Translate to German.", function()
+    util.toast("Translating message to German...")
+    send_translated(translate_message, "DE", false)
+end)
+menu.action(translate_send_root, "Italian", {"ryantranslateitalian"}, "Translate to Italian.", function()
+    util.toast("Translating message to Italian...")
+    send_translated(translate_message, "IT", false)
+end)
 
 
 -- Settings Menu --
