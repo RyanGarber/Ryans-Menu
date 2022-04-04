@@ -185,7 +185,16 @@ function get_closest_vehicle(coords) -- Credit: LanceScript
     return closest_vehicle
 end
 
-function request_control(entity) -- Credit: WiriScript
+function request_control(entity)
+    if not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) then
+		local network_id = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity)
+		NETWORK.SET_NETWORK_ID_CAN_MIGRATE(network_id, true)
+		NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
+	end
+	return NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity)
+end
+
+function request_control_loop(entity) -- Credit: WiriScript
     local tick = 0
     while not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) and tick < 25 do
         util.yield()
@@ -364,7 +373,7 @@ function takeover_vehicle(action, player_id, wait_for)
 
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), false)
     if vehicle ~= NULL then
-        request_control(vehicle)
+        request_control_loop(vehicle)
         if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
             action(vehicle)
             util.yield(wait_for)
@@ -877,7 +886,7 @@ end)
 -- -- Upgrade Closest Vehicle
 menu.action(world_closest_vehicle_root, "Upgrade", {"ryanupgradevehicle"}, "Upgrades the closest vehicle.", function()
     local closest_vehicle = get_closest_vehicle(ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true))
-    request_control(closest_vehicle)
+    request_control_loop(closest_vehicle)
     mod_vehicle(closest_vehicle, true)
     util.toast("Upgraded the nearest car!")
 end)
@@ -885,7 +894,7 @@ end)
 -- -- Downgrade Closest Vehicle
 menu.action(world_closest_vehicle_root, "Downgrade", {"ryandowngradevehicle"}, "Downgrades the closest vehicle.", function()
     local closest_vehicle = get_closest_vehicle(ENTITY.GET_ENTITY_COORDS(PLAYER.PLAYER_PED_ID(), true))
-    request_control(closest_vehicle)
+    request_control_loop(closest_vehicle)
     mod_vehicle(closest_vehicle, false)
     util.toast("Downgraded the nearest car!")
 end)
