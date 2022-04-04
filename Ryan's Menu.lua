@@ -607,7 +607,7 @@ function sms_spam(player_id, message, duration)
 end
 
 function get_magnitude_of_coords(coords)
-    return coords['x'] + coords['y'] + coords['z']
+    return math.abs(coords['x'] + coords['y'] + coords['z'])
 end
 
 function do_ptfx_at_coords(x, y, z, asset, name)
