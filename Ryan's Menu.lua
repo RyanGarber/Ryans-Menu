@@ -725,6 +725,8 @@ settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Setting
 -- World Menu --
 world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
 world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
+world_forcefield_root = menu.list(world_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
+world_ptfx_root = menu.list(world_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 
 world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
 world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
@@ -793,10 +795,6 @@ menu.action(world_closest_vehicle_root, "Downgrade", {"ryandowngradevehicle"}, "
     mod_vehicle(closest_vehicle, false)
     util.toast("Downgraded the nearest car!")
 end)
-
-
-world_forcefield_root = menu.list(world_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
-world_ptfx_root = menu.list(world_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 
 -- -- Forcefield
 forcefield_mode = "Disabled"
