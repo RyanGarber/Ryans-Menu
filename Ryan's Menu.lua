@@ -1,4 +1,4 @@
-version = "0.5.1"
+version = "0.5.2"
 notify_requirements = false
 
 function lib_exists(name)
@@ -100,26 +100,63 @@ PLAYING_CARDS = { -- Credit: Collectibles Script
     {-539, -1279, 27}, {-1205, -1560, 4}, {-1288, -1119, 7}, {-1841, -1235, 13}, {-1155, -528, 31},
     {-1167, -234, 37}, {-971, 104, 55}, {-1513, -105, 54}, {-3048, 585, 7}, {-3150, 1115, 20},
     {-1829, 798, 138}, {-430, 1214, 325}, {-409, 585, 125}, {-103, 368, 112}, {253, 215, 106},
-    {-168, -298, 40}, {183, -686, 43}, {1131, -983, 46}, {1159, -317, 69}, {548, -190, 54}, 
-    {1487, 1128, 114}, {730, 2514, 73}, {188, 3075, 43}, {-288, 2545, 75}, {-1103, 2714, 19}, 
-    {-2306, 3388, 31}, {-1583, 5204, 4}, {-749, 5599, 41}, {-283, 6225, 31}, {99, 6620, 32}, 
-    {1876, 6410, 46}, {2938, 5325, 101}, {3688, 4569, 25}, {2694, 4324, 45}, {2120, 4784, 40}, 
-    {1707, 4920, 42}, {727, 4189, 41}, {-524, 4193, 193}, {79, 3704, 41}, {900, 3557, 33}, 
-    {1690, 3588, 35}, {1991, 3045, 47}, {2747, 3465, 55}, {2341, 2571, 47}, {2565, 297, 108}, 
-    {1325, -1652, 52}, {989, -1801, 31}, {827, -2159, 29}, {810, -2979, 6} 
+    {-168, -298, 40}, {183, -686, 43}, {1131, -983, 46}, {1159, -317, 69}, {548, -190, 54},
+    {1487, 1128, 114}, {730, 2514, 73}, {188, 3075, 43}, {-288, 2545, 75}, {-1103, 2714, 19},
+    {-2306, 3388, 31}, {-1583, 5204, 4}, {-749, 5599, 41}, {-283, 6225, 31}, {99, 6620, 32},
+    {1876, 6410, 46}, {2938, 5325, 101}, {3688, 4569, 25}, {2694, 4324, 45}, {2120, 4784, 40},
+    {1707, 4920, 42}, {727, 4189, 41}, {-524, 4193, 193}, {79, 3704, 41}, {900, 3557, 33},
+    {1690, 3588, 35}, {1991, 3045, 47}, {2747, 3465, 55}, {2341, 2571, 47}, {2565, 297, 108},
+    {1325, -1652, 52}, {989, -1801, 31}, {827, -2159, 29}, {810, -2979, 6}
 }
 
 PTFX = {
     ["Take Zone"] = {"scr_ie_tw", "scr_impexp_tw_take_zone", 500},
     ["Alien Disintegrate"] = {"scr_rcbarry1", "scr_alien_disintegrate", 500},
-    ["Electrical Fire"] = {"core", "ent_dst_elec_fire_sp", 200},
+    ["Electrical Fire (Silent)"] = {"core", "ent_dst_elec_fire_sp", 200},
+    ["Electrical Fire (Noisy)"] = {"core", "ent_dst_elec_crackle"},
+    ["Electrical Malfunction"] = {"cut_exile1", "cs_ex1_elec_malfunction"},
+    ["Chandelier"] = {"cut_family4", "cs_fam4_shot_chandelier"},
     ["Firework Trail (Short)"] = {"scr_rcpaparazzo1", "scr_mich4_firework_sparkle_spawn", 60000},
     ["Firework Trail (Long)"] = {"scr_indep_fireworks", "scr_indep_firework_sparkle_spawn", 60000},
-    ["Firework Burst"] = {"scr_indep_fireworks", "scr_indep_firework_trailburst_spawn", 500}
+    ["Firework Burst"] = {"scr_indep_fireworks", "scr_indep_firework_trailburst_spawn", 500},
+    ["Firework Trailburst"] = {"scr_rcpaparazzo1", "scr_mich4_firework_trailburst_spawn"},
+    ["Firework Fountain"] = {"scr_indep_fireworks", "scr_indep_firework_trail_spawn"},
+    ["Bread"] = {"core", "ent_dst_bread"},
+    ["Water Splash (Short)"] = {"core", "ent_anim_bm_water_scp"},
+    ["Water Splash (Long)"] = {"cut_family5", "cs_fam5_michael_pool_splash"},
+    ["Trash"] = {"core", "ent_dst_hobo_trolley"},
+    ["Car Sparks"] = {"core", "bang_carmetal"},
+    ["Stungun Sparks"] = {"core", "bul_stungun_metal"},
+    ["Foundry Sparks"] = {"core", "sp_foundry_sparks"},
+    ["Foundry Steam"] = {"core", "ent_amb_foundry_steam_spawn"},
+    ["Oil"] = {"core", "trail_splash_oil"},
+    ["FBI Doors"] = {"scr_fbi4", "exp_fbi4_doors_post"},
+    ["Wood Chunks"] = {"core", "ent_dst_wood_chunky"},
+    ["Camera Flash"] = {"scr_bike_business", "scr_bike_cfid_camera_flash"},
+    ["Clown Trails"] = {"scr_rcbarry2", "scr_exp_clown_trails"},
+    ["Musket"] = {"wpn_musket", "muz_musket_ng"},
+    ["Plane Break"] = {"cut_exile1", "cs_ex1_plane_break_L"},
+    ["Molotov"] = {"core", "exp_grd_molotov_lod"},
+    ["Inflate"] = {"core", "ent_dst_inflate_lilo"},
+    ["EXP Mine"] = {"scr_xs_props", "scr_xs_exp_mine_sf"},
+    ["Beast Vanish"] = {"scr_powerplay", "scr_powerplay_beast_vanish"},
+    ["Beast Appear"] = {"scr_powerplay", "scr_powerplay_beast_appear"},
+    ["Beast Trail"] = {"scr_powerplay", "sp_powerplay_beast_appear_trails"},
+    ["Money Trail"] = {"scr_exec_ambient_fm", "scr_ped_foot_banknotes"},
+    ["Jacuzzi Steam"] = {"scr_apartment_mp", "scr_apa_jacuzzi_steam_sp"},
+    ["EMP"] = {"scr_xs_dr", "scr_xs_dr_emp"},
+    ["Torpedo"] = {"veh_stromberg", "exp_underwater_torpedo"},
+    ["Petrol Fire"] = {"scr_finale1", "scr_fin_fire_petrol_trev"},
+    ["Petrol Explosion"] = {"core", "exp_grd_petrol_pump"},
+    ["Paper"] = {"core", "bul_paper"},
+    ["Vehicle Backfire"] = {"core", "veh_backfire"},
+    ["Inflatable"] = {"core", "ent_dst_inflatable"},
+    ["Gumball Machine"] = {"core", "ent_dst_gen_gobstop"}
 }
 
 PTFX_BODY_HEAD_BONES = {"IK_Head"}
 PTFX_BODY_HANDS_BONES = {"IK_L_Hand", "IK_R_Hand"}
+PTFX_BODY_LEFT_HAND_BONES = {"IK_L_Hand"}
 PTFX_BODY_FEET_BONES = {"IK_L_Foot", "IK_R_Foot"}
 PTFX_VEHICLE_WHEEL_BONES = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"}
 PTFX_VEHICLE_EXHAUST_BONES = {"exhaust", "exhaust_2", "exhaust_3", "exhaust_4", "exhaust_5", "exhaust_6", "exhaust_7", "exhaust_8"}
@@ -624,6 +661,64 @@ function coords_normalize(coords)
     return coords_multiply(coords, 1 / coords_magnitude(coords))
 end
 
+function v3_to_object(X, Y, Z) -- Credit: WiriScript
+    return {x = X or 0, y = Y or 0, z = Z or 0}
+end
+
+function rotation_to_direction(rotation) -- Credit: WiriScript
+	local adjusted_rotation = { 
+		x = (math.pi / 180) * rotation.x, 
+		y = (math.pi / 180) * rotation.y, 
+		z = (math.pi / 180) * rotation.z 
+	}
+	local direction = {
+		x = - math.sin(adjusted_rotation.z) * math.abs(math.cos(adjusted_rotation.x)), 
+		y =   math.cos(adjusted_rotation.z) * math.abs(math.cos(adjusted_rotation.x)), 
+		z =   math.sin(adjusted_rotation.x)
+	}
+	return direction
+end
+
+function get_offset_from_camera(distance) -- Credit: WiriScript
+	local position = CAM.GET_FINAL_RENDERED_CAM_COORD()
+    local rotation = CAM.GET_FINAL_RENDERED_CAM_ROT(2)
+	local direction = rotation_to_direction(rotation)
+	local offset = {
+		x = position.x + direction.x * distance,
+		y = position.y + direction.y * distance,
+		z = position.z + direction.z * distance 
+	}
+	return offset
+end
+
+function do_raycast(distance) -- Credit: WiriScript
+    local result = {}
+	local did_hit = memory.alloc(8)
+	local hit_coords = v3.new()
+	local hit_normal = v3.new()
+	local hit_entity = memory.alloc_int()
+	local origin = CAM.GET_FINAL_RENDERED_CAM_COORD()
+	local destination = get_offset_from_camera(distance)
+
+	SHAPETEST.GET_SHAPE_TEST_RESULT(
+		SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
+			origin.x, origin.y, origin.z,
+			destination.x, destination.y, destination.z,
+			-1, PLAYER.PLAYER_PED_ID(), 1
+		), did_hit, hit_coords, hit_normal, hit_entity
+	)
+	result.did_hit = memory.read_byte(did_hit) ~= 0
+	result.hit_coords = v3_to_object(v3.get(hit_coords))
+	result.hit_normal = v3_to_object(v3.get(hit_normal))
+	result.hit_entity = memory.read_int(hit_entity)
+
+	memory.free(did_hit)
+	v3.free(hit_coords)
+	v3.free(hit_normal)
+	memory.free(hit_entity)
+	return result
+end
+
 function do_ptfx_at_coords(x, y, z, asset, name)
     request_ptfx(asset)
     GRAPHICS.USE_PARTICLE_FX_ASSET(asset)
@@ -711,6 +806,7 @@ function get_nearby_entities(coords, range)
 
     return nearby_entities
 end
+
 
 -- Main Menu --
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
@@ -870,6 +966,7 @@ ptfx_r = 1.0; ptfx_g = 1.0; ptfx_b = 1.0
 world_ptfx_body_root = menu.list(world_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body other players can see.")
 world_ptfx_weapon_root = menu.list(world_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon other players can see.")
 world_ptfx_vehicle_root = menu.list(world_ptfx_root, "Vehicle...", {"ryanptfxvehicle"}, "Special FX on your vehicle other players can see.")
+world_ptfx_pointing_root = menu.list(world_ptfx_root, "Pointing...", {"ryanptfxpointing"}, "Special FX when pointing other players can see.")
 
 menu.divider(world_ptfx_root, "Options")
 menu.colour(world_ptfx_root, "Color", {"ryanptfxcolor"}, "Some PTFX options allow for custom colors.", 1.0, 1.0, 1.0, 1.0, false, function(color)
@@ -924,9 +1021,19 @@ create_ptfx_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
 end)
 
 -- -- Weapon PTFX
+self_ptfx_weapon_crosshair_root = menu.list(world_ptfx_weapon_root, "Crosshair...", {"ryanptfxcrosshair"}, "Special FX where your crosshair is pointed.")
 self_ptfx_weapon_muzzle_root = menu.list(world_ptfx_weapon_root, "Muzzle...", {"ryanptfxmuzzle"}, "Special FX on the end of your weapon's barrel.")
 self_ptfx_weapon_muzzle_flash_root = menu.list(world_ptfx_weapon_root, "Muzzle Flash...", {"ryanptfxmuzzleflash"}, "Special FX on the end of your weapon's barrel when firing.")
 self_ptfx_weapon_impact_root = menu.list(world_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
+
+create_ptfx_list(self_ptfx_weapon_crosshair_root, function(ptfx)
+    local raycast = do_raycast(1000.0)
+    if raycast.did_hit then
+        local coords = raycast.hit_coords
+        do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
+        util.yield(ptfx[3])
+    end
+end)
 
 create_ptfx_list(self_ptfx_weapon_muzzle_root, function(ptfx)
     local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user()))
@@ -954,6 +1061,29 @@ create_ptfx_list(self_ptfx_weapon_impact_root, function(ptfx)
         local coords = memory.read_vector3(impact_ptr)
         do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
         memory.free(impact_ptr)
+    end
+end)
+
+-- -- Pointing PTFX
+self_ptfx_pointing_finger_root = menu.list(world_ptfx_pointing_root, "Finger...", {"ryanptfxpointingfinger"}, "Special FX on your left finger.")
+self_ptfx_pointing_crosshair_root = menu.list(world_ptfx_pointing_root, "Crosshair...", {"ryanptfxpointingfinger"}, "Special FX on your crosshair.")
+
+create_ptfx_list(self_ptfx_pointing_finger_root, function(ptfx)
+    if memory.read_int(memory.script_global(4516656 + 930)) == 3 then
+        local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(players.user())
+        do_ptfx_on_entity_bones(player_ped, PTFX_BODY_LEFT_HAND_BONES, ptfx[1], ptfx[2])
+        util.yield(ptfx[3])
+    end
+end)
+
+create_ptfx_list(self_ptfx_pointing_crosshair_root, function(ptfx)
+    if memory.read_int(memory.script_global(4516656 + 930)) == 3 then
+        local raycast = do_raycast(1000.0)
+        if raycast.did_hit then
+            local coords = raycast.hit_coords
+            do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
+            util.yield(ptfx[3])
+        end
     end
 end)
 
