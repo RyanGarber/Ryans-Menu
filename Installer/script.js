@@ -6,13 +6,7 @@ const source = 'https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/Sou
 
 $('#installer').hide();
 
-$.get('https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/VERSION').done((manifest) => {
-    manifest =
-`0.5.4
-{
-    "main": "Ryan's Menu.lua",
-    "resources": ["Crosshair.png"]
-}`;
+$.get('https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/MANIFEST').done((manifest) => {
     let version = manifest.split('\n')[0];
     let contents = JSON.parse(manifest.split('\n').splice(1).join('\n'));
 
@@ -29,7 +23,6 @@ $.get('https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/VERSION').do
         let luaScripts = fs.readdirSync(luaScriptsFolder);
         for(let i = 0; i < luaScripts.length; i++) {
             if(/^.*[Rr]yan.*$/.test(luaScripts[i])) {
-                console.log(luaScripts[i] + ' == ' + contents.main + '?'); // test
                 if(luaScripts[i] != contents.main) {
                     let response = dialog.showMessageBoxSync({
                         type: 'question',
@@ -43,35 +36,52 @@ $.get('https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/VERSION').do
             }
         }
 
-        // Install the script.
+        // Install the main script.
         if(fs.existsSync(luaScriptsFolder + '\\' + contents.main)) {
             fs.unlinkSync(luaScriptsFolder + '\\' + contents.main);
         }
-        $.get(source + '/' + contents.main).done(function(data) {
+        $.get(source + '/' + contents.main).done((data) => {
             fs.writeFileSync(luaScriptsFolder + '\\' + contents.main, data);
         });
-        
-        dialog.showMessageBox({
-            type: 'info',
-            message: 'Install main file: ' + contents.main
-        }).then((response, checkboxChecked) => {
-            for(let type in contents) {
-                if(type == 'main') continue;
 
-                dialog.showMessageBox({
-                    type: 'info',
-                    message: 'Install files in "' + type + '": [' + contents[type].join(', ') + ']'
-                }).then((response) => {
-                    dialog.showMessageBox({
-                        type: 'info',
-                        message: 'Done!'
-                    }).then((response) => {
-                        $('#loading').fadeOut();
+        // Count required files.
+        let fileCount = 0;
+        for(let type in contents) {
+            if(type == 'main') continue;
+            fileCount += contents[type].length;
+        }
+        let filesSaved = 0;
+
+        // Download required files.
+        for(let type in contents) {
+            for(let i = 0; i < contents[type].length; i++) {
+                $.get(source + '/' + type + '/' + contents[type][i]).done((data) => {
+                    if(fs.existsSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu')) {
+                        fs.rmdirSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu');
+                    }
+                    fs.mkdirSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu')
+                    fs.writeFileSync(luaScripts + '\\' + type + '\\Ryan\'s Menu\\' + contents[type][i], data);
+                    filesSaved++;
+
+                    // Show alert when finished.
+                    if(filesSaved == fileCount) {
+                        let response = dialog.showMessageBox({
+                            type: 'info',
+                            message: 'Ryan\'s Menu has been successfully installed! Go back to Grand Theft Auto V to continue.'
+                        });
+                    }
+                }).fail(() => {
+                    dialog.showMessageBoxSync({
+                        type: 'error',
+                        message: 'Failed to download required file: "' + type + '/' + contents[type][i] + '".'
                     });
                 });
             }
-        });
+        }
     });
 }).fail(() => {
-    alert('Failed to find the latest version. Check your internet connection and try again.');
+    dialog.showMessageBoxSync({
+        type: 'error',
+        message: 'Failed to get the latest version. Check your internet connection and try again.'
+    });
 });
