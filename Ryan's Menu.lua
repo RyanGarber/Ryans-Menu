@@ -83,36 +83,36 @@ PTFX = {
     ["Firework Burst"] = {"scr_indep_fireworks", "scr_indep_firework_trailburst_spawn", 500},
     ["Firework Trailburst"] = {"scr_rcpaparazzo1", "scr_mich4_firework_trailburst_spawn", 500},
     ["Firework Fountain"] = {"scr_indep_fireworks", "scr_indep_firework_trail_spawn", 500},
-    ["Jackhammer (Small)"] = {"core", "ent_dst_bread", 500},
-    ["Water Splash (Short)"] = {"core", "ent_anim_bm_water_scp", 500},
+    ["Jackhammer (Small)"] = {"core", "ent_dst_bread", 50},
+    ["Water Splash (Short)"] = {"core", "ent_anim_bm_water_scp", 200},
     ["Water Splash (Long)"] = {"cut_family5", "cs_fam5_michael_pool_splash", 500},
-    ["Trash"] = {"core", "ent_dst_hobo_trolley", 500},
-    ["Car Sparks"] = {"core", "bang_carmetal", 500},
+    ["Trash"] = {"core", "ent_dst_hobo_trolley", 250},
+    ["Car Sparks"] = {"core", "bang_carmetal", 250},
     ["Stungun Sparks"] = {"core", "bul_stungun_metal", 500},
     ["Foundry Sparks"] = {"core", "sp_foundry_sparks", 500},
     ["Foundry Steam"] = {"core", "ent_amb_foundry_steam_spawn", 500},
     ["Oil"] = {"core", "ent_sht_oil", 3500},
     ["FBI Doors"] = {"scr_fbi4", "exp_fbi4_doors_post", 250},
     ["Wood Chunks"] = {"core", "ent_dst_wood_chunky", 500},
-    ["Camera Flash"] = {"scr_bike_business", "scr_bike_cfid_camera_flash", 500},
+    ["Camera Flash"] = {"scr_bike_business", "scr_bike_cfid_camera_flash", 200},
     ["Clown Trails"] = {"scr_rcbarry2", "scr_exp_clown_trails", 500},
     ["Musket"] = {"wpn_musket", "muz_musket_ng", 500},
-    ["Plane Break"] = {"cut_exile1", "cs_ex1_plane_break_L", 500},
+    ["Plane Break"] = {"cut_exile1", "cs_ex1_plane_break_L", 325},
     ["Molotov"] = {"core", "exp_grd_molotov_lod", 500},
-    ["Inflate"] = {"core", "ent_dst_inflate_lilo", 500},
-    ["EXP Mine"] = {"scr_xs_props", "scr_xs_exp_mine_sf", 1000},
+    ["Inflate"] = {"core", "ent_dst_inflate_lilo", 300},
+    ["EXP Mine"] = {"scr_xs_props", "scr_xs_exp_mine_sf", 375},
     ["Beast Vanish"] = {"scr_powerplay", "scr_powerplay_beast_vanish", 1000},
     ["Beast Appear"] = {"scr_powerplay", "scr_powerplay_beast_appear", 1000},
     ["Beast Trail"] = {"scr_powerplay", "sp_powerplay_beast_appear_trails", 500},
-    ["Money Trail"] = {"scr_exec_ambient_fm", "scr_ped_foot_banknotes", 500},
+    ["Money Trail"] = {"scr_exec_ambient_fm", "scr_ped_foot_banknotes", 250},
     ["Jacuzzi Steam"] = {"scr_apartment_mp", "scr_apa_jacuzzi_steam_sp", 500},
-    ["EMP"] = {"scr_xs_dr", "scr_xs_dr_emp", 500},
+    ["EMP"] = {"scr_xs_dr", "scr_xs_dr_emp", 350},
     ["Torpedo"] = {"veh_stromberg", "exp_underwater_torpedo", 1000},
-    ["Petrol Fire"] = {"scr_finale1", "scr_fin_fire_petrol_trev", 500},
-    ["Petrol Explosion"] = {"core", "exp_grd_petrol_pump", 5000},
-    ["Jackhammer (Large)"] = {"core", "bul_paper", 500},
-    ["Vehicle Backfire"] = {"core", "veh_backfire", 500},
-    ["Inflatable"] = {"core", "ent_dst_inflatable", 1000},
+    ["Petrol Fire"] = {"scr_finale1", "scr_fin_fire_petrol_trev", 2500},
+    ["Petrol Explosion"] = {"core", "exp_grd_petrol_pump", 300},
+    ["Jackhammer (Large)"] = {"core", "bul_paper", 50},
+    ["Vehicle Backfire"] = {"core", "veh_backfire", 250},
+    ["Inflatable"] = {"core", "ent_dst_inflatable", 500},
     ["Gumball Machine"] = {"core", "ent_dst_gen_gobstop", 500}
 }
 
@@ -834,6 +834,10 @@ function send_translated(message, language, latin)
     async_http.dispatch()
 end
 
+function draw_crosshair()
+    -- TODO
+end
+
 
 -- Main Menu --
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
@@ -1048,12 +1052,12 @@ create_ptfx_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
 end)
 
 -- -- Weapon PTFX
-self_ptfx_weapon_crosshair_root = menu.list(world_ptfx_weapon_root, "Crosshair...", {"ryanptfxcrosshair"}, "Special FX where your crosshair is pointed.")
+self_ptfx_weapon_aiming_root = menu.list(world_ptfx_weapon_root, "Aiming...", {"ryanptfxaiming"}, "Special FX when aiming at a spot.")
 self_ptfx_weapon_muzzle_root = menu.list(world_ptfx_weapon_root, "Muzzle...", {"ryanptfxmuzzle"}, "Special FX on the end of your weapon's barrel.")
 self_ptfx_weapon_muzzle_flash_root = menu.list(world_ptfx_weapon_root, "Muzzle Flash...", {"ryanptfxmuzzleflash"}, "Special FX on the end of your weapon's barrel when firing.")
 self_ptfx_weapon_impact_root = menu.list(world_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
 
-create_ptfx_list(self_ptfx_weapon_crosshair_root, function(ptfx)
+create_ptfx_list(self_ptfx_weapon_aiming_root, function(ptfx)
     local raycast = do_raycast(1000.0)
     if raycast.did_hit then
         local coords = raycast.hit_coords
@@ -1111,6 +1115,7 @@ create_ptfx_list(self_ptfx_pointing_crosshair_root, function(ptfx)
             do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
             util.yield(ptfx[3])
         end
+        
     end
 end)
 
