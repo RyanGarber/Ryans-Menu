@@ -1,5 +1,5 @@
-version = "0.5.4"
-notify_requirements = false
+VERSION = "0.5.4"
+RESOURCES = {"Crosshair.png"}
 
 
 -- Globals --
@@ -45,6 +45,7 @@ ACTION_FIGURES = { -- Credit: Collectibles Script
     {63, 3683, 39}, {543, 3074, 40}, {387, 2570, 44}, {852, 2166, 52}, {1408, 2157, 98},
     {1189, 2641, 38}, {1848, 2700, 63}, {2635, 2931, 44}, {2399, 3063, 54}, {2394, 3062, 52}
 }
+
 SIGNAL_JAMMERS = { -- Credit: Collectibles Script
     {-3096, 783, 33}, {-2273, 325, 195}, {-1280, 304, 91}, {-1310, -445, 108}, {-1226, -866, 82},
     {-1648, -1125, 29}, {-686, -1381, 24}, {-265, -1897, 54}, {-988, -2647, 89}, {-250, -2390, 124},
@@ -57,6 +58,7 @@ SIGNAL_JAMMERS = { -- Credit: Collectibles Script
     {1595, 6431, 32}, {-119, 6217, 62}, {449, 5595, 793}, {1736, 4821, 60}, {732, 4099, 37},
     {-492, 4428, 86}, {-1018, 4855, 301}, {-2206, 4299, 54}, {-2367, 3233, 103}, {-1870, 2069, 154}
 }
+
 PLAYING_CARDS = { -- Credit: Collectibles Script
     {-1028, -2747, 14}, {-74, -2005, 18}, {202, -1645, 29}, {120, -1298, 29}, {11, -1102, 29},
     {-539, -1279, 27}, {-1205, -1560, 4}, {-1288, -1119, 7}, {-1841, -1235, 13}, {-1155, -528, 31},
@@ -134,29 +136,36 @@ COLOR_PURPLE = 49
 COLOR_RED = 6
 
 
-function lib_exists(name)
-    return filesystem.exists(filesystem.scripts_dir() .. "lib\\" .. name .. ".lua")
+-- Requirements --
+function exists(name)
+    return filesystem.exists(filesystem.scripts_dir() .. name)
 end
 
-
--- Requirements --
-while not lib_exists("natives-1640181023") or not lib_exists("natives-1627063482") do
-    if not notify_requirements then
+notified_of_requirements = false
+while not exists("lib\\natives-1640181023.lua") or not exists("lib\\natives-1627063482.lua") do
+    if not notified_of_requirements then
         local ref = menu.ref_by_path("Stand>Lua Scripts>Repository>WiriScript")
         menu.focus(ref)
-        notify_requirements = true
+        notified_of_requirements = true
     end
 
     util.toast("Ryan's Menu requires WiriScript and LanceScript to function. Please enable them to continue.")
     util.yield(2000)
 end
 
+for _, resource in pairs(resources) do
+    while not exists("resources\\Ryan's Menu\\" .. resource) do
+        util.toast("Ryan's Menu is missing a required file (" .. resource .. ") and must be reinstalled.")
+        util.yield(2000)
+    end
+end
+
 require("natives-1640181023")
 
 
 -- Check for Updates --
-async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/VERSION?nocache=" .. math.random(0, 1000000), function(latest_version)
-    latest_version = latest_version:gsub("\n", "")
+async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
+    latest_version = manifest:sub(1, manifest:find("\n") - 1)
     if latest_version ~= version then
         show_text_message(COLOR_RED, "v" .. version, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
         menu.trigger_commands("ryansettings")

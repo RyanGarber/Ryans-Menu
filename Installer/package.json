@@ -1,0 +1,60 @@
+{
+  "name": "ryans-menu-installer",
+  "version": "1.0.0",
+  "description": "An installer for Ryan's Menu, a lua script for the Stand mod menu.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RyanGarber/Ryans-Menu.git"
+  },
+  "author": "Ryan Garber",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RyanGarber/Ryans-Menu/issues"
+  },
+  "homepage": "https://github.com/RyanGarber/Ryans-Menu#readme",
+  "devDependencies": {
+    "@electron-forge/cli": "^6.0.0-beta.63",
+    "@electron-forge/maker-deb": "^6.0.0-beta.63",
+    "@electron-forge/maker-rpm": "^6.0.0-beta.63",
+    "@electron-forge/maker-squirrel": "^6.0.0-beta.63",
+    "@electron-forge/maker-zip": "^6.0.0-beta.63",
+    "@electron/remote": "^2.0.8",
+    "electron": "^18.0.1"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.0"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "ryans_menu_installer"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ]
+    }
+  }
+}
