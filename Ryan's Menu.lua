@@ -23,7 +23,7 @@ require("natives-1640181023")
 async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/VERSION?nocache=" .. math.random(0, 1000000), function(latest_version)
     latest_version = latest_version:gsub("\n", "")
     if latest_version ~= version then
-        show_text_message(49, "Ryan's Menu", "v" .. version, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
+        show_text_message(6, "Ryan's Menu", "v" .. version, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
         menu.trigger_commands("ryansettings")
     else
         show_text_message(49, "Ryan's Menu", "v" .. version, "You're up to date. Enjoy!")
