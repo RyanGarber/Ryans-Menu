@@ -1,4 +1,4 @@
-VERSION = "0.5.4"
+VERSION = "0.5.5"
 RESOURCES = {"Crosshair.png"}
 
 
@@ -135,6 +135,8 @@ EARRAPE_FLASH = 2
 COLOR_PURPLE = 49
 COLOR_RED = 6
 
+POINTING_CROSSHAIR = directx.create_texture(filesystem.resources_dir() .. "Ryan's Menu\\Crosshair.png")
+
 
 -- Requirements --
 function exists(name)
@@ -153,7 +155,7 @@ while not exists("lib\\natives-1640181023.lua") or not exists("lib\\natives-1627
     util.yield(2000)
 end
 
-for _, resource in pairs(resources) do
+for _, resource in pairs(RESOURCES) do
     while not exists("resources\\Ryan's Menu\\" .. resource) do
         util.toast("Ryan's Menu is missing a required file (" .. resource .. ") and must be reinstalled.")
         util.yield(2000)
@@ -166,15 +168,15 @@ require("natives-1640181023")
 -- Check for Updates --
 async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
     latest_version = manifest:sub(1, manifest:find("\n") - 1)
-    if latest_version ~= version then
-        show_text_message(COLOR_RED, "v" .. version, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
+    if latest_version ~= VERSION then
+        show_text_message(COLOR_RED, "v" .. VERSION, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
         menu.trigger_commands("ryansettings")
     else
-        show_text_message(COLOR_PURPLE, "v" .. version, "You're up to date. Enjoy!")
+        show_text_message(COLOR_PURPLE, "v" .. VERSION, "You're up to date. Enjoy!")
     end
     AUDIO.PLAY_SOUND_FROM_ENTITY(-1, "Object_Dropped_Remote", PLAYER.PLAYER_PED_ID(), "GTAO_FM_Events_Soundset", true, 20)
 end, function()
-    show_text_message(COLOR_RED, "v" .. version, "Failed to get the latest version. Go to Settings to check manually.")
+    show_text_message(COLOR_RED, "v" .. VERSION, "Failed to get the latest version. Go to Settings to check manually.")
 end)
 async_http.dispatch()
 
@@ -843,10 +845,6 @@ function send_translated(message, language, latin)
     async_http.dispatch()
 end
 
-function draw_crosshair()
-    -- TODO
-end
-
 
 -- Main Menu --
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
@@ -1118,16 +1116,30 @@ create_ptfx_list(self_ptfx_pointing_finger_root, function(ptfx)
     end
 end)
 
+pointing_crosshair_enabled = false
 create_ptfx_list(self_ptfx_pointing_crosshair_root, function(ptfx)
-    if memory.read_int(memory.script_global(4516656 + 930)) == 3 then
+    pointing_crosshair_enabled = memory.read_int(memory.script_global(4516656 + 930)) == 3
+    if pointing_crosshair_enabled then
         local raycast = do_raycast(1000.0)
         if raycast.did_hit then
             local coords = raycast.hit_coords
             do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
             util.yield(ptfx[3])
         end
-        
     end
+end)
+util.create_tick_handler(function()
+    if pointing_crosshair_enabled then
+        directx.draw_texture(
+            POINTING_CROSSHAIR,
+            0.03, 0.03,
+            0.5, 0.5,
+            0.5, 0.5,
+            0.0,
+            {["r"] = 1.0, ["g"] = 1.0, ["b"] = 1.0, ["a"] = 1.0}
+        )
+    end
+    util.yield()
 end)
 
 -- -- All Players Visible
@@ -1443,7 +1455,7 @@ end)
 
 -- Settings Menu --
 menu.divider(settings_root, "Updates")
-menu.action(settings_root, "Version: " .. version, {}, "The currently installed version.", function() end)
+menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
 menu.hyperlink(settings_root, "Get Latest Version", "https://github.com/RyanGarber/Ryans-Menu/raw/main/Ryan's Menu.lua", "Opens the latest version of the menu for downloading.")
 
 

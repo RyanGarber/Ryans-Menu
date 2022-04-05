@@ -1,4 +1,5 @@
 const {BrowserWindow, dialog} = require('@electron/remote');
+const https = require('https'), stream = require('stream').Transform;
 const fs = require('fs');
 
 const luaScriptsFolder = process.env.APPDATA + '\\Stand\\Lua Scripts';
@@ -9,6 +10,7 @@ $('#installer').hide();
 $.get('https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/MANIFEST').done((manifest) => {
     let version = manifest.split('\n')[0];
     let contents = JSON.parse(manifest.split('\n').splice(1).join('\n'));
+    console.log('Received manifest for version ' + version + '.', contents);
 
     $('#version').text(version);
     $('#loading').fadeOut();
@@ -40,8 +42,13 @@ $.get('https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/MANIFEST').d
         if(fs.existsSync(luaScriptsFolder + '\\' + contents.main)) {
             fs.unlinkSync(luaScriptsFolder + '\\' + contents.main);
         }
+        console.log('Cleaned main script file.');
+
         $.get(source + '/' + contents.main).done((data) => {
             fs.writeFileSync(luaScriptsFolder + '\\' + contents.main, data);
+            console.log('Saved main script file.');
+        }).fail(() => {
+            console.error('Failed to get main script file.', details);
         });
 
         // Count required files.
@@ -50,36 +57,54 @@ $.get('https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/MANIFEST').d
             if(type == 'main') continue;
             fileCount += contents[type].length;
         }
-        let filesSaved = 0;
+        console.log('Ready to install ' + fileCount + ' file(s).');
 
         // Download required files.
+        let filesSaved = 0;
         for(let type in contents) {
+            if(type == 'main') continue;
+            
+            if(fs.existsSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu')) {
+                fs.rmSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu', {recursive: true, force: true});
+            }
+            fs.mkdirSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu')
+            console.log('Cleaned directory ' + type + '.');
+            
             for(let i = 0; i < contents[type].length; i++) {
-                $.get(source + '/' + type + '/' + contents[type][i]).done((data) => {
-                    if(fs.existsSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu')) {
-                        fs.rmdirSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu');
-                    }
-                    fs.mkdirSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu')
-                    fs.writeFileSync(luaScripts + '\\' + type + '\\Ryan\'s Menu\\' + contents[type][i], data);
-                    filesSaved++;
+                https.request(source + '/' + type + '/' + contents[type][i], (response) => {
+                    let data = new stream();
+                    response.on('data', (chunk) => {
+                        data.push(chunk);
+                    });
+                    response.on('end', () => {
+                        fs.writeFileSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu\\' + contents[type][i], data.read());
+                        filesSaved++;
+                        console.log('Saved file ' + contents[type][i] + ' in directory ' + type + '.');
 
-                    // Show alert when finished.
-                    if(filesSaved == fileCount) {
-                        let response = dialog.showMessageBox({
-                            type: 'info',
-                            message: 'Ryan\'s Menu has been successfully installed! Go back to Grand Theft Auto V to continue.'
-                        });
-                    }
-                }).fail(() => {
+                        // Show alert when finished.
+                        if(filesSaved == fileCount) {
+                            dialog.showMessageBox({
+                                type: 'info',
+                                message: 'Ryan\'s Menu has been successfully installed! You may now go back to Grand Theft Auto V.'
+                            });
+                            $('#loading').fadeOut();
+                            console.log(filesSaved + '/' + fileCount + ' files saved. Ready to go!');
+                        }
+                    });
+                }).end();
+                
+                /*fail((details) => {
+                    console.error('Failed to get file: ' + contents[type][i] + ' for directory ' + type + '.', details);
                     dialog.showMessageBoxSync({
                         type: 'error',
                         message: 'Failed to download required file: "' + type + '/' + contents[type][i] + '".'
                     });
-                });
+                });*/
             }
         }
     });
-}).fail(() => {
+}).fail((details) => {
+    console.error('Failed to get manifest.', details);
     dialog.showMessageBoxSync({
         type: 'error',
         message: 'Failed to get the latest version. Check your internet connection and try again.'

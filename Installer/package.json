@@ -28,6 +28,7 @@
     "electron": "^18.0.1"
   },
   "dependencies": {
+    "@electron/remote": "^2.0.8",
     "electron-squirrel-startup": "^1.0.0"
   },
   "config": {

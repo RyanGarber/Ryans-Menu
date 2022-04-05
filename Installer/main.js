@@ -1,4 +1,4 @@
-const {app, dialog, BrowserWindow} = require('electron');
+const {app, BrowserWindow} = require('electron');
 
 app.whenReady().then(() => {
     const window = new BrowserWindow({
@@ -9,10 +9,10 @@ app.whenReady().then(() => {
             contextIsolation: false
         }
     });
-    
-    window.loadFile('index.html');
-    require('@electron/remote/main').initialize()
+
+    require('@electron/remote/main').initialize();
     require('@electron/remote/main').enable(window.webContents);
+    window.loadFile('index.html');
 });
 
 app.on('window-all-closed', () => { app.quit(); });
