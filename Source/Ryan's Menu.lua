@@ -1116,10 +1116,8 @@ create_ptfx_list(self_ptfx_pointing_finger_root, function(ptfx)
     end
 end)
 
-pointing_crosshair_enabled = false
 create_ptfx_list(self_ptfx_pointing_crosshair_root, function(ptfx)
-    pointing_crosshair_enabled = memory.read_int(memory.script_global(4516656 + 930)) == 3
-    if pointing_crosshair_enabled then
+    if player_is_pointing then
         local raycast = do_raycast(1000.0)
         if raycast.did_hit then
             local coords = raycast.hit_coords
@@ -1127,19 +1125,6 @@ create_ptfx_list(self_ptfx_pointing_crosshair_root, function(ptfx)
             util.yield(ptfx[3])
         end
     end
-end)
-util.create_tick_handler(function()
-    if pointing_crosshair_enabled then
-        directx.draw_texture(
-            POINTING_CROSSHAIR,
-            0.03, 0.03,
-            0.5, 0.5,
-            0.5, 0.5,
-            0.0,
-            {["r"] = 1.0, ["g"] = 1.0, ["b"] = 1.0, ["a"] = 1.0}
-        )
-    end
-    util.yield()
 end)
 
 -- -- All Players Visible
@@ -1150,15 +1135,37 @@ menu.toggle_loop(world_root, "All Players Visible", {"ryannoinvisible"}, "Makes 
 end, false)
 
 -- -- Tiny People
-tiny_people = false
-menu.toggle(world_root, "Tiny People", {"ryantinypeople"}, "Makes everyone tiny (only for you.)", function()
-    tiny_people = not tiny_people
+world_tiny_people = false
+menu.toggle(world_root, "Tiny People", {"ryantinypeople"}, "Makes everyone tiny (only for you.)", function(value)
+    world_tiny_people = value
 end)
 util.create_tick_handler(function()
     for _, ped in pairs(entities.get_all_peds_as_handles()) do
-        PED.SET_PED_CONFIG_FLAG(ped, 223, tiny_people)
+        PED.SET_PED_CONFIG_FLAG(ped, 223, world_tiny_people)
     end
     util.yield(100)
+end)
+
+-- -- Crosshair When Pointing
+world_crosshair_when_pointing = false
+menu.toggle(world_root, "Crosshair When Pointing", {"ryanpointingcrosshair"}, "Adds a crosshair when pointing.", function(value)
+    world_crosshair_when_pointing = value
+end)
+
+player_is_pointing = false
+util.create_tick_handler(function()
+    player_is_pointing = memory.read_int(memory.script_global(4516656 + 930)) == 3
+    if world_crosshair_when_pointing and player_is_pointing then
+        directx.draw_texture(
+            POINTING_CROSSHAIR,
+            0.03, 0.03,
+            0.5, 0.5,
+            0.5, 0.5,
+            0.0,
+            {["r"] = 1.0, ["g"] = 1.0, ["b"] = 1.0, ["a"] = 1.0}
+        )
+    end
+    util.yield()
 end)
 
 
