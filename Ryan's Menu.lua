@@ -1058,11 +1058,13 @@ self_ptfx_weapon_muzzle_flash_root = menu.list(world_ptfx_weapon_root, "Muzzle F
 self_ptfx_weapon_impact_root = menu.list(world_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
 
 create_ptfx_list(self_ptfx_weapon_aiming_root, function(ptfx)
-    local raycast = do_raycast(1000.0)
-    if raycast.did_hit then
-        local coords = raycast.hit_coords
-        do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
-        util.yield(ptfx[3])
+    if CAM.IS_AIM_CAM_ACTIVE() then
+        local raycast = do_raycast(1000.0)
+        if raycast.did_hit then
+            local coords = raycast.hit_coords
+            do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
+            util.yield(ptfx[3])
+        end
     end
 end)
 
