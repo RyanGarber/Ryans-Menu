@@ -1,4 +1,4 @@
-version = "0.5.2"
+version = "0.5.3"
 notify_requirements = false
 
 function lib_exists(name)
@@ -20,18 +20,17 @@ end
 require("natives-1640181023")
 
 -- Check for Updates --
-util.toast("Welcome to Ryan's Menu v" .. version ..". Checking for updates...")
 async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/VERSION?nocache=" .. math.random(0, 1000000), function(latest_version)
     latest_version = latest_version:gsub("\n", "")
     if latest_version ~= version then
-        util.toast("The version you are using is outdated! Press Get Latest Version to get v" .. latest_version .. ".")
+        show_text_message(49, "Ryan's Menu", "v" .. version, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
         menu.trigger_commands("ryansettings")
     else
-        util.toast("You're up to date! Enjoy :)")
+        show_text_message(49, "Ryan's Menu", "v" .. version, "You're up to date. Enjoy!")
     end
     AUDIO.PLAY_SOUND_FROM_ENTITY(-1, "Object_Dropped_Remote", PLAYER.PLAYER_PED_ID(), "GTAO_FM_Events_Soundset", true, 20)
 end, function()
-    util.toast("Failed to get the latest version. Go to Settings and press Get Latest Version to check manually.")
+    show_text_message(49, "Ryan's Menu", "v" .. version, "Failed to get the latest version. Go to Settings to check manually.")
 end)
 async_http.dispatch()
 
@@ -165,6 +164,18 @@ PTFX_WEAPON_MUZZLE_BONES = {"gun_vfx_eject"}
 FORCEFIELD_MODES = {"Disabled", "Push Out", "Destroy"}
 
 -- Helper Functions --
+function show_text_message(color, title, subtitle, message)
+    HUD._THEFEED_SET_NEXT_POST_BACKGROUND_COLOR(color)
+	GRAPHICS.REQUEST_STREAMED_TEXTURE_DICT("DIA_JESUS", 0)
+	while not GRAPHICS.HAS_STREAMED_TEXTURE_DICT_LOADED("DIA_JESUS") do
+		util.yield()
+	end
+	util.BEGIN_TEXT_COMMAND_THEFEED_POST(message)
+	HUD.END_TEXT_COMMAND_THEFEED_POST_MESSAGETEXT("DIA_JESUS", "DIA_JESUS", true, 4, title, subtitle)
+	HUD.END_TEXT_COMMAND_THEFEED_POST_TICKER(true, false)
+	util.log(message)
+end
+
 function get_closest_vehicle(coords) -- Credit: LanceScript
     local vehicles = entities.get_all_vehicles_as_handles()
     local closest_distance = 1000000
