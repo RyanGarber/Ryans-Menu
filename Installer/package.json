@@ -1,6 +1,6 @@
 {
   "name": "ryans-menu-installer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An installer for Ryan's Menu, a lua script for the Stand mod menu.",
   "main": "main.js",
   "scripts": {
