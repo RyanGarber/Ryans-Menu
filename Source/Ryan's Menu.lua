@@ -1163,12 +1163,6 @@ function setup_player(player_id)
         do_trash_pickup(player_id)
     end)
     
-    -- -- Penis Art
-    menu.action(player_trolling_root, "Send Penis Art", {"ryanpenisart"}, "Sends a penis to them via text message.", function()
-        menu.trigger_commands("smstext" .. PLAYER.GET_PLAYER_NAME(player_id) .. "        :-++++-          .%@@@@@@@#        ..@@@@@@@@#      =%@:.*@@@@@+    .-*@@@@@#=..:.      .::-=+#@@@@@@@@@@+          %@@@@@@@@@@@@@*-            %@@@@@@@@@#+-               %@@@@@@@@=                  *@@@@@@@@-                  +@@@@@%-                   .::                      ")
-        menu.trigger_commands("smssend" .. PLAYER.GET_PLAYER_NAME(player_id))
-    end)
-
 
     -- Removal --
     -- -- Text & Kick
