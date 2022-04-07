@@ -1118,6 +1118,30 @@ function setup_player(player_id)
         util.toast("Locked " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
     end)
 
+    -- -- Burst Tires
+    menu.action(player_trolling_vehicle_root, "Burst Tires", {"ryanburst"}, "Burst the tires of the car they are in.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_burst_tires(vehicle)
+            end
+        end
+        util.toast("Bursted " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s tires!")
+    end)
+
+    -- -- Catapult
+    menu.action(player_trolling_vehicle_root, "Catapult", {"ryancatapult"}, "Catapults the car they are in.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_catapult(vehicle)
+            end
+        end
+        util.toast("Catapulted " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
+    end)
+
     -- -- No Godmode
     local remove_godmode_notice = 0
     menu.toggle_loop(player_trolling_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
