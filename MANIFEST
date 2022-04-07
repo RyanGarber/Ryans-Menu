@@ -1,5 +1,6 @@
-0.5.6
+0.6.0
 {
     "main": "Ryan's Menu.lua",
+    "lib": ["Audio.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Vector.lua", "Vehicle.lua"],
     "resources": ["Crosshair.png"]
 }
