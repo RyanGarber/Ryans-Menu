@@ -1324,8 +1324,9 @@ function setup_player(player_id)
     end)
 
     -- -- Smelly Peepo Crash (Credit: 2take1 Additions, Keramis Script)
-    local smelly_peepo = menu.action(player_removal_root, "Smelly Peepo Crash", {"ryansmellypeepo"}, "Attempts to crash using invalid and bugged peds.", function(click_type)
-        menu.show_warning(smelly_peepo, click_type, "If you are near this player, you will crash too. Be sure you are far enough away before pressing Proceed.", function()
+    menu.action(player_removal_root, "Smelly Peepo Crash", {"ryansmellypeepo"}, "Attempts to crash using invalid and bugged peds.", function(click_type)
+        local smelly_peepo_ref = menu.ref_by_command_name("ryansmellypeepo" .. PLAYER.GET_PLAYER_NAME(player_id):lower())
+        menu.show_warning(smelly_peepo_ref, click_type, "If you are near this player, you will crash too. Be sure you are far enough away before pressing Proceed.", function()
             show_text_message(Colors.Purple, "Smelly Peepo Crash", "Smelly Peepo Crash has begun. This may take a while...")
         
             local player_ped = player_get_ped(player_id)
