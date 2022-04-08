@@ -29,11 +29,16 @@ function vehicle_set_upgraded(vehicle, maxed)
     end
 end
 
-function vehicle_set_speed(vehicle, fast)
+function vehicle_set_speed(vehicle, mode)
     entity_request_control_loop(vehicle)
     if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-        ENTITY.SET_ENTITY_MAX_SPEED(vehicle, fast and 64 or 1)
-        VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, fast and 1000000 or 2)
+        if mode == VehicleSpeedModes.None then
+            VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, -1.0)
+            ENTITY.SET_ENTITY_MAX_SPEED(vehicle, 64)
+        else
+            VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, mode == VehicleSpeedModes.Fast and 1000000 or 2)
+            ENTITY.SET_ENTITY_MAX_SPEED(vehicle, mode == VehicleSpeedModes.Fast and 64 or 1)
+        end
     end
 end
 
@@ -42,9 +47,9 @@ function vehicle_set_no_grip(vehicle, no_grip)
     VEHICLE.SET_VEHICLE_REDUCE_GRIP(vehicle, no_grip)
 end
 
-function vehicle_lock_doors(vehicle)
+function vehicle_lock_doors(vehicle, value)
     entity_request_control_loop(vehicle)
-    VEHICLE.SET_VEHICLE_DOORS_LOCKED(vehicle, 4)
+    VEHICLE.SET_VEHICLE_DOORS_LOCKED(vehicle, value and 4 or 0)
 end
 
 function vehicle_burst_tires(vehicle)

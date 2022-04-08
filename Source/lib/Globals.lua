@@ -237,4 +237,10 @@ NearbyEntitiesModes = {
     Vehicles = 2
 }
 
+VehicleSpeedModes = {
+    None = 1,
+    Fast = 2,
+    Slow = 3
+}
+
 CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. "Ryan's Menu\\Crosshair.png")

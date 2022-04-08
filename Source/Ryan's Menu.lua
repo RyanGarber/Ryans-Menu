@@ -1157,64 +1157,52 @@ function setup_player(player_id)
 
 
     -- Trolling --
-    -- -- Downgrade Vehicle
-    menu.action(player_trolling_vehicle_root, "Downgrade", {"ryandowngrade"}, "Downgrades the car they are in.", function()
+    -- -- Make Fast
+    menu.toggle(player_trolling_vehicle_root, "Make Fast", {"ryanfast"}, "Speeds up the car they are in.", function(value)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
         if vehicle ~= NULL then
             entity_request_control_loop(vehicle)
             if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_upgraded(vehicle, false)
+                vehicle_set_speed(vehicle, value and VehicleSpeedModes.Fast or VehicleSpeedModes.None)
             end
         end
-        util.toast("Downgraded " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
+        util.toast("Made " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car " .. (value and "fast" or "normal") .."!")
     end)
 
-    -- -- Make Vehicle Slow
-    menu.action(player_trolling_vehicle_root, "Make Slow", {"ryanslow"}, "Slows the car they are in.", function()
+    -- -- Make Slow
+    menu.toggle(player_trolling_vehicle_root, "Make Slow", {"ryanslow"}, "Slows the car they are in.", function(value)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
         if vehicle ~= NULL then
             entity_request_control_loop(vehicle)
             if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_speed(vehicle, false)
+                vehicle_set_speed(vehicle, value and VehicleSpeedModes.Slow or VehicleSpeedModes.None)
             end
         end
-        util.toast("Made " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car slow!")
+        util.toast("Made " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car " .. (value and "slow" or "normal") .."!")
     end)
 
-    -- -- Make Vehicle Fast
-    menu.action(player_trolling_vehicle_root, "Make Fast", {"ryanfast"}, "Speeds up the car they are in.", function()
+    -- -- Make Drift
+    menu.toggle(player_trolling_vehicle_root, "Make Drift", {"ryandrift"}, "Makes the car they are in lose grip.", function(value)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
         if vehicle ~= NULL then
             entity_request_control_loop(vehicle)
             if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_speed(vehicle, true)
+                vehicle_set_no_grip(vehicle, value)
             end
         end
-        util.toast("Made " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car fast!")
-    end)
-
-    -- -- Make Vehicle Drift
-    menu.action(player_trolling_vehicle_root, "Make Drift", {"ryandrift"}, "Makes the car they are in lose grip.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_no_grip(vehicle, true)
-            end
-        end
-        util.toast("Made " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car drift!")
+        util.toast("Made " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car " .. (value and "drift" or "no longer drift") .."!")
     end)
 
     -- -- Lock Doors
-    menu.action(player_trolling_vehicle_root, "Lock Doors", {"ryanlock"}, "Locks the car they are in.", function()
+    menu.toggle(player_trolling_vehicle_root, "Lock Doors", {"ryanlock"}, "Locks the car they are in.", function(value)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
         if vehicle ~= NULL then
             entity_request_control_loop(vehicle)
             if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_lock_doors(vehicle, true)
+                vehicle_lock_doors(vehicle, value)
             end
         end
-        util.toast("Locked " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
+        util.toast((value and "Locked" or "Unlocked") .. " " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
     end)
 
     -- -- Burst Tires
@@ -1241,6 +1229,19 @@ function setup_player(player_id)
         util.toast("Catapulted " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
     end)
 
+    -- -- Downgrade
+    menu.action(player_trolling_vehicle_root, "Downgrade", {"ryandowngrade"}, "Downgrades the car they are in.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_set_upgraded(vehicle, false)
+            end
+        end
+        util.toast("Downgraded " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
+    end)
+
+    
     -- -- No Godmode
     local remove_godmode_notice = 0
     menu.toggle_loop(player_trolling_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
@@ -1251,6 +1252,7 @@ function setup_player(player_id)
         end
     end, false)
 
+    
     -- -- Fake Money Drop
     menu.toggle_loop(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function()
         util.create_thread(function()
