@@ -1102,7 +1102,7 @@ menu.action(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 
     local oppressor2 = util.joaat("oppressor2")
     request_model(oppressor2)
     for _, player_id in pairs(players.list()) do
-        local player_ped = player_get_ped()
+        local player_ped = player_get_ped(player_id)
         local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0.0, 5.0, 0.0)
         local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
         vehicle_set_upgraded(vehicle, true)
