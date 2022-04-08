@@ -1,4 +1,4 @@
-VERSION = "0.6.0"
+VERSION = "0.6.1"
 MANIFEST = {
     lib = {"Audio.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -1241,7 +1241,7 @@ function setup_player(player_id)
         util.toast("Downgraded " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
     end)
 
-    
+
     -- -- No Godmode
     local remove_godmode_notice = 0
     menu.toggle_loop(player_trolling_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
