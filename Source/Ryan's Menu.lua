@@ -851,11 +851,110 @@ end)
 
 
 -- Session Menu --
+session_vehicles_root = menu.list(session_root, "Vehicles...", {"ryanplayervehicles"}, "Vehicle options for all players in the session.")
 session_trolling_root = menu.list(session_root, "Trolling...", {"ryantrolling"}, "Trolling options on all players.")
 session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
 session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
 
--- -- Vehicle
+-- -- Downgrade Vehicle
+menu.action(session_vehicles_root, "Downgrade", {"ryandowngrade"}, "Downgrades every player's car.", function()
+    for _, player_id in pairs(players.list()) do
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_set_upgraded(vehicle, false)
+            end
+        end
+        util.toast("Downgraded everyone's car!")
+    end
+end)
+
+-- -- Make Vehicle Slow
+menu.action(session_vehicles_root, "Make Slow", {"ryanslow"}, "Slows every player's car.", function()
+    for _, player_id in pairs(players.list()) do
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_set_speed(vehicle, false)
+            end
+        end
+        util.toast("Made everyone's car slow!")
+    end
+end)
+
+-- -- Make Vehicle Fast
+menu.action(session_vehicles_root, "Make Fast", {"ryanfast"}, "Speeds up every player's car.", function()
+    for _, player_id in pairs(players.list()) do
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_set_speed(vehicle, true)
+            end
+        end
+        util.toast("Made everyone's car fast!")
+    end
+end)
+
+-- -- Make Vehicle Drift
+menu.action(session_vehicles_root, "Make Drift", {"ryandrift"}, "Makes every player's car lose grip.", function()
+    for _, player_id in pairs(players.list()) do
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_set_no_grip(vehicle, true)
+            end
+        end
+        util.toast("Made everyone's car drift!")
+    end
+end)
+
+-- -- Lock Doors
+menu.action(session_vehicles_root, "Lock Doors", {"ryanlock"}, "Locks every player's car.", function()
+    for _, player_id in pairs(players.list()) do 
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_lock_doors(vehicle, true)
+            end
+        end
+        util.toast("Locked everyone's car!")
+    end
+end)
+
+-- -- Burst Tires
+menu.action(session_vehicles_root, "Burst Tires", {"ryanburst"}, "Burst the tires of every player's car.", function()
+    for _, player_id in pairs(players.list()) do
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_burst_tires(vehicle)
+            end
+        end
+        util.toast("Bursted everyone's tires!")
+    end
+end)
+
+-- -- Catapult
+menu.action(session_vehicles_root, "Catapult", {"ryancatapult"}, "Catapults every player's car.", function()
+    for _, player_id in pairs(players.list()) do
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_catapult(vehicle)
+            end
+        end
+    end
+    util.toast("Catapulted everyone's car!")
+end)
+
+-- -- Mass Trolling
 trolling_watch_time = 5000
 trolling_include_modders = false
 menu.slider(session_trolling_root, "Watch Time", {"ryanwatchtime"}, "Seconds to watch the chaos unfold per player.", 1, 15, 5, 1, function(value)
