@@ -110,8 +110,7 @@ PTFX = {
     ["Jackhammer (Large)"] = {"core", "bul_paper", 50},
     ["Vehicle Backfire"] = {"core", "veh_backfire", 250},
     ["Inflatable"] = {"core", "ent_dst_inflatable", 500},
-    ["Gumball Machine"] = {"core", "ent_dst_gen_gobstop", 500},
-    ["Flamethrower"] = {"weap_xs_vehicle_weapons", "muz_xs_turret_flamethrower_looping"}
+    ["Gumball Machine"] = {"core", "ent_dst_gen_gobstop", 500}
 }
 
 CrashEvents = {
