@@ -1200,7 +1200,7 @@ menu.toggle_loop(session_root, "Kick Hermits", {"ryankickhermits"}, "Kicks any p
                 if hermits[player_id] == nil then
                     util.toast(player_name .. " is now inside a building.")
                     hermits[player_id] = util.current_time_millis()
-                    create_thread(function()
+                    util.create_thread(function()
                         do_sms_spam(player_id, "Warning! If you are inside for more than 5 minutes, you will be kicked.")
                     end)
                 elseif util.current_time_millis() - hermits[player_id] >= 300000 then
