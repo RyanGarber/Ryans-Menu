@@ -861,21 +861,6 @@ menu.toggle_loop(world_vehicles_root, "Burst Tires", {"ryanmakeallburst"}, "Make
     util.yield(250)
 end, false)
 
--- -- Make Vehicles Catapult
-menu.toggle_loop(world_vehicles_root, "Catapult", {"ryanmakeallcatapult"}, "Makes all nearby vehicles catapult in the air.", function()
-    local player_ped = player_get_ped()
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
-
-    local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
-    for _, vehicle in pairs(vehicles) do
-        if vehicle ~= player_vehicle then
-            vehicle_catapult(vehicle)
-        end
-    end
-    util.yield(250)
-end, false)
-
 -- -- Kill Vehicles
 menu.toggle_loop(world_vehicles_root, "Kill Engine", {"ryanmakealldead"}, "Makes all nearby vehicles dead.", function()
     local player_ped = player_get_ped()
@@ -886,6 +871,21 @@ menu.toggle_loop(world_vehicles_root, "Kill Engine", {"ryanmakealldead"}, "Makes
     for _, vehicle in pairs(vehicles) do
         if vehicle ~= player_vehicle then
             VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+        end
+    end
+    util.yield(250)
+end, false)
+
+-- -- Make Vehicles Catapult
+menu.toggle_loop(world_vehicles_root, "Catapult", {"ryanmakeallcatapult"}, "Makes all nearby vehicles catapult in the air.", function()
+    local player_ped = player_get_ped()
+    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
+
+    local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
+    for _, vehicle in pairs(vehicles) do
+        if vehicle ~= player_vehicle then
+            vehicle_catapult(vehicle)
         end
     end
     util.yield(250)
@@ -1355,7 +1355,7 @@ function setup_player(player_id)
     end)
 
     -- -- Burst Tires
-    menu.action(player_trolling_vehicle_root, "Burst Tires", {"ryanburst"}, "Burst the tires of the car they are in.", function(value)
+    menu.toggle(player_trolling_vehicle_root, "Burst Tires", {"ryanburst"}, "Burst the tires of the car they are in.", function(value)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
         if vehicle ~= NULL then
             entity_request_control_loop(vehicle)
@@ -1364,18 +1364,6 @@ function setup_player(player_id)
             end
         end
         util.toast((value and "Bursted" or "Fixed") .. " " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s tires!")
-    end)
-
-    -- -- Catapult
-    menu.action(player_trolling_vehicle_root, "Catapult", {"ryancatapult"}, "Catapults the car they are in.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_catapult(vehicle)
-            end
-        end
-        util.toast("Catapulted " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
     end)
 
     -- -- Kill Engine
@@ -1400,6 +1388,18 @@ function setup_player(player_id)
             end
         end
         util.toast((value and "Downgraded" or "Upgraded") .. " " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
+    end)
+
+    -- -- Catapult
+    menu.action(player_trolling_vehicle_root, "Catapult", {"ryancatapult"}, "Catapults the car they are in.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_catapult(vehicle)
+            end
+        end
+        util.toast("Catapulted " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
     end)
 
     -- -- No Godmode
