@@ -1255,13 +1255,9 @@ menu.toggle_loop(session_root, "Kick Hermits", {"ryankickhermits"}, "Kicks any p
     for _, player_id in pairs(players.list()) do
         if not players.is_marked_as_modder(player_id) then
             local tracked = false
-            for hermit_id, hermit_start in pairs(hermits) do
-                if hermit_id == player_id then tracked = true end
-            end
-
             local player_name = PLAYER.GET_PLAYER_NAME(player_id)
             if players.is_in_interior(player_id) then
-                if not tracked then
+                if hermits[player_id] == nil then
                     util.toast(player_name .. " is now inside a building.")
                     hermits[player_id] = util.current_time_millis()
                 elseif util.current_time_millis() - hermits[player_id] >= 300000 then
@@ -1275,8 +1271,10 @@ menu.toggle_loop(session_root, "Kick Hermits", {"ryankickhermits"}, "Kicks any p
                     end)
                 end
             else
-                util.toast(player_name .. " is no longer inside a building.")
-                hermits[player_id] = nil
+                if hermits[player_id] ~= nil then 
+                    util.toast(player_name .. " is no longer inside a building.")
+                    hermits[player_id] = nil
+                end
             end
         end
     end
