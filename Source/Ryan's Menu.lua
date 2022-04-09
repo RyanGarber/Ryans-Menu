@@ -40,14 +40,14 @@ end
 async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
     latest_version = manifest:sub(1, manifest:find("\n") - 1)
     if latest_version ~= VERSION then
-        show_text_message(49, "v" .. VERSION, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
+        show_text_message(6, "v" .. VERSION, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
         menu.trigger_commands("ryansettings")
     else
-        show_text_message(6, "v" .. VERSION, "You're up to date. Enjoy!")
+        show_text_message(49, "v" .. VERSION, "You're up to date. Enjoy!")
     end
     audio_play_from_entity(player_get_ped(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
 end, function()
-    show_text_message(49, "v" .. VERSION, "Failed to get the latest version. Go to Settings to check manually.")
+    show_text_message(6, "v" .. VERSION, "Failed to get the latest version. Go to Settings to check manually.")
 end)
 async_http.dispatch()
 
