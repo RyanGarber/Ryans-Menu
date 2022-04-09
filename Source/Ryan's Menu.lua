@@ -493,6 +493,15 @@ function send_translated(message, language, latin)
     async_http.dispatch()
 end
 
+function translate_received(message)
+    async_http.init("ryan.gq", "/menu/translate?text=" .. message .. "&language=EN", function(result)
+        show_text_message(Colors.Purple, "Translation", result)
+    end, function()
+        util.toast("Failed to translate message.")
+    end)
+    async_http.dispatch()
+end
+
 function explode_all(with_earrape)
     for _, player_id in pairs(players.list()) do
         local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id))
@@ -1569,7 +1578,9 @@ end
 
 
 -- Chat Menu --
+menu.divider(chat_root, "Translation")
 chat_new_message_root = menu.list(chat_root, "New Message...", {"ryanchatnew"})
+chat_history_root = menu.list(chat_root, "Message History...", {"ryanchathistory"})
 
 -- -- Send Message
 chat_message = ""
@@ -1637,6 +1648,7 @@ menu.action(chat_send_root, "Italian", {"ryantranslateitalian"}, "Translate to I
     menu.focus(chat_send_root)
 end)
 
+menu.divider(chat_root, "Chat Options")
 -- -- Kick Money Beggars
 kick_money_beggars = false
 menu.toggle(chat_root, "Kick Money Beggars", {"ryankickbeggars"}, "Kicks anyone who begs for money.", function(value)
@@ -1649,23 +1661,37 @@ menu.toggle(chat_root, "Kick Car Meeters", {"ryankickcarmeets"}, "Kicks anyone w
     kick_car_meeters = value
 end)
 
+chat_history = {}
+chat_index = 1
 chat.on_message(function(packet_sender, sender, message, is_team_chat)
     if sender ~= players.user() then
         if kick_money_beggars then
             if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
                 and message:find("money") and message:find("drop") then
-                show_text_message(49, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
+                show_text_message(Colors.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
                 do_omnicrash(sender)
             end
         end
         if kick_car_meeters then
             if (message:find("want to") or message:find("wanna") or message:find("at") or message:find("?"))
                 and message:find("car") and message:find("meet") then
-                show_text_message(49, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
+                show_text_message(Colors.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
                 do_omnicrash(sender)
             end
         end
     end
+
+    if #chat_history > 25 then
+        menu.delete(chat_history[1])
+        table.remove(chat_history, 1)
+    end
+    table.insert(
+        chat_history,
+        menu.action(chat_history_root, "\"" .. message .. "\"", {"ryanchathistory" .. chat_index}, "Translate this message into English.", function()
+            translate_received(message)
+        end)
+    )
+    chat_index = chat_index + 1
 end)
 
 
