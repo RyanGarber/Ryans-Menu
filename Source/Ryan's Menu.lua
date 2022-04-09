@@ -171,7 +171,7 @@ end
 
 -- Player Functions --
 function do_sms_spam(player_id, message, duration)
-    local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+    local player_name = players.get_name(player_id)
     menu.trigger_commands("smsrandomsender" .. player_name .. " on")
     menu.trigger_commands("smstext" .. player_name .. " " .. message)
     menu.trigger_commands("smsspam" .. player_name .. " on")
@@ -180,7 +180,7 @@ function do_sms_spam(player_id, message, duration)
 end
 
 function do_fake_money_drop(player_id)
-    menu.trigger_commands("notifybanked" .. PLAYER.GET_PLAYER_NAME(player_id) .. " " .. math.random(100, 5000))
+    menu.trigger_commands("notifybanked" .. players.get_name(player_id) .. " " .. math.random(100, 5000))
     local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id))
     local bag = entities.create_object(2628187989, vector_add(coords, {x = 0, y = 0, z = 2}))
     ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -15, 0.0, 0.0, 0.0, true, true)
@@ -190,7 +190,7 @@ function do_fake_money_drop(player_id)
 end
 
 function do_trash_pickup(player_id)
-    util.toast("Sending the trash man to " .. PLAYER.GET_PLAYER_NAME(player_id) .. "...")
+    util.toast("Sending the trash man to " .. players.get_name(player_id) .. "...")
 
     local trash_truck = util.joaat("trash"); request_model(trash_truck)
     local trash_man = util.joaat("s_m_y_garbage"); request_model(trash_man)
@@ -304,7 +304,7 @@ function do_flying_yacht(player_id)
 end
 
 function watch_and_takeover_vehicle(action, player_id, wait_for)
-    local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+    local player_name = players.get_name(player_id)
     menu.trigger_commands("tpveh" .. player_name)
     util.yield(750)
 
@@ -330,7 +330,7 @@ function do_smelly_peepo_crash(player_id)
     local player_ped_heading = ENTITY.GET_ENTITY_HEADING(player_ped)
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
-    util.toast("Spawning smelly objects on " .. PLAYER.GET_PLAYER_NAME(player_id) .. "...")
+    util.toast("Spawning smelly objects on " .. players.get_name(player_id) .. "...")
     show_text_message(Colors.Purple, "Smelly Peepo Crash", "Smelly Peepo Crash has begun. This may take a while...")
 
     request_model(-930879665)
@@ -349,7 +349,7 @@ function do_smelly_peepo_crash(player_id)
     entities.delete_by_handle(object_3)
     entities.delete_by_handle(object_4)
 
-    util.toast("Spawning smelly peds on " .. PLAYER.GET_PLAYER_NAME(player_id) .. "...")
+    util.toast("Spawning smelly peds on " .. players.get_name(player_id) .. "...")
     local ped = entities.create_ped(0, 1057201338, player_coords, 0)
     util.yield(100)
     entities.delete_by_handle(ped)
@@ -360,7 +360,7 @@ function do_smelly_peepo_crash(player_id)
     util.yield(100)
     entities.delete_by_handle(ped)
 
-    util.toast("Spawning the smelliest of peds on " .. PLAYER.GET_PLAYER_NAME(player_id) .. "!")
+    util.toast("Spawning the smelliest of peds on " .. players.get_name(player_id) .. "!")
     local fatcult = util.joaat("a_f_m_fatcult_01"); request_model(fatcult)
     for i = 1, 8 do
         util.create_thread(function()
@@ -413,7 +413,7 @@ function watch_and_trigger_command_all(commands, modders, wait_for)
     for _, player_id in pairs(players.list()) do
         if player_id ~= players.user() and not players.is_in_interior(player_id) then
             if modders or not players.is_marked_as_modder(player_id) then
-                local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+                local player_name = players.get_name(player_id)
                 menu.trigger_commands("tp" .. player_name)
                 util.yield(1250)
                 if player_name ~= "**invalid**" then
@@ -436,7 +436,7 @@ function spam_chat(message, all_players, time_between, wait_for)
     while sent < 32 do
         if all_players then
             for _, player_id in pairs(players.list()) do
-                local name = PLAYER.GET_PLAYER_NAME(player_id)
+                local name = players.get_name(player_id)
                 menu.trigger_commands("chatas" .. name .. " on")
                 chat.send_message(message, false, true, true)
                 menu.trigger_commands("chatas" .. name .. " off")
@@ -1195,7 +1195,7 @@ menu.toggle_loop(session_root, "Kick Hermits", {"ryankickhermits"}, "Kicks any p
     for _, player_id in pairs(players.list(false)) do
         if not players.is_marked_as_modder(player_id) then
             local tracked = false
-            local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+            local player_name = players.get_name(player_id)
             if players.is_in_interior(player_id) then
                 if hermits[player_id] == nil then
                     util.toast(player_name .. " is now inside a building.")
@@ -1281,7 +1281,7 @@ end)
 
 
 function spam_and_block_then(player_id, removal_block_joins, removal_message, action)
-    local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+    local player_name = players.get_name(player_id)
     if removal_block_joins then
         player_block_joins(player_name)
     end
@@ -1315,7 +1315,7 @@ function setup_player(player_id)
                 vehicle_set_speed(vehicle, value and VehicleSpeedModes.Fast or VehicleSpeedModes.None)
             end
         end
-        util.toast("Made " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car " .. (value and "fast" or "normal") .."!")
+        util.toast("Made " .. players.get_name(player_id) .. "'s car " .. (value and "fast" or "normal") .."!")
     end)
 
     -- -- Make Slow
@@ -1327,7 +1327,7 @@ function setup_player(player_id)
                 vehicle_set_speed(vehicle, value and VehicleSpeedModes.Slow or VehicleSpeedModes.None)
             end
         end
-        util.toast("Made " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car " .. (value and "slow" or "normal") .."!")
+        util.toast("Made " .. players.get_name(player_id) .. "'s car " .. (value and "slow" or "normal") .."!")
     end)
 
     -- -- Make Drift
@@ -1339,7 +1339,7 @@ function setup_player(player_id)
                 vehicle_set_no_grip(vehicle, value)
             end
         end
-        util.toast("Made " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car " .. (value and "drift" or "no longer drift") .."!")
+        util.toast("Made " .. players.get_name(player_id) .. "'s car " .. (value and "drift" or "no longer drift") .."!")
     end)
 
     -- -- Lock Doors
@@ -1351,7 +1351,7 @@ function setup_player(player_id)
                 vehicle_set_doors_locked(vehicle, value)
             end
         end
-        util.toast((value and "Locked" or "Unlocked") .. " " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
+        util.toast((value and "Locked" or "Unlocked") .. " " .. players.get_name(player_id) .. "'s car!")
     end)
 
     -- -- Burst Tires
@@ -1363,7 +1363,7 @@ function setup_player(player_id)
                 vehicle_set_tires_bursted(vehicle, value)
             end
         end
-        util.toast((value and "Bursted" or "Fixed") .. " " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s tires!")
+        util.toast((value and "Bursted" or "Fixed") .. " " .. players.get_name(player_id) .. "'s tires!")
     end)
 
     -- -- Kill Engine
@@ -1375,7 +1375,7 @@ function setup_player(player_id)
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, value and -4000 or 1000)
             end
         end
-        util.toast((value and "Killed" or "Revived") .. " " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
+        util.toast((value and "Killed" or "Revived") .. " " .. players.get_name(player_id) .. "'s car!")
     end)
 
     -- -- Downgrade
@@ -1387,7 +1387,7 @@ function setup_player(player_id)
                 vehicle_set_upgraded(vehicle, not value)
             end
         end
-        util.toast((value and "Downgraded" or "Upgraded") .. " " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
+        util.toast((value and "Downgraded" or "Upgraded") .. " " .. players.get_name(player_id) .. "'s car!")
     end)
 
     -- -- Catapult
@@ -1399,7 +1399,7 @@ function setup_player(player_id)
                 vehicle_catapult(vehicle)
             end
         end
-        util.toast("Catapulted " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
+        util.toast("Catapulted " .. players.get_name(player_id) .. "'s car!")
     end)
 
     -- -- No Godmode
@@ -1407,7 +1407,7 @@ function setup_player(player_id)
     menu.toggle_loop(player_trolling_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
         player_remove_godmode(player_id, true)
         if util.current_time_millis() - remove_godmode_notice >= 10000 then
-            util.toast("Still removing godmode from " .. PLAYER.GET_PLAYER_NAME(player_id) .. ".")
+            util.toast("Still removing godmode from " .. players.get_name(player_id) .. ".")
             remove_godmode_notice = util.current_time_millis()
         end
     end, false)
@@ -1467,7 +1467,7 @@ function setup_player(player_id)
     -- -- Stand Kick
     menu.action(player_removal_root, "Stand Kick", {"ryanstandkick"}, "Attempts to kick using Stand's Smart and Breakup kicks.", function()
         spam_and_block_then(player_id, removal_block_joins, removal_message, function()
-            local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+            local player_name = players.get_name(player_id)
             menu.trigger_commands("kick" .. player_name)
         end)
     end)
@@ -1481,7 +1481,7 @@ function setup_player(player_id)
 
     -- -- Smelly Peepo Crash (Credit: 2take1 Additions, Keramis Script)
     menu.action(player_removal_root, "Smelly Peepo Crash", {"ryansmellypeepo"}, "Attempts to crash using invalid and bugged peds.", function(click_type)
-        local smelly_peepo_ref = menu.ref_by_command_name("ryansmellypeepo" .. PLAYER.GET_PLAYER_NAME(player_id):lower())
+        local smelly_peepo_ref = menu.ref_by_command_name("ryansmellypeepo" .. players.get_name(player_id):lower())
         menu.show_warning(smelly_peepo_ref, click_type, "If you are near this player, you will crash too.\nBe sure you are far enough away before pressing Proceed.", function()
             spam_and_block_then(player_id, removal_block_joins, removal_message, function()
                 do_smelly_peepo_crash(player_id)
@@ -1492,7 +1492,7 @@ function setup_player(player_id)
 
     -- Divorce Kick --
     menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
-        local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+        local player_name = players.get_name(player_id)
         player_block_joins(player_name)
         menu.trigger_commands("kick" .. player_name)
         menu.trigger_commands("players")
