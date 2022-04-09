@@ -184,7 +184,7 @@ function do_fake_money_drop(player_id)
     local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id))
     local bag = entities.create_object(2628187989, vector_add(coords, {x = 0, y = 0, z = 2}))
     ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -15, 0.0, 0.0, 0.0, true, true)
-    util.yield(250)
+    util.yield(375)
     AUDIO.PLAY_SOUND_FROM_COORD(-1, "LOCAL_PLYR_CASH_COUNTER_COMPLETE", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true, 2, false)
     entities.delete_by_handle(bag)
 end
@@ -192,16 +192,15 @@ end
 function do_trash_pickup(player_id)
     util.toast("Sending the trash man to " .. PLAYER.GET_PLAYER_NAME(player_id) .. "...")
 
-    local player_ped = player_get_ped(player_id)
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-
     local trash_truck = util.joaat("trash"); request_model(trash_truck)
     local trash_man = util.joaat("s_m_y_garbage"); request_model(trash_man)
+    local player_ped = player_get_ped(player_id)
+    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
     local weapons = {"weapon_pistol", "weapon_pumpshotgun"}
     local coords_ptr = memory.alloc()
     local node_ptr = memory.alloc()
-    
+
     if not PATHFIND.GET_RANDOM_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, 80, 0, 0, 0, coords_ptr, node_ptr) then
         player_coords.x = player_coords.x + math.random(-7, 7)
         player_coords.y = player_coords.y + math.random(-7, 7)
@@ -242,6 +241,66 @@ function do_trash_pickup(player_id)
     STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_man)
 
     do_sms_spam(player_id, "It's trash day! Time to take it out.", 5000)
+end
+
+function do_flying_yacht(player_id)
+    local yacht = util.joaat("prop_cj_big_boat"); request_model(yacht)
+    local buzzard = util.joaat("buzzard2"); request_model(buzzard)
+    local black_ops = util.joaat("s_m_y_blackops_01"); request_model(black_ops)
+    local army = util.joaat("ARMY")
+
+    local player_ped =  player_get_ped(player_id)
+    local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
+    local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, army, player_group)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player_group, army)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, army, army)
+
+    local vehicle = entities.create_vehicle(buzzard, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    local attachment = entities.create_object(yacht, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
+    if ENTITY.DOES_ENTITY_EXIST(vehicle) then
+        local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        PED.SET_PED_INTO_VEHICLE(ped, vehicle)
+        
+        coords.x = coords.x + math.random(-20, 20)
+        coords.y = coords.y + math.random(-20, 20)
+        coords.z = coords.z + 30
+        ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
+        NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
+        ENTITY.SET_ENTITY_INVINCIBLE(vehicle, true)
+        VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
+        VEHICLE.SET_HELI_BLADES_FULL_SPEED(vehicle)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, "chassis"), 0, 0, 0, 0, 0, 0, false, false, false, false, 0, true)
+        HUD.ADD_BLIP_FOR_ENTITY(vehicle)
+
+        PED.SET_PED_MAX_HEALTH(ped, 500)
+        ENTITY.SET_ENTITY_HEALTH(ped, 500)
+        ENTITY.SET_ENTITY_INVINCIBLE(ped, true)
+        PED.SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(ped, true)
+        TASK.TASK_HELI_MISSION(ped, vehicle, 0, player_ped, 0.0, 0.0, 0.0, 23, 40.0, 40.0, -1.0, 0, 10, -1.0, 0)
+        PED.SET_PED_KEEP_TASK(ped, true)
+
+        for seat = 1, 2 do 
+            local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+            PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
+            WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
+            PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
+            PED.SET_PED_MAX_HEALTH(ped, 500)
+            ENTITY.SET_ENTITY_HEALTH(ped, 500)
+            ENTITY.SET_ENTITY_INVINCIBLE(ped, true)
+            PED.SET_PED_SHOOT_RATE(ped, 1000)
+            PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, army)
+            TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
+        end
+
+        util.yield(100)
+    end
+
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(yacht)
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(buzzard)
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(black_ops)
 end
 
 function watch_and_takeover_vehicle(action, player_id, wait_for)
@@ -887,6 +946,31 @@ for i = 1, #PlayingCards do
     end)
 end
 
+-- -- No Cops
+menu.toggle_loop(world_root, "No Cops", {"ryannocops"}, "Clears the area of cops while enabled.", function()
+    local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
+    MISC.CLEAR_AREA_OF_COPS(coords.x, coords.y, coords.z, 500, 0) -- might as well
+    for _, entity in pairs(entity_get_all_nearby(coords, 500, NearbyEntitiesModes.All)) do
+        if ENTITY.IS_ENTITY_A_PED(entity) then
+            for _, ped_type in pairs(PolicePedTypes) do
+                if PED.GET_PED_TYPE(entity) == ped_type then
+                    entity_request_control(entity)
+                    entities.delete_by_handle(entity)
+                end
+            end
+        elseif ENTITY.IS_ENTITY_A_VEHICLE(entity) then
+            for _, vehicle_model in pairs(PoliceVehicleModels) do
+                if VEHICLE.IS_VEHICLE_MODEL(entity, vehicle_model) then
+                    entity_request_control(entity)
+                    entities.delete_by_handle(entity)
+                end
+            end
+        end
+    end
+    util.yield(250)
+    -- SEARCHLIGHT
+end, false)
+
 -- -- Tiny People
 world_tiny_people = false
 menu.toggle(world_root, "Tiny People", {"ryantinypeople"}, "Makes everyone tiny (only for you.)", function(value)
@@ -1165,6 +1249,40 @@ menu.toggle(session_omnicrash_root, "Include Modders", {"ryanomnicrashmodders"},
     session_omnicrash_modders = value
 end)
 
+-- -- Kick Hermits
+hermits = {}
+menu.toggle_loop(session_root, "Kick Hermits", {"ryankickhermits"}, "Kicks any player who stays inside for more than 5 minutes.", function()
+    for _, player_id in pairs(players.list()) do
+        if not players.is_marked_as_modder(player_id) then
+            local tracked = false
+            for hermit_id, hermit_start in pairs(hermits) do
+                if hermit_id == player_id then tracked = true end
+            end
+
+            local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+            if players.is_in_interior(player_id) then
+                if not tracked then
+                    util.toast(player_name .. " is now inside a building.")
+                    hermits[player_id] = util.current_time_millis()
+                elseif util.current_time_millis() - hermits[player_id] >= 300000 then
+                    util.toast("Kicking " .. player_name .. " for being inside too long.")
+                    util.create_thread(function()
+                        do_sms_spam(player_id, "You're being kicked for being inside too long. Stop being weird.", 5000)
+                        util.toast(3000)
+                        menu.trigger_commands("kick" .. player_name)
+                        util.yield()
+                        menu.trigger_commands("breakup" .. player_name)
+                    end)
+                end
+            else
+                util.toast(player_name .. " is no longer inside a building.")
+                hermits[player_id] = nil
+            end
+        end
+    end
+    util.yield(125)
+end, false)
+
 -- -- Fake Money Drop
 menu.toggle_loop(session_root, "Fake Money Drop", {"ryanfakemoneyall"}, "Drops fake money bags on all players.", function()
     for _, player_id in pairs(players.list()) do
@@ -1176,7 +1294,8 @@ menu.toggle_loop(session_root, "Fake Money Drop", {"ryanfakemoneyall"}, "Drops f
 end, false)
 
 -- -- Mk II Chaos
-menu.action(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and requests them to duel.", function()
+menu.toggle_loop(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and tells them to duel.", function()
+    chat.send_message("This session is in Mk II Chaos mode! Every 3 minutes, everyone receives an Oppressor. Good luck.", false, true, true)
     local oppressor2 = util.joaat("oppressor2")
     request_model(oppressor2)
     for _, player_id in pairs(players.list()) do
@@ -1189,8 +1308,8 @@ menu.action(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 
         VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
     end
     STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(oppressor2)
-    chat.send_message("Everyone has just received an Oppressor Mk 2 with missiles. Battle it out!", false, true, true)
-end)
+    util.yield(180000)
+end, false)
 
 
 -- Stats Menu --
@@ -1374,6 +1493,11 @@ function setup_player(player_id)
     -- -- Trash Pickup
     menu.action(player_trolling_root, "Send Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
         do_trash_pickup(player_id)
+    end)
+
+    -- -- Flying Yacht
+    menu.action(player_trolling_root, "Send Flying Yacht", {"ryanflyingyacht"}, "Send the magic school yacht to fuck their shit up.", function()
+        do_flying_yacht(player_id)
     end)
     
 

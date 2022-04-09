@@ -243,4 +243,29 @@ VehicleSpeedModes = {
     Slow = 3
 }
 
+PolicePedTypes = {
+    6,
+    27,
+    29
+}
+
+PoliceVehicleModels = {
+    1127131465,
+    -1647941228,
+    2046537925,
+    -1627000575,
+    1912215274,
+    -1973172295,
+    -1536924937,
+    -1779120616,
+    456714581,
+    -34623805,
+    353883353,
+    741586030,
+    -488123221,
+    -1205689942,
+    -1683328900,
+    1922257928
+}
+
 CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. "Ryan's Menu\\Crosshair.png")
