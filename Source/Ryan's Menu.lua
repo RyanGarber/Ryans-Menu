@@ -1252,7 +1252,7 @@ end)
 -- -- Kick Hermits
 hermits = {}
 menu.toggle_loop(session_root, "Kick Hermits", {"ryankickhermits"}, "Kicks any player who stays inside for more than 5 minutes.", function()
-    for _, player_id in pairs(players.list()) do
+    for _, player_id in pairs(players.list(false)) do
         if not players.is_marked_as_modder(player_id) then
             local tracked = false
             local player_name = PLAYER.GET_PLAYER_NAME(player_id)
