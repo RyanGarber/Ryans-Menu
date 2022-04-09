@@ -1260,14 +1260,14 @@ menu.toggle_loop(session_root, "Kick Hermits", {"ryankickhermits"}, "Kicks any p
                 if hermits[player_id] == nil then
                     util.toast(player_name .. " is now inside a building.")
                     hermits[player_id] = util.current_time_millis()
+                    create_thread(function()
+                        do_sms_spam(player_id, "Warning! If you are inside for more than 5 minutes, you will be kicked.")
+                    end)
                 elseif util.current_time_millis() - hermits[player_id] >= 300000 then
                     util.toast("Kicking " .. player_name .. " for being inside too long.")
                     util.create_thread(function()
-                        do_sms_spam(player_id, "You're being kicked for being inside too long. Stop being weird.", 5000)
-                        util.toast(3000)
+                        do_sms_spam(player_id, "You're being kicked for being inside too long. Don't say you weren't warned.", 5000)
                         menu.trigger_commands("kick" .. player_name)
-                        util.yield()
-                        menu.trigger_commands("breakup" .. player_name)
                     end)
                 end
             else
@@ -1517,8 +1517,6 @@ function setup_player(player_id)
         spam_and_block_then(player_id, removal_block_joins, removal_message, function()
             local player_name = PLAYER.GET_PLAYER_NAME(player_id)
             menu.trigger_commands("kick" .. player_name)
-            util.yield()
-            menu.trigger_commands("breakup" .. player_name)
         end)
     end)
 
@@ -1545,8 +1543,6 @@ function setup_player(player_id)
         local player_name = PLAYER.GET_PLAYER_NAME(player_id)
         player_block_joins(player_name)
         menu.trigger_commands("kick" .. player_name)
-        util.yield()
-        menu.trigger_commands("breakup" .. player_name)
         menu.trigger_commands("players")
     end)
 end
