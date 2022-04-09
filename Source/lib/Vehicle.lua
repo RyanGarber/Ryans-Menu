@@ -45,6 +45,9 @@ end
 function vehicle_set_no_grip(vehicle, no_grip)
     entity_request_control_loop(vehicle)
     VEHICLE.SET_VEHICLE_REDUCE_GRIP(vehicle, no_grip)
+    if no_grip then 
+        VEHICLE._SET_VEHICLE_REDUCE_TRACTION(vehicle, 0.0)
+    end
 end
 
 function vehicle_lock_doors(vehicle, value)

