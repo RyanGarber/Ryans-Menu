@@ -17,9 +17,7 @@ function player_is_godmode(player_id)
 end
 
 function player_is_on_oppressor2(player_id)
-    local player_ped = player_get_ped(player_id)
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, true)
-    return VEHICLE.IS_VEHICLE_MODEL(vehicle, util.joaat("oppressor2"))
+    return players.get_vehicle_model(player_id) == util.joaat("oppressor2")
 end
 
 function player_remove_godmode(player_id, vehicle_too) -- Credit: KeramiScript

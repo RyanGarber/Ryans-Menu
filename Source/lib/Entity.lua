@@ -52,11 +52,24 @@ function entity_request_control_loop(entity) -- Credit: WiriScript
     end
 end
 
-function entity_face_entity(entity_1, entity_2) -- Credit: WiriScript
-	local a = ENTITY.GET_ENTITY_COORDS(entity_1)
-	local b = ENTITY.GET_ENTITY_COORDS(entity_2)
-	local dx = b.x - a.x
-	local dy = b.y - a.y
-	local heading = MISC.GET_HEADING_FROM_VECTOR_2D(dx, dy)
-	return ENTITY.SET_ENTITY_HEADING(entity_1, heading)
+function entity_face_entity(entity_1, entity_2, use_pitch)
+    local coords_1 = ENTITY.GET_ENTITY_COORDS(ent1, false)
+	local coords_2 = ENTITY.GET_ENTITY_COORDS(ent2, false)
+	local difference = vector_subtract(coords_2, coords_1)
+	local rotation = vector_direction_to_rotation(difference)
+	if not use_pitch then
+		ENTITY.SET_ENTITY_HEADING(entity_1, rotation.z)
+	else
+		ENTITY.SET_ENTITY_ROTATION(entity_1, rotation.x, rotation.y, rotation.z)
+	end
+end
+
+function entity_get_offset_at_distance(entity, distance) -- Credit: WiriScript
+    local coords = ENTITY.GET_ENTITY_COORDS(entity, 0)
+	local theta = (math.random() + math.random(0, 1)) * math.pi --returns a random angle between 0 and 2pi (exclusive)
+	return {
+		x = coords.x + distance * math.cos(theta),
+		y = coords.y + distance * math.sin(theta),
+		z = coords.z
+    }
 end

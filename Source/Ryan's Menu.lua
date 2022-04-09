@@ -1,4 +1,4 @@
-VERSION = "0.6.3"
+VERSION = "0.6.4"
 MANIFEST = {
     lib = {"Audio.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -80,6 +80,19 @@ function format_int(number)
     local i, j, minus, int, fraction = tostring(number):find('([-]?)(%d+)([.]?%d*)')
     int = int:reverse():gsub("(%d%d%d)", "%1,")
     return minus .. int:reverse():gsub("^,", "") .. fraction
+end
+
+function format_time(ms)
+    local formatted = ""
+    ms = ms / 1000; local s = math.floor(ms % 60)
+    ms = ms / 60; local m = math.floor(ms % 60)
+    ms = ms / 60; local h = math.floor(ms % 24)
+    ms = ms / 24; local d = math.floor(ms)
+    if d > 0 then formatted = formatted .. ", " .. d .. " day" .. (d ~= 1 and "s" or "") end
+    if h > 0 then formatted = formatted .. ", " .. h .. " hour" .. (h ~= 1 and "s" or "") end
+    if m > 0 then formatted = formatted .. ", " .. m .. " minute" .. (m ~= 1 and "s" or "") end
+    if s > 0 then formatted = formatted .. ", " .. s .. " second" .. (s ~= 1 and "s" or "") end
+    return formatted:sub(3)
 end
 
 function request_model(model)
@@ -183,8 +196,8 @@ function do_fake_money_drop(player_id)
     menu.trigger_commands("notifybanked" .. players.get_name(player_id) .. " " .. math.random(100, 5000))
     local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id))
     local bag = entities.create_object(2628187989, vector_add(coords, {x = 0, y = 0, z = 2}))
-    ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -15, 0.0, 0.0, 0.0, true, true)
-    util.yield(375)
+    ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -20, 0.0, 0.0, 0.0, true, true)
+    util.yield(333)
     AUDIO.PLAY_SOUND_FROM_COORD(-1, "LOCAL_PLYR_CASH_COUNTER_COMPLETE", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true, 2, false)
     entities.delete_by_handle(bag)
 end
@@ -209,7 +222,7 @@ function do_trash_pickup(player_id)
 
     local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
     local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-    entity_face_entity(vehicle, player_ped)
+    entity_face_entity(vehicle, player_ped, true)
     VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
     ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
 
@@ -385,6 +398,19 @@ function do_smelly_peepo_crash(player_id)
     util.toast("Done!")
 end
 
+function spam_and_block_then(player_id, removal_block_joins, removal_message, action)
+    local player_name = players.get_name(player_id)
+    if removal_block_joins then
+        player_block_joins(player_name)
+    end
+    if removal_message ~= "" and removal_message ~= " " then
+        util.toast("Spamming " .. player_name .. " with texts...")
+        do_sms_spam(player_id, removal_message, 6000)
+    end
+    action()
+    menu.trigger_commands("players")
+end
+
 
 -- Session Functions --
 function watch_and_takeover_vehicle_all(action, modders, wait_for)
@@ -488,6 +514,8 @@ function explode_all(with_earrape)
         end
     end
 end
+
+request_model(2628187989) -- Fake Money Drop lags otherwise
 
 
 -- Main Menu --
@@ -1190,36 +1218,73 @@ menu.toggle(session_omnicrash_root, "Include Modders", {"ryanomnicrashmodders"},
 end)
 
 -- -- Kick Hermits
+session_antihermit_root = menu.list(session_root, "Anti-Hermit: Disabled", {"ryanantihermit"}, "Kicks or trolls any player who stays inside for more than 5 minutes.")
+antihermit_mode = "Disabled"
+
+menu.action(session_antihermit_root, "Disabled", {"ryanantihermitdisabled"}, "Does nothing to hermits.", function()
+    antihermit_mode = "Disabled"
+    menu.set_menu_name(session_antihermit_root, "Anti-Hermit: Disabled")
+    menu.focus(session_antihermit_root)
+end)
+menu.action(session_antihermit_root, "Teleport Outside", {"ryanantihermittpoutside"}, "Teleports hermits to an apartment, forcing them outside.", function()
+    antihermit_mode = "Teleport Outside"
+    menu.set_menu_name(session_antihermit_root, "Anti-Hermit: Teleport Outside")
+    menu.focus(session_antihermit_root)
+end)
+menu.action(session_antihermit_root, "Stand Kick", {"ryanantihermitkick"}, "Kicks hermits from the session.", function()
+    antihermit_mode = "Stand Kick"
+    menu.set_menu_name(session_antihermit_root, "Anti-Hermit: Stand Kick")
+    menu.focus(session_antihermit_root)
+end)
+menu.action(session_antihermit_root, "Omnicrash Mk II", {"ryanantihermitomnicrash"}, "Kicks hermits from the session.", function()
+    antihermit_mode = "Omnicrash Mk II"
+    menu.set_menu_name(session_antihermit_root, "Anti-Hermit: Omnicrash Mk II")
+    menu.focus(session_antihermit_root)
+end)
+menu.action(session_antihermit_root, "Smelly Peepo Crash", {"ryanantihermitsmellypeepo"}, "Kicks hermits from the session.", function()
+    antihermit_mode = "Smelly Peepo Crash"
+    menu.set_menu_name(session_antihermit_root, "Anti-Hermit: Smelly Peepo Crash")
+    menu.focus(session_antihermit_root)
+end)
+
 hermits = {}
-menu.toggle_loop(session_root, "Kick Hermits", {"ryankickhermits"}, "Kicks any player who stays inside for more than 5 minutes.", function()
-    for _, player_id in pairs(players.list(false)) do
-        if not players.is_marked_as_modder(player_id) then
-            local tracked = false
-            local player_name = players.get_name(player_id)
-            if players.is_in_interior(player_id) then
-                if hermits[player_id] == nil then
-                    util.toast(player_name .. " is now inside a building.")
-                    hermits[player_id] = util.current_time_millis()
-                    util.create_thread(function()
-                        do_sms_spam(player_id, "Warning! If you are inside for more than 5 minutes, you will be kicked.")
-                    end)
-                elseif util.current_time_millis() - hermits[player_id] >= 300000 then
-                    util.toast("Kicking " .. player_name .. " for being inside too long.")
-                    util.create_thread(function()
-                        do_sms_spam(player_id, "You're being kicked for being inside too long. Don't say you weren't warned.", 5000)
-                        menu.trigger_commands("kick" .. player_name)
-                    end)
-                end
-            else
-                if hermits[player_id] ~= nil then 
-                    util.toast(player_name .. " is no longer inside a building.")
-                    hermits[player_id] = nil
+util.create_tick_handler(function()
+    if antihermit_mode ~= "Disabled" then
+        for _, player_id in pairs(players.list(false)) do
+            if not players.is_marked_as_modder(player_id) then
+                local tracked = false
+                local player_name = players.get_name(player_id)
+                if players.is_in_interior(player_id) then
+                    if hermits[player_id] == nil then
+                        hermits[player_id] = util.current_time_millis()
+                        util.toast(player_name .. " is now inside a building.")
+                    elseif util.current_time_millis() - hermits[player_id] >= 300000 then
+                        hermits[player_id] = util.current_time_millis() - 210000
+                        show_text_message(Colors.Purple, "Anti-Hermit", player_name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
+                        util.create_thread(function()
+                            do_sms_spam(player_id, "You've been inside too long. Stop being weird and play the game!", 3000)
+                        end)
+                        if antihermit_mode == "Teleport Outside" then
+                            menu.trigger_commands("apt1" .. player_name)
+                        elseif antihermit_mode == "Stand Kick" then
+                            menu.trigger_commands("kick" .. player_name)
+                        elseif antihermit_mode == "Omnicrash Mk II" then
+                            do_omnicrash(player_id)
+                        elseif antihermit_mode == "Smelly Peepo Crash" then
+                            do_smelly_peepo_crash(player_id)
+                        end
+                    end
+                else
+                    if hermits[player_id] ~= nil then 
+                        util.toast(player_name .. " is no longer inside a building after " .. format_time(util.current_time_millis() - hermits[player_id]) .. ".")
+                        hermits[player_id] = nil
+                    end
                 end
             end
         end
     end
-    util.yield(125)
-end, false)
+    util.yield(500)
+end)
 
 -- -- Fake Money Drop
 menu.toggle_loop(session_root, "Fake Money Drop", {"ryanfakemoneyall"}, "Drops fake money bags on all players.", function()
@@ -1280,32 +1345,17 @@ mc_clutter_100 = menu.action(stats_mc_clutter_root, "100% Full", {"ryanmcclutter
 end)
 
 
-function spam_and_block_then(player_id, removal_block_joins, removal_message, action)
-    local player_name = players.get_name(player_id)
-    if removal_block_joins then
-        player_block_joins(player_name)
-    end
-    if removal_message ~= "" and removal_message ~= " " then
-        util.toast("Spamming " .. player_name .. " with texts...")
-        do_sms_spam(player_id, removal_message, 6000)
-    end
-    action()
-    menu.trigger_commands("players")
-end
-
-
 -- Player Options --
 function setup_player(player_id)
     local player_root = menu.player_root(player_id)
     menu.divider(player_root, "Ryan's Menu")
     
     local player_trolling_root = menu.list(player_root, "Trolling...", {"ryantrolling"}, "Options that players may not like.")
-    local player_trolling_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")
-
     local player_removal_root = menu.list(player_root, "Removal...", {"ryanremoval"}, "Options to remove the player forcibly.")
 
 
     -- Trolling --
+    local player_trolling_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")
     -- -- Make Fast
     menu.toggle(player_trolling_vehicle_root, "Make Fast", {"ryanfast"}, "Speeds up the car they are in.", function(value)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
@@ -1402,26 +1452,10 @@ function setup_player(player_id)
         util.toast("Catapulted " .. players.get_name(player_id) .. "'s car!")
     end)
 
-    -- -- No Godmode
-    local remove_godmode_notice = 0
-    menu.toggle_loop(player_trolling_root, "No Godmode", {"ryannogodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
-        player_remove_godmode(player_id, true)
-        if util.current_time_millis() - remove_godmode_notice >= 10000 then
-            util.toast("Still removing godmode from " .. players.get_name(player_id) .. ".")
-            remove_godmode_notice = util.current_time_millis()
-        end
-    end, false)
-
-    -- -- Fake Money Drop
-    menu.toggle_loop(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function()
-        util.create_thread(function()
-            do_fake_money_drop(player_id)
-        end)
-        util.yield(125)
-    end, false)
-
+    local player_trolling_npcs_root = menu.list(player_trolling_root, "NPCs...", {"ryannpcs"}, "NPC trolling options.")
+    
     -- -- Stripper El Rubio
-    menu.action(player_trolling_root, "Stripper El Rubio", {"ryanelrubio"}, "Spawns an El Rubio whose fortune has been stolen, leading him to the pole.", function()
+    menu.action(player_trolling_npcs_root, "Pole-Dancing El Rubio", {"ryanelrubio"}, "Spawns an El Rubio whose fortune has been stolen, leading him to the pole.", function()
         local ped_coords = vector_add(
             ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)),
             {x = math.random(-5, 5), y = math.random(-5, 5), z = 0}
@@ -1441,15 +1475,49 @@ function setup_player(player_id)
     end)
 
     -- -- Trash Pickup
-    menu.action(player_trolling_root, "Send Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
+    menu.action(player_trolling_npcs_root, "Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
         do_trash_pickup(player_id)
     end)
 
+    local player_trolling_objects_root = menu.list(player_trolling_root, "Objects...", {"ryanobjects"}, "Object trolling options.")
+
     -- -- Flying Yacht
-    menu.action(player_trolling_root, "Send Flying Yacht", {"ryanflyingyacht"}, "Send the magic school yacht to fuck their shit up.", function()
+    menu.action(player_trolling_objects_root, "Flying Yacht", {"ryanflyingyacht"}, "Send the magic school yacht to fuck their shit up.", function()
         do_flying_yacht(player_id)
     end)
     
+    -- -- Tank Kamkaze
+    menu.action(player_trolling_objects_root, "Falling Tank", {"ryantankkamikaze"}, "Send a tank straight from heaven.", function()
+		local player_ped = player_get_ped(player_id)
+        local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+        coords.z = coords.z + 10
+
+        local tank = util.joaat("rhino"); request_model(tank)
+        local entity = entities.create_vehicle(tank, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        ENTITY.SET_ENTITY_LOAD_COLLISION_FLAG(entity, true)
+        ENTITY.SET_ENTITY_MAX_SPEED(entity, 64)
+        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 3, 0.0, 0.0, -1000.00, 0.0, 0.0, 0.0, 0, true, true, false, true)
+        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(tank)
+    end)
+
+    -- -- Fake Money Drop
+    menu.toggle_loop(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function()
+        util.create_thread(function()
+            do_fake_money_drop(player_id)
+        end)
+        util.yield(125)
+    end, false)
+
+    -- -- No Godmode
+    local remove_godmode_notice = 0
+    menu.toggle_loop(player_trolling_root, "Remove Godmode", {"ryanremovegodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
+        player_remove_godmode(player_id, true)
+        if util.current_time_millis() - remove_godmode_notice >= 10000 then
+            util.toast("Still removing godmode from " .. players.get_name(player_id) .. ".")
+            remove_godmode_notice = util.current_time_millis()
+        end
+    end, false)
+
 
     -- Removal --
     -- -- Text & Kick
@@ -1501,16 +1569,19 @@ end
 
 
 -- Chat Menu --
+chat_new_message_root = menu.list(chat_root, "New Message...", {"ryanchatnew"})
+
+-- -- Send Message
 chat_message = ""
 chat_prefix = ""
 
 -- -- Message
-menu.text_input(chat_root, "Message", {"ryanchatmessage"}, "The message to send in chat.", function(value)
+menu.text_input(chat_new_message_root, "Message", {"ryanchatmessage"}, "The message to send in chat.", function(value)
     chat_message = value
 end, "")
 
 -- -- Logo
-chat_prefix_root = menu.list(chat_root, "Logo: None", {"ryanchatlogo"}, "Adds a special logo to the beginning of the message.")
+chat_prefix_root = menu.list(chat_new_message_root, "Logo: None", {"ryanchatlogo"}, "Adds a special logo to the beginning of the message.")
 menu.action(chat_prefix_root, "Rockstar", {"ryanchatlogors"}, "Adds the Rockstar logo.", function()
     menu.set_menu_name(chat_prefix_root, "Logo: Rockstar")
     menu.focus(chat_prefix_root)
@@ -1528,7 +1599,7 @@ menu.action(chat_prefix_root, "Lock", {"ryanchatlogors"}, "Adds the lock logo.",
 end)
 
 -- -- Send Message
-chat_send_root = menu.list(chat_root, "Send...", {"ryantranslatesend"}, "Translate and send the message.")
+chat_send_root = menu.list(chat_new_message_root, "Send...", {"ryantranslatesend"}, "Translate and send the message.")
 menu.action(chat_send_root, "Send", {"ryanchatsend"}, "Send without translating.", function()
     chat.send_message(chat_prefix .. chat_message, false, true, true)
     menu.focus(chat_send_root)
@@ -1564,6 +1635,36 @@ menu.action(chat_send_root, "Italian", {"ryantranslateitalian"}, "Translate to I
     util.toast("Translating message to Italian...")
     send_translated(chat_prefix .. chat_message, "IT", false)
     menu.focus(chat_send_root)
+end)
+
+-- -- Kick Money Beggars
+kick_money_beggars = false
+menu.toggle(chat_root, "Kick Money Beggars", {"ryankickbeggars"}, "Kicks anyone who begs for money.", function(value)
+    kick_money_beggars = value
+end)
+
+-- -- Kick Car Meeters
+kick_car_meeters = false
+menu.toggle(chat_root, "Kick Car Meeters", {"ryankickcarmeets"}, "Kicks anyone who suggests a car meet.", function(value)
+    kick_car_meeters = value
+end)
+
+chat.on_message(function(packet_sender, sender, message, is_team_chat)
+    util.toast(sender .. ", " .. message)
+    if kick_money_beggars then
+        if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
+            and message:find("money") and message:find("drop") then
+            show_text_message(49, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
+            --do_omnicrash(sender)
+        end
+    end
+    if kick_car_meeters then
+        if (message:find("want to") or message:find("wanna") or message:find("at") or message:find("?"))
+            and message:find("car") and message:find("meet") then
+            show_text_message(49, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
+            --do_omnicrash(sender)
+        end
+    end
 end)
 
 

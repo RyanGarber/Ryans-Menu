@@ -27,17 +27,24 @@ function v3_to_object(X, Y, Z)
 end
 
 function vector_rotation_to_direction(rotation) -- Credit: WiriScript
-	local adjusted_rotation = { 
+	rotation = { 
 		x = (math.pi / 180) * rotation.x, 
 		y = (math.pi / 180) * rotation.y, 
 		z = (math.pi / 180) * rotation.z 
 	}
-	local direction = {
-		x = - math.sin(adjusted_rotation.z) * math.abs(math.cos(adjusted_rotation.x)), 
-		y =   math.cos(adjusted_rotation.z) * math.abs(math.cos(adjusted_rotation.x)), 
-		z =   math.sin(adjusted_rotation.x)
+	return {
+		x = -math.sin(rotation.z) * math.abs(math.cos(rotation.x)), 
+		y = math.cos(rotation.z) * math.abs(math.cos(rotation.x)), 
+		z = math.sin(rotation.x)
 	}
-	return direction
+end
+
+function vector_direction_to_rotation(direction) -- Credit: WiriScript
+	return {
+		x = math.asin(direction.z / vector_magnitude(direction)) * (180 / math.pi),
+		y = 0.0,
+		z = -math.atan(direction.x, direction.y) * (180 / math.pi)
+	}
 end
 
 function vector_offset_from_camera(distance) -- Credit: WiriScript
