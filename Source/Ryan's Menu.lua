@@ -1578,7 +1578,7 @@ end
 
 
 -- Chat Menu --
-menu.divider(chat_root, "Translation")
+menu.divider(chat_root, "Translate")
 chat_new_message_root = menu.list(chat_root, "New Message...", {"ryanchatnew"})
 chat_history_root = menu.list(chat_root, "Message History...", {"ryanchathistory"})
 
