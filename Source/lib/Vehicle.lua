@@ -56,9 +56,13 @@ function vehicle_set_doors_locked(vehicle, value)
 end
 
 function vehicle_set_tires_bursted(vehicle, value)
-    VEHICLE.SET_VEHICLE_TYRES_CAN_BURST(vehicle, true)
+    if value then VEHICLE.SET_VEHICLE_TYRES_CAN_BURST(vehicle, true) end
     for tire = 0, 7 do
-        VEHICLE.SET_VEHICLE_TYRE_BURST(vehicle, tire, value, value and 1000.0 or 0.0)
+        if value then 
+            VEHICLE.SET_VEHICLE_TYRE_BURST(vehicle, tire, value, 1000.0)
+        else
+            VEHICLE.SET_VEHICLE_TYRE_FIXED(vehicle, tire)
+        end
     end
 end
 
