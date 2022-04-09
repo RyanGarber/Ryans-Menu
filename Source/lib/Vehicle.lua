@@ -50,15 +50,15 @@ function vehicle_set_no_grip(vehicle, no_grip)
     end
 end
 
-function vehicle_lock_doors(vehicle, value)
+function vehicle_set_doors_locked(vehicle, value)
     entity_request_control_loop(vehicle)
     VEHICLE.SET_VEHICLE_DOORS_LOCKED(vehicle, value and 4 or 0)
 end
 
-function vehicle_burst_tires(vehicle)
+function vehicle_set_tires_bursted(vehicle, value)
     VEHICLE.SET_VEHICLE_TYRES_CAN_BURST(vehicle, true)
     for tire = 0, 7 do
-        VEHICLE.SET_VEHICLE_TYRE_BURST(vehicle, tire, true, 1000.0)
+        VEHICLE.SET_VEHICLE_TYRE_BURST(vehicle, tire, value, value and 1000.0 or 0.0)
     end
 end
 
