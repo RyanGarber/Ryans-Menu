@@ -1650,19 +1650,20 @@ menu.toggle(chat_root, "Kick Car Meeters", {"ryankickcarmeets"}, "Kicks anyone w
 end)
 
 chat.on_message(function(packet_sender, sender, message, is_team_chat)
-    util.toast(sender .. ", " .. message)
-    if kick_money_beggars then
-        if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
-            and message:find("money") and message:find("drop") then
-            show_text_message(49, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
-            do_omnicrash(sender)
+    if sender ~= players.user() then
+        if kick_money_beggars then
+            if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
+                and message:find("money") and message:find("drop") then
+                show_text_message(49, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
+                do_omnicrash(sender)
+            end
         end
-    end
-    if kick_car_meeters then
-        if (message:find("want to") or message:find("wanna") or message:find("at") or message:find("?"))
-            and message:find("car") and message:find("meet") then
-            show_text_message(49, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
-            do_omnicrash(sender)
+        if kick_car_meeters then
+            if (message:find("want to") or message:find("wanna") or message:find("at") or message:find("?"))
+                and message:find("car") and message:find("meet") then
+                show_text_message(49, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
+                do_omnicrash(sender)
+            end
         end
     end
 end)
