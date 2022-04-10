@@ -1542,7 +1542,7 @@ function setup_player(player_id)
 
     menu.divider(player_removal_root, "Go")
     -- -- Stand Kick
-    menu.action(player_removal_root, "Stand Kick", {"ryanstandkick"}, "Attempts to kick using Stand's Smart and Breakup kicks.", function()
+    menu.action(player_removal_root, "Stand Kick", {"ryanstandkick"}, "Attempts to kick using Stand's Smart kick.", function()
         spam_and_block_then(player_id, removal_block_joins, removal_message, function()
             local player_name = players.get_name(player_id)
             menu.trigger_commands("kick" .. player_name)
