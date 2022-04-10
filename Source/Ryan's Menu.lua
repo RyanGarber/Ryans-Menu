@@ -1,4 +1,4 @@
-VERSION = "0.6.4"
+VERSION = "0.6.5"
 MANIFEST = {
     lib = {"Audio.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -124,7 +124,8 @@ function show_text_message(color, subtitle, message)
 	HUD.END_TEXT_COMMAND_THEFEED_POST_TICKER(true, false)
 end
 
-function do_raycast(distance) -- Credit: WiriScript
+function do_raycast(distance, flags) -- Credit: WiriScript
+    flags = flags or -1
     local result = {}
 	local did_hit = memory.alloc(8)
 	local hit_coords = v3.new()
@@ -137,7 +138,7 @@ function do_raycast(distance) -- Credit: WiriScript
 		SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
 			origin.x, origin.y, origin.z,
 			destination.x, destination.y, destination.z,
-			-1, PLAYER.PLAYER_PED_ID(), 1
+			flags, PLAYER.PLAYER_PED_ID(), 1
 		), did_hit, hit_coords, hit_normal, hit_entity
 	)
 	result.did_hit = memory.read_byte(did_hit) ~= 0
@@ -150,6 +151,42 @@ function do_raycast(distance) -- Credit: WiriScript
 	v3.free(hit_normal)
 	memory.free(hit_entity)
 	return result
+end
+
+function esp_box(entity)
+    local color = {r = 75, g = 175, b = 255}
+    local minimum = v3.new()
+	local maximum = v3.new()
+	if ENTITY.DOES_ENTITY_EXIST(entity) then
+		MISC.GET_MODEL_DIMENSIONS(ENTITY.GET_ENTITY_MODEL(entity), minimum, maximum)
+		local width  = 2 * v3.getX(maximum)
+		local length = 2 * v3.getY(maximum)
+		local depth  = 2 * v3.getZ(maximum)
+
+		local offset1 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -width / 2,  length / 2,  depth / 2)
+		local offset4 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,  width / 2,  length / 2,  depth / 2)
+		local offset5 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -width / 2,  length / 2, -depth / 2)
+		local offset7 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,  width / 2,  length / 2, -depth / 2)
+		local offset2 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -width / 2, -length / 2,  depth / 2) 
+		local offset3 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,  width / 2, -length / 2,  depth / 2)
+		local offset6 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -width / 2, -length / 2, -depth / 2)
+		local offset8 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,  width / 2, -length / 2, -depth / 2)
+
+		GRAPHICS.DRAW_LINE(offset1.x, offset1.y, offset1.z, offset4.x, offset4.y, offset4.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset1.x, offset1.y, offset1.z, offset2.x, offset2.y, offset2.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset1.x, offset1.y, offset1.z, offset5.x, offset5.y, offset5.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset2.x, offset2.y, offset2.z, offset3.x, offset3.y, offset3.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset3.x, offset3.y, offset3.z, offset8.x, offset8.y, offset8.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset4.x, offset4.y, offset4.z, offset7.x, offset7.y, offset7.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset4.x, offset4.y, offset4.z, offset3.x, offset3.y, offset3.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset5.x, offset5.y, offset5.z, offset7.x, offset7.y, offset7.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset6.x, offset6.y, offset6.z, offset2.x, offset2.y, offset2.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset6.x, offset6.y, offset6.z, offset8.x, offset8.y, offset8.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset5.x, offset5.y, offset5.z, offset6.x, offset6.y, offset6.z, color.r, color.g, color.b, 255)
+		GRAPHICS.DRAW_LINE(offset7.x, offset7.y, offset7.z, offset8.x, offset8.y, offset8.z, color.r, color.g, color.b, 255)
+	end
+	v3.free(minimum)
+	v3.free(maximum)
 end
 
 
@@ -542,6 +579,8 @@ self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"},
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
+ptfx_disable = false
+
 
 self_ptfx_body_root = menu.list(self_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body other players can see.")
 self_ptfx_weapon_root = menu.list(self_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon other players can see.")
@@ -553,6 +592,9 @@ menu.colour(self_ptfx_root, "Color", {"ryanptfxcolor"}, "Some PTFX options allow
     ptfx_color.r = color.r
     ptfx_color.g = color.g
     ptfx_color.b = color.b
+end)
+menu.toggle(self_ptfx_root, "Disable", {"ryanptfxoff"}, "Disables PTFX but keeps your settings.", function(value)
+    ptfx_disable = value
 end)
 
 -- -- Body PTFX
@@ -580,6 +622,7 @@ self_ptfx_vehicle_wheels_root = menu.list(self_ptfx_vehicle_root, "Wheels...", {
 self_ptfx_vehicle_exhaust_root = menu.list(self_ptfx_vehicle_root, "Exhaust...", {"ryanptfxexhaust"}, "Speicla FX on the exhaust of your vehicle.")
 
 ptfx_create_list(self_ptfx_vehicle_wheels_root, function(ptfx)
+    if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
     if vehicle ~= NULL then
         ptfx_play_on_entity_bones(vehicle, VehicleBones.Wheels, ptfx[1], ptfx[2], ptfx_color)
@@ -588,6 +631,7 @@ ptfx_create_list(self_ptfx_vehicle_wheels_root, function(ptfx)
 end)
 
 ptfx_create_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
+    if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
     if vehicle ~= NULL then
         ptfx_play_on_entity_bones(vehicle, VehicleBones.Exhaust, ptfx[1], ptfx[2], ptfx_color)
@@ -602,6 +646,7 @@ self_ptfx_weapon_muzzle_flash_root = menu.list(self_ptfx_weapon_root, "Muzzle Fl
 self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
 
 ptfx_create_list(self_ptfx_weapon_aiming_root, function(ptfx)
+    if ptfx_disable then return end
     if CAM.IS_AIM_CAM_ACTIVE() then
         local raycast = do_raycast(1000.0)
         if raycast.did_hit then
@@ -612,6 +657,7 @@ ptfx_create_list(self_ptfx_weapon_aiming_root, function(ptfx)
 end)
 
 ptfx_create_list(self_ptfx_weapon_muzzle_root, function(ptfx)
+    if ptfx_disable then return end
     local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_get_ped())
     if weapon ~= NULL then
         ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[1], ptfx[2], ptfx_color)
@@ -620,6 +666,7 @@ ptfx_create_list(self_ptfx_weapon_muzzle_root, function(ptfx)
 end)
 
 ptfx_create_list(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
+    if ptfx_disable then return end
     local player_ped = player_get_ped()
     if PED.IS_PED_SHOOTING(player_ped) then
         local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_ped)
@@ -631,6 +678,7 @@ ptfx_create_list(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
 end)
 
 ptfx_create_list(self_ptfx_weapon_impact_root, function(ptfx)
+    if ptfx_disable then return end
     local impact_ptr = memory.alloc()
     if WEAPON.GET_PED_LAST_WEAPON_IMPACT_COORD(player_get_ped(), impact_ptr) then
         ptfx_play_at_coords(memory.read_vector3(impact_ptr), ptfx[1], ptfx[2], ptfx_color)
@@ -640,9 +688,11 @@ end)
 
 -- -- Pointing PTFX
 self_ptfx_pointing_finger_root = menu.list(self_ptfx_pointing_root, "Finger...", {"ryanptfxpointingfinger"}, "Special FX on your left finger.")
-self_ptfx_pointing_crosshair_root = menu.list(self_ptfx_pointing_root, "Crosshair...", {"ryanptfxpointingfinger"}, "Special FX on your crosshair.")
+self_ptfx_pointing_crosshair_root = menu.list(self_ptfx_pointing_root, "Crosshair...", {"ryanptfxpointingcrosshair"}, "Special FX on your crosshair.")
+self_ptfx_pointing_god_finger_root = menu.list(self_ptfx_pointing_root, "God Finger...", {"ryanptfxpointinggodfinger"}, "Special FX on your crosshair when using God Finger.")
 
 ptfx_create_list(self_ptfx_pointing_finger_root, function(ptfx)
+    if ptfx_disable then return end
     if memory.read_int(memory.script_global(4516656 + 930)) == 3 then
         ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Pointer, ptfx[1], ptfx[2], ptfx_color)
         util.yield(ptfx[3])
@@ -650,12 +700,21 @@ ptfx_create_list(self_ptfx_pointing_finger_root, function(ptfx)
 end)
 
 ptfx_create_list(self_ptfx_pointing_crosshair_root, function(ptfx)
+    if ptfx_disable then return end
     if player_is_pointing then
         local raycast = do_raycast(1000.0)
         if raycast.did_hit then
             ptfx_play_at_coords(raycast.hit_coords, ptfx[1], ptfx[2], ptfx_color)
             util.yield(ptfx[3])
         end
+    end
+end)
+
+ptfx_create_list(self_ptfx_pointing_god_finger_root, function(ptfx)
+    if ptfx_disable then return end
+    if god_finger_target ~= nil then
+        ptfx_play_at_coords(god_finger_target, ptfx[1], ptfx[2], ptfx_color)
+        util.yield(ptfx[3])
     end
 end)
 
@@ -704,6 +763,8 @@ util.create_tick_handler(function()
 		end
         entities_destroyed = {}
     elseif forcefield_mode == ForcefieldModes.Destroy then -- Destroy
+        ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
+
         local player_ped = player_get_ped()
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
         local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
@@ -727,15 +788,34 @@ util.create_tick_handler(function()
             end
         end
     else
+        ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
         entities_destroyed = {}
     end
     return true
 end)
 
+player_is_pointing = false
+god_finger_target = nil
+menu.toggle_loop(self_root, "God Finger", {"ryangodfinger"}, "Pushes objects away when pointing at them.", function(value)
+    if player_is_pointing then
+        local raycast = do_raycast(400.0, 2 + 8 + 16)
+        memory.write_int(memory.script_global(4516656 + 935), NETWORK.GET_NETWORK_TIME())
+        if raycast.did_hit and raycast.hit_entity ~= nil then
+            god_finger_target = raycast.hit_coords
+            ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
+            FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 29, 25.0, false, true, 0.0, true)
+            esp_box(raycast.hit_entity)
+        else
+            god_finger_target = nil
+            ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
+        end
+    else
+        god_finger_target = nil
+    end
+end)
+
 -- -- Crosshair When Pointing
 world_crosshair_when_pointing = false
-player_is_pointing = false
-
 menu.toggle(self_root, "Crosshair When Pointing", {"ryanpointingcrosshair"}, "Adds a crosshair when pointing.", function(value)
     world_crosshair_when_pointing = value
 end)
@@ -754,8 +834,9 @@ menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while ho
 end)
 util.create_tick_handler(function()
     if ebrake then
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped())
-        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+        local player_ped = player_get_ped(players.user())
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
+        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == player_ped then
             vehicle_set_no_grip(vehicle, PAD.IS_CONTROL_PRESSED(21, 21))
         end
     end
@@ -1461,10 +1542,10 @@ function setup_player(player_id)
         util.toast("Catapulted " .. players.get_name(player_id) .. "'s car!")
     end)
 
-    local player_trolling_npcs_root = menu.list(player_trolling_root, "NPCs...", {"ryannpcs"}, "NPC trolling options.")
+    local player_trolling_entities_root = menu.list(player_trolling_root, "Entities...", {"ryanentities"}, "Entity trolling options.")
     
     -- -- Stripper El Rubio
-    menu.action(player_trolling_npcs_root, "Pole-Dancing El Rubio", {"ryanelrubio"}, "Spawns an El Rubio whose fortune has been stolen, leading him to the pole.", function()
+    menu.action(player_trolling_entities_root, "Pole-Dancing El Rubio", {"ryanelrubio"}, "Spawns an El Rubio whose fortune has been stolen, leading him to the pole.", function()
         local ped_coords = vector_add(
             ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)),
             {x = math.random(-5, 5), y = math.random(-5, 5), z = 0}
@@ -1484,19 +1565,17 @@ function setup_player(player_id)
     end)
 
     -- -- Trash Pickup
-    menu.action(player_trolling_npcs_root, "Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
+    menu.action(player_trolling_entities_root, "Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
         do_trash_pickup(player_id)
     end)
 
-    local player_trolling_objects_root = menu.list(player_trolling_root, "Objects...", {"ryanobjects"}, "Object trolling options.")
-
     -- -- Flying Yacht
-    menu.action(player_trolling_objects_root, "Flying Yacht", {"ryanflyingyacht"}, "Send the magic school yacht to fuck their shit up.", function()
+    menu.action(player_trolling_entities_root, "Flying Yacht", {"ryanflyingyacht"}, "Send the magic school yacht to fuck their shit up.", function()
         do_flying_yacht(player_id)
     end)
     
     -- -- Tank Kamkaze
-    menu.action(player_trolling_objects_root, "Falling Tank", {"ryantankkamikaze"}, "Send a tank straight from heaven.", function()
+    menu.action(player_trolling_entities_root, "Falling Tank", {"ryantankkamikaze"}, "Send a tank straight from heaven.", function()
 		local player_ped = player_get_ped(player_id)
         local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
         coords.z = coords.z + 10
