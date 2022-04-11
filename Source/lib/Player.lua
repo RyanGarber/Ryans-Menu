@@ -43,7 +43,6 @@ function player_block_joins(player_name) -- Credit: Block Joins Script
             ref = menu.ref_by_path("Online>Player History>" .. player_name .. possible_tags[i] .. ">Player Join Reactions>Block Join")
         end) then
             menu.focus(menu.my_root())
-            menu.focus(ref)
             menu.trigger_command(ref, "true")
             success = true
             break

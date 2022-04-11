@@ -1147,13 +1147,13 @@ util.create_tick_handler(function()
             local offset = {x = math.random(-75, 75), y = math.random(-75, 75), z = math.random(-25, 25)}
             local color = {r = math.random(0, 255) / 255.0, g = math.random(0, 255) / 255.0, b = math.random(0, 255) / 255.0}
             for i = 1, math.random(3, 6) do
-                util.yield(math.random(200, 750))
+                util.yield(math.random(75, 500))
                 do_fireworks("Firework Burst", vector_add(offset, {x = 8, y = i + 8, z = 0}), color)
                 do_fireworks("Firework Burst", vector_add(offset, {x = 8, y = -i - 8, z = 0}), color)
             end
         end
 
-        util.yield(math.random(300, 1000))
+        util.yield(math.random(150, 650))
     end
 end)
 
@@ -1783,7 +1783,11 @@ end)
 -- Settings Menu --
 menu.divider(settings_root, "Updates")
 menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
-menu.hyperlink(settings_root, "Get Latest Version", "https://github.com/RyanGarber/Ryans-Menu/raw/main/Ryan's Menu.lua", "Opens the latest version of the menu for downloading.")
+menu.hyperlink(settings_root, "Website", "https://ryan.gq/menu/", "Opens the official website, for downloading the installer and viewing the changelog.")
+menu.divider(settings_root, "Miscellaneous")
+menu.action(settings_root, "Allow Fireworks", {"ryanallowfireworks"}, "Disable Crash Event timeout to allow for fireworks.", function()
+    menu.focus(menu.ref_by_path("Online>Protections>Events>Crash Event>Timeout"))
+end)
 
 
 -- Initialize --
