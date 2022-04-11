@@ -155,7 +155,6 @@ end
 
 function esp_box(entity)
     local color = {r = math.floor(esp_color.r * 255), g = math.floor(esp_color.g * 255), b = math.floor(esp_color.b * 255)}
-    util.toast(color.r .. ", " .. color.g .. ", " .. color.b)
     local minimum = v3.new()
 	local maximum = v3.new()
 	if ENTITY.DOES_ENTITY_EXIST(entity) then
