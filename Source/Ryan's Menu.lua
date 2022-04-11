@@ -745,18 +745,18 @@ util.create_tick_handler(function()
     if forcefield_mode == ForcefieldModes.Push then -- Push
         local player_ped = player_get_ped()
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-		local entities = entity_get_all_nearby(player_coords, forcefield_size)
+		local entities = entity_get_all_nearby(player_coords, forcefield_size, NearbyEntitiesModes.All)
 		for _, entity in pairs(entities) do
 			local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
 			local force = vector_normalize(vector_subtract(entity_coords, player_coords))
             force = vector_multiply(force, forcefield_force)
-			if ENTITY.IS_ENTITY_A_PED(entity)  then
+			if ENTITY.IS_ENTITY_A_PED(entity) then
 				if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
 					entity_request_control(entity)
 					PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
 					ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
 				end
-			else
+			elseif entity ~= entities.get_user_vehicle_as_handle() then
 				entity_request_control(entity)
 				ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
 			end
@@ -848,7 +848,7 @@ end)
 world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
 world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
 world_vehicles_root = menu.list(world_root, "All Vehicles...", {"ryanallvehicles"}, "Control the vehicles around you.")
-world_npc_action_root = menu.list(world_root, "All NPCs: None", {"ryannpcaction"}, "Changes the action NPCs are currently performing.")
+world_npc_action_root = menu.list(world_root, "All NPCs: None", {"ryanallnpcs"}, "Changes the action NPCs are currently performing.")
 
 
 -- -- Enter Closest Vehicle
@@ -1011,27 +1011,27 @@ end, false)
 
 -- -- NPC Action
 npc_action = nil
-menu.action(world_npc_action_root, "None", {"ryannpcnone"}, "Makes NPCs normal.", function()
+menu.action(world_npc_action_root, "None", {"ryanallnpcsnone"}, "Makes NPCs normal.", function()
     menu.set_menu_name(world_npc_action_root, "All NPCs: None")
     menu.focus(world_npc_action_root)
     npc_action = nil
 end)
-menu.action(world_npc_action_root, "Musician", {"ryannpcmusician"}, "Makes NPCs into musicians.", function()
+menu.action(world_npc_action_root, "Musician", {"ryanallnpcsmusician"}, "Makes NPCs into musicians.", function()
     menu.set_menu_name(world_npc_action_root, "All NPCs: Musician")
     menu.focus(world_npc_action_root)
     npc_action = "WORLD_HUMAN_MUSICIAN"
 end)
-menu.action(world_npc_action_root, "Human Statue", {"ryannpcstatue"}, "Makes NPCs into human statues.", function()
+menu.action(world_npc_action_root, "Human Statue", {"ryanallnpcsstatue"}, "Makes NPCs into human statues.", function()
     menu.set_menu_name(world_npc_action_root, "All NPCs: Human Statue")
     menu.focus(world_npc_action_root)
     npc_action = "WORLD_HUMAN_HUMAN_STATUE"
 end)
-menu.action(world_npc_action_root, "Paparazzi", {"ryannpcpaparazzi"}, "Makes NPCs into paparazzi.", function()
+menu.action(world_npc_action_root, "Paparazzi", {"ryanallnpcspaparazzi"}, "Makes NPCs into paparazzi.", function()
     menu.set_menu_name(world_npc_action_root, "All NPCs: Paparazzi")
     menu.focus(world_npc_action_root)
     npc_action = "WORLD_HUMAN_PAPARAZZI"
 end)
-menu.action(world_npc_action_root, "Janitor", {"ryannpcjanitor"}, "Makes NPCs into janitors.", function()
+menu.action(world_npc_action_root, "Janitor", {"ryanallnpcsjanitor"}, "Makes NPCs into janitors.", function()
     menu.set_menu_name(world_npc_action_root, "All NPCs: Janitor")
     menu.focus(world_npc_action_root)
     npc_action = "WORLD_HUMAN_JANITOR"
