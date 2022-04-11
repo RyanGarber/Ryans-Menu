@@ -1116,39 +1116,45 @@ util.create_tick_handler(function()
     util.yield(100)
 end)
 
--- -- Del Perro Fireworks
-menu.toggle_loop(world_root, "Del Perro Fireworks", {"ryanfireworkshow"}, "A nice display of liberty on the second worst beach in America.", function()
-    function spawn_firework(burst_type, coords, color)
-        coords = vector_add({x = -1800, y = -1000, z = 85}, coords)
-        ptfx_play_at_coords(coords, PTFX[burst_type][1], PTFX[burst_type][2], color)
-        audio_play_at_coords(coords, "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 100)
-        audio_play_at_coords(vector_add(coords, {x = 50, y = 50, z = 0}), "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 500)
-        audio_play_at_coords(vector_add(coords, {x = -50, y = -50, z = 0}), "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 500)
-        audio_play_at_coords(vector_add(coords, {x = 75, y = 75, z = 0}), "PLAYER_SWITCH_CUSTOM_SOUNDSET", "Hit_Out", 100)
-    end
+-- -- Fireworks
+function do_fireworks(burst_type, coords, color)
+    coords = vector_add(firework_coords, coords)
+    ptfx_play_at_coords(coords, PTFX[burst_type][1], PTFX[burst_type][2], color)
+    audio_play_at_coords(coords, "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 100)
+    audio_play_at_coords(vector_add(coords, {x = 50, y = 50, z = 0}), "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 500)
+    audio_play_at_coords(vector_add(coords, {x = -50, y = -50, z = 0}), "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 500)
+    audio_play_at_coords(vector_add(coords, {x = 75, y = 75, z = 0}), "PLAYER_SWITCH_CUSTOM_SOUNDSET", "Hit_Out", 100)
+end
 
-    local color = {r = math.random(0, 255) / 255.0, g = math.random(0, 255) / 255.0, b = math.random(0, 255) / 255.0}
-    spawn_firework("Firework Burst", {x = math.random(-150, 150), y = math.random(-200, 50), z = math.random(-25, 25)}, color)
+firework_coords = nil -- {x = -1800, y = -1000, z = 85}
+menu.toggle(world_root, "Fireworks Show", {"ryanfireworkshow"}, "A nice display of liberty on the second worst beach in America.", function(value)
+    firework_coords = value and ENTITY.GET_ENTITY_COORDS(player_get_ped()) or nil
+end)
+util.create_tick_handler(function()
+    if firework_coords ~= nil then
+        local color = {r = math.random(0, 255) / 255.0, g = math.random(0, 255) / 255.0, b = math.random(0, 255) / 255.0}
+        do_fireworks("Firework Burst", {x = math.random(-150, 150), y = math.random(-200, 50), z = math.random(-25, 25)}, color)
 
-    if math.random(1, 10) == 2 then
-        local offset = {x = math.random(-75, 75), y = math.random(-75, 75), z = math.random(-25, 25)}
-        local color = {r = math.random(0, 255) / 255.0, g = math.random(0, 255) / 255.0, b = math.random(0, 255) / 255.0}
-        spawn_firework("Firework Burst", vector_add(offset, {x = 8, y = 8, z = 0}), color)
-        spawn_firework("Firework Burst", vector_add(offset, {x = -8, y = 8, z = 0}), color)
-        spawn_firework("Firework Burst", vector_add(offset, {x = 8, y = -8, z = 0}), color)
-        spawn_firework("Firework Burst", vector_add(offset, {x = -8, y = -8, z = 0}), color)
-    end
-    if math.random(1, 10) == 8 then
-        local offset = {x = math.random(-75, 75), y = math.random(-75, 75), z = math.random(-25, 25)}
-        local color = {r = math.random(0, 255) / 255.0, g = math.random(0, 255) / 255.0, b = math.random(0, 255) / 255.0}
-        for i = 1, math.random(3, 6) do
-            util.yield(math.random(25, 250))
-            spawn_firework("Firework Burst", vector_add(offset, {x = 8, y = i + 8, z = 0}), color)
-            spawn_firework("Firework Burst", vector_add(offset, {x = 8, y = -i - 8, z = 0}), color)
+        if math.random(1, 10) == 2 then
+            local offset = {x = math.random(-75, 75), y = math.random(-75, 75), z = math.random(-25, 25)}
+            local color = {r = math.random(0, 255) / 255.0, g = math.random(0, 255) / 255.0, b = math.random(0, 255) / 255.0}
+            do_fireworks("Firework Burst", vector_add(offset, {x = 8, y = 8, z = 0}), color)
+            do_fireworks("Firework Burst", vector_add(offset, {x = -8, y = 8, z = 0}), color)
+            do_fireworks("Firework Burst", vector_add(offset, {x = 8, y = -8, z = 0}), color)
+            do_fireworks("Firework Burst", vector_add(offset, {x = -8, y = -8, z = 0}), color)
         end
-    end
+        if math.random(1, 10) == 8 then
+            local offset = {x = math.random(-75, 75), y = math.random(-75, 75), z = math.random(-25, 25)}
+            local color = {r = math.random(0, 255) / 255.0, g = math.random(0, 255) / 255.0, b = math.random(0, 255) / 255.0}
+            for i = 1, math.random(3, 6) do
+                util.yield(math.random(200, 750))
+                do_fireworks("Firework Burst", vector_add(offset, {x = 8, y = i + 8, z = 0}), color)
+                do_fireworks("Firework Burst", vector_add(offset, {x = 8, y = -i - 8, z = 0}), color)
+            end
+        end
 
-    util.yield(math.random(150, 650))
+        util.yield(math.random(300, 1000))
+    end
 end)
 
 
