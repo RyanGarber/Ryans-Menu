@@ -154,7 +154,8 @@ function do_raycast(distance, flags) -- Credit: WiriScript
 end
 
 function esp_box(entity)
-    local color = {r = 75, g = 175, b = 255}
+    local color = {r = math.floor(esp_color.r * 255), g = math.floor(esp_color.g * 255), b = math.floor(esp_color.b * 255)}
+    util.toast(color.r .. ", " .. color.g .. ", " .. color.b)
     local minimum = v3.new()
 	local maximum = v3.new()
 	if ENTITY.DOES_ENTITY_EXIST(entity) then
@@ -648,7 +649,7 @@ self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...", {"r
 ptfx_create_list(self_ptfx_weapon_aiming_root, function(ptfx)
     if ptfx_disable then return end
     if CAM.IS_AIM_CAM_ACTIVE() then
-        local raycast = do_raycast(1000.0)
+        local raycast = do_raycast(500.0)
         if raycast.did_hit then
             ptfx_play_at_coords(raycast.hit_coords, ptfx[1], ptfx[2], ptfx_color)
             util.yield(ptfx[3])
@@ -798,7 +799,7 @@ player_is_pointing = false
 god_finger_target = nil
 menu.toggle_loop(self_root, "God Finger", {"ryangodfinger"}, "Pushes objects away when pointing at them.", function(value)
     if player_is_pointing then
-        local raycast = do_raycast(400.0, 2 + 8 + 16)
+        local raycast = do_raycast(5000.0, 2 + 8 + 16)
         memory.write_int(memory.script_global(4516656 + 935), NETWORK.GET_NETWORK_TIME())
         if raycast.did_hit and raycast.hit_entity ~= nil then
             god_finger_target = raycast.hit_coords
@@ -1781,11 +1782,17 @@ end)
 
 
 -- Settings Menu --
+esp_color = {r = 0.29, g = 0.69, b = 1.0}
 menu.divider(settings_root, "Updates")
 menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
 menu.hyperlink(settings_root, "Website", "https://ryan.gq/menu/", "Opens the official website, for downloading the installer and viewing the changelog.")
-menu.divider(settings_root, "Miscellaneous")
-menu.action(settings_root, "Allow Fireworks", {"ryanallowfireworks"}, "Disable Crash Event timeout to allow for fireworks.", function()
+menu.divider(settings_root, "Options")
+menu.colour(settings_root, "ESP Color", {"ryanespcolor"}, "The color of on-screen ESP.", 0.29, 0.69, 1.0, 1.0, false, function(color)
+    esp_color.r = color.r
+    esp_color.g = color.g
+    esp_color.b = color.b
+end)
+menu.action(settings_root, "Allow Fireworks", {"ryanallowfireworks"}, "Disable Crash Event - Timeout to allow for fireworks.", function()
     menu.focus(menu.ref_by_path("Online>Protections>Events>Crash Event>Timeout"))
 end)
 
