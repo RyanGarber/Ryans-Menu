@@ -1,16 +1,14 @@
-VERSION = "0.6.5"
+VERSION = "0.6.6"
 MANIFEST = {
-    lib = {"Audio.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Vector.lua", "Vehicle.lua"},
+    lib = {"Audio.lua", "Basic.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
 }
 
 
 -- Requirements --
-function exists(name)
-    return filesystem.exists(filesystem.scripts_dir() .. name)
-end
-
 notified_of_requirements = false
+
+function exists(name) return filesystem.exists(filesystem.scripts_dir() .. name) end
 while not exists("lib\\natives-1640181023.lua") or not exists("lib\\natives-1627063482.lua") do
     if not notified_of_requirements then
         local ref = menu.ref_by_path("Stand>Lua Scripts>Repository>WiriScript")
@@ -21,7 +19,6 @@ while not exists("lib\\natives-1640181023.lua") or not exists("lib\\natives-1627
     util.toast("Ryan's Menu requires WiriScript and LanceScript to function. Please enable them to continue.")
     util.yield(2000)
 end
-require("natives-1640181023")
 
 for required_directory, required_files in pairs(MANIFEST) do
     for _, required_file in pairs(required_files) do
@@ -35,533 +32,24 @@ for required_directory, required_files in pairs(MANIFEST) do
     end
 end
 
+require("natives-1640181023")
+basics_request_model(2628187989)
+
 
 -- Check for Updates --
 async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
     latest_version = manifest:sub(1, manifest:find("\n") - 1)
     if latest_version ~= VERSION then
-        show_text_message(6, "v" .. VERSION, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
+        basics_show_text_message(6, "v" .. VERSION, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
         menu.trigger_commands("ryansettings")
     else
-        show_text_message(49, "v" .. VERSION, "You're up to date. Enjoy!")
+        basics_show_text_message(49, "v" .. VERSION, "You're up to date. Enjoy!")
     end
     audio_play_from_entity(player_get_ped(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
 end, function()
-    show_text_message(6, "v" .. VERSION, "Failed to get the latest version. Go to Settings to check manually.")
+    basics_show_text_message(6, "v" .. VERSION, "Failed to get the latest version. Go to Settings to check manually.")
 end)
 async_http.dispatch()
-
-
--- Basic Functions --
-function teleport_to(x, y, z)
-    util.toast("Teleporting...")
-    ENTITY.SET_ENTITY_COORDS(player_get_ped(), x, y, z)
-end
-
-function teleport_with_vehicle_to(x, y, z)
-    util.toast("Teleporting...")
-    local player_ped = player_get_ped()
-    if PED.IS_PED_IN_ANY_VEHICLE(player_ped, true) then
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
-        ENTITY.SET_ENTITY_COORDS(vehicle, x, y, z)
-    else
-        ENTITY.SET_ENTITY_COORDS(player_ped, x, y, z)
-    end
-end
-
-function get_random(table) -- Credit: WiriScript
-	if rawget(table, 1) ~= nil then return table[math.random(1, #table)] end
-	local list = {}
-	for _, value in pairs(table) do table.insert(list, value) end
-	return list[math.random(1, #list)]
-end
-
-function format_int(number)
-    local i, j, minus, int, fraction = tostring(number):find('([-]?)(%d+)([.]?%d*)')
-    int = int:reverse():gsub("(%d%d%d)", "%1,")
-    return minus .. int:reverse():gsub("^,", "") .. fraction
-end
-
-function format_time(ms)
-    local formatted = ""
-    ms = ms / 1000; local s = math.floor(ms % 60)
-    ms = ms / 60; local m = math.floor(ms % 60)
-    ms = ms / 60; local h = math.floor(ms % 24)
-    ms = ms / 24; local d = math.floor(ms)
-    if d > 0 then formatted = formatted .. ", " .. d .. " day" .. (d ~= 1 and "s" or "") end
-    if h > 0 then formatted = formatted .. ", " .. h .. " hour" .. (h ~= 1 and "s" or "") end
-    if m > 0 then formatted = formatted .. ", " .. m .. " minute" .. (m ~= 1 and "s" or "") end
-    if s > 0 then formatted = formatted .. ", " .. s .. " second" .. (s ~= 1 and "s" or "") end
-    return formatted:sub(3)
-end
-
-function request_model(model)
-    if STREAMING.IS_MODEL_VALID(model) then
-        STREAMING.REQUEST_MODEL(model)
-        while not STREAMING.HAS_MODEL_LOADED(model) do
-            util.yield()
-        end
-    else
-        util.toast("Invalid model '" .. model .."', please report this issue to Ryan.")
-    end
-end
-
-function request_animations(animation_group)
-    STREAMING.REQUEST_ANIM_DICT(animation_group)
-    while not STREAMING.HAS_ANIM_DICT_LOADED(animation_group) do
-        util.yield()
-    end
-end
-
-function show_text_message(color, subtitle, message)
-    HUD._THEFEED_SET_NEXT_POST_BACKGROUND_COLOR(color)
-	GRAPHICS.REQUEST_STREAMED_TEXTURE_DICT("DIA_JESUS", 0)
-	while not GRAPHICS.HAS_STREAMED_TEXTURE_DICT_LOADED("DIA_JESUS") do
-		util.yield()
-	end
-	util.BEGIN_TEXT_COMMAND_THEFEED_POST(message)
-	HUD.END_TEXT_COMMAND_THEFEED_POST_MESSAGETEXT("DIA_JESUS", "DIA_JESUS", true, 4, "Ryan's Menu", subtitle)
-	HUD.END_TEXT_COMMAND_THEFEED_POST_TICKER(true, false)
-end
-
-function do_raycast(distance, flags) -- Credit: WiriScript
-    flags = flags or -1
-    local result = {}
-	local did_hit = memory.alloc(8)
-	local hit_coords = v3.new()
-	local hit_normal = v3.new()
-	local hit_entity = memory.alloc_int()
-	local origin = CAM.GET_FINAL_RENDERED_CAM_COORD()
-	local destination = vector_offset_from_camera(distance)
-
-	SHAPETEST.GET_SHAPE_TEST_RESULT(
-		SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
-			origin.x, origin.y, origin.z,
-			destination.x, destination.y, destination.z,
-			flags, PLAYER.PLAYER_PED_ID(), 1
-		), did_hit, hit_coords, hit_normal, hit_entity
-	)
-	result.did_hit = memory.read_byte(did_hit) ~= 0
-	result.hit_coords = v3_to_object(v3.get(hit_coords))
-	result.hit_normal = v3_to_object(v3.get(hit_normal))
-	result.hit_entity = memory.read_int(hit_entity)
-
-	memory.free(did_hit)
-	v3.free(hit_coords)
-	v3.free(hit_normal)
-	memory.free(hit_entity)
-	return result
-end
-
-function esp_box(entity)
-    local color = {r = math.floor(esp_color.r * 255), g = math.floor(esp_color.g * 255), b = math.floor(esp_color.b * 255)}
-    local minimum = v3.new()
-	local maximum = v3.new()
-	if ENTITY.DOES_ENTITY_EXIST(entity) then
-		MISC.GET_MODEL_DIMENSIONS(ENTITY.GET_ENTITY_MODEL(entity), minimum, maximum)
-		local width  = 2 * v3.getX(maximum)
-		local length = 2 * v3.getY(maximum)
-		local depth  = 2 * v3.getZ(maximum)
-
-		local offset1 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -width / 2,  length / 2,  depth / 2)
-		local offset4 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,  width / 2,  length / 2,  depth / 2)
-		local offset5 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -width / 2,  length / 2, -depth / 2)
-		local offset7 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,  width / 2,  length / 2, -depth / 2)
-		local offset2 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -width / 2, -length / 2,  depth / 2) 
-		local offset3 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,  width / 2, -length / 2,  depth / 2)
-		local offset6 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -width / 2, -length / 2, -depth / 2)
-		local offset8 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,  width / 2, -length / 2, -depth / 2)
-
-		GRAPHICS.DRAW_LINE(offset1.x, offset1.y, offset1.z, offset4.x, offset4.y, offset4.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset1.x, offset1.y, offset1.z, offset2.x, offset2.y, offset2.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset1.x, offset1.y, offset1.z, offset5.x, offset5.y, offset5.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset2.x, offset2.y, offset2.z, offset3.x, offset3.y, offset3.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset3.x, offset3.y, offset3.z, offset8.x, offset8.y, offset8.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset4.x, offset4.y, offset4.z, offset7.x, offset7.y, offset7.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset4.x, offset4.y, offset4.z, offset3.x, offset3.y, offset3.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset5.x, offset5.y, offset5.z, offset7.x, offset7.y, offset7.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset6.x, offset6.y, offset6.z, offset2.x, offset2.y, offset2.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset6.x, offset6.y, offset6.z, offset8.x, offset8.y, offset8.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset5.x, offset5.y, offset5.z, offset6.x, offset6.y, offset6.z, color.r, color.g, color.b, 255)
-		GRAPHICS.DRAW_LINE(offset7.x, offset7.y, offset7.z, offset8.x, offset8.y, offset8.z, color.r, color.g, color.b, 255)
-	end
-	v3.free(minimum)
-	v3.free(maximum)
-end
-
-
--- Stats --
-function set_office_money(command, click_type, amount)
-    menu.show_warning(command, click_type, "Make sure you have at least 1 crate of Special Cargo to sell before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell that cargo.", function()
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BUY_COMPLETE"), 1000, true)
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_SELL_COMPLETE"), 1000, true)
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BUY_UNDERTAKEN"), 1000, true)
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BUY_UNDERTAKEN"), 1000, true)
-        STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_CONTRA_EARNINGS"), amount, true)
-
-        show_text_message(Colors.Purple, "CEO Office Money", "Done! Switch sessions and start a Special Cargo sale to apply your changes.")
-    end)
-end
-
-function set_mc_clutter(command, click_type, amount)
-    menu.show_warning(command, click_type, "Make sure you have at least 1 unit of stock to sell, in every business, before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell all of those, one by one.", function()
-        for i=0, 5 do
-            STATS.STAT_SET_INT(MISC.GET_HASH_KEY("LIFETIME_BKR_SELL_EARNINGS" .. i), amount, true)
-            if i == 0 then i = "" end
-            STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_BUY_COMPLET" .. i), 1000, true)
-            STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_BUY_UNDERTA" .. i), 1000, true)
-            STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_SELL_COMPLET" .. i), 1000, true)
-            STATS.STAT_SET_INT(MISC.GET_HASH_KEY("MP0_LIFETIME_BIKER_SELL_UNDERTA" .. i), 1000, true)
-        end
-
-        show_text_message(Colors.Purple, "M.C. Clubhouse Clutter", "Done! Switch sessions and start a sale in every business to apply changes.")
-    end)
-end
-
-
--- Player Functions --
-function do_sms_spam(player_id, message, duration)
-    local player_name = players.get_name(player_id)
-    menu.trigger_commands("smsrandomsender" .. player_name .. " on")
-    menu.trigger_commands("smstext" .. player_name .. " " .. message)
-    menu.trigger_commands("smsspam" .. player_name .. " on")
-    util.yield(duration)
-    menu.trigger_commands("smsspam" .. player_name .. " off")
-end
-
-function do_fake_money_drop(player_id)
-    menu.trigger_commands("notifybanked" .. players.get_name(player_id) .. " " .. math.random(100, 5000))
-    local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id))
-    local bag = entities.create_object(2628187989, vector_add(coords, {x = 0, y = 0, z = 2}))
-    ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -20, 0.0, 0.0, 0.0, true, true)
-    util.yield(333)
-    AUDIO.PLAY_SOUND_FROM_COORD(-1, "LOCAL_PLYR_CASH_COUNTER_COMPLETE", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true, 2, false)
-    entities.delete_by_handle(bag)
-end
-
-function do_trash_pickup(player_id)
-    util.toast("Sending the trash man to " .. players.get_name(player_id) .. "...")
-
-    local trash_truck = util.joaat("trash"); request_model(trash_truck)
-    local trash_man = util.joaat("s_m_y_garbage"); request_model(trash_man)
-    local player_ped = player_get_ped(player_id)
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-
-    local weapons = {"weapon_pistol", "weapon_pumpshotgun"}
-    local coords_ptr = memory.alloc()
-    local node_ptr = memory.alloc()
-
-    if not PATHFIND.GET_RANDOM_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, 80, 0, 0, 0, coords_ptr, node_ptr) then
-        player_coords.x = player_coords.x + math.random(-7, 7)
-        player_coords.y = player_coords.y + math.random(-7, 7)
-        PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords_ptr, 1, 100, 2.5)
-    end
-
-    local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
-    local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-    entity_face_entity(vehicle, player_ped, true)
-    VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
-    ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
-
-    for seat = -1, 2 do
-        local npc = entities.create_ped(5, trash_man, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-        local weapon = get_random(weapons)
-
-        PED.SET_PED_RANDOM_COMPONENT_VARIATION(npc, 0)
-        WEAPON.GIVE_WEAPON_TO_PED(npc, util.joaat(weapon) , -1, false, true)
-        PED.SET_PED_NEVER_LEAVES_GROUP(npc, true)
-        PED.SET_PED_COMBAT_ATTRIBUTES(npc, 1, true)
-        PED.SET_PED_INTO_VEHICLE(npc, vehicle, seat)
-        ENTITY.SET_ENTITY_INVINCIBLE(npc, false)
-        TASK.TASK_COMBAT_PED(npc, player_ped, 0, 16)
-        PED.SET_PED_KEEP_TASK(npc, true)
-
-        util.create_tick_handler(function()
-            if TASK.GET_SCRIPT_TASK_STATUS(npc, 0x2E85A751) == 7 then
-                TASK.CLEAR_PED_TASKS(npc)
-                TASK.TASK_SMART_FLEE_PED(npc, player_get_ped(player_id), 1000.0, -1, false, false)
-                PED.SET_PED_KEEP_TASK(npc, true)
-                return false
-            end
-            return true
-        end)
-    end
-    
-    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_truck)
-    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_man)
-
-    do_sms_spam(player_id, "It's trash day! Time to take it out.", 5000)
-end
-
-function do_flying_yacht(player_id)
-    local yacht = util.joaat("prop_cj_big_boat"); request_model(yacht)
-    local buzzard = util.joaat("buzzard2"); request_model(buzzard)
-    local black_ops = util.joaat("s_m_y_blackops_01"); request_model(black_ops)
-    local army = util.joaat("ARMY")
-
-    local player_ped =  player_get_ped(player_id)
-    local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
-    local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, army, player_group)
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player_group, army)
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, army, army)
-
-    local vehicle = entities.create_vehicle(buzzard, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-    local attachment = entities.create_object(yacht, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-    NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
-    if ENTITY.DOES_ENTITY_EXIST(vehicle) then
-        local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-        PED.SET_PED_INTO_VEHICLE(ped, vehicle)
-        
-        coords.x = coords.x + math.random(-20, 20)
-        coords.y = coords.y + math.random(-20, 20)
-        coords.z = coords.z + 30
-        ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
-        NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
-        ENTITY.SET_ENTITY_INVINCIBLE(vehicle, true)
-        VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
-        VEHICLE.SET_HELI_BLADES_FULL_SPEED(vehicle)
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, "chassis"), 0, 0, 0, 0, 0, 0, false, false, false, false, 0, true)
-        HUD.ADD_BLIP_FOR_ENTITY(vehicle)
-
-        PED.SET_PED_MAX_HEALTH(ped, 500)
-        ENTITY.SET_ENTITY_HEALTH(ped, 500)
-        ENTITY.SET_ENTITY_INVINCIBLE(ped, true)
-        PED.SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(ped, true)
-        TASK.TASK_HELI_MISSION(ped, vehicle, 0, player_ped, 0.0, 0.0, 0.0, 23, 40.0, 40.0, -1.0, 0, 10, -1.0, 0)
-        PED.SET_PED_KEEP_TASK(ped, true)
-
-        for seat = 1, 2 do 
-            local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-            PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
-            WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
-            PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
-            PED.SET_PED_MAX_HEALTH(ped, 500)
-            ENTITY.SET_ENTITY_HEALTH(ped, 500)
-            ENTITY.SET_ENTITY_INVINCIBLE(ped, true)
-            PED.SET_PED_SHOOT_RATE(ped, 1000)
-            PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, army)
-            TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
-        end
-
-        util.yield(100)
-    end
-
-    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(yacht)
-    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(buzzard)
-    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(black_ops)
-end
-
-function watch_and_takeover_vehicle(action, player_id, wait_for)
-    local player_name = players.get_name(player_id)
-    menu.trigger_commands("tpveh" .. player_name)
-    util.yield(750)
-
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-    if vehicle ~= NULL then
-        entity_request_control_loop(vehicle)
-        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-            action(vehicle)
-            util.yield(wait_for)
-        end
-    end
-end
-
-function do_omnicrash(player_id)
-    show_text_message(Colors.Purple, "Omnicrash Mk II", "Omnicrash has begun. This may take a while...")
-    for _, crash_event in pairs(CrashEvents) do
-        player_send_script_event(player_id, crash_event, "Omnicrash")
-    end
-end
-
-function do_smelly_peepo_crash(player_id)
-    local player_ped = player_get_ped(player_id)
-    local player_ped_heading = ENTITY.GET_ENTITY_HEADING(player_ped)
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-
-    util.toast("Spawning smelly objects on " .. players.get_name(player_id) .. "...")
-    show_text_message(Colors.Purple, "Smelly Peepo Crash", "Smelly Peepo Crash has begun. This may take a while...")
-
-    request_model(-930879665)
-    request_model(3613262246)
-    request_model(452618762)
-    local object_1 = entities.create_object(-930879665, player_coords)
-    util.yield(10)
-    local object_2 = entities.create_object(3613262246, player_coords)
-    util.yield(10)
-    local object_3 = entities.create_object(452618762, player_coords)
-    util.yield(10)
-    local object_4 = entities.create_object(3613262246, player_coords)
-    util.yield(300)
-    entities.delete_by_handle(object_1)
-    entities.delete_by_handle(object_2)
-    entities.delete_by_handle(object_3)
-    entities.delete_by_handle(object_4)
-
-    util.toast("Spawning smelly peds on " .. players.get_name(player_id) .. "...")
-    local ped = entities.create_ped(0, 1057201338, player_coords, 0)
-    util.yield(100)
-    entities.delete_by_handle(ped)
-    local ped = entities.create_ped(0, -2056455422, player_coords, 0)
-    util.yield(100)
-    entities.delete_by_handle(ped)
-    local ped = entities.create_ped(0, 762327283, player_coords, 0)
-    util.yield(100)
-    entities.delete_by_handle(ped)
-
-    util.toast("Spawning the smelliest of peds on " .. players.get_name(player_id) .. "!")
-    local fatcult = util.joaat("a_f_m_fatcult_01"); request_model(fatcult)
-    for i = 1, 8 do
-        util.create_thread(function()
-            local ped = entities.create_ped(
-                0, fatcult,
-                vector_add(player_coords, {x = math.random(-1, 1), y = math.random(-1, 1), z = 0}),
-                player_ped_heading
-            )
-            util.yield(400)
-            entities.delete_by_handle(ped)
-        end)
-        util.yield(100)
-        local ped_1 = entities.create_ped(0, util.joaat("slod_human"), player_coords, player_ped_heading)
-        local ped_2 = entities.create_ped(0, util.joaat("slod_large_quadped"), player_coords, player_ped_heading)
-        local ped_3 = entities.create_ped(0, util.joaat("slod_small_quadped"), player_coords, player_ped_heading)
-        util.yield(750)
-        entities.delete_by_handle(ped_1)
-        entities.delete_by_handle(ped_2)
-        entities.delete_by_handle(ped_3)
-        player_send_script_event(player_id, {962740265, player_id, 23243, 5332, 3324, player_id}, "final payload")
-    end
-    util.toast("Done!")
-end
-
-function spam_and_block_then(player_id, removal_block_joins, removal_message, action)
-    local player_name = players.get_name(player_id)
-    if removal_block_joins then
-        player_block_joins(player_name)
-    end
-    if removal_message ~= "" and removal_message ~= " " then
-        util.toast("Spamming " .. player_name .. " with texts...")
-        do_sms_spam(player_id, removal_message, 6000)
-    end
-    action()
-    menu.trigger_commands("players")
-end
-
-
--- Session Functions --
-function watch_and_takeover_vehicle_all(action, modders, wait_for)
-    local starting_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(), true)
-    show_text_message(Colors.Purple, "Session Trolling", "Session trolling has begun. Sit tight and enjoy the show!")
-    menu.trigger_commands("otr on")
-    menu.trigger_commands("invisibility on")
-    for _, player_id in pairs(players.list()) do
-        if player_id ~= players.user() and not players.is_in_interior(player_id) then
-            if modders or not players.is_marked_as_modder(player_id) then
-                watch_and_takeover_vehicle(action, player_id, wait_for)
-            end
-        end
-    end
-    teleport_to(starting_coords.x, starting_coords.y, starting_coords.z)
-    menu.trigger_commands("otr off")
-    menu.trigger_commands("invisibility off")
-end
-
-function watch_and_trigger_command_all(commands, modders, wait_for)
-    local starting_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(), true)
-    show_text_message(Colors.Purple, "Session Trolling", "Session trolling has begun. Sit tight and enjoy the show!")
-    menu.trigger_commands("otr on")
-    menu.trigger_commands("invisibility on")
-    menu.trigger_commands("levitation on")
-    for _, player_id in pairs(players.list()) do
-        if player_id ~= players.user() and not players.is_in_interior(player_id) then
-            if modders or not players.is_marked_as_modder(player_id) then
-                local player_name = players.get_name(player_id)
-                menu.trigger_commands("tp" .. player_name)
-                util.yield(1250)
-                if player_name ~= "**invalid**" then
-                    for i = 1, #commands do
-                        menu.trigger_commands(commands[i]:gsub("{name}", player_name))
-                    end
-                end
-                util.yield(wait_for)
-            end
-        end
-    end
-    teleport_to(starting_coords.x, starting_coords.y, starting_coords.z)
-    menu.trigger_commands("otr off")
-    menu.trigger_commands("invisibility off")
-    menu.trigger_commands("levitation off")
-end
-
-function spam_chat(message, all_players, time_between, wait_for)
-    local sent = 0
-    while sent < 32 do
-        if all_players then
-            for _, player_id in pairs(players.list()) do
-                local name = players.get_name(player_id)
-                menu.trigger_commands("chatas" .. name .. " on")
-                chat.send_message(message, false, true, true)
-                menu.trigger_commands("chatas" .. name .. " off")
-                util.yield(time_between)
-                sent = sent + 1
-            end
-        else
-            chat.send_message(message, false, true, true)
-            util.yield(time_between)
-            sent = sent + 1
-        end
-    end
-    util.yield(wait_for)
-end
-
-function send_translated(message, language, latin)
-    async_http.init("ryan.gq", "/menu/translate?text=" .. message .. "&language=" .. language, function(result)
-        if latin then
-            for from, to in pairs(RussianAlphabet) do
-                result = result:gsub(from, to)
-            end
-        end
-        chat.send_message(result, false, true, true)
-        util.toast("Sent!")
-    end, function()
-        util.toast("Failed to translate message.")
-    end)
-    async_http.dispatch()
-end
-
-function translate_received(message)
-    async_http.init("ryan.gq", "/menu/translate?text=" .. message .. "&language=EN", function(result)
-        show_text_message(Colors.Purple, "Translation", result)
-    end, function()
-        util.toast("Failed to translate message.")
-    end)
-    async_http.dispatch()
-end
-
-function explode_all(with_earrape)
-    for _, player_id in pairs(players.list()) do
-        local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id))
-        FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z, 0, 100, true, false, 150, false)
-        
-        if with_earrape then -- Credit: Bed Sound
-            for i = 1, #BedSoundCoords do
-                local coords = BedSoundCoords[i]
-                audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
-                coords.z = 2000.0
-                audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
-                coords.z = -2000.0
-                audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
-
-                for _, player_id in pairs(players.list()) do
-                    audio_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), "WastedSounds", "Bed", 999999999)
-                end
-            end
-        end
-    end
-end
-
-request_model(2628187989) -- Fake Money Drop lags otherwise
 
 
 -- Main Menu --
@@ -576,6 +64,7 @@ settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Setting
 -- Self Menu --
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
+self_burning_man_root = menu.list(self_root, "Burning Man...", {"ryanburningman"}, "An enhanced LanceScript burning man.")
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
@@ -648,7 +137,7 @@ self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...", {"r
 ptfx_create_list(self_ptfx_weapon_aiming_root, function(ptfx)
     if ptfx_disable then return end
     if CAM.IS_AIM_CAM_ACTIVE() then
-        local raycast = do_raycast(500.0)
+        local raycast = basics_do_raycast(500.0)
         if raycast.did_hit then
             ptfx_play_at_coords(raycast.hit_coords, ptfx[1], ptfx[2], ptfx_color)
             util.yield(ptfx[3])
@@ -689,7 +178,7 @@ end)
 -- -- Pointing PTFX
 self_ptfx_pointing_finger_root = menu.list(self_ptfx_pointing_root, "Finger...", {"ryanptfxpointingfinger"}, "Special FX on your left finger.")
 self_ptfx_pointing_crosshair_root = menu.list(self_ptfx_pointing_root, "Crosshair...", {"ryanptfxpointingcrosshair"}, "Special FX on your crosshair.")
-self_ptfx_pointing_god_finger_root = menu.list(self_ptfx_pointing_root, "God Finger...", {"ryanptfxpointinggodfinger"}, "Special FX on your crosshair when using God Finger.")
+self_ptfx_pointing_god_finger_root = menu.list(self_ptfx_pointing_root, "Target...", {"ryanptfxpointingtarget"}, "Special FX on your target when using God Finger.")
 
 ptfx_create_list(self_ptfx_pointing_finger_root, function(ptfx)
     if ptfx_disable then return end
@@ -702,7 +191,7 @@ end)
 ptfx_create_list(self_ptfx_pointing_crosshair_root, function(ptfx)
     if ptfx_disable then return end
     if player_is_pointing then
-        local raycast = do_raycast(1000.0)
+        local raycast = basics_do_raycast(1000.0)
         if raycast.did_hit then
             ptfx_play_at_coords(raycast.hit_coords, ptfx[1], ptfx[2], ptfx_color)
             util.yield(ptfx[3])
@@ -745,8 +234,8 @@ util.create_tick_handler(function()
     if forcefield_mode == ForcefieldModes.Push then -- Push
         local player_ped = player_get_ped()
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-		local entities = entity_get_all_nearby(player_coords, forcefield_size, NearbyEntitiesModes.All)
-		for _, entity in pairs(entities) do
+		local nearby = entity_get_all_nearby(player_coords, forcefield_size, NearbyEntitiesModes.All)
+		for _, entity in pairs(nearby) do
 			local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
 			local force = vector_normalize(vector_subtract(entity_coords, player_coords))
             force = vector_multiply(force, forcefield_force)
@@ -767,10 +256,10 @@ util.create_tick_handler(function()
 
         local player_ped = player_get_ped()
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-        local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
+        local player_vehicle = entities.get_user_vehicle_as_handle()
 
-        local entities = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.All)
-        for _, entity in pairs(entities) do
+        local nearby = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.All)
+        for _, entity in pairs(nearby) do
             local was_destroyed = false
             for _, destroyed_entity in pairs(entities_destroyed) do
                 if destroyed_entity == entity then was_destroyed = true end
@@ -794,17 +283,50 @@ util.create_tick_handler(function()
     return true
 end)
 
+-- -- Burning Man
+burning_man_enabled = false
+burning_man_spread = 2
+
+menu.toggle(self_burning_man_root, "Enable", {"ryanburningmanenabled"}, "Sets yourself on fire and lets you spread it using the X key.", function(value)
+    burning_man_enabled = value
+    if burning_man_enabled then
+        menu.trigger_commands("godmode off")
+        menu.trigger_commands("demigodmode on")
+        FIRE.START_ENTITY_FIRE(player_get_ped())
+    else
+        menu.trigger_commands("demigodmode off")
+        FIRE.STOP_ENTITY_FIRE(player_get_ped())
+    end
+end)
+
+menu.divider(self_burning_man_root, "Options")
+menu.slider(self_burning_man_root, "Spread", {"ryanburningmanspread"}, "Amount of spread the fire can achieve.", 1, 25, 2, 1, function(value)
+    burning_man_spread = value
+end)
+
+util.create_tick_handler(function()
+    if player_is_pointing then
+        if PAD.IS_CONTROL_JUST_PRESSED(21, 86) then
+            local raycast = basics_do_raycast(250.0)
+            if raycast.did_hit then
+                FIRE.START_SCRIPT_FIRE(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, burning_man_spread, false)
+            end
+        end
+    end
+end)
+
+-- -- God Finger
 player_is_pointing = false
 god_finger_target = nil
 menu.toggle_loop(self_root, "God Finger", {"ryangodfinger"}, "Pushes objects away when pointing at them.", function(value)
     if player_is_pointing then
-        local raycast = do_raycast(5000.0, 2 + 8 + 16)
+        local raycast = basics_do_raycast(5000.0, 2 + 8 + 16)
         memory.write_int(memory.script_global(4516656 + 935), NETWORK.GET_NETWORK_TIME())
         if raycast.did_hit and raycast.hit_entity ~= nil then
             god_finger_target = raycast.hit_coords
             ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
             FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 29, 25.0, false, true, 0.0, true)
-            esp_box(raycast.hit_entity)
+            basics_esp_box(raycast.hit_entity)
         else
             god_finger_target = nil
             ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
@@ -1061,21 +583,21 @@ end)
 -- -- Action Figures
 for i = 1, #ActionFigures do
     menu.action(world_action_figures_root, "Action Figure " .. i, {"ryanactionfigure" .. i}, "Teleports to action figure #" .. i, function()
-        teleport_to(ActionFigures[i][1], ActionFigures[i][2], ActionFigures[i][3])
+        player_teleport_to(ActionFigures[i][1], ActionFigures[i][2], ActionFigures[i][3])
     end)
 end
 
 -- -- Signal Jammers
 for i = 1, #SignalJammers do
     menu.action(world_signal_jammers_root, "Signal Jammer " .. i, {"ryansignaljammer" .. i}, "Teleports to signal jammer #" .. i, function()
-        teleport_with_vehicle_to(SignalJammers[i][1], SignalJammers[i][2], SignalJammers[i][3])
+        player_teleport_with_vehicle_to(SignalJammers[i][1], SignalJammers[i][2], SignalJammers[i][3])
     end)
 end
 
 -- -- Playing Cards
 for i = 1, #PlayingCards do
     menu.action(world_playing_cards_root, "Playing Card " .. i, {"ryanplayingcard" .. i}, "Teleports to playing card #" .. i, function()
-        teleport_with_vehicle_to(PlayingCards[i][1], PlayingCards[i][2], PlayingCards[i][3])
+        player_teleport_with_vehicle_to(PlayingCards[i][1], PlayingCards[i][2], PlayingCards[i][3])
     end)
 end
 
@@ -1176,61 +698,61 @@ end)
 menu.divider(session_trolling_root, "Attacker")
 menu.action(session_trolling_root, "Clone", {"ryanattackallclone"}, "Sends an angry clone to attack all players.", function()
     util.toast("Sending a clone after all players...")
-    watch_and_trigger_command_all({"enemyclone{name}"}, trolling_include_modders, trolling_watch_time)
+    session_watch_and_do_command_all({"enemyclone{name}"}, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Chop", {"ryanattackallchop"}, "Sends Chop to attack all players.", function()
     util.toast("Sending Chop after all players...")
-    watch_and_trigger_command_all({"sendchop{name}"}, trolling_include_modders, trolling_watch_time)
+    session_watch_and_do_command_all({"sendchop{name}"}, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Police", {"ryanattackallpolice"}, "Sends the law to attack all players.", function()
     util.toast("Sending a police car after all players...")
-    watch_and_trigger_command_all({"sendpolicecar{name}"}, trolling_include_modders, trolling_watch_time)
+    session_watch_and_do_command_all({"sendpolicecar{name}"}, trolling_include_modders, trolling_watch_time)
 end)
 
 menu.divider(session_trolling_root, "Vehicle")
 menu.action(session_trolling_root, "Tow", {"ryantowall"}, "Sends a tow truck to all players.", function()
     util.toast("Towing all players...")
-    watch_and_trigger_command_all({"towtruck{name}"}, trolling_include_modders, trolling_watch_time)
+    session_watch_and_do_command_all({"towtruck{name}"}, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Make Fast", {"ryanmakefastall"}, "Makes everyone's vehicles fast.", function()
     util.toast("Making all players' cars fast...")
-    watch_and_takeover_vehicle_all(function(vehicle)
+    session_watch_and_takeover_all(function(vehicle)
         vehicle_set_speed(vehicle, true)
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Make Slow", {"ryanmakeslowall"}, "Makes everyone's vehicles slow.", function()
     util.toast("Making all players' cars slow...")
-    watch_and_takeover_vehicle_all(function(vehicle)
+    session_watch_and_takeover_all(function(vehicle)
         vehicle_set_speed(vehicle, false)
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Make Drift", {"ryanmakedriftall"}, "Makes everyone's vehicles drift.", function()
     util.toast("Making all players' cars drift...")
-    watch_and_takeover_vehicle_all(function(vehicle)
+    session_watch_and_takeover_all(function(vehicle)
         vehicle_set_no_grip(vehicle, true)
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Lock Doors", {"ryanlockall"}, "Makes everyone's vehicle's doors locked.", function()
     util.toast("Making all players' cars locked...")
-    watch_and_takeover_vehicle_all(function(vehicle)
+    session_watch_and_takeover_all(function(vehicle)
         vehicle_set_doors_locked(vehicle, true)
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Burst Tires", {"ryanbursttiresall"}, "Bursts everyone's tires.", function()
     util.toast("Bursting all tires...")
-    watch_and_takeover_vehicle_all(function(vehicle)
+    session_watch_and_takeover_all(function(vehicle)
         vehicle_set_tires_bursted(vehicle, true)
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Catapult", {"ryancatapultall"}, "Catapults everyone's vehicles.", function()
     util.toast("Catapulting all players...")
-    watch_and_takeover_vehicle_all(function(vehicle)
+    session_watch_and_takeover_all(function(vehicle)
         vehicle_catapult(vehicle)
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Kill Engine", {"ryankillengineall"}, "Kills everyone's engine.", function()
     util.toast("Killing all engines...")
-    watch_and_takeover_vehicle_all(function(vehicle)
+    session_watch_and_takeover_all(function(vehicle)
         VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
     end, trolling_include_modders, trolling_watch_time)
 end)
@@ -1254,15 +776,9 @@ menu.action(session_nuke_root, "Start Nuke", {"ryannukestart"}, "Starts the nuke
     audio_play_on_all_players("HUD_MINI_GAME_SOUNDSET", "5_SEC_WARNING"); util.yield(125)
     audio_play_on_all_players("HUD_MINI_GAME_SOUNDSET", "5_SEC_WARNING"); util.yield(125)
     audio_play_on_all_players("HUD_MINI_GAME_SOUNDSET", "5_SEC_WARNING"); util.yield(125)
-    explode_all(true)
+    session_explode_all(true)
     if nuke_spam_enabled then
-        if not STAND_DOESNT_LIKE_SPAM_CHAT then
-            spam_chat(nuke_spam_message, true, 100, 0)
-        else
-            menu.trigger_commands("spam on")
-            util.yield(3000)
-            menu.trigger_commands("spam off")
-        end
+        session_spam_chat(nuke_spam_message, true, 100, 0)
     end
 end)
 menu.divider(session_nuke_root, "Options")
@@ -1299,7 +815,7 @@ menu.action(session_omnicrash_root, "Go", {"ryanomnicrashallgo"}, "Attempts to c
     for _, player_id in pairs(players.list(false, session_omnicrash_friends)) do
         if session_omnicrash_modders or not players.is_marked_as_modder(player_id) then
             util.create_thread(function()
-                do_omnicrash(player_id)
+                player_omnicrash(player_id)
             end)
         end
     end
@@ -1356,23 +872,23 @@ util.create_tick_handler(function()
                         util.toast(player_name .. " is now inside a building.")
                     elseif util.current_time_millis() - hermits[player_id] >= 300000 then
                         hermits[player_id] = util.current_time_millis() - 210000
-                        show_text_message(Colors.Purple, "Anti-Hermit", player_name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
+                        basics_show_text_message(Colors.Purple, "Anti-Hermit", player_name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
                         util.create_thread(function()
-                            do_sms_spam(player_id, "You've been inside too long. Stop being weird and play the game!", 3000)
+                            player_do_sms_spam(player_id, "You've been inside too long. Stop being weird and play the game!", 3000)
                         end)
                         if antihermit_mode == "Teleport Outside" then
                             menu.trigger_commands("apt1" .. player_name)
                         elseif antihermit_mode == "Stand Kick" then
                             menu.trigger_commands("kick" .. player_name)
                         elseif antihermit_mode == "Omnicrash Mk II" then
-                            do_omnicrash(player_id)
+                            player_omnicrash(player_id)
                         elseif antihermit_mode == "Smelly Peepo Crash" then
-                            do_smelly_peepo_crash(player_id)
+                            player_smelly_peepo_crash(player_id)
                         end
                     end
                 else
                     if hermits[player_id] ~= nil then 
-                        util.toast(player_name .. " is no longer inside a building after " .. format_time(util.current_time_millis() - hermits[player_id]) .. ".")
+                        util.toast(player_name .. " is no longer inside a building after " .. basics_format_time(util.current_time_millis() - hermits[player_id]) .. ".")
                         hermits[player_id] = nil
                     end
                 end
@@ -1386,7 +902,7 @@ end)
 menu.toggle_loop(session_root, "Fake Money Drop", {"ryanfakemoneyall"}, "Drops fake money bags on all players.", function()
     for _, player_id in pairs(players.list()) do
         util.create_thread(function()
-            do_fake_money_drop(player_id)
+            player_fake_money_drop(player_id)
         end)
     end
     util.yield(125)
@@ -1396,7 +912,7 @@ end, false)
 menu.toggle_loop(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and tells them to duel.", function()
     chat.send_message("This session is in Mk II Chaos mode! Every 3 minutes, everyone receives an Oppressor. Good luck.", false, true, true)
     local oppressor2 = util.joaat("oppressor2")
-    request_model(oppressor2)
+    basics_request_model(oppressor2)
     for _, player_id in pairs(players.list()) do
         local player_ped = player_get_ped(player_id)
         local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0.0, 5.0, 0.0)
@@ -1417,27 +933,27 @@ stats_mc_clutter_root = menu.list(stats_root, "MC Clubhouse Clutter...", {"ryanm
 
 -- -- CEO Office Money
 office_money_0 = menu.action(stats_office_money_root, "0% Full", {"ryanofficemoney0"}, "Makes the office 0% full with money.", function(click_type)
-    set_office_money(office_money_0, click_type, 0)
+    stats_set_office_money(office_money_0, click_type, 0)
 end)
 office_money_25 = menu.action(stats_office_money_root, "25% Full", {"ryanofficemoney25"}, "Makes the office 25% full with money.", function(click_type)
-    set_office_money(office_money_25, click_type, 5000000)
+    stats_set_office_money(office_money_25, click_type, 5000000)
 end)
 office_money_50 = menu.action(stats_office_money_root, "50% Full", {"ryanofficemoney50"}, "Makes the office 50% full with money.", function(click_type)
-    set_office_money(office_money_50, click_type, 10000000)
+    stats_set_office_money(office_money_50, click_type, 10000000)
 end)
 office_money_75 = menu.action(stats_office_money_root, "75% Full", {"ryanofficemoney75"}, "Makes the office 75% full with money.", function(click_type)
-    set_office_money(office_money_75, click_type, 15000000)
+    stats_set_office_money(office_money_75, click_type, 15000000)
 end)
 office_money_100 = menu.action(stats_office_money_root, "100% Full", {"ryanofficemoney100"}, "Makes the office 100% full with money.", function(click_type)
-    set_office_money(office_money_100, click_type, 20000000)
+    stats_set_office_money(office_money_100, click_type, 20000000)
 end)
 
 -- -- MC Clubhouse Clutter
 mc_clutter_0 = menu.action(stats_mc_clutter_root, "0% Full", {"ryanmcclutter0"}, "Removes drugs, money, and other clutter to your M.C. clubhouse.", function(click_type)
-    set_mc_clutter(mc_clutter_0, click_type, 0)
+    stats_set_mc_clutter(mc_clutter_0, click_type, 0)
 end)
 mc_clutter_100 = menu.action(stats_mc_clutter_root, "100% Full", {"ryanmcclutter100"}, "Adds drugs, money, and other clutter to your M.C. clubhouse.", function(click_type)
-    set_mc_clutter(mc_clutter_100, click_type, 20000000)
+    stats_set_mc_clutter(mc_clutter_100, click_type, 20000000)
 end)
 
 
@@ -1557,8 +1073,8 @@ function setup_player(player_id)
             {x = math.random(-5, 5), y = math.random(-5, 5), z = 0}
         )
 
-        local el_rubio = util.joaat("csb_juanstrickler"); request_model(el_rubio)
-        request_animations("mini@strip_club@pole_dance@pole_dance1")
+        local el_rubio = util.joaat("csb_juanstrickler"); basics_request_model(el_rubio)
+        basics_request_animations("mini@strip_club@pole_dance@pole_dance1")
 
         local ped = entities.create_ped(1, el_rubio, ped_coords, ENTITY.GET_ENTITY_HEADING(player_get_ped(player_id)))
         STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(el_rubio)
@@ -1570,23 +1086,28 @@ function setup_player(player_id)
         entities.delete_by_handle(ped)
     end)
 
+    -- -- Transgender Go-Karts
+    menu.action(player_trolling_entities_root, "Transgender Go-Karts", {"ryanmilitarykarts"}, "Spawns a military squad in go-karts.", function()
+        player_go_karts(player_id, "a_m_m_tranvest_01")
+    end)
+
     -- -- Trash Pickup
     menu.action(player_trolling_entities_root, "Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
-        do_trash_pickup(player_id)
+        player_trash_pickup(player_id)
     end)
 
     -- -- Flying Yacht
     menu.action(player_trolling_entities_root, "Flying Yacht", {"ryanflyingyacht"}, "Send the magic school yacht to fuck their shit up.", function()
-        do_flying_yacht(player_id)
+        player_flying_yacht(player_id)
     end)
     
-    -- -- Tank Kamkaze
+    -- -- Falling Tank
     menu.action(player_trolling_entities_root, "Falling Tank", {"ryantankkamikaze"}, "Send a tank straight from heaven.", function()
 		local player_ped = player_get_ped(player_id)
         local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
         coords.z = coords.z + 10
 
-        local tank = util.joaat("rhino"); request_model(tank)
+        local tank = util.joaat("rhino"); basics_request_model(tank)
         local entity = entities.create_vehicle(tank, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
         ENTITY.SET_ENTITY_LOAD_COLLISION_FLAG(entity, true)
         ENTITY.SET_ENTITY_MAX_SPEED(entity, 64)
@@ -1597,7 +1118,7 @@ function setup_player(player_id)
     -- -- Fake Money Drop
     menu.toggle_loop(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function()
         util.create_thread(function()
-            do_fake_money_drop(player_id)
+            player_fake_money_drop(player_id)
         end)
         util.yield(125)
     end, false)
@@ -1628,7 +1149,7 @@ function setup_player(player_id)
     menu.divider(player_removal_root, "Go")
     -- -- Stand Kick
     menu.action(player_removal_root, "Stand Kick", {"ryanstandkick"}, "Attempts to kick using Stand's Smart kick.", function()
-        spam_and_block_then(player_id, removal_block_joins, removal_message, function()
+        player_spam_and_block(player_id, removal_block_joins, removal_message, function()
             local player_name = players.get_name(player_id)
             menu.trigger_commands("kick" .. player_name)
         end)
@@ -1636,8 +1157,8 @@ function setup_player(player_id)
 
     -- -- Omnicrash (Credit: various artists)
     menu.action(player_removal_root, "Omnicrash Mk II", {"ryanomnicrash"}, "Attempts to crash using all known script events.", function()
-        spam_and_block_then(player_id, removal_block_joins, removal_message, function()
-            do_omnicrash(player_id)
+        player_spam_and_block(player_id, removal_block_joins, removal_message, function()
+            player_omnicrash(player_id)
         end)
     end)
 
@@ -1645,8 +1166,8 @@ function setup_player(player_id)
     menu.action(player_removal_root, "Smelly Peepo Crash", {"ryansmellypeepo"}, "Attempts to crash using invalid and bugged peds.", function(click_type)
         local smelly_peepo_ref = menu.ref_by_command_name("ryansmellypeepo" .. players.get_name(player_id):lower())
         menu.show_warning(smelly_peepo_ref, click_type, "If you are near this player, you will crash too.\nBe sure you are far enough away before pressing Proceed.", function()
-            spam_and_block_then(player_id, removal_block_joins, removal_message, function()
-                do_smelly_peepo_crash(player_id)
+            player_spam_and_block(player_id, removal_block_joins, removal_message, function()
+                player_smelly_peepo_crash(player_id)
             end)
         end)
     end)
@@ -1704,32 +1225,32 @@ end)
 menu.divider(chat_send_root, "Translate")
 menu.action(chat_send_root, "Spanish", {"ryantranslatespanish"}, "Translate to Spanish.", function()
     util.toast("Translating message to Spanish...")
-    send_translated(chat_prefix .. chat_message, "ES", false)
+    session_translate_to(chat_prefix .. chat_message, "ES", false)
     menu.focus(chat_send_root)
 end)
 menu.action(chat_send_root, "Russian", {"ryantranslaterussian"}, "Translate to Russian.", function()
     util.toast("Translating message to Russian...")
-    send_translated(chat_prefix .. chat_message, "RU", true)
+    session_translate_to(chat_prefix .. chat_message, "RU", true)
     menu.focus(chat_send_root)
 end)
 menu.action(chat_send_root, "Russian (Cyrillic)", {"ryantranslatecyrillic"}, "Translate to Russian (Cyrillic).", function()
     util.toast("Translating message to Russian (Cyrillic)...")
-    send_translated(chat_prefix .. chat_message, "RU", false)
+    session_translate_to(chat_prefix .. chat_message, "RU", false)
     menu.focus(chat_send_root)
 end)
 menu.action(chat_send_root, "French", {"ryantranslatefrench"}, "Translate to French.", function()
     util.toast("Translating message to French...")
-    send_translated(chat_prefix .. chat_message, "FR", false)
+    session_translate_to(chat_prefix .. chat_message, "FR", false)
     menu.focus(chat_send_root)
 end)
 menu.action(chat_send_root, "German", {"ryantranslategerman"}, "Translate to German.", function()
     util.toast("Translating message to German...")
-    send_translated(chat_prefix .. chat_message, "DE", false)
+    session_translate_to(chat_prefix .. chat_message, "DE", false)
     menu.focus(chat_send_root)
 end)
 menu.action(chat_send_root, "Italian", {"ryantranslateitalian"}, "Translate to Italian.", function()
     util.toast("Translating message to Italian...")
-    send_translated(chat_prefix .. chat_message, "IT", false)
+    session_translate_to(chat_prefix .. chat_message, "IT", false)
     menu.focus(chat_send_root)
 end)
 
@@ -1753,15 +1274,15 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
         if kick_money_beggars then
             if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
                 and message:find("money") and message:find("drop") then
-                show_text_message(Colors.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
-                do_omnicrash(sender)
+                    basics_show_text_message(Colors.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
+                player_omnicrash(sender)
             end
         end
         if kick_car_meeters then
             if (message:find("want to") or message:find("wanna") or message:find("at") or message:find("?"))
                 and message:find("car") and message:find("meet") then
-                show_text_message(Colors.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
-                do_omnicrash(sender)
+                    basics_show_text_message(Colors.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
+                player_omnicrash(sender)
             end
         end
     end
@@ -1773,7 +1294,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
     table.insert(
         chat_history,
         menu.action(chat_history_root, "\"" .. message .. "\"", {"ryanchathistory" .. chat_index}, "Translate this message into English.", function()
-            translate_received(message)
+            session_translate_from(message)
         end)
     )
     chat_index = chat_index + 1

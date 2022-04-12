@@ -4,6 +4,22 @@ function player_get_ped(player_id)
     return PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
 end
 
+function player_teleport_to(x, y, z)
+    util.toast("Teleporting...")
+    ENTITY.SET_ENTITY_COORDS(player_get_ped(), x, y, z)
+end
+
+function player_teleport_with_vehicle_to(x, y, z)
+    util.toast("Teleporting...")
+    local player_ped = player_get_ped()
+    if PED.IS_PED_IN_ANY_VEHICLE(player_ped, true) then
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
+        ENTITY.SET_ENTITY_COORDS(vehicle, x, y, z)
+    else
+        ENTITY.SET_ENTITY_COORDS(player_ped, x, y, z)
+    end
+end
+
 function player_get_money(player_id)
     return players.get_wallet(player_id) + players.get_bank(player_id)
 end
@@ -106,10 +122,10 @@ function player_list_by_money()
     
     message = ""
     if data[1] ~= -1 then
-        message = PLAYER.GET_PLAYER_NAME(data[1]) .. " is the richest player here ($" .. format_int(data[2]) .. ")."
+        message = PLAYER.GET_PLAYER_NAME(data[1]) .. " is the richest player here ($" .. basics_format_int(data[2]) .. ")."
     end
     if data[1] ~= data[3] then
-        message = message .. " " .. PLAYER.GET_PLAYER_NAME(data[3]) .. " is the poorest ($" .. format_int(data[4]) .. ")."
+        message = message .. " " .. PLAYER.GET_PLAYER_NAME(data[3]) .. " is the poorest ($" .. basics_format_int(data[4]) .. ")."
     end
     if message ~= "" then
         chat.send_message(message, false, true, true)
@@ -164,4 +180,242 @@ function player_list_by_oppressor2()
     end
 
     chat.send_message("No players are on Oppressors.", false, true, true)
+end
+
+
+-- Trolling --
+function player_do_sms_spam(player_id, message, duration)
+    local player_name = players.get_name(player_id)
+    menu.trigger_commands("smsrandomsender" .. player_name .. " on")
+    menu.trigger_commands("smstext" .. player_name .. " " .. message)
+    menu.trigger_commands("smsspam" .. player_name .. " on")
+    util.yield(duration)
+    menu.trigger_commands("smsspam" .. player_name .. " off")
+end
+
+function player_spam_and_block(player_id, removal_block_joins, removal_message, action)
+    local player_name = players.get_name(player_id)
+    if removal_block_joins then
+        player_block_joins(player_name)
+    end
+    if removal_message ~= "" and removal_message ~= " " then
+        util.toast("Spamming " .. player_name .. " with texts...")
+        player_do_sms_spam(player_id, removal_message, 6000)
+    end
+    action()
+    menu.trigger_commands("players")
+end
+
+function player_fake_money_drop(player_id)
+    menu.trigger_commands("notifybanked" .. players.get_name(player_id) .. " " .. math.random(100, 5000))
+    local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id))
+    local bag = entities.create_object(2628187989, vector_add(coords, {x = 0, y = 0, z = 2}))
+    ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -20, 0.0, 0.0, 0.0, true, true)
+    util.yield(333)
+    AUDIO.PLAY_SOUND_FROM_COORD(-1, "LOCAL_PLYR_CASH_COUNTER_COMPLETE", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true, 2, false)
+    entities.delete_by_handle(bag)
+end
+
+function player_trash_pickup(player_id)
+    util.toast("Sending the trash man to " .. players.get_name(player_id) .. "...")
+
+    local trash_truck = util.joaat("trash"); basics_request_model(trash_truck)
+    local trash_man = util.joaat("s_m_y_garbage"); basics_request_model(trash_man)
+    local player_ped = player_get_ped(player_id)
+    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+
+    local weapons = {"weapon_pistol", "weapon_pumpshotgun"}
+    local coords_ptr = memory.alloc()
+    local node_ptr = memory.alloc()
+
+    if not PATHFIND.GET_RANDOM_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, 80, 0, 0, 0, coords_ptr, node_ptr) then
+        player_coords.x = player_coords.x + math.random(-7, 7)
+        player_coords.y = player_coords.y + math.random(-7, 7)
+        PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords_ptr, 1, 100, 2.5)
+    end
+
+    local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
+    local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    entity_face_entity(vehicle, player_ped, true)
+    VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
+    ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
+
+    for seat = -1, 2 do
+        local npc = entities.create_ped(5, trash_man, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        local weapon = basics_get_random(weapons)
+
+        PED.SET_PED_RANDOM_COMPONENT_VARIATION(npc, 0)
+        WEAPON.GIVE_WEAPON_TO_PED(npc, util.joaat(weapon) , -1, false, true)
+        PED.SET_PED_NEVER_LEAVES_GROUP(npc, true)
+        PED.SET_PED_COMBAT_ATTRIBUTES(npc, 1, true)
+        PED.SET_PED_INTO_VEHICLE(npc, vehicle, seat)
+        ENTITY.SET_ENTITY_INVINCIBLE(npc, false)
+        TASK.TASK_COMBAT_PED(npc, player_ped, 0, 16)
+        PED.SET_PED_KEEP_TASK(npc, true)
+
+        util.create_tick_handler(function()
+            if TASK.GET_SCRIPT_TASK_STATUS(npc, 0x2E85A751) == 7 then
+                TASK.CLEAR_PED_TASKS(npc)
+                TASK.TASK_SMART_FLEE_PED(npc, player_get_ped(player_id), 1000.0, -1, false, false)
+                PED.SET_PED_KEEP_TASK(npc, true)
+                return false
+            end
+            return true
+        end)
+    end
+    
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_truck)
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_man)
+
+    player_do_sms_spam(player_id, "It's trash day! Time to take it out.", 5000)
+end
+
+function player_go_karts(player_id, ped_type)
+    local player_ped = player_get_ped(player_id)
+    local veto = util.joaat("veto2"); basics_request_model(veto)
+    local driver = util.joaat(ped_type); basics_request_model(driver)
+    for i = 1, 4 do
+        local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 5 - i, -10.0, 0.0)
+        local vehicle = entities.create_vehicle(veto, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
+        for i = -1, VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(veto) - 2 do
+            local ped = entities.create_ped(1, driver, coords, 0.0)
+            if i == -1 then
+                TASK.TASK_VEHICLE_CHASE(ped, player_ped)
+            end
+            vehicle_set_upgraded(vehicle, true)
+            PED.SET_PED_INTO_VEHICLE(ped, vehicle, i)
+            WEAPON.GIVE_WEAPON_TO_PED(ped, util.joaat("weapon_appistol"), 1000, false, true)
+            PED.SET_PED_COMBAT_ATTRIBUTES(ped, 5, true)
+            PED.SET_PED_COMBAT_ATTRIBUTES(ped, 46, true)
+            TASK.TASK_COMBAT_PED(ped, player_ped, 0, 16)
+        end
+    end
+end
+
+function player_flying_yacht(player_id)
+    local yacht = util.joaat("prop_cj_big_boat"); basics_request_model(yacht)
+    local buzzard = util.joaat("buzzard2"); basics_request_model(buzzard)
+    local black_ops = util.joaat("s_m_y_blackops_01"); basics_request_model(black_ops)
+    local army = util.joaat("ARMY")
+
+    local player_ped =  player_get_ped(player_id)
+    local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
+    local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, army, player_group)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player_group, army)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, army, army)
+
+    local vehicle = entities.create_vehicle(buzzard, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    local attachment = entities.create_object(yacht, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
+    if ENTITY.DOES_ENTITY_EXIST(vehicle) then
+        local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        PED.SET_PED_INTO_VEHICLE(ped, vehicle)
+        
+        coords.x = coords.x + math.random(-20, 20)
+        coords.y = coords.y + math.random(-20, 20)
+        coords.z = coords.z + 30
+        ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
+        NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
+        ENTITY.SET_ENTITY_INVINCIBLE(vehicle, true)
+        VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
+        VEHICLE.SET_HELI_BLADES_FULL_SPEED(vehicle)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, "chassis"), 0, 0, 0, 0, 0, 0, false, false, false, false, 0, true)
+        HUD.ADD_BLIP_FOR_ENTITY(vehicle)
+
+        PED.SET_PED_MAX_HEALTH(ped, 500)
+        ENTITY.SET_ENTITY_HEALTH(ped, 500)
+        ENTITY.SET_ENTITY_INVINCIBLE(ped, true)
+        PED.SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(ped, true)
+        TASK.TASK_HELI_MISSION(ped, vehicle, 0, player_ped, 0.0, 0.0, 0.0, 23, 40.0, 40.0, -1.0, 0, 10, -1.0, 0)
+        PED.SET_PED_KEEP_TASK(ped, true)
+
+        for seat = 1, 2 do 
+            local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+            PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
+            WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
+            PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
+            PED.SET_PED_MAX_HEALTH(ped, 500)
+            ENTITY.SET_ENTITY_HEALTH(ped, 500)
+            ENTITY.SET_ENTITY_INVINCIBLE(ped, true)
+            PED.SET_PED_SHOOT_RATE(ped, 1000)
+            PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, army)
+            TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
+        end
+
+        util.yield(100)
+    end
+
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(yacht)
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(buzzard)
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(black_ops)
+end
+
+-- Crashes --
+function player_omnicrash(player_id)
+    basics_show_text_message(Colors.Purple, "Omnicrash Mk II", "Omnicrash has begun. This may take a while...")
+    for _, crash_event in pairs(CrashEvents) do
+        player_send_script_event(player_id, crash_event, "Omnicrash")
+    end
+end
+
+function player_smelly_peepo_crash(player_id)
+    local player_ped = player_get_ped(player_id)
+    local player_ped_heading = ENTITY.GET_ENTITY_HEADING(player_ped)
+    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+
+    util.toast("Spawning smelly objects on " .. players.get_name(player_id) .. "...")
+    basics_show_text_message(Colors.Purple, "Smelly Peepo Crash", "Smelly Peepo Crash has begun. This may take a while...")
+
+    basics_request_model(-930879665)
+    basics_request_model(3613262246)
+    basics_request_model(452618762)
+    local object_1 = entities.create_object(-930879665, player_coords)
+    util.yield(10)
+    local object_2 = entities.create_object(3613262246, player_coords)
+    util.yield(10)
+    local object_3 = entities.create_object(452618762, player_coords)
+    util.yield(10)
+    local object_4 = entities.create_object(3613262246, player_coords)
+    util.yield(300)
+    entities.delete_by_handle(object_1)
+    entities.delete_by_handle(object_2)
+    entities.delete_by_handle(object_3)
+    entities.delete_by_handle(object_4)
+
+    util.toast("Spawning smelly peds on " .. players.get_name(player_id) .. "...")
+    local ped = entities.create_ped(0, 1057201338, player_coords, 0)
+    util.yield(100)
+    entities.delete_by_handle(ped)
+    local ped = entities.create_ped(0, -2056455422, player_coords, 0)
+    util.yield(100)
+    entities.delete_by_handle(ped)
+    local ped = entities.create_ped(0, 762327283, player_coords, 0)
+    util.yield(100)
+    entities.delete_by_handle(ped)
+
+    util.toast("Spawning the smelliest of peds on " .. players.get_name(player_id) .. "!")
+    local fatcult = util.joaat("a_f_m_fatcult_01"); basics_request_model(fatcult)
+    for i = 1, 8 do
+        util.create_thread(function()
+            local ped = entities.create_ped(
+                0, fatcult,
+                vector_add(player_coords, {x = math.random(-1, 1), y = math.random(-1, 1), z = 0}),
+                player_ped_heading
+            )
+            util.yield(400)
+            entities.delete_by_handle(ped)
+        end)
+        util.yield(100)
+        local ped_1 = entities.create_ped(0, util.joaat("slod_human"), player_coords, player_ped_heading)
+        local ped_2 = entities.create_ped(0, util.joaat("slod_large_quadped"), player_coords, player_ped_heading)
+        local ped_3 = entities.create_ped(0, util.joaat("slod_small_quadped"), player_coords, player_ped_heading)
+        util.yield(750)
+        entities.delete_by_handle(ped_1)
+        entities.delete_by_handle(ped_2)
+        entities.delete_by_handle(ped_3)
+        player_send_script_event(player_id, {962740265, player_id, 23243, 5332, 3324, player_id}, "final payload")
+    end
+    util.toast("Done!")
 end

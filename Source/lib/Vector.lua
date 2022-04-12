@@ -22,7 +22,7 @@ function vector_normalize(vector)
     return vector_multiply(vector, 1 / vector_magnitude(vector))
 end
 
-function v3_to_object(X, Y, Z)
+function vector_v3_to_object(X, Y, Z)
     return {x = X, y = Y, z = Z}
 end
 
