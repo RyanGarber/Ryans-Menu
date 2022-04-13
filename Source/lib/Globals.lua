@@ -212,9 +212,21 @@ WeaponBones = {
 }
 
 ForcefieldModes = {
-    None = 0,
+    Off = 0,
     Push = 1,
     Destroy = 2
+}
+
+CrosshairModes = {
+    Off = 0,
+    WhenPointing = 1,
+    Always = 2
+}
+
+FireFingerModes = {
+    Off = 0,
+    WhenPointing = 1,
+    Always = 2
 }
 
 BedSoundCoords = {

@@ -1,4 +1,4 @@
-VERSION = "0.6.6"
+VERSION = "0.6.7"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -64,12 +64,11 @@ settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Setting
 -- Self Menu --
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
-self_burning_man_root = menu.list(self_root, "Burning Man...", {"ryanburningman"}, "An enhanced LanceScript burning man.")
+self_fire_root = menu.list(self_root, "Fire...", {"ryanfire"}, "An enhanced LanceScript burning man.")
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
 ptfx_disable = false
-
 
 self_ptfx_body_root = menu.list(self_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body other players can see.")
 self_ptfx_weapon_root = menu.list(self_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon other players can see.")
@@ -208,7 +207,7 @@ ptfx_create_list(self_ptfx_pointing_god_finger_root, function(ptfx)
 end)
 
 -- -- Forcefield
-forcefield_mode = ForcefieldModes.None
+forcefield_mode = ForcefieldModes.Off
 forcefield_size = 10
 forcefield_force = 1
 
@@ -284,13 +283,8 @@ util.create_tick_handler(function()
 end)
 
 -- -- Burning Man
-burning_man_enabled = false
-burning_man_spread = 2
-
-menu.toggle(self_burning_man_root, "Enable", {"ryanburningmanenabled"}, "Sets yourself on fire and lets you spread it using the X key.", function(value)
-    burning_man_enabled = value
-    if burning_man_enabled then
-        menu.trigger_commands("godmode off")
+menu.toggle(self_fire_root, "Body", {"ryanfirebody"}, "Sets yourself on fire visually.", function(value)
+    if value then
         menu.trigger_commands("demigodmode on")
         FIRE.START_ENTITY_FIRE(player_get_ped())
     else
@@ -299,20 +293,68 @@ menu.toggle(self_burning_man_root, "Enable", {"ryanburningmanenabled"}, "Sets yo
     end
 end)
 
-menu.divider(self_burning_man_root, "Options")
-menu.slider(self_burning_man_root, "Spread", {"ryanburningmanspread"}, "Amount of spread the fire can achieve.", 1, 25, 2, 1, function(value)
-    burning_man_spread = value
+fire_finger_last_coords = {x = 0, y = 0, z = 0}
+menu.toggle_loop(self_fire_root, "Touch", {"ryanfiretouch"}, "Catches things on fire when you touch them.", function(value)
+    local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
+    if vector_distance(coords, fire_finger_last_coords) > 1.5 then
+        FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z, 3, 100.0, false, false, 1.0)
+        fire_finger_last_coords = coords
+    end
+    util.yield(500)
+end)
+
+fire_finger_mode = FireFingerModes.Off
+self_fire_finger_root = menu.list(self_fire_root, "Finger: Off", {"ryanfirefinger"}, "Catches things on fire from a distance when pressing E.")
+menu.action(self_fire_finger_root, "Off", {"ryanfirefingeroff"}, "No fire finger.", function(value)
+    fire_finger_mode = FireFingerModes.Off
+    menu.set_menu_name(self_fire_finger_root, "Finger: Off")
+    menu.focus(self_fire_finger_root)
+end)
+menu.action(self_fire_finger_root, "When Pointing", {"ryanfirefingerpointing"}, "Fire finger when pointing.", function(value)
+    fire_finger_mode = FireFingerModes.WhenPointing
+    menu.set_menu_name(self_fire_finger_root, "Finger: When Pointing")
+    menu.focus(self_fire_finger_root)
+end)
+menu.action(self_fire_finger_root, "Always", {"ryanfirefingeralways"}, "Fire finger at all times.", function(value)
+    fire_finger_mode = FireFingerModes.Always
+    menu.set_menu_name(self_fire_finger_root, "Finger: Always")
+    menu.focus(self_fire_finger_root)
 end)
 
 util.create_tick_handler(function()
-    if player_is_pointing then
+    if fire_finger_mode == FireFingerModes.Always or (fire_finger_mode == FireFingerModes.WhenPointing and player_is_pointing) then
         if PAD.IS_CONTROL_JUST_PRESSED(21, 86) then
             local raycast = basics_do_raycast(250.0)
             if raycast.did_hit then
-                FIRE.START_SCRIPT_FIRE(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, burning_man_spread, false)
+                FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
             end
         end
     end
+end)
+
+self_crosshair_root = menu.list(self_root, "Crosshair: Off", {"ryancrosshair"}, "Addn-screen crosshair.")
+crosshair_mode = CrosshairModes.Never
+
+-- -- When Pointing
+menu.action(self_crosshair_root, "Never", {"ryancrosshairnever"}, "Doesn't add a crosshair.", function(value)
+    crosshair_mode = CrosshairModes.Never
+    menu.set_menu_name(self_crosshair_root, "Crosshair: Never")
+    menu.focus(self_crosshair_root)
+end)
+
+-- -- When Pointing
+menu.action(self_crosshair_root, "When Pointing", {"ryancrosshairpointing"}, "Adds a crosshair when pointing.", function(value)
+    crosshair_mode = CrosshairModes.WhenPointing
+    menu.set_menu_name(self_crosshair_root, "Crosshair: When Pointing")
+    menu.focus(self_crosshair_root)
+end)
+
+-- -- Always
+crosshair_when_pointing = false
+menu.action(self_crosshair_root, "Always", {"ryancrosshairalways"}, "Adds a crosshair at all times.", function(value)
+    crosshair_mode = CrosshairModes.Always
+    menu.set_menu_name(self_crosshair_root, "Crosshair: Always")
+    menu.focus(self_crosshair_root)
 end)
 
 -- -- God Finger
@@ -320,7 +362,7 @@ player_is_pointing = false
 god_finger_target = nil
 menu.toggle_loop(self_root, "God Finger", {"ryangodfinger"}, "Pushes objects away when pointing at them.", function(value)
     if player_is_pointing then
-        local raycast = basics_do_raycast(5000.0, 2 + 8 + 16)
+        local raycast = basics_do_raycast(500.0, 2 + 8 + 16)
         memory.write_int(memory.script_global(4516656 + 935), NETWORK.GET_NETWORK_TIME())
         if raycast.did_hit and raycast.hit_entity ~= nil then
             god_finger_target = raycast.hit_coords
@@ -334,12 +376,6 @@ menu.toggle_loop(self_root, "God Finger", {"ryangodfinger"}, "Pushes objects awa
     else
         god_finger_target = nil
     end
-end)
-
--- -- Crosshair When Pointing
-world_crosshair_when_pointing = false
-menu.toggle(self_root, "Crosshair When Pointing", {"ryanpointingcrosshair"}, "Adds a crosshair when pointing.", function(value)
-    world_crosshair_when_pointing = value
 end)
 
 -- -- All Players Visible
@@ -1197,6 +1233,15 @@ menu.text_input(chat_new_message_root, "Message", {"ryanchatmessage"}, "The mess
     chat_message = value
 end, "")
 
+-- -- Send Message
+chat_send_root = menu.list(chat_new_message_root, "Send...", {"ryantranslatesend"}, "Translate and send the message.")
+menu.action(chat_send_root, "Send", {"ryanchatsend"}, "Send without translating.", function()
+    chat.send_message(chat_prefix .. chat_message, false, true, true)
+    menu.focus(chat_send_root)
+end)
+
+menu.divider(chat_new_message_root, "Options")
+
 -- -- Logo
 chat_prefix_root = menu.list(chat_new_message_root, "Logo: None", {"ryanchatlogo"}, "Adds a special logo to the beginning of the message.")
 menu.action(chat_prefix_root, "Rockstar", {"ryanchatlogors"}, "Adds the Rockstar logo.", function()
@@ -1213,13 +1258,6 @@ menu.action(chat_prefix_root, "Lock", {"ryanchatlogors"}, "Adds the lock logo.",
     menu.set_menu_name(chat_prefix_root, "Logo: Lock")
     menu.focus(chat_prefix_root)
     chat_prefix = "Ω "
-end)
-
--- -- Send Message
-chat_send_root = menu.list(chat_new_message_root, "Send...", {"ryantranslatesend"}, "Translate and send the message.")
-menu.action(chat_send_root, "Send", {"ryanchatsend"}, "Send without translating.", function()
-    chat.send_message(chat_prefix .. chat_message, false, true, true)
-    menu.focus(chat_send_root)
 end)
 
 menu.divider(chat_send_root, "Translate")
@@ -1327,7 +1365,7 @@ util.keep_running()
 -- DirectX --
 while true do
     player_is_pointing = memory.read_int(memory.script_global(4516656 + 930)) == 3
-    if world_crosshair_when_pointing and player_is_pointing then
+    if crosshair_mode == CrosshairModes.Always or (crosshair_mode == CrosshairModes.WhenPointing and player_is_pointing) then
         directx.draw_texture(
             CrosshairTexture,
             0.03, 0.03,
