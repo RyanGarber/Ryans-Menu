@@ -465,7 +465,7 @@ menu.toggle_loop(world_vehicles_root, "Make Fast", {"ryanmakeallfast"}, "Makes a
     local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
     for _, vehicle in pairs(vehicles) do
         if vehicle ~= player_vehicle then
-            vehicle_set_speed(vehicle, true)
+            vehicle_set_speed(vehicle, VehicleSpeedModes.Fast)
         end
     end
     util.yield(250)
@@ -480,7 +480,7 @@ menu.toggle_loop(world_vehicles_root, "Make Slow", {"ryanmakeallslow"}, "Makes a
     local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
     for _, vehicle in pairs(vehicles) do
         if vehicle ~= player_vehicle then
-            vehicle_set_speed(vehicle, false)
+            vehicle_set_speed(vehicle, VehicleSpeedModes.Slow)
         end
     end
     util.yield(250)
@@ -753,13 +753,13 @@ end)
 menu.action(session_trolling_root, "Make Fast", {"ryanmakefastall"}, "Makes everyone's vehicles fast.", function()
     util.toast("Making all players' cars fast...")
     session_watch_and_takeover_all(function(vehicle)
-        vehicle_set_speed(vehicle, true)
+        vehicle_set_speed(vehicle, VehicleSpeedModes.Fast)
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Make Slow", {"ryanmakeslowall"}, "Makes everyone's vehicles slow.", function()
     util.toast("Making all players' cars slow...")
     session_watch_and_takeover_all(function(vehicle)
-        vehicle_set_speed(vehicle, false)
+        vehicle_set_speed(vehicle, VehicleSpeedModes.Slow)
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Make Drift", {"ryanmakedriftall"}, "Makes everyone's vehicles drift.", function()
@@ -1010,7 +1010,7 @@ function setup_player(player_id)
         if vehicle ~= NULL then
             entity_request_control_loop(vehicle)
             if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_speed(vehicle, value and VehicleSpeedModes.Fast or VehicleSpeedModes.None)
+                vehicle_set_speed(vehicle, value and VehicleSpeedModes.Fast or VehicleSpeedModes.Default)
             end
         end
         util.toast("Made " .. players.get_name(player_id) .. "'s car " .. (value and "fast" or "normal") .."!")
@@ -1022,7 +1022,7 @@ function setup_player(player_id)
         if vehicle ~= NULL then
             entity_request_control_loop(vehicle)
             if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_speed(vehicle, value and VehicleSpeedModes.Slow or VehicleSpeedModes.None)
+                vehicle_set_speed(vehicle, value and VehicleSpeedModes.Slow or VehicleSpeedModes.Default)
             end
         end
         util.toast("Made " .. players.get_name(player_id) .. "'s car " .. (value and "slow" or "normal") .."!")
@@ -1076,16 +1076,28 @@ function setup_player(player_id)
         util.toast((value and "Killed" or "Revived") .. " " .. players.get_name(player_id) .. "'s car!")
     end)
 
-    -- -- Downgrade
-    menu.toggle(player_trolling_vehicle_root, "Downgrade", {"ryandowngrade"}, "Downgrades the car they are in.", function(value)
+    -- -- Upgrade
+    menu.action(player_trolling_vehicle_root, "Upgrade", {"ryanupgrade"}, "Upgrades the car they are in.", function()
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
         if vehicle ~= NULL then
             entity_request_control_loop(vehicle)
             if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_upgraded(vehicle, not value)
+                vehicle_set_upgraded(vehicle, true)
             end
         end
-        util.toast((value and "Downgraded" or "Upgraded") .. " " .. players.get_name(player_id) .. "'s car!")
+        util.toast("Upgraded " .. players.get_name(player_id) .. "'s car!")
+    end)
+
+    -- -- Downgrade
+    menu.action(player_trolling_vehicle_root, "Downgrade", {"ryandowngrade"}, "Downgrades the car they are in.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_set_upgraded(vehicle, false)
+            end
+        end
+        util.toast("Downgraded " .. players.get_name(player_id) .. "'s car!")
     end)
 
     -- -- Catapult
