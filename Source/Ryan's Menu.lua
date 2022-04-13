@@ -63,8 +63,8 @@ settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Setting
 
 -- Self Menu --
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
-self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
 self_fire_root = menu.list(self_root, "Fire...", {"ryanfire"}, "An enhanced LanceScript burning man.")
+self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
@@ -1149,6 +1149,11 @@ function setup_player(player_id)
         ENTITY.SET_ENTITY_MAX_SPEED(entity, 64)
         ENTITY.APPLY_FORCE_TO_ENTITY(entity, 3, 0.0, 0.0, -1000.00, 0.0, 0.0, 0.0, 0, true, true, false, true)
         STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(tank)
+    end)
+
+    -- -- PTFX Attack
+    menu.toggle_loop(player_trolling_root, "PTFX Attack", {"ryanptfxattack"}, "Tries to lag the player with PTFX.", function()
+        ptfx_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), "core", "exp_grd_petrol_pump_post", {r = 0, g = 0, b = 0})
     end)
 
     -- -- Fake Money Drop
