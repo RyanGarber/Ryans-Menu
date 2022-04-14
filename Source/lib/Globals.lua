@@ -229,6 +229,22 @@ FireFingerModes = {
     Always = 2
 }
 
+AntihermitModes = {
+    Off = 0,
+    TeleportOutside = 1,
+    StandKick = 2,
+    Omnicrash = 3,
+    SmellyPeepoCrash = 4
+}
+
+AllNPCsModes = {
+    Off = "",
+    Musician = "WORLD_HUMAN_MUSICIAN",
+    HumanStatue = "WORLD_HUMAN_HUMAN_STATUE",
+    Paparazzi = "WORLD_HUMAN_PAPARAZZI",
+    Janitor = "WORLD_HUMAN_JANITOR"
+}
+
 BedSoundCoords = {
     {x = -73.31681060791, y = -820.26013183594, z = 326.17517089844},
     {x = 2784.536, y = 5994.213, z = 354.275},

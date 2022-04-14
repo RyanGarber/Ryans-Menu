@@ -61,6 +61,10 @@ chat_root = menu.list(menu.my_root(), "Chat", {"ryanchat"}, "Send special chat m
 settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Settings for Ryan's Menu.")
 
 
+--lights = {""}
+--test = menu.list(menu.my_root(), "Test", {"ryantest"}, "")
+
+
 -- Self Menu --
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 self_fire_root = menu.list(self_root, "Fire...", {"ryanfire"}, "An enhanced LanceScript burning man.")
@@ -211,13 +215,17 @@ forcefield_mode = ForcefieldModes.Off
 forcefield_size = 10
 forcefield_force = 1
 
-self_forcefield_mode_root = menu.list(self_forcefield_root, "Mode: None", {"ryanforcefieldmode"}, "Forcefield mode.")
 for mode_name, mode_id in pairs(ForcefieldModes) do
-    menu.action(self_forcefield_mode_root, mode_name, {"ryanforcefield" .. mode_name:lower()}, "", function()
-        forcefield_mode = mode_id
-        menu.set_menu_name(self_forcefield_mode_root, "Mode: " .. mode_name)
-        menu.focus(self_forcefield_mode_root)
-    end)
+    menu.toggle(self_forcefield_root, mode_name, {"ryanforcefield" .. mode_name:lower()}, "", function(value)
+        if value then
+            for name, id in pairs(ForcefieldModes) do
+                if forcefield_mode == id then
+                    menu.trigger_commands("ryanforcefield" .. name .. " off")
+                end
+            end
+            forcefield_mode = mode_id
+        end
+    end, mode_name == "Off")
 end
 
 menu.divider(self_forcefield_root, "Options")
@@ -282,7 +290,23 @@ util.create_tick_handler(function()
     return true
 end)
 
--- -- Burning Man
+-- -- Fire
+fire_finger_mode = FireFingerModes.Off
+self_fire_finger_root = menu.list(self_fire_root, "Finger...", {"ryanfirefinger"}, "Catches things on fire from a distance when pressing E.")
+for mode_name, mode_id in pairs(FireFingerModes) do
+    if mode_name == "WhenPointing" then mode_name = "When Pointing" end -- this is gross
+    menu.toggle(self_fire_finger_root, mode_name, {"ryanfirefinger" .. mode_name:lower()}, "", function(value)
+        if value then
+            for name, id in pairs(FireFingerModes) do
+                if fire_finger_mode == id then
+                    menu.trigger_commands("ryanfirefinger" .. name .. " off")
+                end
+            end
+            fire_finger_mode = mode_id
+        end
+    end, mode_name == "Off")
+end
+
 menu.toggle(self_fire_root, "Body", {"ryanfirebody"}, "Sets yourself on fire visually.", function(value)
     if value then
         menu.trigger_commands("demigodmode on")
@@ -303,24 +327,6 @@ menu.toggle_loop(self_fire_root, "Touch", {"ryanfiretouch"}, "Catches things on 
     util.yield(500)
 end)
 
-fire_finger_mode = FireFingerModes.Off
-self_fire_finger_root = menu.list(self_fire_root, "Finger: Off", {"ryanfirefinger"}, "Catches things on fire from a distance when pressing E.")
-menu.action(self_fire_finger_root, "Off", {"ryanfirefingeroff"}, "No fire finger.", function(value)
-    fire_finger_mode = FireFingerModes.Off
-    menu.set_menu_name(self_fire_finger_root, "Finger: Off")
-    menu.focus(self_fire_finger_root)
-end)
-menu.action(self_fire_finger_root, "When Pointing", {"ryanfirefingerpointing"}, "Fire finger when pointing.", function(value)
-    fire_finger_mode = FireFingerModes.WhenPointing
-    menu.set_menu_name(self_fire_finger_root, "Finger: When Pointing")
-    menu.focus(self_fire_finger_root)
-end)
-menu.action(self_fire_finger_root, "Always", {"ryanfirefingeralways"}, "Fire finger at all times.", function(value)
-    fire_finger_mode = FireFingerModes.Always
-    menu.set_menu_name(self_fire_finger_root, "Finger: Always")
-    menu.focus(self_fire_finger_root)
-end)
-
 util.create_tick_handler(function()
     if fire_finger_mode == FireFingerModes.Always or (fire_finger_mode == FireFingerModes.WhenPointing and player_is_pointing) then
         if PAD.IS_CONTROL_JUST_PRESSED(21, 86) then
@@ -332,30 +338,22 @@ util.create_tick_handler(function()
     end
 end)
 
-self_crosshair_root = menu.list(self_root, "Crosshair: Off", {"ryancrosshair"}, "Addn-screen crosshair.")
-crosshair_mode = CrosshairModes.Never
+self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Addn-screen crosshair.")
+crosshair_mode = CrosshairModes.Off
 
--- -- When Pointing
-menu.action(self_crosshair_root, "Never", {"ryancrosshairnever"}, "Doesn't add a crosshair.", function(value)
-    crosshair_mode = CrosshairModes.Never
-    menu.set_menu_name(self_crosshair_root, "Crosshair: Never")
-    menu.focus(self_crosshair_root)
-end)
-
--- -- When Pointing
-menu.action(self_crosshair_root, "When Pointing", {"ryancrosshairpointing"}, "Adds a crosshair when pointing.", function(value)
-    crosshair_mode = CrosshairModes.WhenPointing
-    menu.set_menu_name(self_crosshair_root, "Crosshair: When Pointing")
-    menu.focus(self_crosshair_root)
-end)
-
--- -- Always
-crosshair_when_pointing = false
-menu.action(self_crosshair_root, "Always", {"ryancrosshairalways"}, "Adds a crosshair at all times.", function(value)
-    crosshair_mode = CrosshairModes.Always
-    menu.set_menu_name(self_crosshair_root, "Crosshair: Always")
-    menu.focus(self_crosshair_root)
-end)
+for mode_name, mode_id in pairs(CrosshairModes) do
+    if mode_name == "WhenPointing" then mode_name = "When Pointing" end -- this is gross
+    menu.toggle(self_crosshair_root, mode_name, {"ryancrosshair" .. mode_name:lower()}, "", function(value)
+        if value then
+            for name, id in pairs(CrosshairModes) do
+                if crosshair_mode == id then
+                    menu.trigger_commands("ryancrosshair" .. name .. " off")
+                end
+            end
+            crosshair_mode = mode_id
+        end
+    end, mode_name == "Off")
+end
 
 -- -- God Finger
 player_is_pointing = false
@@ -405,9 +403,8 @@ end)
 -- World Menu --
 world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
 world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
-world_vehicles_root = menu.list(world_root, "All Vehicles...", {"ryanallvehicles"}, "Control the vehicles around you.")
-world_npc_action_root = menu.list(world_root, "All NPCs: None", {"ryanallnpcs"}, "Changes the action NPCs are currently performing.")
-
+world_all_vehicles_root = menu.list(world_root, "All Vehicles...", {"ryanallvehicles"}, "Control the vehicles around you.")
+world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Changes the action NPCs are currently performing.")
 
 -- -- Enter Closest Vehicle
 menu.action(world_closest_vehicle_root, "Enter", {"ryandrivevehicle"}, "Teleports into the closest vehicle.", function()
@@ -456,104 +453,37 @@ world_action_figures_root = menu.list(world_collectibles_root, "Action Figures..
 world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
 world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
 
--- -- Make Vehicles Fast
-menu.toggle_loop(world_vehicles_root, "Make Fast", {"ryanmakeallfast"}, "Makes all nearby vehicles fast.", function()
-    local player_ped = player_get_ped()
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
+-- -- All Vehicles
+all_vehicles_make_fast = false
+all_vehicles_make_slow = false
+all_vehicles_no_grip = false
+all_vehicles_lock_doors = false
+all_vehicles_burst_tires = false
+all_vehicles_kill_engine = false
+all_vehicles_catapult = false
 
-    local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
-    for _, vehicle in pairs(vehicles) do
-        if vehicle ~= player_vehicle then
-            vehicle_set_speed(vehicle, VehicleSpeedModes.Fast)
-        end
-    end
-    util.yield(250)
-end, false)
-
--- -- Make Vehicles Slow
-menu.toggle_loop(world_vehicles_root, "Make Slow", {"ryanmakeallslow"}, "Makes all nearby vehicles slow.", function()
-    local player_ped = player_get_ped()
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
-
-    local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
-    for _, vehicle in pairs(vehicles) do
-        if vehicle ~= player_vehicle then
-            vehicle_set_speed(vehicle, VehicleSpeedModes.Slow)
-        end
-    end
-    util.yield(250)
-end, false)
-
--- -- Make Vehicles Drift
-menu.toggle_loop(world_vehicles_root, "No Grip", {"ryanmakealldrift"}, "Makes all nearby vehicles lose grip.", function()
-    local player_ped = player_get_ped()
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
-
-    local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
-    for _, vehicle in pairs(vehicles) do
-        if vehicle ~= player_vehicle then
-            vehicle_set_no_grip(vehicle, true)
-        end
-    end
-    util.yield(250)
-end, false)
-
--- -- Lock Vehicle Doors
-menu.toggle_loop(world_vehicles_root, "Lock Doors", {"ryanmakealllocked"}, "Locks all nearby vehicles.", function()
-    local player_ped = player_get_ped()
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
-
-    local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
-    for _, vehicle in pairs(vehicles) do
-        if vehicle ~= player_vehicle then
-            vehicle_set_doors_locked(vehicle, true)
-        end
-    end
-    util.yield(250)
-end, false)
-
--- -- Make Vehicles Burst
 vehicles_bursted = {}
-menu.toggle_loop(world_vehicles_root, "Burst Tires", {"ryanmakeallburst"}, "Makes all nearby vehicles have sudden tire loss.", function()
-    local player_ped = player_get_ped()
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
 
-    local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
-    for _, vehicle in pairs(vehicles) do
-        local was_bursted = false
-        for _, vehicle_bursted in pairs(vehicles_bursted) do
-            if vehicle_bursted == vehicle then was_bursted = true end
-        end
-        if not was_bursted and vehicle ~= player_vehicle then
-            vehicle_set_tires_bursted(vehicle, true)
-            table.insert(vehicles_bursted, vehicle)
-        end
-    end
-    util.yield(250)
+menu.toggle(world_all_vehicles_root, "Make Fast", {"ryanmakeallfast"}, "Makes all nearby vehicles fast.", function(value)
+    all_vehicles_make_fast = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Make Slow", {"ryanmakeallslow"}, "Makes all nearby vehicles slow.", function(value)
+    all_vehicles_make_slow = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Lock Doors", {"ryanmakealllocked"}, "Locks all nearby vehicles.", function(value)
+    all_vehicles_lock_doors = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Burst Tires", {"ryanmakeallburst"}, "Makes all nearby vehicles have sudden tire loss.", function(value)
+    all_vehicles_burst_tires = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Kill Engine", {"ryanmakealldead"}, "Makes all nearby vehicles dead.", function(value)
+    all_vehicles_kill_engine = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Catapult", {"ryanmakeallcatapult"}, "Makes all nearby vehicles catapult in the air.", function(value)
+    all_vehicles_catapult = value
 end, false)
 
--- -- Kill Vehicles
-menu.toggle_loop(world_vehicles_root, "Kill Engine", {"ryanmakealldead"}, "Makes all nearby vehicles dead.", function()
-    local player_ped = player_get_ped()
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
-
-    local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
-    for _, vehicle in pairs(vehicles) do
-        if vehicle ~= player_vehicle then
-            VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-        end
-    end
-    util.yield(250)
-end, false)
-
--- -- Make Vehicles Catapult
-menu.toggle_loop(world_vehicles_root, "Catapult", {"ryanmakeallcatapult"}, "Makes all nearby vehicles catapult in the air.", function()
+util.create_tick_handler(function()
     local player_ped = player_get_ped()
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
     local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
@@ -561,43 +491,48 @@ menu.toggle_loop(world_vehicles_root, "Catapult", {"ryanmakeallcatapult"}, "Make
     local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
     for _, vehicle in pairs(vehicles) do
         if vehicle ~= player_vehicle then
-            vehicle_catapult(vehicle)
+            if all_vehicles_make_fast then vehicle_set_speed(vehicle, VehicleSpeedModes.Fast) end
+            if all_vehicles_make_slow then vehicle_set_speed(vehicle, VehicleSpeedModes.Slow) end
+            if all_vehicles_no_grip then vehicle_set_no_grip(vehicle, true) end
+            if all_vehicles_burst_tires then
+                local was_bursted = false
+                for _, vehicle_bursted in pairs(vehicles_bursted) do
+                    if vehicle_bursted == vehicle then was_bursted = true end
+                end
+                if not was_bursted then
+                    vehicle_set_tires_bursted(vehicle, true)
+                    table.insert(vehicles_bursted, vehicle)
+                end
+            end
+            if all_vehicles_lock_doors then vehicle_set_doors_locked(vehicle, true) end
+            if all_vehicles_kill_engine then VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000) end
+            if all_vehicles_catapult then vehicle_catapult(vehicle) end
         end
     end
+
     util.yield(250)
-end, false)
+end)
 
 -- -- NPC Action
-npc_action = nil
-menu.action(world_npc_action_root, "None", {"ryanallnpcsnone"}, "Makes NPCs normal.", function()
-    menu.set_menu_name(world_npc_action_root, "All NPCs: None")
-    menu.focus(world_npc_action_root)
-    npc_action = nil
-end)
-menu.action(world_npc_action_root, "Musician", {"ryanallnpcsmusician"}, "Makes NPCs into musicians.", function()
-    menu.set_menu_name(world_npc_action_root, "All NPCs: Musician")
-    menu.focus(world_npc_action_root)
-    npc_action = "WORLD_HUMAN_MUSICIAN"
-end)
-menu.action(world_npc_action_root, "Human Statue", {"ryanallnpcsstatue"}, "Makes NPCs into human statues.", function()
-    menu.set_menu_name(world_npc_action_root, "All NPCs: Human Statue")
-    menu.focus(world_npc_action_root)
-    npc_action = "WORLD_HUMAN_HUMAN_STATUE"
-end)
-menu.action(world_npc_action_root, "Paparazzi", {"ryanallnpcspaparazzi"}, "Makes NPCs into paparazzi.", function()
-    menu.set_menu_name(world_npc_action_root, "All NPCs: Paparazzi")
-    menu.focus(world_npc_action_root)
-    npc_action = "WORLD_HUMAN_PAPARAZZI"
-end)
-menu.action(world_npc_action_root, "Janitor", {"ryanallnpcsjanitor"}, "Makes NPCs into janitors.", function()
-    menu.set_menu_name(world_npc_action_root, "All NPCs: Janitor")
-    menu.focus(world_npc_action_root)
-    npc_action = "WORLD_HUMAN_JANITOR"
-end)
+all_npcs_mode = AllNPCsModes.Off
+
+for mode_name, mode_id in pairs(AllNPCsModes) do
+    if mode_name == "HumanStatue" then mode_name = "Human Statue" end -- this is gross
+    menu.toggle(world_all_npcs_root, mode_name, {"ryanallnpcs" .. mode_name:lower()}, "", function(value)
+        if value then
+            for name, id in pairs(AllNPCsModes) do
+                if all_npcs_mode == id then
+                    menu.trigger_commands("ryanallnpcs" .. name .. " off")
+                end
+            end
+            all_npcs_mode = mode_id
+        end
+    end, mode_name == "Off")
+end
 
 npcs_affected = {}
 util.create_tick_handler(function()
-    if npc_action ~= nil then
+    if all_npcs_mode ~= AllNPCsModes.Off then
         local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
         for _, ped in pairs(entity_get_all_nearby(coords, 200, NearbyEntitiesModes.Peds)) do
             if not PED.IS_PED_A_PLAYER(ped) and not PED.IS_PED_IN_ANY_VEHICLE(ped) then
@@ -607,7 +542,7 @@ util.create_tick_handler(function()
                 end
                 if not was_affected then
                     TASK.CLEAR_PED_TASKS_IMMEDIATELY(ped)
-                    TASK.TASK_START_SCENARIO_IN_PLACE(ped, npc_action, 0, true)
+                    TASK.TASK_START_SCENARIO_IN_PLACE(ped, all_npcs_mode, 0, true)
                     table.insert(npcs_affected, ped)
                 end
             end
@@ -865,39 +800,29 @@ menu.toggle(session_omnicrash_root, "Include Modders", {"ryanomnicrashmodders"},
     session_omnicrash_modders = value
 end)
 
--- -- Kick Hermits
-session_antihermit_root = menu.list(session_root, "Anti-Hermit: Disabled", {"ryanantihermit"}, "Kicks or trolls any player who stays inside for more than 5 minutes.")
-antihermit_mode = "Disabled"
+-- -- Anti-Hermit
+session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Kicks or trolls any player who stays inside for more than 5 minutes.")
+antihermit_mode = AntihermitModes.Off
 
-menu.action(session_antihermit_root, "Disabled", {"ryanantihermitdisabled"}, "Does nothing to hermits.", function()
-    antihermit_mode = "Disabled"
-    menu.set_menu_name(session_antihermit_root, "Anti-Hermit: Disabled")
-    menu.focus(session_antihermit_root)
-end)
-menu.action(session_antihermit_root, "Teleport Outside", {"ryanantihermittpoutside"}, "Teleports hermits to an apartment, forcing them outside.", function()
-    antihermit_mode = "Teleport Outside"
-    menu.set_menu_name(session_antihermit_root, "Anti-Hermit: Teleport Outside")
-    menu.focus(session_antihermit_root)
-end)
-menu.action(session_antihermit_root, "Stand Kick", {"ryanantihermitkick"}, "Kicks hermits from the session.", function()
-    antihermit_mode = "Stand Kick"
-    menu.set_menu_name(session_antihermit_root, "Anti-Hermit: Stand Kick")
-    menu.focus(session_antihermit_root)
-end)
-menu.action(session_antihermit_root, "Omnicrash Mk II", {"ryanantihermitomnicrash"}, "Kicks hermits from the session.", function()
-    antihermit_mode = "Omnicrash Mk II"
-    menu.set_menu_name(session_antihermit_root, "Anti-Hermit: Omnicrash Mk II")
-    menu.focus(session_antihermit_root)
-end)
-menu.action(session_antihermit_root, "Smelly Peepo Crash", {"ryanantihermitsmellypeepo"}, "Kicks hermits from the session.", function()
-    antihermit_mode = "Smelly Peepo Crash"
-    menu.set_menu_name(session_antihermit_root, "Anti-Hermit: Smelly Peepo Crash")
-    menu.focus(session_antihermit_root)
-end)
+for mode_name, mode_id in pairs(AntihermitModes) do
+    if mode_name == "TeleportOutside" then mode_name = "Teleport Outside" end -- this is gross
+    if mode_name == "StandKick" then mode_name = "Stand Kick" end -- this is gross
+    if mode_name == "SmellyPeepoCrash" then mode_name = "Smelly Peepo Crash" end -- this is gross
+    menu.toggle(session_antihermit_root, mode_name, {"ryanantihermit" .. mode_name:lower()}, "", function(value)
+        if value then
+            for name, id in pairs(AntihermitModes) do
+                if antihermit_mode == id then
+                    menu.trigger_commands("ryanantihermit" .. name .. " off")
+                end
+            end
+            antihermit_mode = mode_id
+        end
+    end, mode_name == "Off")
+end
 
 hermits = {}
 util.create_tick_handler(function()
-    if antihermit_mode ~= "Disabled" then
+    if antihermit_mode ~= AntihermitModes.Off then
         for _, player_id in pairs(players.list(false)) do
             if not players.is_marked_as_modder(player_id) then
                 local tracked = false
@@ -912,13 +837,13 @@ util.create_tick_handler(function()
                         util.create_thread(function()
                             player_do_sms_spam(player_id, "You've been inside too long. Stop being weird and play the game!", 3000)
                         end)
-                        if antihermit_mode == "Teleport Outside" then
+                        if antihermit_mode == AntihermitModes.TeleportOutside then
                             menu.trigger_commands("apt1" .. player_name)
-                        elseif antihermit_mode == "Stand Kick" then
+                        elseif antihermit_mode == AntihermitModes.StandKick then
                             menu.trigger_commands("kick" .. player_name)
-                        elseif antihermit_mode == "Omnicrash Mk II" then
+                        elseif antihermit_mode == AntihermitModes.Omnicrash then
                             player_omnicrash(player_id)
-                        elseif antihermit_mode == "Smelly Peepo Crash" then
+                        elseif antihermit_mode == AntihermitModes.SmellyPeepoCrash then
                             player_smelly_peepo_crash(player_id)
                         end
                     end
