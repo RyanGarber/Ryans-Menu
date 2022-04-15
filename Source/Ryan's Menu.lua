@@ -484,7 +484,7 @@ util.create_tick_handler(function()
 
     local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
     for _, vehicle in pairs(vehicles) do
-        if vehicle ~= player_vehicle then
+        if not PED.IS_PED_A_PLAYER(VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)) then
             vehicle_set_speed(vehicle, all_vehicles_make_fast and VehicleSpeedModes.Fast or (all_vehicles_make_slow and VehicleSpeedModes.Slow or VehicleSpeedModes.Default))
             
             vehicle_set_no_grip(vehicle, all_vehicles_no_grip)
@@ -938,8 +938,32 @@ end, false)
 
 
 -- Stats Menu --
+menu.divider(stats_root, "General")
+stats_kd_root = menu.list(stats_root, "Kills/Deaths...", {"ryankd"}, "Controls your kills and deaths.")
+
+menu.divider(stats_root, "Visual")
 stats_office_money_root = menu.list(stats_root, "CEO Office Money...", {"ryanofficemoney"}, "Controls the amount of money in your CEO office.")
 stats_mc_clutter_root = menu.list(stats_root, "MC Clubhouse Clutter...", {"ryanmcclutter"}, "Controls the amount of clutter in your clubhouse.")
+
+-- -- Kills/Deaths
+stats_kills = menu.text_input(stats_kd_root, "Kills: " .. stats_get_kills(), {"ryankills"}, "The amount of kills you have given.", function(value)
+    value = tonumber(value)
+    if value ~= nil then
+        stats_set_deaths(math.floor(value))
+        basics_show_text_message(Colors.Purple, "Stats", "Your kill count has been changed to " .. value .. "!")
+    else
+        basics_show_text_message(Colors.Red, "Stats", "The kill count you provided was not a valid number.")
+    end
+end)
+stats_deaths = menu.text_input(stats_kd_root, "Deaths: " .. stats_get_deaths(), {"ryandeaths"}, "The amount of deaths you have received.", function(value)
+    value = tonumber(value)
+    if value ~= nil then
+        stats_set_deaths(math.floor(value))
+        basics_show_text_message(Colors.Purple, "Stats", "Your death count has been changed to " .. value .. "!")
+    else
+        basics_show_text_message(Colors.Red, "Stats", "The death count you provided was not a valid number.")
+    end
+end)
 
 -- -- CEO Office Money
 office_money_0 = menu.action(stats_office_money_root, "0% Full", {"ryanofficemoney0"}, "Makes the office 0% full with money.", function(click_type)
@@ -964,6 +988,12 @@ mc_clutter_0 = menu.action(stats_mc_clutter_root, "0% Full", {"ryanmcclutter0"},
 end)
 mc_clutter_100 = menu.action(stats_mc_clutter_root, "100% Full", {"ryanmcclutter100"}, "Adds drugs, money, and other clutter to your M.C. clubhouse.", function(click_type)
     stats_set_mc_clutter(mc_clutter_100, click_type, 20000000)
+end)
+
+util.create_tick_handler(function()
+    menu.set_menu_name(stats_kills, "Kills: " .. stats_get_kills())
+    menu.set_menu_name(stats_deaths, "Deaths: " .. stats_get_deaths())
+    util.yield(10000)
 end)
 
 
@@ -1314,14 +1344,14 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
             if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
                 and message:find("money") and message:find("drop") then
                     basics_show_text_message(Colors.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
-                player_crash_to_singleplayer(sender)
+                    player_crash_to_desktop(sender)
             end
         end
         if kick_car_meeters then
             if (message:find("want to") or message:find("wanna") or message:find("at") or message:find("?"))
                 and message:find("car") and message:find("meet") then
                     basics_show_text_message(Colors.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
-                player_crash_to_singleplayer(sender)
+                    player_crash_to_desktop(sender)
             end
         end
     end
