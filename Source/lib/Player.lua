@@ -376,8 +376,8 @@ function player_crash_to_desktop(player_id, mode)
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
     basics_show_text_message(Colors.Purple, "Crash To Desktop", "Now spawning entities. This may take a while...")
-    for name, id in pairs(CrashToDesktopModes) do
-        if id == mode then util.toast("Beginning crash: " .. name .. ".") end
+    for _, crash_mode in pairs(CrashToDesktopModes) do
+        if mode == crash_mode then util.toast("Beginning crash: " .. crash_mode .. ".") end
     end
 
     if mode == "Yo Momma" then

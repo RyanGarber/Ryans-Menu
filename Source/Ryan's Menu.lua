@@ -830,7 +830,8 @@ menu.action(session_crash_all_root, "Crash To Desktop", {"ryancrashallmultiplaye
     end
     for _, player_id in pairs(players.list(false, crash_all_friends)) do
         if crash_all_modders or not players.is_marked_as_modder(player_id) then
-            player_crash_to_desktop(player_id)
+            player_crash_to_desktop(player_id, "Vegetation")
+            player_crash_to_desktop(player_id, "Invalid Peds")
         end
     end
     if in_danger_zone then
