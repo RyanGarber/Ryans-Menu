@@ -1,4 +1,4 @@
-VERSION = "0.6.8"
+VERSION = "0.6.9"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -43,7 +43,7 @@ async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFE
         basics_show_text_message(6, "v" .. VERSION, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
         menu.trigger_commands("ryansettings")
     else
-        basics_show_text_message(49, "v" .. VERSION, "You're up to date. Enjoy!")
+        basics_show_text_message(49, "v" .. VERSION, VERSION:find("6.9") and "nice" or "You're up to date. Enjoy!")
     end
     audio_play_from_entity(player_get_ped(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
 end, function()
@@ -95,18 +95,18 @@ self_ptfx_body_hands_root = menu.list(self_ptfx_body_root, "Hands...", {"ryanptf
 self_ptfx_body_feet_root = menu.list(self_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
 
 ptfx_create_list(self_ptfx_body_head_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Head, ptfx[1], ptfx[2], ptfx_color)
-    util.yield(ptfx[3])
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Head, ptfx[2], ptfx[3], ptfx_color)
+    util.yield(ptfx[4])
 end)
 
 ptfx_create_list(self_ptfx_body_hands_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Hands, ptfx[1], ptfx[2], ptfx_color)
-    util.yield(ptfx[3])
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Hands, ptfx[2], ptfx[3], ptfx_color)
+    util.yield(ptfx[4])
 end)
 
 ptfx_create_list(self_ptfx_body_feet_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Feet, ptfx[1], ptfx[2], ptfx_color)
-    util.yield(ptfx[3])
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Feet, ptfx[2], ptfx[3], ptfx_color)
+    util.yield(ptfx[4])
 end)
 
 -- -- Vehicle PTFX
@@ -117,8 +117,8 @@ ptfx_create_list(self_ptfx_vehicle_wheels_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
     if vehicle ~= NULL then
-        ptfx_play_on_entity_bones(vehicle, VehicleBones.Wheels, ptfx[1], ptfx[2], ptfx_color)
-        util.yield(ptfx[3])
+        ptfx_play_on_entity_bones(vehicle, VehicleBones.Wheels, ptfx[2], ptfx[3], ptfx_color)
+        util.yield(ptfx[4])
     end
 end)
 
@@ -126,8 +126,8 @@ ptfx_create_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
     if vehicle ~= NULL then
-        ptfx_play_on_entity_bones(vehicle, VehicleBones.Exhaust, ptfx[1], ptfx[2], ptfx_color)
-        util.yield(ptfx[3])
+        ptfx_play_on_entity_bones(vehicle, VehicleBones.Exhaust, ptfx[2], ptfx[3], ptfx_color)
+        util.yield(ptfx[4])
     end
 end)
 
@@ -142,8 +142,8 @@ ptfx_create_list(self_ptfx_weapon_aiming_root, function(ptfx)
     if CAM.IS_AIM_CAM_ACTIVE() then
         local raycast = basics_do_raycast(500.0)
         if raycast.did_hit then
-            ptfx_play_at_coords(raycast.hit_coords, ptfx[1], ptfx[2], ptfx_color)
-            util.yield(ptfx[3])
+            ptfx_play_at_coords(raycast.hit_coords, ptfx[2], ptfx[3], ptfx_color)
+            util.yield(ptfx[4])
         end
     end
 end)
@@ -152,8 +152,8 @@ ptfx_create_list(self_ptfx_weapon_muzzle_root, function(ptfx)
     if ptfx_disable then return end
     local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_get_ped())
     if weapon ~= NULL then
-        ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[1], ptfx[2], ptfx_color)
-        util.yield(ptfx[3])
+        ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
+        util.yield(ptfx[4])
     end
 end)
 
@@ -163,8 +163,8 @@ ptfx_create_list(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
     if PED.IS_PED_SHOOTING(player_ped) then
         local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_ped)
         if weapon ~= NULL then
-            ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[1], ptfx[2], ptfx_color)
-            util.yield(ptfx[3])
+            ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
+            util.yield(ptfx[4])
         end
     end
 end)
@@ -173,7 +173,7 @@ ptfx_create_list(self_ptfx_weapon_impact_root, function(ptfx)
     if ptfx_disable then return end
     local impact_ptr = memory.alloc()
     if WEAPON.GET_PED_LAST_WEAPON_IMPACT_COORD(player_get_ped(), impact_ptr) then
-        ptfx_play_at_coords(memory.read_vector3(impact_ptr), ptfx[1], ptfx[2], ptfx_color)
+        ptfx_play_at_coords(memory.read_vector3(impact_ptr), ptfx[2], ptfx[3], ptfx_color)
         memory.free(impact_ptr)
     end
 end)
@@ -186,8 +186,8 @@ self_ptfx_pointing_god_finger_root = menu.list(self_ptfx_pointing_root, "Target.
 ptfx_create_list(self_ptfx_pointing_finger_root, function(ptfx)
     if ptfx_disable then return end
     if memory.read_int(memory.script_global(4516656 + 930)) == 3 then
-        ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Pointer, ptfx[1], ptfx[2], ptfx_color)
-        util.yield(ptfx[3])
+        ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
+        util.yield(ptfx[4])
     end
 end)
 
@@ -196,8 +196,8 @@ ptfx_create_list(self_ptfx_pointing_crosshair_root, function(ptfx)
     if player_is_pointing then
         local raycast = basics_do_raycast(1000.0)
         if raycast.did_hit then
-            ptfx_play_at_coords(raycast.hit_coords, ptfx[1], ptfx[2], ptfx_color)
-            util.yield(ptfx[3])
+            ptfx_play_at_coords(raycast.hit_coords, ptfx[2], ptfx[3], ptfx_color)
+            util.yield(ptfx[4])
         end
     end
 end)
@@ -205,27 +205,23 @@ end)
 ptfx_create_list(self_ptfx_pointing_god_finger_root, function(ptfx)
     if ptfx_disable then return end
     if god_finger_target ~= nil then
-        ptfx_play_at_coords(god_finger_target, ptfx[1], ptfx[2], ptfx_color)
-        util.yield(ptfx[3])
+        ptfx_play_at_coords(god_finger_target, ptfx[2], ptfx[3], ptfx_color)
+        util.yield(ptfx[4])
     end
 end)
 
 -- -- Forcefield
-forcefield_mode = ForcefieldModes.Off
+forcefield_mode = "Off"
 forcefield_size = 10
 forcefield_force = 1
 
-for mode_name, mode_id in pairs(ForcefieldModes) do
-    menu.toggle(self_forcefield_root, mode_name, {"ryanforcefield" .. mode_name:lower()}, "", function(value)
+for _, mode in pairs(ForcefieldModes) do
+    menu.toggle(self_forcefield_root, mode, {"ryanforcefield" .. mode:lower()}, "", function(value)
         if value then
-            for name, id in pairs(ForcefieldModes) do
-                if forcefield_mode == id then
-                    menu.trigger_commands("ryanforcefield" .. name .. " off")
-                end
-            end
-            forcefield_mode = mode_id
+            menu.trigger_commands("ryanforcefield" .. forcefield_mode:lower() .. " off")
+            forcefield_mode = mode
         end
-    end, mode_name == "Off")
+    end, mode == "Off")
 end
 
 menu.divider(self_forcefield_root, "Options")
@@ -238,7 +234,7 @@ end)
 
 entities_destroyed = {}
 util.create_tick_handler(function()
-    if forcefield_mode == ForcefieldModes.Push then -- Push
+    if forcefield_mode == "Push" then
         local player_ped = player_get_ped()
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 		local nearby = entity_get_all_nearby(player_coords, forcefield_size, NearbyEntitiesModes.All)
@@ -258,7 +254,7 @@ util.create_tick_handler(function()
 			end
 		end
         entities_destroyed = {}
-    elseif forcefield_mode == ForcefieldModes.Destroy then -- Destroy
+    elseif forcefield_mode == "Destroy" then
         ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
 
         local player_ped = player_get_ped()
@@ -291,20 +287,15 @@ util.create_tick_handler(function()
 end)
 
 -- -- Fire
-fire_finger_mode = FireFingerModes.Off
+fire_finger_mode = "Off"
 self_fire_finger_root = menu.list(self_fire_root, "Finger...", {"ryanfirefinger"}, "Catches things on fire from a distance when pressing E.")
-for mode_name, mode_id in pairs(FireFingerModes) do
-    if mode_name == "WhenPointing" then mode_name = "When Pointing" end -- this is gross
-    menu.toggle(self_fire_finger_root, mode_name, {"ryanfirefinger" .. mode_name:lower()}, "", function(value)
+for _, mode in pairs(FireFingerModes) do
+    menu.toggle(self_fire_finger_root, mode, {"ryanfirefinger" .. mode:lower()}, "", function(value)
         if value then
-            for name, id in pairs(FireFingerModes) do
-                if fire_finger_mode == id then
-                    menu.trigger_commands("ryanfirefinger" .. name .. " off")
-                end
-            end
-            fire_finger_mode = mode_id
+            menu.trigger_commands("ryanfirefinger" .. fire_finger_mode:lower() .. " off")
+            fire_finger_mode = mode
         end
-    end, mode_name == "Off")
+    end, mode == "Off")
 end
 
 menu.toggle(self_fire_root, "Body", {"ryanfirebody"}, "Sets yourself on fire visually.", function(value)
@@ -328,7 +319,7 @@ menu.toggle_loop(self_fire_root, "Touch", {"ryanfiretouch"}, "Catches things on 
 end)
 
 util.create_tick_handler(function()
-    if fire_finger_mode == FireFingerModes.Always or (fire_finger_mode == FireFingerModes.WhenPointing and player_is_pointing) then
+    if fire_finger_mode == "Always" or (fire_finger_mode == "When Pointing" and player_is_pointing) then
         if PAD.IS_CONTROL_JUST_PRESSED(21, 86) then
             local raycast = basics_do_raycast(250.0)
             if raycast.did_hit then
@@ -339,20 +330,15 @@ util.create_tick_handler(function()
 end)
 
 self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Addn-screen crosshair.")
-crosshair_mode = CrosshairModes.Off
+crosshair_mode = "Off"
 
-for mode_name, mode_id in pairs(CrosshairModes) do
-    if mode_name == "WhenPointing" then mode_name = "When Pointing" end -- this is gross
-    menu.toggle(self_crosshair_root, mode_name, {"ryancrosshair" .. mode_name:lower()}, "", function(value)
+for _, mode in pairs(CrosshairModes) do
+    menu.toggle(self_crosshair_root, mode, {"ryancrosshair" .. mode:lower()}, "", function(value)
         if value then
-            for name, id in pairs(CrosshairModes) do
-                if crosshair_mode == id then
-                    menu.trigger_commands("ryancrosshair" .. name .. " off")
-                end
-            end
-            crosshair_mode = mode_id
+            menu.trigger_commands("ryancrosshair" .. crosshair_mode:lower() .. " off")
+            crosshair_mode = mode
         end
-    end, mode_name == "Off")
+    end, mode == "Off")
 end
 
 -- -- God Finger
@@ -546,25 +532,26 @@ util.create_tick_handler(function()
 end)
 
 -- -- NPC Action
-all_npcs_mode = AllNPCsModes.Off
+all_npcs_mode = "Off"
 
-for mode_name, mode_id in pairs(AllNPCsModes) do
-    if mode_name == "HumanStatue" then mode_name = "Human Statue" end -- this is gross
-    menu.toggle(world_all_npcs_root, mode_name, {"ryanallnpcs" .. mode_name:lower()}, "", function(value)
+for _, mode in pairs(AllNPCsModes) do
+    menu.toggle(world_all_npcs_root, mode, {"ryanallnpcs" .. mode:lower()}, "", function(value)
         if value then
-            for name, id in pairs(AllNPCsModes) do
-                if all_npcs_mode == id then
-                    menu.trigger_commands("ryanallnpcs" .. name .. " off")
-                end
-            end
-            all_npcs_mode = mode_id
+            menu.trigger_commands("ryanallnpcs" .. all_npcs_mode:lower() .. " off")
+            all_npcs_mode = mode
         end
-    end, mode_name == "Off")
+    end, mode == "Off")
 end
 
 npcs_affected = {}
 util.create_tick_handler(function()
-    if all_npcs_mode ~= AllNPCsModes.Off then
+    if all_npcs_mode ~= "Off" then
+        local scenario = ""
+        if all_npcs_mode == "Musician" then scenario = "WORLD_HUMAN_MUSICIAN"
+        elseif all_npcs_mode == "Human Statue" then scenario = "WORLD_HUMAN_HUMAN_STATUE"
+        elseif all_npcs_mode == "Paparazzi" then scenario = "WORLD_HUMAN_PAPARAZZI"
+        elseif all_npcs_mode == "Janitor" then scenario = "WORLD_HUMAN_JANITOR" end
+
         local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
         for _, ped in pairs(entity_get_all_nearby(coords, 200, NearbyEntitiesModes.Peds)) do
             if not PED.IS_PED_A_PLAYER(ped) and not PED.IS_PED_IN_ANY_VEHICLE(ped) then
@@ -586,21 +573,21 @@ end)
 -- -- Action Figures
 for i = 1, #ActionFigures do
     menu.action(world_action_figures_root, "Action Figure " .. i, {"ryanactionfigure" .. i}, "Teleports to action figure #" .. i, function()
-        player_teleport_to(ActionFigures[i][1], ActionFigures[i][2], ActionFigures[i][3])
+        player_teleport_to({x = ActionFigures[i][1], y = ActionFigures[i][2], z = ActionFigures[i][3]})
     end)
 end
 
 -- -- Signal Jammers
 for i = 1, #SignalJammers do
     menu.action(world_signal_jammers_root, "Signal Jammer " .. i, {"ryansignaljammer" .. i}, "Teleports to signal jammer #" .. i, function()
-        player_teleport_with_vehicle_to(SignalJammers[i][1], SignalJammers[i][2], SignalJammers[i][3])
+        player_teleport_with_vehicle_to({x = SignalJammers[i][1], y = SignalJammers[i][2], z = SignalJammers[i][3]})
     end)
 end
 
 -- -- Playing Cards
 for i = 1, #PlayingCards do
     menu.action(world_playing_cards_root, "Playing Card " .. i, {"ryanplayingcard" .. i}, "Teleports to playing card #" .. i, function()
-        player_teleport_with_vehicle_to(PlayingCards[i][1], PlayingCards[i][2], PlayingCards[i][3])
+        player_teleport_with_vehicle_to({x = PlayingCards[i][1], y = PlayingCards[i][2], z = PlayingCards[i][3]})
     end)
 end
 
@@ -644,7 +631,11 @@ end)
 -- -- Fireworks
 function do_fireworks(burst_type, coords, color)
     coords = vector_add(firework_coords, coords)
-    ptfx_play_at_coords(coords, PTFX[burst_type][1], PTFX[burst_type][2], color)
+    local ptfx = nil
+    for _, ptfx_data in pairs(PTFX) do
+        if ptfx_data[1] == burst_type then ptfx = ptfx_data end
+    end
+    ptfx_play_at_coords(coords, ptfx[2], ptfx[3], color)
     audio_play_at_coords(coords, "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 100)
     audio_play_at_coords(vector_add(coords, {x = 50, y = 50, z = 0}), "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 500)
     audio_play_at_coords(vector_add(coords, {x = -50, y = -50, z = 0}), "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 500)
@@ -810,52 +801,68 @@ menu.action(session_dox_root, "Oppressor", {"ryanoppressor"}, "Shares the name o
     player_list_by_oppressor2()
 end)
 
--- -- Omnicrash
-session_omnicrash_root = menu.list(session_root, "Omnicrash...", {"ryanomnicrashall"}, "The ultimate session crash.")
-session_omnicrash_friends = false
-session_omnicrash_modders = true
+-- -- Crash All
+session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
+crash_all_friends = false
+crash_all_modders = false
 
-menu.action(session_omnicrash_root, "Go", {"ryanomnicrashallgo"}, "Attempts to crash using all known script events.", function()
-    for _, player_id in pairs(players.list(false, session_omnicrash_friends)) do
-        if session_omnicrash_modders or not players.is_marked_as_modder(player_id) then
+menu.action(session_crash_all_root, "Crash To Singleplayer", {"ryancrashallsingleplayer"}, "Attempts to crash using all to singleplayer.", function()
+    for _, player_id in pairs(players.list(false, crash_all_friends)) do
+        if crash_all_modders or not players.is_marked_as_modder(player_id) then
             util.create_thread(function()
-                player_omnicrash(player_id)
+                player_crash_to_singleplayer(player_id)
             end)
         end
     end
 end)
+menu.action(session_crash_all_root, "Crash To Desktop", {"ryancrashallmultiplayer"}, "Attempts to crash using all known entities.", function()
+    local starting_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
+    local in_danger_zone = false
+    for _, player_id in pairs(players.list(false, crash_all_friends)) do
+        if vector_distance(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), starting_coords) < SafeCrashDistance then
+            in_danger_zone = true
+        end
+    end
 
-menu.divider(session_omnicrash_root, "Options")
-menu.toggle(session_omnicrash_root, "Include Friends", {"ryanomnicrashfriends"}, "If enabled, friends are included in the Omnicrash.", function(value)
-    session_omnicrash_friends = value
+    if in_danger_zone then
+        player_teleport_to(SafeCrashCoords)
+        util.yield(1000)
+    end
+    for _, player_id in pairs(players.list(false, crash_all_friends)) do
+        if crash_all_modders or not players.is_marked_as_modder(player_id) then
+            player_crash_to_desktop(player_id)
+        end
+    end
+    if in_danger_zone then
+        util.yield(SafeCrashDuration)
+        player_teleport_to(starting_coords)
+    end
 end)
-menu.toggle(session_omnicrash_root, "Include Modders", {"ryanomnicrashmodders"}, "If enabled, modders are included in the Omnicrash.", function(value)
-    session_omnicrash_modders = value
+
+menu.divider(session_crash_all_root, "Options")
+menu.toggle(session_crash_all_root, "Include Friends", {"ryanomnicrashfriends"}, "If enabled, friends are included in the Omnicrash.", function(value)
+    crash_all_friends = value
+end)
+menu.toggle(session_crash_all_root, "Include Modders", {"ryanomnicrashmodders"}, "If enabled, modders are included in the Omnicrash.", function(value)
+    crash_all_modders = value
 end)
 
 -- -- Anti-Hermit
 session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Kicks or trolls any player who stays inside for more than 5 minutes.")
-antihermit_mode = AntihermitModes.Off
+antihermit_mode = "Off"
 
-for mode_name, mode_id in pairs(AntihermitModes) do
-    if mode_name == "TeleportOutside" then mode_name = "Teleport Outside" end -- this is gross
-    if mode_name == "StandKick" then mode_name = "Stand Kick" end -- this is gross
-    if mode_name == "SmellyPeepoCrash" then mode_name = "Smelly Peepo Crash" end -- this is gross
-    menu.toggle(session_antihermit_root, mode_name, {"ryanantihermit" .. mode_name:lower()}, "", function(value)
+for _, mode in pairs(AntihermitModes) do
+    menu.toggle(session_antihermit_root, mode, {"ryanantihermit" .. mode:lower()}, "", function(value)
         if value then
-            for name, id in pairs(AntihermitModes) do
-                if antihermit_mode == id then
-                    menu.trigger_commands("ryanantihermit" .. name .. " off")
-                end
-            end
-            antihermit_mode = mode_id
+            menu.trigger_commands("ryanantihermit" .. antihermit_mode:lower() .. " off")
+            antihermit_mode = mode
         end
-    end, mode_name == "Off")
+    end, mode == "Off")
 end
 
 hermits = {}
 util.create_tick_handler(function()
-    if antihermit_mode ~= AntihermitModes.Off then
+    if antihermit_mode ~= "Off" then
         for _, player_id in pairs(players.list(false)) do
             if not players.is_marked_as_modder(player_id) then
                 local tracked = false
@@ -867,17 +874,25 @@ util.create_tick_handler(function()
                     elseif util.current_time_millis() - hermits[player_id] >= 300000 then
                         hermits[player_id] = util.current_time_millis() - 210000
                         basics_show_text_message(Colors.Purple, "Anti-Hermit", player_name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
-                        util.create_thread(function()
-                            player_do_sms_spam(player_id, "You've been inside too long. Stop being weird and play the game!", 3000)
-                        end)
-                        if antihermit_mode == AntihermitModes.TeleportOutside then
+                        player_do_sms_spam(player_id, "You've been inside too long. Stop being weird and play the game!", 3000)
+                        if antihermit_mode == "Teleport Outside" then
                             menu.trigger_commands("apt1" .. player_name)
-                        elseif antihermit_mode == AntihermitModes.StandKick then
+                        elseif antihermit_mode == "Stand Kick" then
                             menu.trigger_commands("kick" .. player_name)
-                        elseif antihermit_mode == AntihermitModes.Omnicrash then
-                            player_omnicrash(player_id)
-                        elseif antihermit_mode == AntihermitModes.SmellyPeepoCrash then
-                            player_smelly_peepo_crash(player_id)
+                        elseif antihermit_mode == "Crash To Singleplayer" then
+                            player_crash_to_singleplayer(player_id)
+                        elseif antihermit_mode == "Crash To Desktop" then
+                            local starting_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
+                            local in_danger_zone = vector_distance(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), starting_coords) < SafeCrashDistance
+                            if in_danger_zone then
+                                player_teleport_to(SafeCrashCoords)
+                                util.yield(1000)
+                            end
+                            player_crash_to_desktop(player_id)
+                            if in_danger_zone then
+                                util.yield(SafeCrashDuration)
+                                player_teleport_to(starting_coords)
+                            end
                         end
                     end
                 else
@@ -955,7 +970,7 @@ end)
 function setup_player(player_id)
     local player_root = menu.player_root(player_id)
     menu.divider(player_root, "Ryan's Menu")
-    
+
     local player_trolling_root = menu.list(player_root, "Trolling...", {"ryantrolling"}, "Options that players may not like.")
     local player_removal_root = menu.list(player_root, "Removal...", {"ryanremoval"}, "Options to remove the player forcibly.")
 
@@ -1158,22 +1173,40 @@ function setup_player(player_id)
         end)
     end)
 
-    -- -- Omnicrash (Credit: various artists)
-    menu.action(player_removal_root, "Omnicrash Mk II", {"ryanomnicrash"}, "Attempts to crash using all known script events.", function()
+    -- -- Crash To Singleplayer
+    menu.action(player_removal_root, "Crash To Singleplayer", {"ryancrashsingleplayer"}, "Attempts to crash using all known script events.", function()
         player_spam_and_block(player_id, removal_block_joins, removal_message, function()
-            player_omnicrash(player_id)
+            player_crash_to_singleplayer(player_id)
         end)
     end)
 
-    -- -- Smelly Peepo Crash (Credit: 2take1 Additions, Keramis Script)
-    menu.action(player_removal_root, "Smelly Peepo Crash", {"ryansmellypeepo"}, "Attempts to crash using invalid and bugged peds.", function(click_type)
-        local smelly_peepo_ref = menu.ref_by_command_name("ryansmellypeepo" .. players.get_name(player_id):lower())
-        menu.show_warning(smelly_peepo_ref, click_type, "If you are near this player, you will crash too.\nBe sure you are far enough away before pressing Proceed.", function()
-            player_spam_and_block(player_id, removal_block_joins, removal_message, function()
-                player_smelly_peepo_crash(player_id)
-            end)
+    -- -- Crash To Desktop
+    player_crash_to_desktop_root = menu.list(player_removal_root, "Crash To Desktop...", {"ryancrashdesktop"}, "Various methods of crashing to desktop.")
+    
+    menu.action(player_crash_to_desktop_root, "Do All", {"ryancrashdesktopall"}, "Attempts to crash using all known entities.", function(click_type)
+        player_spam_and_block(player_id, removal_block_joins, removal_message, function()
+            local starting_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
+            local in_danger_zone = vector_distance(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), starting_coords) < SafeCrashDistance
+            if in_danger_zone then
+                player_teleport_to(SafeCrashCoords)
+                util.yield(1000)
+            end
+            player_crash_to_desktop(player_id)
+            if in_danger_zone then
+                util.yield(SafeCrashDuration)
+                player_teleport_to(starting_coords)
+            end
         end)
     end)
+
+    menu.divider(player_crash_to_desktop_root, "Methods")
+    for _, mode in pairs(CrashToDesktopModes) do
+        menu.action(player_crash_to_desktop_root, mode, {"ryancrashdesktop" .. mode}, "Attempts to crash using the " .. mode .. " method.", function(click_type)
+            player_spam_and_block(player_id, removal_block_joins, removal_message, function()
+                player_crash_to_desktop(player_id, mode)
+            end)
+        end)
+    end
 
 
     -- Divorce Kick --
@@ -1280,14 +1313,14 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
             if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
                 and message:find("money") and message:find("drop") then
                     basics_show_text_message(Colors.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
-                player_omnicrash(sender)
+                player_crash_to_singleplayer(sender)
             end
         end
         if kick_car_meeters then
             if (message:find("want to") or message:find("wanna") or message:find("at") or message:find("?"))
                 and message:find("car") and message:find("meet") then
                     basics_show_text_message(Colors.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
-                player_omnicrash(sender)
+                player_crash_to_singleplayer(sender)
             end
         end
     end
@@ -1332,7 +1365,7 @@ util.keep_running()
 -- DirectX --
 while true do
     player_is_pointing = memory.read_int(memory.script_global(4516656 + 930)) == 3
-    if crosshair_mode == CrosshairModes.Always or (crosshair_mode == CrosshairModes.WhenPointing and player_is_pointing) then
+    if crosshair_mode == "Always" or (crosshair_mode == "When Pointing" and player_is_pointing) then
         directx.draw_texture(
             CrosshairTexture,
             0.03, 0.03,

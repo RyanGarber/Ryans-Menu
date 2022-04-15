@@ -58,3 +58,7 @@ function vector_offset_from_camera(distance) -- Credit: WiriScript
 	}
 	return offset
 end
+
+function vector_to_string(vector)
+	return "{" .. math.floor(vector.x) .. ", " .. math.floor(vector.y) .. ", " .. math.floor(vector.z) .. "}"
+end

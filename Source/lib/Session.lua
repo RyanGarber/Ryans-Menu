@@ -92,7 +92,7 @@ function session_watch_and_takeover_all(action, modders, wait_for)
             end
         end
     end
-    player_teleport_to(starting_coords.x, starting_coords.y, starting_coords.z)
+    player_teleport_to(starting_coords)
     menu.trigger_commands("otr off")
     menu.trigger_commands("invisibility off")
 end
@@ -118,7 +118,7 @@ function session_watch_and_do_command_all(commands, modders, wait_for)
             end
         end
     end
-    player_teleport_to(starting_coords.x, starting_coords.y, starting_coords.z)
+    player_teleport_to(starting_coords)
     menu.trigger_commands("otr off")
     menu.trigger_commands("invisibility off")
     menu.trigger_commands("levitation off")

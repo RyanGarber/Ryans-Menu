@@ -6,6 +6,16 @@ function basics_get_random(table) -- Credit: WiriScript
 	return list[math.random(1, #list)]
 end
 
+function basics_shuffle(list)
+    local shuffled = {}
+    for i = 1, #list do shuffled[i] = list[i] end
+    for i = #list, 2, -1 do
+        local randomized = math.random(i)
+        shuffled[i], shuffled[randomized] = shuffled[randomized], shuffled[i]
+    end
+    return shuffled
+end
+
 function basics_format_int(number)
     local i, j, minus, int, fraction = tostring(number):find('([-]?)(%d+)([.]?%d*)')
     int = int:reverse():gsub("(%d%d%d)", "%1,")

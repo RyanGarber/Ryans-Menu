@@ -6,8 +6,8 @@ function ptfx_request_asset(ptfx)
 end
 
 function ptfx_create_list(root, loop)
-    for name, ptfx in pairs(PTFX) do
-        menu.toggle_loop(root, name, {"ryan" .. name:lower()}, "Plays the " .. name .. " effect.", function()
+    for _, ptfx in pairs(PTFX) do
+        menu.toggle_loop(root, ptfx[1], {"ryan" .. ptfx[1]:lower()}, "Plays the " .. ptfx[1] .. " effect.", function()
             loop(ptfx)
         end, false)
     end

@@ -4,19 +4,19 @@ function player_get_ped(player_id)
     return PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
 end
 
-function player_teleport_to(x, y, z)
+function player_teleport_to(coords)
     util.toast("Teleporting...")
-    ENTITY.SET_ENTITY_COORDS(player_get_ped(), x, y, z)
+    ENTITY.SET_ENTITY_COORDS(player_get_ped(), coords.x, coords.y, coords.z)
 end
 
-function player_teleport_with_vehicle_to(x, y, z)
+function player_teleport_with_vehicle_to(coords)
     util.toast("Teleporting...")
     local player_ped = player_get_ped()
     if PED.IS_PED_IN_ANY_VEHICLE(player_ped, true) then
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
-        ENTITY.SET_ENTITY_COORDS(vehicle, x, y, z)
+        ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
     else
-        ENTITY.SET_ENTITY_COORDS(player_ped, x, y, z)
+        ENTITY.SET_ENTITY_COORDS(player_ped, coords.x, coords.y, coords.z)
     end
 end
 
@@ -353,69 +353,92 @@ function player_flying_yacht(player_id)
 end
 
 -- Crashes --
-function player_omnicrash(player_id)
-    basics_show_text_message(Colors.Purple, "Omnicrash Mk II", "Omnicrash has begun. This may take a while...")
-    for _, crash_event in pairs(CrashEvents) do
-        player_send_script_event(player_id, crash_event, "Omnicrash")
+function player_crash_to_singleplayer(player_id)
+    basics_show_text_message(Colors.Purple, "Crash To Singleplayer", "Now sending script events. This may take a while...")
+    local events = basics_shuffle(CrashEvents)
+    for _, event in pairs(events) do
+        player_send_script_event(player_id, event, "Crash To Singleplayer")
     end
 end
 
-function player_smelly_peepo_crash(player_id)
+function player_crash_to_desktop(player_id, mode)
+    if not mode then
+        for _, crash_mode in pairs(CrashToDesktopModes) do
+            util.create_thread(function()
+                player_crash_to_desktop(player_id, crash_mode)
+            end)
+        end
+        return
+    end
+
     local player_ped = player_get_ped(player_id)
     local player_ped_heading = ENTITY.GET_ENTITY_HEADING(player_ped)
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
-    util.toast("Spawning smelly objects on " .. players.get_name(player_id) .. "...")
-    basics_show_text_message(Colors.Purple, "Smelly Peepo Crash", "Smelly Peepo Crash has begun. This may take a while...")
-
-    basics_request_model(-930879665)
-    basics_request_model(3613262246)
-    basics_request_model(452618762)
-    local object_1 = entities.create_object(-930879665, player_coords)
-    util.yield(10)
-    local object_2 = entities.create_object(3613262246, player_coords)
-    util.yield(10)
-    local object_3 = entities.create_object(452618762, player_coords)
-    util.yield(10)
-    local object_4 = entities.create_object(3613262246, player_coords)
-    util.yield(300)
-    entities.delete_by_handle(object_1)
-    entities.delete_by_handle(object_2)
-    entities.delete_by_handle(object_3)
-    entities.delete_by_handle(object_4)
-
-    util.toast("Spawning smelly peds on " .. players.get_name(player_id) .. "...")
-    local ped = entities.create_ped(0, 1057201338, player_coords, 0)
-    util.yield(100)
-    entities.delete_by_handle(ped)
-    local ped = entities.create_ped(0, -2056455422, player_coords, 0)
-    util.yield(100)
-    entities.delete_by_handle(ped)
-    local ped = entities.create_ped(0, 762327283, player_coords, 0)
-    util.yield(100)
-    entities.delete_by_handle(ped)
-
-    util.toast("Spawning the smelliest of peds on " .. players.get_name(player_id) .. "!")
-    local fatcult = util.joaat("a_f_m_fatcult_01"); basics_request_model(fatcult)
-    for i = 1, 8 do
-        util.create_thread(function()
-            local ped = entities.create_ped(
-                0, fatcult,
-                vector_add(player_coords, {x = math.random(-1, 1), y = math.random(-1, 1), z = 0}),
-                player_ped_heading
-            )
-            util.yield(400)
-            entities.delete_by_handle(ped)
-        end)
-        util.yield(100)
-        local ped_1 = entities.create_ped(0, util.joaat("slod_human"), player_coords, player_ped_heading)
-        local ped_2 = entities.create_ped(0, util.joaat("slod_large_quadped"), player_coords, player_ped_heading)
-        local ped_3 = entities.create_ped(0, util.joaat("slod_small_quadped"), player_coords, player_ped_heading)
-        util.yield(750)
-        entities.delete_by_handle(ped_1)
-        entities.delete_by_handle(ped_2)
-        entities.delete_by_handle(ped_3)
-        player_send_script_event(player_id, {962740265, player_id, 23243, 5332, 3324, player_id}, "final payload")
+    basics_show_text_message(Colors.Purple, "Crash To Desktop", "Now spawning entities. This may take a while...")
+    for name, id in pairs(CrashToDesktopModes) do
+        if id == mode then util.toast("Beginning crash: " .. name .. ".") end
     end
-    util.toast("Done!")
+
+    if mode == "Yo Momma" then
+        local fatcult = util.joaat("a_f_m_fatcult_01"); basics_request_model(fatcult)
+        for i = 1, 8 do
+            util.create_thread(function()
+                local ped = entities.create_ped(
+                    0, fatcult,
+                    vector_add(player_coords, {x = math.random(-1, 1), y = math.random(-1, 1), z = 0}),
+                    player_ped_heading
+                )
+                util.yield(400)
+                entities.delete_by_handle(ped)
+            end)
+            util.yield(100)
+            local ped_1 = entities.create_ped(0, util.joaat("slod_human"), player_coords, player_ped_heading)
+            local ped_2 = entities.create_ped(0, util.joaat("slod_large_quadped"), player_coords, player_ped_heading)
+            local ped_3 = entities.create_ped(0, util.joaat("slod_small_quadped"), player_coords, player_ped_heading)
+            util.yield(750)
+            entities.delete_by_handle(ped_1)
+            entities.delete_by_handle(ped_2)
+            entities.delete_by_handle(ped_3)
+            player_send_script_event(player_id, {962740265, player_id, 23243, 5332, 3324, player_id}, "final payload")
+        end
+    end
+
+    if mode == "Vegetation" then
+        basics_request_model(-930879665)
+        basics_request_model(3613262246)
+        basics_request_model(452618762)
+        local object_1 = entities.create_object(-930879665, player_coords)
+        util.yield(10)
+        local object_2 = entities.create_object(3613262246, player_coords)
+        util.yield(10)
+        local object_3 = entities.create_object(452618762, player_coords)
+        util.yield(10)
+        local object_4 = entities.create_object(3613262246, player_coords)
+        util.yield(300)
+        entities.delete_by_handle(object_1)
+        entities.delete_by_handle(object_2)
+        entities.delete_by_handle(object_3)
+        entities.delete_by_handle(object_4)
+    end
+
+    if mode == "Invalid Objects" then
+        local hashes = basics_shuffle(InvalidObjectsHashes)
+        local objects = {}
+        for _, hash in pairs(hashes) do table.insert(objects, entities.create_object(hash, player_coords)) end
+        util.yield(5000)
+        for _, object in pairs(objects) do entities.delete_by_handle(object) end
+    end
+
+    if mode == "Invalid Peds" then
+        local ped = entities.create_ped(0, 1057201338, player_coords, 0)
+        util.yield(100)
+        entities.delete_by_handle(ped)
+        local ped = entities.create_ped(0, -2056455422, player_coords, 0)
+        util.yield(100)
+        entities.delete_by_handle(ped)
+        local ped = entities.create_ped(0, 762327283, player_coords, 0)
+        util.yield(100)
+        entities.delete_by_handle(ped)
+    end
 end
