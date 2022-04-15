@@ -457,30 +457,38 @@ world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards..."
 all_vehicles_make_fast = false
 all_vehicles_make_slow = false
 all_vehicles_no_grip = false
-all_vehicles_lock_doors = false
 all_vehicles_burst_tires = false
 all_vehicles_kill_engine = false
+all_vehicles_lock_doors = false
 all_vehicles_catapult = false
+all_vehicles_flee = false
 
 vehicles_bursted = {}
+vehicles_killed = {}
 
-menu.toggle(world_all_vehicles_root, "Make Fast", {"ryanmakeallfast"}, "Makes all nearby vehicles fast.", function(value)
+menu.toggle(world_all_vehicles_root, "Make Fast", {"ryanallvehiclesfast"}, "Makes all nearby vehicles fast.", function(value)
     all_vehicles_make_fast = value
 end, false)
-menu.toggle(world_all_vehicles_root, "Make Slow", {"ryanmakeallslow"}, "Makes all nearby vehicles slow.", function(value)
+menu.toggle(world_all_vehicles_root, "Make Slow", {"ryanallvehiclesslow"}, "Makes all nearby vehicles slow.", function(value)
     all_vehicles_make_slow = value
 end, false)
-menu.toggle(world_all_vehicles_root, "Lock Doors", {"ryanmakealllocked"}, "Locks all nearby vehicles.", function(value)
-    all_vehicles_lock_doors = value
+menu.toggle(world_all_vehicles_root, "No Grip", {"ryanallvehiclesnogrip"}, "Makes all nearby vehicles drift.", function(value)
+    all_vehicles_no_grip = value
 end, false)
-menu.toggle(world_all_vehicles_root, "Burst Tires", {"ryanmakeallburst"}, "Makes all nearby vehicles have sudden tire loss.", function(value)
+menu.toggle(world_all_vehicles_root, "Burst Tires", {"ryanallvehiclesburst"}, "Makes all nearby vehicles have sudden tire loss.", function(value)
     all_vehicles_burst_tires = value
 end, false)
-menu.toggle(world_all_vehicles_root, "Kill Engine", {"ryanmakealldead"}, "Makes all nearby vehicles dead.", function(value)
+menu.toggle(world_all_vehicles_root, "Kill Engine", {"ryanallvehiclesdead"}, "Makes all nearby vehicles dead.", function(value)
     all_vehicles_kill_engine = value
 end, false)
-menu.toggle(world_all_vehicles_root, "Catapult", {"ryanmakeallcatapult"}, "Makes all nearby vehicles catapult in the air.", function(value)
+menu.toggle(world_all_vehicles_root, "Lock Doors", {"ryanallvehicleslocked"}, "Locks all nearby vehicles.", function(value)
+    all_vehicles_lock_doors = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Catapult", {"ryanallvehiclescatapult"}, "Makes all nearby vehicles catapult in the air.", function(value)
     all_vehicles_catapult = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Flee", {"ryanallvehiclesflee"}, "Makes all nearby vehicles flee.", function(value)
+    all_vehicles_flee = value
 end, false)
 
 util.create_tick_handler(function()
@@ -491,22 +499,46 @@ util.create_tick_handler(function()
     local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
     for _, vehicle in pairs(vehicles) do
         if vehicle ~= player_vehicle then
-            if all_vehicles_make_fast then vehicle_set_speed(vehicle, VehicleSpeedModes.Fast) end
-            if all_vehicles_make_slow then vehicle_set_speed(vehicle, VehicleSpeedModes.Slow) end
-            if all_vehicles_no_grip then vehicle_set_no_grip(vehicle, true) end
-            if all_vehicles_burst_tires then
-                local was_bursted = false
-                for _, vehicle_bursted in pairs(vehicles_bursted) do
-                    if vehicle_bursted == vehicle then was_bursted = true end
-                end
-                if not was_bursted then
-                    vehicle_set_tires_bursted(vehicle, true)
-                    table.insert(vehicles_bursted, vehicle)
+            vehicle_set_speed(vehicle, all_vehicles_make_fast and VehicleSpeedModes.Fast or (all_vehicles_make_slow and VehicleSpeedModes.Slow or VehicleSpeedModes.Default))
+            
+            vehicle_set_no_grip(vehicle, all_vehicles_no_grip)
+
+            local was_bursted = false
+            for _, vehicle_bursted in pairs(vehicles_bursted) do
+                if vehicle_bursted == vehicle then was_bursted = true end
+            end
+            if all_vehicles_burst_tires and not was_bursted then
+                vehicle_set_tires_bursted(vehicle, true)
+                table.insert(vehicles_bursted, vehicle)
+            elseif not all_vehicles_burst_tires and was_bursted then
+                vehicle_set_tires_bursted(vehicle, false)
+                table.remove(vehicles_bursted, vehicle)
+            end
+
+            local was_killed = false
+            for _, vehicle_killed in pairs(vehicles_killed) do
+                if vehicle_killed == vehicle then was_killed = true end
+            end
+            if all_vehicles_kill_engine and not was_killed then
+                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+                table.insert(vehicles_killed, vehicle)
+            elseif not all_vehicles_kill_engine and was_killed then
+                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+                table.remove(vehicles_killed, vehicle)
+            end
+
+            vehicle_set_doors_locked(vehicle, all_vehicles_lock_doors)
+
+            if all_vehicles_catapult then
+                vehicle_catapult(vehicle)
+            end
+
+            if all_vehicles_flee then
+                local ped = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+                if not PED.IS_PED_A_PLAYER(ped) and not PED.IS_PED_FLEEING(ped) then
+                    TASK.TASK_SMART_FLEE_PED(ped, player_get_ped(), 250.0, -1, false, false)
                 end
             end
-            if all_vehicles_lock_doors then vehicle_set_doors_locked(vehicle, true) end
-            if all_vehicles_kill_engine then VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000) end
-            if all_vehicles_catapult then vehicle_catapult(vehicle) end
         end
     end
 
@@ -697,7 +729,7 @@ menu.action(session_trolling_root, "Make Slow", {"ryanmakeslowall"}, "Makes ever
         vehicle_set_speed(vehicle, VehicleSpeedModes.Slow)
     end, trolling_include_modders, trolling_watch_time)
 end)
-menu.action(session_trolling_root, "Make Drift", {"ryanmakedriftall"}, "Makes everyone's vehicles drift.", function()
+menu.action(session_trolling_root, "No Grip", {"ryanmakenogripall"}, "Makes everyone's vehicles drift.", function()
     util.toast("Making all players' cars drift...")
     session_watch_and_takeover_all(function(vehicle)
         vehicle_set_no_grip(vehicle, true)
@@ -715,18 +747,19 @@ menu.action(session_trolling_root, "Burst Tires", {"ryanbursttiresall"}, "Bursts
         vehicle_set_tires_bursted(vehicle, true)
     end, trolling_include_modders, trolling_watch_time)
 end)
-menu.action(session_trolling_root, "Catapult", {"ryancatapultall"}, "Catapults everyone's vehicles.", function()
-    util.toast("Catapulting all players...")
-    session_watch_and_takeover_all(function(vehicle)
-        vehicle_catapult(vehicle)
-    end, trolling_include_modders, trolling_watch_time)
-end)
 menu.action(session_trolling_root, "Kill Engine", {"ryankillengineall"}, "Kills everyone's engine.", function()
     util.toast("Killing all engines...")
     session_watch_and_takeover_all(function(vehicle)
         VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
     end, trolling_include_modders, trolling_watch_time)
 end)
+menu.action(session_trolling_root, "Catapult", {"ryancatapultall"}, "Catapults everyone's vehicles.", function()
+    util.toast("Catapulting all players...")
+    session_watch_and_takeover_all(function(vehicle)
+        vehicle_catapult(vehicle)
+    end, trolling_include_modders, trolling_watch_time)
+end)
+
 
 -- -- Nuke
 nuke_spam_enabled = false
@@ -929,6 +962,7 @@ function setup_player(player_id)
 
     -- Trolling --
     local player_trolling_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")
+
     -- -- Make Fast
     menu.toggle(player_trolling_vehicle_root, "Make Fast", {"ryanfast"}, "Speeds up the car they are in.", function(value)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
@@ -938,7 +972,6 @@ function setup_player(player_id)
                 vehicle_set_speed(vehicle, value and VehicleSpeedModes.Fast or VehicleSpeedModes.Default)
             end
         end
-        util.toast("Made " .. players.get_name(player_id) .. "'s car " .. (value and "fast" or "normal") .."!")
     end)
 
     -- -- Make Slow
@@ -950,11 +983,10 @@ function setup_player(player_id)
                 vehicle_set_speed(vehicle, value and VehicleSpeedModes.Slow or VehicleSpeedModes.Default)
             end
         end
-        util.toast("Made " .. players.get_name(player_id) .. "'s car " .. (value and "slow" or "normal") .."!")
     end)
 
-    -- -- Make Drift
-    menu.toggle(player_trolling_vehicle_root, "Make Drift", {"ryandrift"}, "Makes the car they are in lose grip.", function(value)
+    -- -- No Grip
+    menu.toggle(player_trolling_vehicle_root, "No Grip", {"ryannogrip"}, "Makes the car they are in lose grip.", function(value)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
         if vehicle ~= NULL then
             entity_request_control_loop(vehicle)
@@ -962,7 +994,6 @@ function setup_player(player_id)
                 vehicle_set_no_grip(vehicle, value)
             end
         end
-        util.toast("Made " .. players.get_name(player_id) .. "'s car " .. (value and "drift" or "no longer drift") .."!")
     end)
 
     -- -- Lock Doors
@@ -974,7 +1005,6 @@ function setup_player(player_id)
                 vehicle_set_doors_locked(vehicle, value)
             end
         end
-        util.toast((value and "Locked" or "Unlocked") .. " " .. players.get_name(player_id) .. "'s car!")
     end)
 
     -- -- Burst Tires
@@ -986,7 +1016,6 @@ function setup_player(player_id)
                 vehicle_set_tires_bursted(vehicle, value)
             end
         end
-        util.toast((value and "Bursted" or "Fixed") .. " " .. players.get_name(player_id) .. "'s tires!")
     end)
 
     -- -- Kill Engine
@@ -998,31 +1027,6 @@ function setup_player(player_id)
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, value and -4000 or 1000)
             end
         end
-        util.toast((value and "Killed" or "Revived") .. " " .. players.get_name(player_id) .. "'s car!")
-    end)
-
-    -- -- Upgrade
-    menu.action(player_trolling_vehicle_root, "Upgrade", {"ryanupgrade"}, "Upgrades the car they are in.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_upgraded(vehicle, true)
-            end
-        end
-        util.toast("Upgraded " .. players.get_name(player_id) .. "'s car!")
-    end)
-
-    -- -- Downgrade
-    menu.action(player_trolling_vehicle_root, "Downgrade", {"ryandowngrade"}, "Downgrades the car they are in.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_upgraded(vehicle, false)
-            end
-        end
-        util.toast("Downgraded " .. players.get_name(player_id) .. "'s car!")
     end)
 
     -- -- Catapult
@@ -1034,7 +1038,28 @@ function setup_player(player_id)
                 vehicle_catapult(vehicle)
             end
         end
-        util.toast("Catapulted " .. players.get_name(player_id) .. "'s car!")
+    end)
+
+    -- -- Upgrade
+    menu.action(player_trolling_vehicle_root, "Upgrade", {"ryanupgrade"}, "Upgrades the car they are in.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_set_upgraded(vehicle, true)
+            end
+        end
+    end)
+
+    -- -- Downgrade
+    menu.action(player_trolling_vehicle_root, "Downgrade", {"ryandowngrade"}, "Downgrades the car they are in.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+        if vehicle ~= NULL then
+            entity_request_control_loop(vehicle)
+            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+                vehicle_set_upgraded(vehicle, false)
+            end
+        end
     end)
 
     local player_trolling_entities_root = menu.list(player_trolling_root, "Entities...", {"ryanentities"}, "Entity trolling options.")

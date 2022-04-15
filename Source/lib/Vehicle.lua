@@ -32,7 +32,7 @@ end
 function vehicle_set_speed(vehicle, mode)
     entity_request_control_loop(vehicle)
     if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-        if mode == VehicleSpeedModes.None then
+        if mode == VehicleSpeedModes.Default then
             VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, -1.0)
             ENTITY.SET_ENTITY_MAX_SPEED(vehicle, 64)
         else
