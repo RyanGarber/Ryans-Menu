@@ -1630,18 +1630,19 @@ chat_history = {}
 chat_index = 1
 chat.on_message(function(packet_sender, sender, message, is_team_chat)
     --if sender ~= players.user() then
+    local message_lower = message:lower()
     if kick_money_beggars then
-        if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
-            and message:find("money") and message:find("drop") then
+        if (message_lower:find("can") or message_lower:find("?") or message_lower:find("want") or message_lower:find("please") or message_lower:find("plz") or message_lower:find("pls"))
+            and message_lower:find("money") and message_lower:find("drop") then
                 basics_show_text_message(Colors.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
-                player_crash_to_desktop(sender, "Yo Momma")
+                menu.trigger_commands("footlettuce" .. players.get_name(sender))
         end
     end
     if kick_car_meeters then
-        if (message:find("want to") or message:find("wanna") or message:find("at") or message:find("?"))
-            and message:find("car") and message:find("meet") then
+        if (message_lower:find("want to") or message_lower:find("wanna") or message_lower:find("at") or message_lower:find("is") or message_lower:find("?"))
+            and message_lower:find("car") and message_lower:find("meet") then
                 basics_show_text_message(Colors.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
-                player_crash_to_desktop(sender, "Yo Momma")
+                menu.trigger_commands("footlettuce" .. players.get_name(sender))
         end
     end
     --end
