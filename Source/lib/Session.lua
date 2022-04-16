@@ -43,7 +43,7 @@ end
 
 function session_translate_from(message)
     async_http.init("ryan.gq", "/menu/translate?text=" .. message .. "&language=EN", function(result)
-        basics_show_text_message(Colors.Purple, "Translation", result)
+        basics_show_text_message(Color.Purple, "Translation", result)
     end, function()
         util.toast("Failed to translate message.")
     end)
@@ -82,7 +82,7 @@ end
 
 function session_watch_and_takeover_all(action, modders, wait_for)
     local starting_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(), true)
-    basics_show_text_message(Colors.Purple, "Session Trolling", "Session trolling has begun. Sit tight and enjoy the show!")
+    basics_show_text_message(Color.Purple, "Session Trolling", "Session trolling has begun. Sit tight and enjoy the show!")
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
     for _, player_id in pairs(players.list()) do
@@ -99,7 +99,7 @@ end
 
 function session_watch_and_do_command_all(commands, modders, wait_for)
     local starting_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(), true)
-    basics_show_text_message(Colors.Purple, "Session Trolling", "Session trolling has begun. Sit tight and enjoy the show!")
+    basics_show_text_message(Color.Purple, "Session Trolling", "Session trolling has begun. Sit tight and enjoy the show!")
     menu.trigger_commands("otr on")
     menu.trigger_commands("invisibility on")
     menu.trigger_commands("levitation on")

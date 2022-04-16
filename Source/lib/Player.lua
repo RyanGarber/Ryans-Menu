@@ -355,11 +355,11 @@ end
 -- Crashes --
 function player_crash_to_singleplayer(player_id)
     if player_id == players.user() then
-        basics_show_text_message(Colors.Red, "Crash To Singleplayer", "I don't need to explain why what you just tried to do was not very smart... or do I?")
+        basics_show_text_message(Color.Red, "Crash To Singleplayer", "I don't need to explain why what you just tried to do was not very smart, do I?")
         return
     end
 
-    basics_show_text_message(Colors.Purple, "Crash To Singleplayer", "Now sending script events. This may take a while...")
+    basics_show_text_message(Color.Purple, "Crash To Singleplayer", "Now sending script events. This may take a while...")
     local events = basics_shuffle(CrashEvents)
     for _, event in pairs(events) do
         player_send_script_event(player_id, event, "Crash To Singleplayer")
@@ -368,12 +368,12 @@ end
 
 function player_crash_to_desktop(player_id, mode)
     if player_id == players.user() then
-        basics_show_text_message(Colors.Red, "Crash To Desktop", "I don't need to explain why what you just tried to do was not very smart... or do I?")
+        basics_show_text_message(Color.Red, "Crash To Desktop", "I don't need to explain why what you just tried to do was not very smart, do I?")
         return
     end
 
     if not mode then
-        for _, crash_mode in pairs(CrashToDesktopModes) do
+        for _, crash_mode in pairs(CrashToDesktopMethod) do
             util.create_thread(function()
                 player_crash_to_desktop(player_id, crash_mode)
             end)
@@ -385,8 +385,8 @@ function player_crash_to_desktop(player_id, mode)
     local player_ped_heading = ENTITY.GET_ENTITY_HEADING(player_ped)
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
-    basics_show_text_message(Colors.Purple, "Crash To Desktop", "Now spawning entities. This may take a while...")
-    for _, crash_mode in pairs(CrashToDesktopModes) do
+    basics_show_text_message(Color.Purple, "Crash To Desktop", "Now spawning entities. This may take a while...")
+    for _, crash_mode in pairs(CrashToDesktopMethod) do
         if mode == crash_mode then util.toast("Beginning crash: " .. crash_mode .. ".") end
     end
 
@@ -433,7 +433,7 @@ function player_crash_to_desktop(player_id, mode)
     end
 
     if mode == "Invalid Objects" then
-        local hashes = basics_shuffle(InvalidObjectsHashes)
+        local hashes = basics_shuffle(InvalidObjects)
         local objects = {}
         for _, hash in pairs(hashes) do table.insert(objects, entities.create_object(hash, player_coords)) end
         util.yield(5000)

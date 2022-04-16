@@ -95,17 +95,17 @@ self_ptfx_body_hands_root = menu.list(self_ptfx_body_root, "Hands...", {"ryanptf
 self_ptfx_body_feet_root = menu.list(self_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
 
 ptfx_create_list(self_ptfx_body_head_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Head, ptfx[2], ptfx[3], ptfx_color)
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBone.Head, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 ptfx_create_list(self_ptfx_body_hands_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Hands, ptfx[2], ptfx[3], ptfx_color)
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBone.Hands, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 ptfx_create_list(self_ptfx_body_feet_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Feet, ptfx[2], ptfx[3], ptfx_color)
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBone.Feet, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
@@ -117,7 +117,7 @@ ptfx_create_list(self_ptfx_vehicle_wheels_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
     if vehicle ~= NULL then
-        ptfx_play_on_entity_bones(vehicle, VehicleBones.Wheels, ptfx[2], ptfx[3], ptfx_color)
+        ptfx_play_on_entity_bones(vehicle, VehicleBone.Wheels, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -126,7 +126,7 @@ ptfx_create_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
     if vehicle ~= NULL then
-        ptfx_play_on_entity_bones(vehicle, VehicleBones.Exhaust, ptfx[2], ptfx[3], ptfx_color)
+        ptfx_play_on_entity_bones(vehicle, VehicleBone.Exhaust, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -152,7 +152,7 @@ ptfx_create_list(self_ptfx_weapon_muzzle_root, function(ptfx)
     if ptfx_disable then return end
     local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_get_ped())
     if weapon ~= NULL then
-        ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
+        ptfx_play_at_entity_bone_coords(weapon, WeaponBone.Muzzle, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -163,7 +163,7 @@ ptfx_create_list(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
     if PED.IS_PED_SHOOTING(player_ped) then
         local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_ped)
         if weapon ~= NULL then
-            ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
+            ptfx_play_at_entity_bone_coords(weapon, WeaponBone.Muzzle, ptfx[2], ptfx[3], ptfx_color)
             util.yield(ptfx[4])
         end
     end
@@ -186,7 +186,7 @@ self_ptfx_pointing_god_finger_root = menu.list(self_ptfx_pointing_root, "Target.
 ptfx_create_list(self_ptfx_pointing_finger_root, function(ptfx)
     if ptfx_disable then return end
     if memory.read_int(memory.script_global(4516656 + 930)) == 3 then
-        ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
+        ptfx_play_on_entity_bones(player_get_ped(), PlayerBone.Pointer, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -215,7 +215,7 @@ forcefield_mode = "Off"
 forcefield_size = 10
 forcefield_force = 1
 
-for _, mode in pairs(ForcefieldModes) do
+for _, mode in pairs(ForcefieldMode) do
     menu.toggle(self_forcefield_root, mode, {"ryanforcefield" .. mode:lower()}, "", function(value)
         if value then
             menu.trigger_commands("ryanforcefield" .. forcefield_mode:lower() .. " off")
@@ -237,7 +237,7 @@ util.create_tick_handler(function()
     if forcefield_mode == "Push" then
         local player_ped = player_get_ped()
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-		local nearby = entity_get_all_nearby(player_coords, forcefield_size, NearbyEntitiesModes.All)
+		local nearby = entity_get_all_nearby(player_coords, forcefield_size, NearbyEntities.All)
 		for _, entity in pairs(nearby) do
 			local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
 			local force = vector_normalize(vector_subtract(entity_coords, player_coords))
@@ -261,7 +261,7 @@ util.create_tick_handler(function()
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
         local player_vehicle = entities.get_user_vehicle_as_handle()
 
-        local nearby = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.All)
+        local nearby = entity_get_all_nearby(player_coords, 200, NearbyEntities.All)
         for _, entity in pairs(nearby) do
             local was_destroyed = false
             for _, destroyed_entity in pairs(entities_destroyed) do
@@ -289,7 +289,7 @@ end)
 -- -- Fire
 fire_finger_mode = "Off"
 self_fire_finger_root = menu.list(self_fire_root, "Finger...", {"ryanfirefinger"}, "Catches things on fire from a distance when pressing E.")
-for _, mode in pairs(FireFingerModes) do
+for _, mode in pairs(FireFingerMode) do
     menu.toggle(self_fire_finger_root, mode, {"ryanfirefinger" .. mode:lower()}, "", function(value)
         if value then
             menu.trigger_commands("ryanfirefinger" .. fire_finger_mode:lower() .. " off")
@@ -332,7 +332,7 @@ end)
 self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Addn-screen crosshair.")
 crosshair_mode = "Off"
 
-for _, mode in pairs(CrosshairModes) do
+for _, mode in pairs(CrosshairMode) do
     menu.toggle(self_crosshair_root, mode, {"ryancrosshair" .. mode:lower()}, "", function(value)
         if value then
             menu.trigger_commands("ryancrosshair" .. crosshair_mode:lower() .. " off")
@@ -484,7 +484,7 @@ util.create_tick_handler(function()
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
     local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
 
-    local vehicles = entity_get_all_nearby(player_coords, 250, NearbyEntitiesModes.Vehicles)
+    local vehicles = entity_get_all_nearby(player_coords, 250, NearbyEntities.Vehicles)
     for _, vehicle in pairs(vehicles) do
         local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
         if all_vehicles_include_players or not PED.IS_PED_A_PLAYER(driver) then
@@ -493,10 +493,10 @@ util.create_tick_handler(function()
                 if vehicles_make_fast[i] == vehicle then make_fast = i end
             end
             if all_vehicles_make_fast and not make_fast then
-                vehicle_set_speed(vehicle, VehicleSpeedModes.Fast)
+                vehicle_set_speed(vehicle, VehicleSpeed.Fast)
                 table.insert(vehicles_make_fast, vehicle)
             elseif not all_vehicles_make_fast and make_fast then
-                vehicle_set_speed(vehicle, VehicleSpeedModes.Default)
+                vehicle_set_speed(vehicle, VehicleSpeed.Normal)
                 table.remove(vehicles_make_fast, make_fast)
             end
 
@@ -505,10 +505,10 @@ util.create_tick_handler(function()
                 if vehicles_make_slow[i] == vehicle then make_slow = i end
             end
             if all_vehicles_make_slow and not make_slow then
-                vehicle_set_speed(vehicle, VehicleSpeedModes.Slow)
+                vehicle_set_speed(vehicle, VehicleSpeed.Slow)
                 table.insert(vehicles_make_slow, vehicle)
             elseif not all_vehicles_make_slow and make_slow then
-                vehicle_set_speed(vehicle, VehicleSpeedModes.Default)
+                vehicle_set_speed(vehicle, VehicleSpeed.Normal)
                 table.remove(vehicles_make_slow, make_slow)
             end
 
@@ -586,7 +586,7 @@ end)
 -- -- NPC Action
 all_npcs_mode = "Off"
 
-for _, mode in pairs(AllNPCsModes) do
+for _, mode in pairs(NPCScenarios) do
     menu.toggle(world_all_npcs_root, mode, {"ryanallnpcs" .. mode:lower()}, "", function(value)
         if value then
             menu.trigger_commands("ryanallnpcs" .. all_npcs_mode:lower() .. " off")
@@ -605,7 +605,7 @@ util.create_tick_handler(function()
         elseif all_npcs_mode == "Janitor" then scenario = "WORLD_HUMAN_JANITOR" end
 
         local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
-        for _, ped in pairs(entity_get_all_nearby(coords, 200, NearbyEntitiesModes.Peds)) do
+        for _, ped in pairs(entity_get_all_nearby(coords, 200, NearbyEntities.Peds)) do
             if not PED.IS_PED_A_PLAYER(ped) and not PED.IS_PED_IN_ANY_VEHICLE(ped) then
                 local was_affected = false
                 for _, npc in pairs(npcs_affected) do
@@ -647,16 +647,16 @@ end
 menu.toggle_loop(world_root, "No Cops", {"ryannocops"}, "Clears the area of cops while enabled.", function()
     local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
     MISC.CLEAR_AREA_OF_COPS(coords.x, coords.y, coords.z, 500, 0) -- might as well
-    for _, entity in pairs(entity_get_all_nearby(coords, 500, NearbyEntitiesModes.All)) do
+    for _, entity in pairs(entity_get_all_nearby(coords, 500, NearbyEntities.All)) do
         if ENTITY.IS_ENTITY_A_PED(entity) then
-            for _, ped_type in pairs(PolicePedTypes) do
+            for _, ped_type in pairs(PolicePeds) do
                 if PED.GET_PED_TYPE(entity) == ped_type then
                     entity_request_control(entity)
                     entities.delete_by_handle(entity)
                 end
             end
         elseif ENTITY.IS_ENTITY_A_VEHICLE(entity) then
-            for _, vehicle_model in pairs(PoliceVehicleModels) do
+            for _, vehicle_model in pairs(PoliceVehicles) do
                 if VEHICLE.IS_VEHICLE_MODEL(entity, vehicle_model) then
                     entity_request_control(entity)
                     entities.delete_by_handle(entity)
@@ -763,13 +763,13 @@ end)
 menu.action(session_trolling_root, "Make Fast", {"ryanmakefastall"}, "Makes everyone's vehicles fast.", function()
     util.toast("Making all players' cars fast...")
     session_watch_and_takeover_all(function(vehicle)
-        vehicle_set_speed(vehicle, VehicleSpeedModes.Fast)
+        vehicle_set_speed(vehicle, VehicleSpeed.Fast)
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Make Slow", {"ryanmakeslowall"}, "Makes everyone's vehicles slow.", function()
     util.toast("Making all players' cars slow...")
     session_watch_and_takeover_all(function(vehicle)
-        vehicle_set_speed(vehicle, VehicleSpeedModes.Slow)
+        vehicle_set_speed(vehicle, VehicleSpeed.Slow)
     end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "No Grip", {"ryanmakenogripall"}, "Makes everyone's vehicles drift.", function()
@@ -904,7 +904,7 @@ end)
 session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Kicks or trolls any player who stays inside for more than 5 minutes.")
 antihermit_mode = "Off"
 
-for _, mode in pairs(AntihermitModes) do
+for _, mode in pairs(AntihermitMode) do
     menu.toggle(session_antihermit_root, mode, {"ryanantihermit" .. mode:lower()}, "", function(value)
         if value then
             menu.trigger_commands("ryanantihermit" .. antihermit_mode:lower() .. " off")
@@ -926,26 +926,14 @@ util.create_tick_handler(function()
                         util.toast(player_name .. " is now inside a building.")
                     elseif util.current_time_millis() - hermits[player_id] >= 300000 then
                         hermits[player_id] = util.current_time_millis() - 210000
-                        basics_show_text_message(Colors.Purple, "Anti-Hermit", player_name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
+                        basics_show_text_message(Color.Purple, "Anti-Hermit", player_name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
                         player_do_sms_spam(player_id, "You've been inside too long. Stop being weird and play the game!", 3000)
                         if antihermit_mode == "Teleport Outside" then
                             menu.trigger_commands("apt1" .. player_name)
-                        elseif antihermit_mode == "Stand Kick" then
+                        elseif antihermit_mode == "Kick" then
                             menu.trigger_commands("kick" .. player_name)
-                        elseif antihermit_mode == "Crash To Singleplayer" then
-                            player_crash_to_singleplayer(player_id)
-                        elseif antihermit_mode == "Crash To Desktop" then
-                            local starting_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
-                            local in_danger_zone = vector_distance(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), starting_coords) < SafeCrashDistance
-                            if in_danger_zone then
-                                player_teleport_to(SafeCrashCoords)
-                                util.yield(1000)
-                            end
-                            player_crash_to_desktop(player_id)
-                            if in_danger_zone then
-                                util.yield(SafeCrashDuration)
-                                player_teleport_to(starting_coords)
-                            end
+                        elseif antihermit_mode == "Crash" then
+                            menu.trigger_commands("footlettuce" .. player_name)
                         end
                     end
                 else
@@ -997,9 +985,9 @@ menu.action(stats_root, "Favorite Radio Station", {"ryanradio"}, "Sets your favo
     
     if station_name ~= nil then
         STATS.STAT_SET_INT(stats_get_hash("MPPLY_MOST_FAVORITE_STATION"), util.joaat(station_name), true)
-        basics_show_text_message(Colors.Purple, "Favorite Radio Station", "Your favorite radio station has been updated!")
+        basics_show_text_message(Color.Purple, "Favorite Radio Station", "Your favorite radio station has been updated!")
     else
-        basics_show_text_message(Colors.Red, "Favorite Radio Station", "You're not currently listening to the radio.")
+        basics_show_text_message(Color.Red, "Favorite Radio Station", "You're not currently listening to the radio.")
     end
 end)
 
@@ -1019,9 +1007,9 @@ function create_kd_inputs()
         value = tonumber(value)
         if value ~= nil then
             stats_set_deaths(math.floor(value))
-            basics_show_text_message(Colors.Purple, "Stats", "Your kill count has been changed to " .. value .. "!")
+            basics_show_text_message(Color.Purple, "Stats", "Your kill count has been changed to " .. value .. "!")
         else
-            basics_show_text_message(Colors.Red, "Stats", "The kill count you provided was not a valid number.")
+            basics_show_text_message(Color.Red, "Stats", "The kill count you provided was not a valid number.")
         end
         create_kd_inputs()
     end)
@@ -1030,9 +1018,9 @@ function create_kd_inputs()
         value = tonumber(value)
         if value ~= nil then
             stats_set_deaths(math.floor(value))
-            basics_show_text_message(Colors.Purple, "Stats", "Your death count has been changed to " .. value .. "!")
+            basics_show_text_message(Color.Purple, "Stats", "Your death count has been changed to " .. value .. "!")
         else
-            basics_show_text_message(Colors.Red, "Stats", "The death count you provided was not a valid number.")
+            basics_show_text_message(Color.Red, "Stats", "The death count you provided was not a valid number.")
         end
         create_kd_inputs()
     end)
@@ -1427,7 +1415,7 @@ function setup_player(player_id)
     end)
 
     menu.divider(player_crash_to_desktop_root, "Methods")
-    for _, mode in pairs(CrashToDesktopModes) do
+    for _, mode in pairs(CrashToDesktopMethod) do
         menu.action(player_crash_to_desktop_root, mode, {"ryan" .. mode}, "Attempts to crash using the " .. mode .. " method.", function(click_type)
             player_spam_and_block(player_id, removal_block_joins, removal_message, function()
                 player_crash_to_desktop(player_id, mode)
@@ -1469,15 +1457,15 @@ util.create_tick_handler(function()
         -- Speed
         if vehicle_speed[player_id] == "fast" then
             get_control(player_id, function(vehicle)
-                vehicle_set_speed(vehicle, VehicleSpeedModes.Fast)
+                vehicle_set_speed(vehicle, VehicleSpeed.Fast)
             end)
         elseif vehicle_speed[player_id] == "slow" then
             get_control(player_id, function(vehicle)
-                vehicle_set_speed(vehicle, VehicleSpeedModes.Slow)
+                vehicle_set_speed(vehicle, VehicleSpeed.Slow)
             end)
         elseif vehicle_speed[player_id] == "normal" then
             get_control(player_id, function(vehicle)
-                vehicle_set_speed(vehicle, VehicleSpeedModes.Default)
+                vehicle_set_speed(vehicle, VehicleSpeed.Normal)
             end)
         end
 
@@ -1634,14 +1622,14 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
     if kick_money_beggars then
         if (message_lower:find("can") or message_lower:find("?") or message_lower:find("please") or message_lower:find("plz") or message_lower:find("pls") or message_lower:find("drop"))
             and message_lower:find("money") then
-                basics_show_text_message(Colors.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
+                basics_show_text_message(Color.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
                 menu.trigger_commands("footlettuce" .. players.get_name(sender))
         end
     end
     if kick_car_meeters then
         if (message_lower:find("want to") or message_lower:find("wanna") or message_lower:find("at") or message_lower:find("is") or message_lower:find("?"))
             and message_lower:find("car") and message_lower:find("meet") then
-                basics_show_text_message(Colors.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
+                basics_show_text_message(Color.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
                 menu.trigger_commands("footlettuce" .. players.get_name(sender))
         end
     end

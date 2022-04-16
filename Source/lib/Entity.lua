@@ -4,7 +4,7 @@ function entity_get_all_nearby(coords, range, mode)
     local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped())
     local nearby_entities = {}
 
-    if mode == NearbyEntitiesModes.Peds or mode == NearbyEntitiesModes.All then
+    if mode == NearbyEntities.Peds or mode == NearbyEntities.All then
         for _, ped in pairs(entities.get_all_peds_as_handles()) do
             if ped ~= player_ped then
                 local ped_coords = ENTITY.GET_ENTITY_COORDS(ped)
@@ -15,7 +15,7 @@ function entity_get_all_nearby(coords, range, mode)
         end
     end
 
-    if mode == NearbyEntitiesModes.Vehicles or mode == NearbyEntitiesModes.All then
+    if mode == NearbyEntities.Vehicles or mode == NearbyEntities.All then
         for _, vehicle in ipairs(entities.get_all_vehicles_as_handles()) do
             if vehicle ~= player_vehicle then
                 local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)

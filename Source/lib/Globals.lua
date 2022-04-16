@@ -196,64 +196,65 @@ CrashEvents = {
     {-1501164935, player_id, player_id, 1001, player_id}
 }
 
-CrashToDesktopModes = {
+CrashToDesktopMethod = {
     "Yo Momma",
     "Vegetation",
     "Invalid Objects",
     "Invalid Peds"
 }
 
-InvalidObjectsHashes = {
+InvalidObjects = {
     386259036, 450174759, 1567950121, 1734157390, 1759812941, 2040219850,
     -1231365640, 1727217687, 3613262246, -993438434, -990984874, -818431457,
     -681705050, -568850501, 3301528862, 3303982422, 3476535839, 3726116795
 }
 
 SafeCrashDistance = 666.9
-SafeCrashCoords = {x = 4500, y = -4400, z = 0}
 SafeCrashDuration = 10000
+SafeCrashCoords = {x = 4500, y = -4400, z = 0}
 
-PlayerBones = {
+PlayerBone = {
     Head = {"IK_Head"},
     Hands = {"IK_L_Hand", "IK_R_Hand"},
     Pointer = {"IK_L_Hand"},
     Feet = {"IK_L_Foot", "IK_R_Foot"}
 }
-VehicleBones = {
+
+VehicleBone = {
     Wheels = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"},
     Exhaust = {"exhaust", "exhaust_2", "exhaust_3", "exhaust_4", "exhaust_5", "exhaust_6", "exhaust_7", "exhaust_8"}
 }
-WeaponBones = {
+
+WeaponBone = {
     Muzzle = {"gun_vfx_eject"}
 }
 
-ForcefieldModes = {
+ForcefieldMode = {
     "Off",
     "Push",
     "Destroy"
 }
 
-CrosshairModes = {
+CrosshairMode = {
     "Off",
     "When Pointing",
     "Always"
 }
 
-FireFingerModes = {
+FireFingerMode = {
     "Off",
     "When Pointing",
     "Always"
 }
 
-AntihermitModes = {
+AntihermitMode = {
     "Off",
     "Teleport Outside",
-    "Stand Kick",
-    "Crash To Singleplayer",
-    "Crash To Desktop"
+    "Kick",
+    "Crash"
 }
 
-AllNPCsModes = {
+NPCScenarios = {
     "Off",
     "Musician", -- "WORLD_HUMAN_MUSICIAN"
     "Human Statue", -- "WORLD_HUMAN_HUMAN_STATUE"
@@ -274,28 +275,28 @@ BedSoundCoords = {
     {x = 2099.765, y = 1766.219, z = 102.698}
 }
 
-Colors = {
+Color = {
     Purple = 49,
     Red = 6
 }
 
-NearbyEntitiesModes = {
+NearbyEntities = {
     All = 1,
     Peds = 3,
     Vehicles = 2
 }
 
-VehicleSpeedModes = {
-    Default = 0,
+VehicleSpeed = {
+    Normal = 0,
     Fast = 1,
     Slow = 2
 }
 
-PolicePedTypes = {
+PolicePeds = {
     6, 27, 29
 }
 
-PoliceVehicleModels = {
+PoliceVehicles = {
     1127131465, -1647941228, 2046537925, -1627000575,
     1912215274, -1973172295, -1536924937, -1779120616,
     456714581, -34623805, 353883353, 741586030,

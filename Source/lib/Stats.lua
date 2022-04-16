@@ -24,7 +24,7 @@ function stats_set_office_money(command, click_type, amount)
         stats_set_int(stats_hash(Stats.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000)
         stats_set_int(stats_hash(Stats.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000)
 
-        basics_show_text_message(Colors.Purple, "CEO Office Money", "Done! Switch sessions and start a Special Cargo sale to apply your changes.")
+        basics_show_text_message(Color.Purple, "CEO Office Money", "Done! Switch sessions and start a Special Cargo sale to apply your changes.")
     end)
 end
 
@@ -40,7 +40,7 @@ function stats_set_mc_clutter(command, click_type, amount)
             stats_set_int(stats_hash(Stats.Character, "LIFETIME_BIKER_SELL_UNDERTA" .. i), 1000)
         end
 
-        basics_show_text_message(Colors.Purple, "M.C. Clubhouse Clutter", "Done! Switch sessions and start a sale in every business to apply changes.")
+        basics_show_text_message(Color.Purple, "M.C. Clubhouse Clutter", "Done! Switch sessions and start a sale in every business to apply changes.")
     end)
 end
 
