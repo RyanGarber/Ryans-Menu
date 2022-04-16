@@ -1632,8 +1632,8 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
     --if sender ~= players.user() then
     local message_lower = message:lower()
     if kick_money_beggars then
-        if (message_lower:find("can") or message_lower:find("?") or message_lower:find("want") or message_lower:find("please") or message_lower:find("plz") or message_lower:find("pls"))
-            and message_lower:find("money") and message_lower:find("drop") then
+        if (message_lower:find("can") or message_lower:find("?") or message_lower:find("please") or message_lower:find("plz") or message_lower:find("pls") or message_lower:find("drop"))
+            and message_lower:find("money") then
                 basics_show_text_message(Colors.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
                 menu.trigger_commands("footlettuce" .. players.get_name(sender))
         end
