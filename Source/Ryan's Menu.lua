@@ -1339,7 +1339,7 @@ end)
 chat_history = {}
 chat_index = 1
 chat.on_message(function(packet_sender, sender, message, is_team_chat)
-    if sender == players.user() then
+    if sender ~= players.user() then
         if kick_money_beggars then
             if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
                 and message:find("money") and message:find("drop") then
