@@ -302,4 +302,9 @@ PoliceVehicleModels = {
     -488123221, -1205689942, -1683328900, 1922257928
 }
 
+Stats = {
+    Global = 1,
+    Character = 2
+}
+
 CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. "Ryan's Menu\\Crosshair.png")

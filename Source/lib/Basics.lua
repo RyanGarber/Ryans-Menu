@@ -1,4 +1,10 @@
 -- Fundamentals --
+function basics_run(commands)
+	for i = 1, #commands do
+		menu.trigger_commands(commands[i])
+	end
+end
+
 function basics_get_random(table) -- Credit: WiriScript
 	if rawget(table, 1) ~= nil then return table[math.random(1, #table)] end
 	local list = {}

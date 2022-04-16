@@ -354,6 +354,11 @@ end
 
 -- Crashes --
 function player_crash_to_singleplayer(player_id)
+    if player_id == players.user() then
+        basics_show_text_message(Colors.Red, "Crash To Singleplayer", "I don't need to explain why what you just tried to do was not very smart... or do I?")
+        return
+    end
+
     basics_show_text_message(Colors.Purple, "Crash To Singleplayer", "Now sending script events. This may take a while...")
     local events = basics_shuffle(CrashEvents)
     for _, event in pairs(events) do
@@ -362,6 +367,11 @@ function player_crash_to_singleplayer(player_id)
 end
 
 function player_crash_to_desktop(player_id, mode)
+    if player_id == players.user() then
+        basics_show_text_message(Colors.Red, "Crash To Desktop", "I don't need to explain why what you just tried to do was not very smart... or do I?")
+        return
+    end
+
     if not mode then
         for _, crash_mode in pairs(CrashToDesktopModes) do
             util.create_thread(function()

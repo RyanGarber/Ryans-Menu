@@ -58,8 +58,10 @@ end
 function vehicle_set_tires_bursted(vehicle, value)
     if value then VEHICLE.SET_VEHICLE_TYRES_CAN_BURST(vehicle, true) end
     for tire = 0, 7 do
-        if value then 
-            VEHICLE.SET_VEHICLE_TYRE_BURST(vehicle, tire, value, 1000.0)
+        if value then
+            if not VEHICLE.IS_VEHICLE_TYRE_BURST(vehicle, tire, true) then
+                VEHICLE.SET_VEHICLE_TYRE_BURST(vehicle, tire, value, 1000.0)
+            end
         else
             VEHICLE.SET_VEHICLE_TYRE_FIXED(vehicle, tire)
         end

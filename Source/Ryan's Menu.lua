@@ -1,4 +1,4 @@
-VERSION = "0.6.9"
+VERSION = "0.6.10"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -440,17 +440,15 @@ world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers..
 world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
 
 -- -- All Vehicles
-all_vehicles_make_fast = false
-all_vehicles_make_slow = false
-all_vehicles_no_grip = false
-all_vehicles_burst_tires = false
-all_vehicles_kill_engine = false
-all_vehicles_lock_doors = false
+all_vehicles_make_fast = false; vehicles_make_fast = {}
+all_vehicles_make_slow = false; vehicles_make_slow = {}
+all_vehicles_no_grip = false; vehicles_no_grip = {}
+all_vehicles_burst_tires = false; vehicles_burst_tires = {}
+all_vehicles_kill_engine = false; vehicles_kill_engine = {}
+all_vehicles_lock_doors = false; vehicles_lock_doors = {}
 all_vehicles_catapult = false
-all_vehicles_flee = false
-
-vehicles_bursted = {}
-vehicles_killed = {}
+all_vehicles_flee = false; vehicles_flee = {}
+all_vehicles_include_players = false
 
 menu.toggle(world_all_vehicles_root, "Make Fast", {"ryanallvehiclesfast"}, "Makes all nearby vehicles fast.", function(value)
     all_vehicles_make_fast = value
@@ -476,59 +474,113 @@ end, false)
 menu.toggle(world_all_vehicles_root, "Flee", {"ryanallvehiclesflee"}, "Makes all nearby vehicles flee.", function(value)
     all_vehicles_flee = value
 end, false)
+menu.divider(world_all_vehicles_root, "Options")
+menu.toggle(world_all_vehicles_root, "Include Players", {"ryanallvehiclesplayers"}, "If enabled, player-driven vehicles are affected too.", function(value)
+    all_vehicles_include_players = value
+end)
 
 util.create_tick_handler(function()
     local player_ped = player_get_ped()
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
     local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
 
-    local vehicles = entity_get_all_nearby(player_coords, 200, NearbyEntitiesModes.Vehicles)
+    local vehicles = entity_get_all_nearby(player_coords, 250, NearbyEntitiesModes.Vehicles)
     for _, vehicle in pairs(vehicles) do
-        if not PED.IS_PED_A_PLAYER(VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)) then
-            vehicle_set_speed(vehicle, all_vehicles_make_fast and VehicleSpeedModes.Fast or (all_vehicles_make_slow and VehicleSpeedModes.Slow or VehicleSpeedModes.Default))
-            
-            vehicle_set_no_grip(vehicle, all_vehicles_no_grip)
-
-            local was_bursted = false
-            for _, vehicle_bursted in pairs(vehicles_bursted) do
-                if vehicle_bursted == vehicle then was_bursted = true end
+        local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+        if all_vehicles_include_players or not PED.IS_PED_A_PLAYER(driver) then
+            local make_fast = nil
+            for i = 1, #vehicles_make_fast do
+                if vehicles_make_fast[i] == vehicle then make_fast = i end
             end
-            if all_vehicles_burst_tires and not was_bursted then
+            if all_vehicles_make_fast and not make_fast then
+                vehicle_set_speed(vehicle, VehicleSpeedModes.Fast)
+                table.insert(vehicles_make_fast, vehicle)
+            elseif not all_vehicles_make_fast and make_fast then
+                vehicle_set_speed(vehicle, VehicleSpeedModes.Default)
+                table.remove(vehicles_make_fast, make_fast)
+            end
+
+            local make_slow = nil
+            for i = 1, #vehicles_make_slow do
+                if vehicles_make_slow[i] == vehicle then make_slow = i end
+            end
+            if all_vehicles_make_slow and not make_slow then
+                vehicle_set_speed(vehicle, VehicleSpeedModes.Slow)
+                table.insert(vehicles_make_slow, vehicle)
+            elseif not all_vehicles_make_slow and make_slow then
+                vehicle_set_speed(vehicle, VehicleSpeedModes.Default)
+                table.remove(vehicles_make_slow, make_slow)
+            end
+
+            local no_grip = nil
+            for i = 1, #vehicles_no_grip do
+                if vehicles_no_grip[i] == vehicle then no_grip = i end
+            end
+            if all_vehicles_no_grip and not no_grip then
+                vehicle_set_no_grip(vehicle, true)
+                table.insert(vehicles_no_grip, vehicle)
+            elseif not all_vehicles_no_grip and no_grip then
+                vehicle_set_no_grip(vehicle, false)
+                table.remove(vehicles_no_grip, no_grip)
+            end
+
+            local burst_tires = nil
+            for i = 1, #vehicles_burst_tires do
+                if vehicles_burst_tires[i] == vehicle then burst_tires = i end
+            end
+            if all_vehicles_burst_tires and not burst_tires then
                 vehicle_set_tires_bursted(vehicle, true)
-                table.insert(vehicles_bursted, vehicle)
-            elseif not all_vehicles_burst_tires and was_bursted then
+                table.insert(vehicles_burst_tires, vehicle)
+            elseif not all_vehicles_burst_tires and burst_tires then
                 vehicle_set_tires_bursted(vehicle, false)
-                table.remove(vehicles_bursted, vehicle)
+                table.remove(vehicles_burst_tires, burst_tires)
             end
 
-            local was_killed = false
-            for _, vehicle_killed in pairs(vehicles_killed) do
-                if vehicle_killed == vehicle then was_killed = true end
+            local kill_engine = nil
+            for i = 1, #vehicles_kill_engine do
+                if vehicles_kill_engine[i] == vehicle then kill_engine = i end
             end
-            if all_vehicles_kill_engine and not was_killed then
+            if all_vehicles_kill_engine and not kill_engine then
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-                table.insert(vehicles_killed, vehicle)
-            elseif not all_vehicles_kill_engine and was_killed then
+                table.insert(vehicles_kill_engine, vehicle)
+            elseif not all_vehicles_kill_engine and kill_engine then
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-                table.remove(vehicles_killed, vehicle)
+                table.remove(vehicles_kill_engine, kill_engine)
             end
 
-            vehicle_set_doors_locked(vehicle, all_vehicles_lock_doors)
+            local lock_doors = nil
+            for i = 1, #vehicles_lock_doors do
+                if vehicles_lock_doors[i] == vehicle then lock_doors = i end
+            end
+            if all_vehicles_lock_doors and not lock_doors then
+                vehicle_set_doors_locked(vehicle, true)
+                table.insert(vehicles_lock_doors, vehicle)
+            elseif not all_vehicles_lock_doors and lock_doors then
+                vehicle_set_doors_locked(vehicle, false)
+                table.remove(vehicles_lock_doors, lock_doors)
+            end
 
             if all_vehicles_catapult then
                 vehicle_catapult(vehicle)
             end
 
-            if all_vehicles_flee then
-                local ped = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
-                if not PED.IS_PED_A_PLAYER(ped) and not PED.IS_PED_FLEEING(ped) then
-                    TASK.TASK_SMART_FLEE_PED(ped, player_get_ped(), 250.0, -1, false, false)
+            if not PED.IS_PED_A_PLAYER(driver) then
+                local flee = nil
+                for i = 1, #vehicles_flee do
+                    if vehicles_flee[i] == vehicle then flee = i end
+                end
+                if all_vehicles_flee and not flee then
+                    TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
+                    table.insert(vehicles_flee, vehicle)
+                elseif not all_vehicles_flee and flee then
+                    TASK.CLEAR_PED_TASKS(driver)
+                    table.remove(vehicles_flee, flee)
                 end
             end
         end
     end
 
-    util.yield(250)
+    util.yield(500)
 end)
 
 -- -- NPC Action
@@ -938,32 +990,57 @@ end, false)
 
 
 -- Stats Menu --
-menu.divider(stats_root, "General")
+menu.divider(stats_root, "Player")
 stats_kd_root = menu.list(stats_root, "Kills/Deaths...", {"ryankd"}, "Controls your kills and deaths.")
+menu.action(stats_root, "Favorite Radio Station", {"ryanradio"}, "Sets your favorite station to the one currently playing.", function()
+    local station_name = AUDIO.GET_PLAYER_RADIO_STATION_NAME()
+    
+    if station_name ~= nil then
+        STATS.STAT_SET_INT(stats_get_hash("MPPLY_MOST_FAVORITE_STATION"), util.joaat(station_name), true)
+        basics_show_text_message(Colors.Purple, "Favorite Radio Station", "Your favorite radio station has been updated!")
+    else
+        basics_show_text_message(Colors.Red, "Favorite Radio Station", "You're not currently listening to the radio.")
+    end
+end)
 
-menu.divider(stats_root, "Visual")
+menu.divider(stats_root, "World")
 stats_office_money_root = menu.list(stats_root, "CEO Office Money...", {"ryanofficemoney"}, "Controls the amount of money in your CEO office.")
 stats_mc_clutter_root = menu.list(stats_root, "MC Clubhouse Clutter...", {"ryanmcclutter"}, "Controls the amount of clutter in your clubhouse.")
 
 -- -- Kills/Deaths
-stats_kills = menu.text_input(stats_kd_root, "Kills: " .. stats_get_kills(), {"ryankills"}, "The amount of kills you have given.", function(value)
-    value = tonumber(value)
-    if value ~= nil then
-        stats_set_deaths(math.floor(value))
-        basics_show_text_message(Colors.Purple, "Stats", "Your kill count has been changed to " .. value .. "!")
-    else
-        basics_show_text_message(Colors.Red, "Stats", "The kill count you provided was not a valid number.")
-    end
-end)
-stats_deaths = menu.text_input(stats_kd_root, "Deaths: " .. stats_get_deaths(), {"ryandeaths"}, "The amount of deaths you have received.", function(value)
-    value = tonumber(value)
-    if value ~= nil then
-        stats_set_deaths(math.floor(value))
-        basics_show_text_message(Colors.Purple, "Stats", "Your death count has been changed to " .. value .. "!")
-    else
-        basics_show_text_message(Colors.Red, "Stats", "The death count you provided was not a valid number.")
-    end
-end)
+stats_kills, stats_deaths = nil, nil
+
+function create_kd_inputs()
+    if stats_kills ~= nil then menu.delete(stats_kills); stats_kills = nil end
+    if stats_deaths ~= nil then menu.delete(stats_deaths); stats_deaths = nil end
+    if stats_kd ~= nil then menu.delete(stats_kd); stats_kd = nil end
+
+    stats_kills = menu.text_input(stats_kd_root, "Kills: -", {"ryankills"}, "The amount of kills you have given.", function(value)
+        value = tonumber(value)
+        if value ~= nil then
+            stats_set_deaths(math.floor(value))
+            basics_show_text_message(Colors.Purple, "Stats", "Your kill count has been changed to " .. value .. "!")
+        else
+            basics_show_text_message(Colors.Red, "Stats", "The kill count you provided was not a valid number.")
+        end
+        create_kd_inputs()
+    end)
+
+    stats_deaths = menu.text_input(stats_kd_root, "Deaths: -", {"ryandeaths"}, "The amount of deaths you have received.", function(value)
+        value = tonumber(value)
+        if value ~= nil then
+            stats_set_deaths(math.floor(value))
+            basics_show_text_message(Colors.Purple, "Stats", "Your death count has been changed to " .. value .. "!")
+        else
+            basics_show_text_message(Colors.Red, "Stats", "The death count you provided was not a valid number.")
+        end
+        create_kd_inputs()
+    end)
+
+    stats_kd = menu.divider(stats_kd_root, "K/D: -")
+end
+
+create_kd_inputs()
 
 -- -- CEO Office Money
 office_money_0 = menu.action(stats_office_money_root, "0% Full", {"ryanofficemoney0"}, "Makes the office 0% full with money.", function(click_type)
@@ -991,92 +1068,231 @@ mc_clutter_100 = menu.action(stats_mc_clutter_root, "100% Full", {"ryanmcclutter
 end)
 
 util.create_tick_handler(function()
-    menu.set_menu_name(stats_kills, "Kills: " .. stats_get_kills())
-    menu.set_menu_name(stats_deaths, "Deaths: " .. stats_get_deaths())
-    util.yield(10000)
+    if stats_kills ~= nil and stats_deaths ~= nil then
+        local kills, deaths = stats_get_kills(), stats_get_deaths()
+        menu.set_menu_name(stats_kills, "Kills: " .. kills)
+        menu.set_menu_name(stats_deaths, "Deaths: " .. deaths)
+        menu.set_menu_name(stats_kd, "K/D: " .. string.format("%.2f", kills / deaths))
+        util.yield(10000)
+    end
 end)
 
 
 -- Player Options --
+money_drop = {}
+vehicle_speed = {}
+vehicle_grip = {}
+vehicle_doors = {}
+vehicle_tires = {}
+vehicle_engine = {}
+vehicle_upgrades = {}
+
 function setup_player(player_id)
     local player_root = menu.player_root(player_id)
     menu.divider(player_root, "Ryan's Menu")
 
+    local player_name = players.get_name(player_id)
     local player_trolling_root = menu.list(player_root, "Trolling...", {"ryantrolling"}, "Options that players may not like.")
     local player_removal_root = menu.list(player_root, "Removal...", {"ryanremoval"}, "Options to remove the player forcibly.")
 
 
     -- Trolling --
-    local player_trolling_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")
+    local player_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")
 
-    -- -- Make Fast
-    menu.toggle(player_trolling_vehicle_root, "Make Fast", {"ryanfast"}, "Speeds up the car they are in.", function(value)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_speed(vehicle, value and VehicleSpeedModes.Fast or VehicleSpeedModes.Default)
-            end
+
+    -- Vehicle --
+    -- -- Speed
+    local player_vehicle_speed_root = menu.list(player_vehicle_root, "Speed: -", {"ryanspeed"}, "Changes the speed of their vehicle.")
+    menu.toggle(player_vehicle_speed_root, "Fast", {"ryanspeedfast"}, "Makes the speed extremely fast.", function(value)
+        if value then
+            basics_run({
+                "ryanspeednormal" .. player_name .. " off",
+                "ryanspeedslow" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_speed[player_id] = "fast"
+            menu.set_menu_name(player_vehicle_speed_root, "Speed: Fast")
+        else
+            vehicle_speed[player_id] = nil
+            menu.set_menu_name(player_vehicle_speed_root, "Speed: -")
+        end
+    end)
+    menu.toggle(player_vehicle_speed_root, "Slow", {"ryanspeedslow"}, "Makes the speed extremely slow.", function(value)
+        if value then
+            basics_run({
+                "ryanspeedfast" .. player_name .. " off",
+                "ryanspeednormal" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_speed[player_id] = "slow"
+            menu.set_menu_name(player_vehicle_speed_root, "Speed: Slow")
+        else
+            vehicle_speed[player_id] = nil
+            menu.set_menu_name(player_vehicle_speed_root, "Speed: -")
+        end
+    end)
+    menu.toggle(player_vehicle_speed_root, "Normal", {"ryanspeednormal"}, "Makes the speed normal again.", function(value)
+        if value then
+            basics_run({
+                "ryanspeedfast" .. player_name .. " off",
+                "ryanspeedslow" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_speed[player_id] = "normal"
+            menu.set_menu_name(player_vehicle_speed_root, "Speed: Normal")
+        else
+            vehicle_speed[player_id] = nil
+            menu.set_menu_name(player_vehicle_speed_root, "Speed: -")
+        end
+    end)
+    
+    -- -- Grip
+    local player_vehicle_grip_root = menu.list(player_vehicle_root, "Grip: -", {"ryangrip"}, "Changes the grip of their vehicle's wheels.")
+    menu.toggle(player_vehicle_grip_root, "None", {"ryangripnone"}, "Makes the tires have no grip.", function(value)
+        if value then
+            basics_run({
+                "ryangripfull" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_grip[player_id] = "none"
+            menu.set_menu_name(player_vehicle_grip_root, "Grip: None")
+        else
+            vehicle_grip[player_id] = nil
+            menu.set_menu_name(player_vehicle_grip_root, "Grip: -")
+        end
+    end)
+    menu.toggle(player_vehicle_grip_root, "Full", {"ryangripfull"}, "Makes the grip normal again.", function(value)
+        if value then
+            basics_run({
+                "ryangripnone" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_grip[player_id] = "full"
+            menu.set_menu_name(player_vehicle_grip_root, "Grip: Full")
+        else
+            vehicle_grip[player_id] = nil
+            menu.set_menu_name(player_vehicle_grip_root, "Grip: -")
         end
     end)
 
-    -- -- Make Slow
-    menu.toggle(player_trolling_vehicle_root, "Make Slow", {"ryanslow"}, "Slows the car they are in.", function(value)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_speed(vehicle, value and VehicleSpeedModes.Slow or VehicleSpeedModes.Default)
-            end
+    -- -- Doors
+    local player_vehicle_doors_root = menu.list(player_vehicle_root, "Doors: -", {"ryandoors"}, "Changes their vehicle's door lock state.")
+    menu.toggle(player_vehicle_doors_root, "Lock", {"ryandoorslock"}, "Locks the vehicle's doors.", function(value)
+        if value then
+            basics_run({
+                "ryandoorsunlock" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_doors[player_id] = "lock"
+            menu.set_menu_name(player_vehicle_doors_root, "Doors: Lock")
+        else
+            vehicle_doors[player_id] = nil
+            menu.set_menu_name(player_vehicle_doors_root, "Doors: -")
+        end
+    end)
+    menu.toggle(player_vehicle_doors_root, "Unlock", {"ryandoorsunlock"}, "Unlocks the vehicle's doors.", function(value)
+        if value then
+            basics_run({
+                "ryandoorslock" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_doors[player_id] = "unlock"
+            menu.set_menu_name(player_vehicle_doors_root, "Doors: Unlock")
+        else
+            vehicle_doors[player_id] = nil
+            menu.set_menu_name(player_vehicle_doors_root, "Doors: -")
         end
     end)
 
-    -- -- No Grip
-    menu.toggle(player_trolling_vehicle_root, "No Grip", {"ryannogrip"}, "Makes the car they are in lose grip.", function(value)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_no_grip(vehicle, value)
-            end
+    -- -- Tires
+    local player_vehicle_tires_root = menu.list(player_vehicle_root, "Tires: -", {"ryantires"}, "Changes their vehicle's tire health.")
+    menu.toggle(player_vehicle_tires_root, "Burst", {"ryantiresburst"}, "Makes the vehicle's tires burst.", function(value)
+        if value then
+            basics_run({
+                "ryantiresfix" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_tires[player_id] = "burst"
+            menu.set_menu_name(player_vehicle_tires_root, "Tires: Burst")
+        else
+            vehicle_tires[player_id] = nil
+            menu.set_menu_name(player_vehicle_tires_root, "Tires: -")
+        end
+    end)
+    menu.toggle(player_vehicle_tires_root, "Fix", {"ryantiresfix"}, "Fixes the vehicle's tires.", function(value)
+        if value then
+            basics_run({
+                "ryantiresburst" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_tires[player_id] = "fix"
+            menu.set_menu_name(player_vehicle_tires_root, "Tires: Fix")
+        else
+            vehicle_tires[player_id] = nil
+            menu.set_menu_name(player_vehicle_tires_root, "Tires: -")
         end
     end)
 
-    -- -- Lock Doors
-    menu.toggle(player_trolling_vehicle_root, "Lock Doors", {"ryanlock"}, "Locks the car they are in.", function(value)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_doors_locked(vehicle, value)
-            end
+    -- -- Engine
+    local player_vehicle_engine_root = menu.list(player_vehicle_root, "Engine: -", {"ryanengine"}, "Changes their vehicle's engine health.")
+    menu.toggle(player_vehicle_engine_root, "Kill", {"ryanenginekill"}, "Makes the vehicle's engine die.", function(value)
+        if value then
+            basics_run({
+                "ryanenginefix" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_engine[player_id] = "kill"
+            menu.set_menu_name(player_vehicle_engine_root, "Engine: Kill")
+        else
+            vehicle_engine[player_id] = nil
+            menu.set_menu_name(player_vehicle_engine_root, "Engine: -")
+        end
+    end)
+    menu.toggle(player_vehicle_engine_root, "Fix", {"ryanenginefix"}, "Fixes the vehicle's engine.", function(value)
+        if value then
+            basics_run({
+                "ryanenginekill" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_engine[player_id] = "fix"
+            menu.set_menu_name(player_vehicle_engine_root, "Engine: Fix")
+        else
+            vehicle_engine[player_id] = nil
+            menu.set_menu_name(player_vehicle_engine_root, "Engine: -")
         end
     end)
 
-    -- -- Burst Tires
-    menu.toggle(player_trolling_vehicle_root, "Burst Tires", {"ryanburst"}, "Burst the tires of the car they are in.", function(value)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_tires_bursted(vehicle, value)
-            end
+    -- -- Upgrades
+    local player_vehicle_upgrades_root = menu.list(player_vehicle_root, "Upgrades: -", {"ryanengine"}, "Changes their vehicle's upgrades.")
+    menu.toggle(player_vehicle_upgrades_root, "All", {"ryanupgradesall"}, "Fully upgrades the vehicle.", function(value)
+        if value then
+            basics_run({
+                "ryanupgradesnone" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_upgrades[player_id] = "all"
+            menu.set_menu_name(player_vehicle_upgrades_root, "Upgrades: All")
+        else
+            vehicle_upgrades[player_id] = nil
+            menu.set_menu_name(player_vehicle_upgrades_root, "Upgrades: -")
         end
     end)
-
-    -- -- Kill Engine
-    menu.toggle(player_trolling_vehicle_root, "Kill Engine", {"ryankillengine"}, "Kills the car they are in.", function(value)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, value and -4000 or 1000)
-            end
+    menu.toggle(player_vehicle_upgrades_root, "None", {"ryanupgradesnone"}, "Fully downgrades the vehicle.", function(value)
+        if value then
+            basics_run({
+                "ryanupgradesall" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_upgrades[player_id] = "none"
+            menu.set_menu_name(player_vehicle_upgrades_root, "Upgrades: None")
+        else
+            vehicle_upgrades[player_id] = nil
+            menu.set_menu_name(player_vehicle_upgrades_root, "Upgrades: -")
         end
     end)
 
     -- -- Catapult
-    menu.action(player_trolling_vehicle_root, "Catapult", {"ryancatapult"}, "Catapults the car they are in.", function()
+    menu.toggle_loop(player_vehicle_root, "Catapult", {"ryancatapult"}, "Catapults their car non-stop.", function()
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
         if vehicle ~= NULL then
             entity_request_control_loop(vehicle)
@@ -1084,30 +1300,11 @@ function setup_player(player_id)
                 vehicle_catapult(vehicle)
             end
         end
+        util.yield(500)
     end)
 
-    -- -- Upgrade
-    menu.action(player_trolling_vehicle_root, "Upgrade", {"ryanupgrade"}, "Upgrades the car they are in.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_upgraded(vehicle, true)
-            end
-        end
-    end)
 
-    -- -- Downgrade
-    menu.action(player_trolling_vehicle_root, "Downgrade", {"ryandowngrade"}, "Downgrades the car they are in.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
-            entity_request_control_loop(vehicle)
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_set_upgraded(vehicle, false)
-            end
-        end
-    end)
-
+    -- Entities --
     local player_trolling_entities_root = menu.list(player_trolling_root, "Entities...", {"ryanentities"}, "Entity trolling options.")
     
     -- -- Stripper El Rubio
@@ -1162,15 +1359,14 @@ function setup_player(player_id)
     -- -- PTFX Attack
     menu.toggle_loop(player_trolling_root, "PTFX Attack", {"ryanptfxattack"}, "Tries to lag the player with PTFX.", function()
         ptfx_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), "core", "exp_grd_petrol_pump_post", {r = 0, g = 0, b = 0})
+        ptfx_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), "core", "exp_grd_petrol_pump", {r = 0, g = 0, b = 0})
     end)
 
     -- -- Fake Money Drop
-    menu.toggle_loop(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function()
-        util.create_thread(function()
-            player_fake_money_drop(player_id)
-        end)
-        util.yield(125)
-    end, false)
+    menu.toggle(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function(value)
+        money_drop[player_id] = value and true or nil
+    end)
+    
 
     -- -- No Godmode
     local remove_godmode_notice = 0
@@ -1197,7 +1393,7 @@ function setup_player(player_id)
 
     menu.divider(player_removal_root, "Go")
     -- -- Stand Kick
-    menu.action(player_removal_root, "Stand Kick", {"ryanstandkick"}, "Attempts to kick using Stand's Smart kick.", function()
+    menu.action(player_removal_root, "Stand Kick", {"ryankick"}, "Attempts to kick using Stand's Smart kick.", function()
         player_spam_and_block(player_id, removal_block_joins, removal_message, function()
             local player_name = players.get_name(player_id)
             menu.trigger_commands("kick" .. player_name)
@@ -1205,16 +1401,16 @@ function setup_player(player_id)
     end)
 
     -- -- Crash To Singleplayer
-    menu.action(player_removal_root, "Crash To Singleplayer", {"ryancrashsingleplayer"}, "Attempts to crash using all known script events.", function()
+    menu.action(player_removal_root, "Crash To Singleplayer", {"ryancrash"}, "Attempts to crash using all known script events.", function()
         player_spam_and_block(player_id, removal_block_joins, removal_message, function()
             player_crash_to_singleplayer(player_id)
         end)
     end)
 
     -- -- Crash To Desktop
-    player_crash_to_desktop_root = menu.list(player_removal_root, "Crash To Desktop...", {"ryancrashdesktop"}, "Various methods of crashing to desktop.")
+    player_crash_to_desktop_root = menu.list(player_removal_root, "Crash To Desktop...", {"ryancrashes"}, "Various methods of crashing to desktop.")
     
-    menu.action(player_crash_to_desktop_root, "Do All", {"ryancrashdesktopall"}, "Attempts to crash using all known entities.", function(click_type)
+    menu.action(player_crash_to_desktop_root, "Do All", {"ryandesktop"}, "Attempts to crash using all known entities.", function(click_type)
         player_spam_and_block(player_id, removal_block_joins, removal_message, function()
             local starting_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
             local in_danger_zone = vector_distance(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), starting_coords) < SafeCrashDistance
@@ -1232,7 +1428,7 @@ function setup_player(player_id)
 
     menu.divider(player_crash_to_desktop_root, "Methods")
     for _, mode in pairs(CrashToDesktopModes) do
-        menu.action(player_crash_to_desktop_root, mode, {"ryancrashdesktop" .. mode}, "Attempts to crash using the " .. mode .. " method.", function(click_type)
+        menu.action(player_crash_to_desktop_root, mode, {"ryan" .. mode}, "Attempts to crash using the " .. mode .. " method.", function(click_type)
             player_spam_and_block(player_id, removal_block_joins, removal_message, function()
                 player_crash_to_desktop(player_id, mode)
             end)
@@ -1248,6 +1444,100 @@ function setup_player(player_id)
         menu.trigger_commands("players")
     end)
 end
+
+util.create_thread(function()
+    while true do
+        for player_id, _ in pairs(money_drop) do
+            player_fake_money_drop(player_id)
+        end
+        util.yield()
+    end
+end)
+
+function get_control(player_id, action)
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
+    if vehicle ~= NULL then
+        entity_request_control_loop(vehicle)
+        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+            action(vehicle)
+        end
+    end
+end
+
+util.create_tick_handler(function()
+    for _, player_id in pairs(players.list()) do
+        -- Speed
+        if vehicle_speed[player_id] == "fast" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_speed(vehicle, VehicleSpeedModes.Fast)
+            end)
+        elseif vehicle_speed[player_id] == "slow" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_speed(vehicle, VehicleSpeedModes.Slow)
+            end)
+        elseif vehicle_speed[player_id] == "normal" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_speed(vehicle, VehicleSpeedModes.Default)
+            end)
+        end
+
+        -- Grip
+        if vehicle_grip[player_id] == "none" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_no_grip(vehicle, true)
+            end)
+        elseif vehicle_grip[player_id] == "full" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_no_grip(vehicle, false)
+            end)
+        end
+
+        -- Doors
+        if vehicle_doors[player_id] == "lock" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_doors_locked(vehicle, true)
+            end)
+        elseif vehicle_doors[player_id] == "unlock" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_doors_locked(vehicle, false)
+            end)
+        end
+
+        -- Tires
+        if vehicle_tires[player_id] == "burst" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_tires_bursted(vehicle, true)
+            end)
+        elseif vehicle_tires[player_id] == "fix" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_tires_bursted(vehicle, false)
+            end)
+        end
+
+        -- Engine
+        if vehicle_engine[player_id] == "kill" then
+            get_control(player_id, function(vehicle)
+                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+            end)
+        elseif vehicle_engine[player_id] == "fix" then
+            get_control(player_id, function(vehicle)
+                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+            end)
+        end
+
+        -- Upgrades
+        if vehicle_upgrades[player_id] == "all" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_upgraded(vehicle, true)
+            end)
+        elseif vehicle_upgrades[player_id] == "none" then
+            get_control(player_id, function(vehicle)
+                vehicle_set_upgraded(vehicle, false)
+            end)
+        end
+    end
+    util.yield(250)
+end)
 
 
 -- Chat Menu --
@@ -1339,24 +1629,24 @@ end)
 chat_history = {}
 chat_index = 1
 chat.on_message(function(packet_sender, sender, message, is_team_chat)
-    if sender ~= players.user() then
-        if kick_money_beggars then
-            if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
-                and message:find("money") and message:find("drop") then
-                    basics_show_text_message(Colors.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
-                    player_crash_to_desktop(sender)
-            end
-        end
-        if kick_car_meeters then
-            if (message:find("want to") or message:find("wanna") or message:find("at") or message:find("?"))
-                and message:find("car") and message:find("meet") then
-                    basics_show_text_message(Colors.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
-                    player_crash_to_desktop(sender)
-            end
+    --if sender ~= players.user() then
+    if kick_money_beggars then
+        if (message:find("can") or message:find("?") or message:find("please") or message:find("plz") or message:find("pls"))
+            and message:find("money") and message:find("drop") then
+                basics_show_text_message(Colors.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
+                player_crash_to_desktop(sender, "Yo Momma")
         end
     end
+    if kick_car_meeters then
+        if (message:find("want to") or message:find("wanna") or message:find("at") or message:find("?"))
+            and message:find("car") and message:find("meet") then
+                basics_show_text_message(Colors.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
+                player_crash_to_desktop(sender, "Yo Momma")
+        end
+    end
+    --end
 
-    if #chat_history > 25 then
+    if #chat_history > 30 then
         menu.delete(chat_history[1])
         table.remove(chat_history, 1)
     end
