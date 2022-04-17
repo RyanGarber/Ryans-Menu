@@ -116,7 +116,7 @@ PTFX = {
     {"Mop Squeeze", "scr_agencyheist", "scr_fbi_mop_squeeze", 100}
 }
 
-CrashEvents = {
+CrashToSingleplayerEvents = {
     {-1386010354, player_id, player_id, player_id, -788905164},
     {962740265, player_id, player_id, player_id, -788905164},
     {-1386010354, player_id, 0, 23243, 5332, 3324, 845546543, 3437435, player_id},
@@ -196,7 +196,7 @@ CrashEvents = {
     {-1501164935, player_id, player_id, 1001, player_id}
 }
 
-CrashToDesktopMethod = {
+CrashToDesktopMethods = {
     "Yo Momma",
     "Vegetation",
     "Invalid Objects",
@@ -213,41 +213,41 @@ SafeCrashDistance = 666.9
 SafeCrashDuration = 10000
 SafeCrashCoords = {x = 4500, y = -4400, z = 0}
 
-PlayerBone = {
+PlayerBones = {
     Head = {"IK_Head"},
     Hands = {"IK_L_Hand", "IK_R_Hand"},
     Pointer = {"IK_L_Hand"},
     Feet = {"IK_L_Foot", "IK_R_Foot"}
 }
 
-VehicleBone = {
+VehicleBones = {
     Wheels = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"},
     Exhaust = {"exhaust", "exhaust_2", "exhaust_3", "exhaust_4", "exhaust_5", "exhaust_6", "exhaust_7", "exhaust_8"}
 }
 
-WeaponBone = {
+WeaponBones = {
     Muzzle = {"gun_vfx_eject"}
 }
 
-ForcefieldMode = {
+ForcefieldModes = {
     "Off",
     "Push",
     "Destroy"
 }
 
-CrosshairMode = {
+CrosshairModes = {
     "Off",
     "When Pointing",
     "Always"
 }
 
-FireFingerMode = {
+FireFingerModes = {
     "Off",
     "When Pointing",
     "Always"
 }
 
-AntihermitMode = {
+AntihermitModes = {
     "Off",
     "Teleport Outside",
     "Kick",

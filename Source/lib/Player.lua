@@ -360,7 +360,7 @@ function player_crash_to_singleplayer(player_id)
     end
 
     basics_show_text_message(Color.Purple, "Crash To Singleplayer", "Now sending script events. This may take a while...")
-    local events = basics_shuffle(CrashEvents)
+    local events = basics_shuffle(CrashToSingleplayerEvents)
     for _, event in pairs(events) do
         player_send_script_event(player_id, event, "Crash To Singleplayer")
     end
@@ -373,7 +373,7 @@ function player_crash_to_desktop(player_id, mode)
     end
 
     if not mode then
-        for _, crash_mode in pairs(CrashToDesktopMethod) do
+        for _, crash_mode in pairs(CrashToDesktopMethods) do
             util.create_thread(function()
                 player_crash_to_desktop(player_id, crash_mode)
             end)
@@ -386,7 +386,7 @@ function player_crash_to_desktop(player_id, mode)
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
     basics_show_text_message(Color.Purple, "Crash To Desktop", "Now spawning entities. This may take a while...")
-    for _, crash_mode in pairs(CrashToDesktopMethod) do
+    for _, crash_mode in pairs(CrashToDesktopMethods) do
         if mode == crash_mode then util.toast("Beginning crash: " .. crash_mode .. ".") end
     end
 

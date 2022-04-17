@@ -95,17 +95,17 @@ self_ptfx_body_hands_root = menu.list(self_ptfx_body_root, "Hands...", {"ryanptf
 self_ptfx_body_feet_root = menu.list(self_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
 
 ptfx_create_list(self_ptfx_body_head_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBone.Head, ptfx[2], ptfx[3], ptfx_color)
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Head, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 ptfx_create_list(self_ptfx_body_hands_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBone.Hands, ptfx[2], ptfx[3], ptfx_color)
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Hands, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 ptfx_create_list(self_ptfx_body_feet_root, function(ptfx)
-    ptfx_play_on_entity_bones(player_get_ped(), PlayerBone.Feet, ptfx[2], ptfx[3], ptfx_color)
+    ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Feet, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
@@ -117,7 +117,7 @@ ptfx_create_list(self_ptfx_vehicle_wheels_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
     if vehicle ~= NULL then
-        ptfx_play_on_entity_bones(vehicle, VehicleBone.Wheels, ptfx[2], ptfx[3], ptfx_color)
+        ptfx_play_on_entity_bones(vehicle, VehicleBones.Wheels, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -126,7 +126,7 @@ ptfx_create_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
     if vehicle ~= NULL then
-        ptfx_play_on_entity_bones(vehicle, VehicleBone.Exhaust, ptfx[2], ptfx[3], ptfx_color)
+        ptfx_play_on_entity_bones(vehicle, VehicleBones.Exhaust, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -152,7 +152,7 @@ ptfx_create_list(self_ptfx_weapon_muzzle_root, function(ptfx)
     if ptfx_disable then return end
     local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_get_ped())
     if weapon ~= NULL then
-        ptfx_play_at_entity_bone_coords(weapon, WeaponBone.Muzzle, ptfx[2], ptfx[3], ptfx_color)
+        ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -163,7 +163,7 @@ ptfx_create_list(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
     if PED.IS_PED_SHOOTING(player_ped) then
         local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_ped)
         if weapon ~= NULL then
-            ptfx_play_at_entity_bone_coords(weapon, WeaponBone.Muzzle, ptfx[2], ptfx[3], ptfx_color)
+            ptfx_play_at_entity_bone_coords(weapon, WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
             util.yield(ptfx[4])
         end
     end
@@ -186,7 +186,7 @@ self_ptfx_pointing_god_finger_root = menu.list(self_ptfx_pointing_root, "Target.
 ptfx_create_list(self_ptfx_pointing_finger_root, function(ptfx)
     if ptfx_disable then return end
     if memory.read_int(memory.script_global(4516656 + 930)) == 3 then
-        ptfx_play_on_entity_bones(player_get_ped(), PlayerBone.Pointer, ptfx[2], ptfx[3], ptfx_color)
+        ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -215,7 +215,7 @@ forcefield_mode = "Off"
 forcefield_size = 10
 forcefield_force = 1
 
-for _, mode in pairs(ForcefieldMode) do
+for _, mode in pairs(ForcefieldModes) do
     menu.toggle(self_forcefield_root, mode, {"ryanforcefield" .. mode:lower()}, "", function(value)
         if value then
             menu.trigger_commands("ryanforcefield" .. forcefield_mode:lower() .. " off")
@@ -289,7 +289,7 @@ end)
 -- -- Fire
 fire_finger_mode = "Off"
 self_fire_finger_root = menu.list(self_fire_root, "Finger...", {"ryanfirefinger"}, "Catches things on fire from a distance when pressing E.")
-for _, mode in pairs(FireFingerMode) do
+for _, mode in pairs(FireFingerModes) do
     menu.toggle(self_fire_finger_root, mode, {"ryanfirefinger" .. mode:lower()}, "", function(value)
         if value then
             menu.trigger_commands("ryanfirefinger" .. fire_finger_mode:lower() .. " off")
@@ -332,7 +332,7 @@ end)
 self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Add an on-screen crosshair.")
 crosshair_mode = "Off"
 
-for _, mode in pairs(CrosshairMode) do
+for _, mode in pairs(CrosshairModes) do
     menu.toggle(self_crosshair_root, mode, {"ryancrosshair" .. mode:lower()}, "", function(value)
         if value then
             menu.trigger_commands("ryancrosshair" .. crosshair_mode:lower() .. " off")
@@ -904,7 +904,7 @@ end)
 session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Kicks or trolls any player who stays inside for more than 5 minutes.")
 antihermit_mode = "Off"
 
-for _, mode in pairs(AntihermitMode) do
+for _, mode in pairs(AntihermitModes) do
     menu.toggle(session_antihermit_root, mode, {"ryanantihermit" .. mode:lower()}, "", function(value)
         if value then
             menu.trigger_commands("ryanantihermit" .. antihermit_mode:lower() .. " off")
@@ -1415,7 +1415,7 @@ function setup_player(player_id)
     end)
 
     menu.divider(player_crash_to_desktop_root, "Methods")
-    for _, mode in pairs(CrashToDesktopMethod) do
+    for _, mode in pairs(CrashToDesktopMethods) do
         menu.action(player_crash_to_desktop_root, mode, {"ryan" .. mode}, "Attempts to crash using the " .. mode .. " method.", function(click_type)
             player_spam_and_block(player_id, removal_block_joins, removal_message, function()
                 player_crash_to_desktop(player_id, mode)
