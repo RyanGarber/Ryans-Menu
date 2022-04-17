@@ -1,7 +1,7 @@
 function stats_hash(stat_type, stat_name)
     local prefix = nil
     if stat_type == Stats.Global then prefix = "MPPLY"
-    else prefix = "MP" .. stats_get_int(stats_hash(MPPLY, "LAST_MP_CHAR")) end
+    else prefix = "MP" .. stats_get_int(stats_hash(Stats.Global, "LAST_MP_CHAR")) end
     return util.joaat(prefix .. "_" .. stat_name)
 end
 
