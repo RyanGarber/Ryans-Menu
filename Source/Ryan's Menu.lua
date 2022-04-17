@@ -329,7 +329,7 @@ util.create_tick_handler(function()
     end
 end)
 
-self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Addn-screen crosshair.")
+self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Add an on-screen crosshair.")
 crosshair_mode = "Off"
 
 for _, mode in pairs(CrosshairMode) do
@@ -583,7 +583,7 @@ util.create_tick_handler(function()
     util.yield(500)
 end)
 
--- -- NPC Action
+-- -- All NPCs
 all_npcs_mode = "Off"
 
 for _, mode in pairs(NPCScenarios) do
