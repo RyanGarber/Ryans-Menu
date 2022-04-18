@@ -69,6 +69,8 @@ settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Setting
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 self_fire_root = menu.list(self_root, "Fire...", {"ryanfire"}, "An enhanced LanceScript burning man.")
 self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
+self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Add an on-screen crosshair.")
+self_seats_root = menu.list(self_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
@@ -116,7 +118,7 @@ self_ptfx_vehicle_exhaust_root = menu.list(self_ptfx_vehicle_root, "Exhaust...",
 ptfx_create_list(self_ptfx_vehicle_wheels_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
-    if vehicle ~= NULL then
+    if vehicle ~= 0 then
         ptfx_play_on_entity_bones(vehicle, VehicleBones.Wheels, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
@@ -125,7 +127,7 @@ end)
 ptfx_create_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
-    if vehicle ~= NULL then
+    if vehicle ~= 0 then
         ptfx_play_on_entity_bones(vehicle, VehicleBones.Exhaust, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
@@ -329,7 +331,7 @@ util.create_tick_handler(function()
     end
 end)
 
-self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Add an on-screen crosshair.")
+-- -- Crosshair
 crosshair_mode = "Off"
 
 for _, mode in pairs(CrosshairModes) do
@@ -340,6 +342,29 @@ for _, mode in pairs(CrosshairModes) do
         end
     end, mode == "Off")
 end
+
+-- -- Seats
+switch_seats_actions = {}
+util.create_tick_handler(function()
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped())
+    if vehicle ~= 0 then
+        local seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(players.get_vehicle_model(players.user()))
+        if seats ~= #switch_seats_actions then
+            for _, action in pairs(switch_seats_actions) do menu.delete(action) end
+            switch_seats_actions = {}
+            for i = -1, seats - 2 do
+                local name = "Seat " .. (i + 2) .. (i == -1 and " (Driver)" or (i == 0 and " (Passenger)" or ""))
+                table.insert(switch_seats_actions, menu.action(self_seats_root, name, {"ryanseat" .. (i + 2)}, "Switches to the seat.", function()
+                    PED.SET_PED_INTO_VEHICLE(player_get_ped(), vehicle, i)
+                end))
+            end
+        end
+    else
+        for _, action in pairs(switch_seats_actions) do menu.delete(action) end
+        switch_seats_actions = {}
+    end
+    util.yield(500)
+end)
 
 -- -- God Finger
 player_is_pointing = false
@@ -382,7 +407,6 @@ util.create_tick_handler(function()
             vehicle_set_no_grip(vehicle, PAD.IS_CONTROL_PRESSED(21, 21))
         end
     end
-    util.yield()
 end)
 
 
@@ -1282,7 +1306,7 @@ function setup_player(player_id)
     -- -- Catapult
     menu.toggle_loop(player_vehicle_root, "Catapult", {"ryancatapult"}, "Catapults their car non-stop.", function()
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= NULL then
+        if vehicle ~= 0 then
             entity_request_control_loop(vehicle)
             if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
                 vehicle_catapult(vehicle)
@@ -1366,6 +1390,33 @@ function setup_player(player_id)
         end
     end, false)
 
+    -- -- Steal Vehicle
+    menu.action(player_trolling_root, "Steal Vehicle", {"ryanstealvehicle"}, "Steals the player's car.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), true)
+        if vehicle ~= 0 then
+            basics_show_text_message(Color.Purple, "Steal Vehicle", "Stealing " .. players.get_name(player_id) .. "'s vehicle. Please wait.")
+            local player_ped = player_get_ped(player_id)
+            local start_time = util.current_time_millis()
+
+            if VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) ~= player_ped then
+                basics_show_text_message(Color.Red, "Steal Vehicle", players.get_name(player_id) .. " isn't the driver!")
+            end
+
+            menu.trigger_commands("vehkick" .. players.get_name(player_id))
+            while VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == player_ped do
+                if util.current_time_millis() - start_time > 5000 then
+                    basics_show_text_message(Color.Red, "Steal Vehicle", "Failed to kick " .. players.get_name(player_id) .. " from their vehicle.")
+                    break
+                end
+                util.yield()
+            end
+            basics_show_text_message(Color.Purple, "Steal Vehicle", "Teleporting into " .. players.get_name(player_id) .. "'s vehicle.")
+            PED.SET_PED_INTO_VEHICLE(player_get_ped(), vehicle, -1)
+        else
+            basics_show_text_message(Color.Red, "Steal Vehicle", players.get_name(player_id) .. " is not in a vehicle.")
+        end
+    end)
+
 
     -- Removal --
     -- -- Text & Kick
@@ -1444,7 +1495,7 @@ end)
 
 function get_control(player_id, action)
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-    if vehicle ~= NULL then
+    if vehicle ~= 0 then
         entity_request_control_loop(vehicle)
         if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
             action(vehicle)

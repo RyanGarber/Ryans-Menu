@@ -113,7 +113,8 @@ PTFX = {
     {"Inflatable", "core", "ent_dst_inflatable", 500},
     {"Water Splash (Short)", "core", "ent_anim_bm_water_scp", 200},
     {"Water Splash (Long)", "cut_family5", "cs_fam5_michael_pool_splash", 500},
-    {"Mop Squeeze", "scr_agencyheist", "scr_fbi_mop_squeeze", 100}
+    {"Mop Squeeze", "scr_agencyheist", "scr_fbi_mop_squeeze", 100},
+    {"Flame (Real)", "core", "ent_sht_flame", 7500}
 }
 
 CrashToSingleplayerEvents = {
