@@ -1,4 +1,4 @@
-VERSION = "0.6.10"
+VERSION = "0.6.11"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -754,6 +754,9 @@ end)
 session_trolling_root = menu.list(session_root, "Trolling...", {"ryantrolling"}, "Trolling options on all players.")
 session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
 session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
+session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
+session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Kicks or trolls any player who stays inside for more than 5 minutes.")
+session_drivers_root = menu.list(session_root, "Drivers...", {"ryandrivers"}, "Lists the players driving vehicles.")
 
 -- -- Mass Trolling
 trolling_watch_time = 5000
@@ -878,7 +881,6 @@ menu.action(session_dox_root, "Oppressor", {"ryanoppressor"}, "Shares the name o
 end)
 
 -- -- Crash All
-session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
 crash_all_friends = false
 crash_all_modders = false
 
@@ -925,7 +927,6 @@ menu.toggle(session_crash_all_root, "Include Modders", {"ryanomnicrashmodders"},
 end)
 
 -- -- Anti-Hermit
-session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Kicks or trolls any player who stays inside for more than 5 minutes.")
 antihermit_mode = "Off"
 
 for _, mode in pairs(AntihermitModes) do
@@ -938,6 +939,7 @@ for _, mode in pairs(AntihermitModes) do
 end
 
 hermits = {}
+hermit_list = {}
 util.create_tick_handler(function()
     if antihermit_mode ~= "Off" then
         for _, player_id in pairs(players.list(false)) do
@@ -948,8 +950,12 @@ util.create_tick_handler(function()
                     if hermits[player_id] == nil then
                         hermits[player_id] = util.current_time_millis()
                         util.toast(player_name .. " is now inside a building.")
+                    elseif hermit_list[player_id] ~= nil then
+                        hermits[player_id] = util.current_time_millis() - 210000
+                        hermit_list[player_id] = nil
                     elseif util.current_time_millis() - hermits[player_id] >= 300000 then
                         hermits[player_id] = util.current_time_millis() - 210000
+                        hermit_list[player_id] = true
                         basics_show_text_message(Color.Purple, "Anti-Hermit", player_name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
                         player_do_sms_spam(player_id, "You've been inside too long. Stop being weird and play the game!", 3000)
                         if antihermit_mode == "Teleport Outside" then
@@ -970,6 +976,26 @@ util.create_tick_handler(function()
         end
     end
     util.yield(500)
+end)
+
+-- -- Drivers
+drivers = {}
+
+util.create_thread(function()
+    while true do
+        for _, driver in pairs(drivers) do menu.delete(driver) end
+        drivers = {}
+        for _, player_id in pairs(players.list()) do
+            -- session_drivers_root
+            local vehicle = players.get_vehicle_model(player_id)
+            if vehicle ~= 0 then
+                table.insert(drivers, menu.action(session_drivers_root, players.get_name(player_id), {"ryandriver" .. players.get_name(player_id)}, "", function()
+                
+                end))
+            end
+        end
+        util.yield(1000)
+    end
 end)
 
 -- -- Fake Money Drop
@@ -1008,7 +1034,7 @@ menu.action(stats_root, "Favorite Radio Station", {"ryanradio"}, "Sets your favo
     local station_name = AUDIO.GET_PLAYER_RADIO_STATION_NAME()
     
     if station_name ~= nil then
-        STATS.STAT_SET_INT(stats_get_hash("MPPLY_MOST_FAVORITE_STATION"), util.joaat(station_name), true)
+        STATS.STAT_SET_INT(stats_hash(Stats.Global, "MOST_FAVORITE_STATION"), util.joaat(station_name), true)
         basics_show_text_message(Color.Purple, "Favorite Radio Station", "Your favorite radio station has been updated!")
     else
         basics_show_text_message(Color.Red, "Favorite Radio Station", "You're not currently listening to the radio.")
@@ -1404,7 +1430,7 @@ function setup_player(player_id)
 
             menu.trigger_commands("vehkick" .. players.get_name(player_id))
             while VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == player_ped do
-                if util.current_time_millis() - start_time > 5000 then
+                if util.current_time_millis() - start_time > 10000 then
                     basics_show_text_message(Color.Red, "Steal Vehicle", "Failed to kick " .. players.get_name(player_id) .. " from their vehicle.")
                     break
                 end
