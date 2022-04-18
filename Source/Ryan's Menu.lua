@@ -990,7 +990,7 @@ util.create_thread(function()
             local vehicle = players.get_vehicle_model(player_id)
             if vehicle ~= 0 then
                 table.insert(drivers, menu.action(session_drivers_root, players.get_name(player_id), {"ryandriver" .. players.get_name(player_id)}, "", function()
-                
+                    menu.trigger_commands("p " .. players.get_name(player_id))
                 end))
             end
         end
