@@ -847,6 +847,8 @@ end)
 
 -- -- Fireworks
 function do_fireworks(burst_type, coords, color)
+    if firework_coords == nil then return end
+    
     coords = vector_add(firework_coords, coords)
     local ptfx = nil
     for _, ptfx_data in pairs(PTFX) do
