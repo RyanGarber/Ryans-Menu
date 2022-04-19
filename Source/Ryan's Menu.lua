@@ -538,6 +538,7 @@ end)
 
 
 -- World Menu --
+menu.divider(world_root, "General")
 world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
 world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Changes the action NPCs are currently performing.")
 
