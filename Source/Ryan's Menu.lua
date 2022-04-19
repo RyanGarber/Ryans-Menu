@@ -447,7 +447,12 @@ util.create_tick_handler(function()
 end)
 
 -- -- Seats
+function seat_name(i)
+    return (i == -1 and "Driver" or "Seat " .. (i + 2))
+end
+
 switch_seats_actions = {}
+switch_seats_notice = nil
 util.create_tick_handler(function()
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped())
     if vehicle ~= 0 then
@@ -455,18 +460,34 @@ util.create_tick_handler(function()
         if seats ~= #switch_seats_actions then
             for _, action in pairs(switch_seats_actions) do menu.delete(action) end
             switch_seats_actions = {}
-            for i = -1, seats - 2 do
-                local name = "Seat " .. (i + 2) .. (i == -1 and " (Driver)" or (i == 0 and " (Passenger)" or ""))
-                table.insert(switch_seats_actions, menu.action(self_seats_root, name, {"ryanseat" .. (i + 2)}, "Switches to the seat.", function()
-                    PED.SET_PED_INTO_VEHICLE(player_get_ped(), vehicle, i)
+            for seat = -1, seats - 2 do
+                table.insert(switch_seats_actions, menu.action(self_seats_root, seat_name(seat), {"ryanseat" .. (seat + 2)}, "Switches to the seat.", function()
+                    PED.SET_PED_INTO_VEHICLE(player_get_ped(), vehicle, seat)
                 end))
             end
+        else
+            for seat = -1, seats - 2 do
+                if VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, seat) ~= 0 then
+                    menu.set_menu_name(switch_seats_actions[seat + 2], seat_name(seat) .. " [Taken]")
+                else
+                    menu.set_menu_name(switch_seats_actions[seat + 2], seat_name(seat))
+                end
+            end
+        end
+
+        if switch_seats_notice ~= nil then
+            menu.delete(switch_seats_notice)
+            switch_seats_notice = nil
         end
     else
         for _, action in pairs(switch_seats_actions) do menu.delete(action) end
         switch_seats_actions = {}
+
+        if switch_seats_notice == nil then
+            switch_seats_notice = menu.divider(self_seats_root, "Not inside a vehicle.")
+        end
     end
-    util.yield(500)
+    util.yield(200)
 end)
 
 -- -- E-Brake
