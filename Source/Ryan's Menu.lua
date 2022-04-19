@@ -484,7 +484,7 @@ util.create_tick_handler(function()
         switch_seats_actions = {}
 
         if switch_seats_notice == nil then
-            switch_seats_notice = menu.divider(self_seats_root, "Not inside a vehicle.")
+            switch_seats_notice = menu.divider(self_seats_root, "Vehicle Needed")
         end
     end
     util.yield(200)
