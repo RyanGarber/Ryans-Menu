@@ -66,11 +66,11 @@ settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Setting
 
 
 -- Self Menu --
+menu.divider(self_root, "General")
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 self_fire_root = menu.list(self_root, "Fire...", {"ryanfire"}, "An enhanced LanceScript burning man.")
 self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
 self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Add an on-screen crosshair.")
-self_seats_root = menu.list(self_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
@@ -446,6 +446,37 @@ util.create_tick_handler(function()
     end
 end)
 
+-- -- God Finger
+player_is_pointing = false
+god_finger_target = nil
+menu.toggle_loop(self_root, "God Finger", {"ryangodfinger"}, "Pushes objects away when pointing at them.", function(value)
+    if player_is_pointing then
+        local raycast = basics_do_raycast(500.0, 2 + 8 + 16)
+        memory.write_int(memory.script_global(4516656 + 935), NETWORK.GET_NETWORK_TIME())
+        if raycast.did_hit and raycast.hit_entity ~= nil then
+            god_finger_target = raycast.hit_coords
+            ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
+            FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 29, 25.0, false, true, 0.0, true)
+            basics_esp_box(raycast.hit_entity)
+        else
+            god_finger_target = nil
+            ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
+        end
+    else
+        god_finger_target = nil
+    end
+end)
+
+-- -- All Players Visible
+menu.toggle_loop(self_root, "All Players Visible", {"ryannoinvisible"}, "Makes all invisible players visible again.", function()
+    for _, player_id in pairs(players.list()) do
+        ENTITY.SET_ENTITY_VISIBLE(player_get_ped(player_id), true, 0)
+    end
+end, false)
+
+menu.divider(self_root, "Vehicle")
+self_seats_root = menu.list(self_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
+
 -- -- Seats
 function seat_name(i)
     return (i == -1 and "Driver" or "Seat " .. (i + 2))
@@ -505,231 +536,14 @@ util.create_tick_handler(function()
     end
 end)
 
--- -- God Finger
-player_is_pointing = false
-god_finger_target = nil
-menu.toggle_loop(self_root, "God Finger", {"ryangodfinger"}, "Pushes objects away when pointing at them.", function(value)
-    if player_is_pointing then
-        local raycast = basics_do_raycast(500.0, 2 + 8 + 16)
-        memory.write_int(memory.script_global(4516656 + 935), NETWORK.GET_NETWORK_TIME())
-        if raycast.did_hit and raycast.hit_entity ~= nil then
-            god_finger_target = raycast.hit_coords
-            ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
-            FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 29, 25.0, false, true, 0.0, true)
-            basics_esp_box(raycast.hit_entity)
-        else
-            god_finger_target = nil
-            ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
-        end
-    else
-        god_finger_target = nil
-    end
-end)
-
--- -- All Players Visible
-menu.toggle_loop(self_root, "All Players Visible", {"ryannoinvisible"}, "Makes all invisible players visible again.", function()
-    for _, player_id in pairs(players.list()) do
-        ENTITY.SET_ENTITY_VISIBLE(player_get_ped(player_id), true, 0)
-    end
-end, false)
-
 
 -- World Menu --
-world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
 world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
-world_all_vehicles_root = menu.list(world_root, "All Vehicles...", {"ryanallvehicles"}, "Control the vehicles around you.")
 world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Changes the action NPCs are currently performing.")
-
--- -- Enter Closest Vehicle
-menu.action(world_closest_vehicle_root, "Enter", {"ryandrivevehicle"}, "Teleports into the closest vehicle.", function()
-    local closest_vehicle = vehicle_get_closest(ENTITY.GET_ENTITY_COORDS(player_get_ped(), true))
-    local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(closest_vehicle, -1)
-    
-    if VEHICLE.IS_VEHICLE_SEAT_FREE(closest_vehicle, -1) then
-        PED.SET_PED_INTO_VEHICLE(player_get_ped(), closest_vehicle, -1)
-        util.toast("Teleported into the closest vehicle.")
-    else
-        if PED.GET_PED_TYPE(driver) >= 4 then
-            entities.delete(driver)
-            PED.SET_PED_INTO_VEHICLE(player_get_ped(), closest_vehicle, -1)
-            util.toast("Teleported into the closest vehicle.")
-        elseif VEHICLE.ARE_ANY_VEHICLE_SEATS_FREE(closest_vehicle) then
-            for i=0, 10 do
-                if VEHICLE.IS_VEHICLE_SEAT_FREE(closest_vehicle, i) then
-                    PED.SET_PED_INTO_VEHICLE(player_get_ped(), closest_vehicle, i)
-                    break
-                end
-            end
-            util.toast("Teleported into the closest vehicle.")
-        else
-            util.toast("No nearby vehicles found.")
-        end
-    end
-end)
-
--- -- Upgrade Closest Vehicle
-menu.action(world_closest_vehicle_root, "Upgrade", {"ryanupgradevehicle"}, "Upgrades the closest vehicle.", function()
-    local closest_vehicle = vehicle_get_closest(ENTITY.GET_ENTITY_COORDS(player_get_ped(), true))
-    entity_request_control_loop(closest_vehicle)
-    vehicle_set_upgraded(closest_vehicle, true)
-    util.toast("Upgraded the nearest car!")
-end)
-
--- -- Downgrade Closest Vehicle
-menu.action(world_closest_vehicle_root, "Downgrade", {"ryandowngradevehicle"}, "Downgrades the closest vehicle.", function()
-    local closest_vehicle = vehicle_get_closest(ENTITY.GET_ENTITY_COORDS(player_get_ped(), true))
-    entity_request_control_loop(closest_vehicle)
-    vehicle_set_upgraded(closest_vehicle, false)
-    util.toast("Downgraded the nearest car!")
-end)
 
 world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
 world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
 world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
-
--- -- All Vehicles
-all_vehicles_make_fast = false; vehicles_make_fast = {}
-all_vehicles_make_slow = false; vehicles_make_slow = {}
-all_vehicles_no_grip = false; vehicles_no_grip = {}
-all_vehicles_burst_tires = false; vehicles_burst_tires = {}
-all_vehicles_kill_engine = false; vehicles_kill_engine = {}
-all_vehicles_lock_doors = false; vehicles_lock_doors = {}
-all_vehicles_catapult = false
-all_vehicles_flee = false; vehicles_flee = {}
-all_vehicles_include_players = false
-
-menu.toggle(world_all_vehicles_root, "Make Fast", {"ryanallvehiclesfast"}, "Makes all nearby vehicles fast.", function(value)
-    all_vehicles_make_fast = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Make Slow", {"ryanallvehiclesslow"}, "Makes all nearby vehicles slow.", function(value)
-    all_vehicles_make_slow = value
-end, false)
-menu.toggle(world_all_vehicles_root, "No Grip", {"ryanallvehiclesnogrip"}, "Makes all nearby vehicles drift.", function(value)
-    all_vehicles_no_grip = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Burst Tires", {"ryanallvehiclesburst"}, "Makes all nearby vehicles have sudden tire loss.", function(value)
-    all_vehicles_burst_tires = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Kill Engine", {"ryanallvehiclesdead"}, "Makes all nearby vehicles dead.", function(value)
-    all_vehicles_kill_engine = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Lock Doors", {"ryanallvehicleslocked"}, "Locks all nearby vehicles.", function(value)
-    all_vehicles_lock_doors = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Catapult", {"ryanallvehiclescatapult"}, "Makes all nearby vehicles catapult in the air.", function(value)
-    all_vehicles_catapult = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Flee", {"ryanallvehiclesflee"}, "Makes all nearby vehicles flee.", function(value)
-    all_vehicles_flee = value
-end, false)
-menu.divider(world_all_vehicles_root, "Options")
-menu.toggle(world_all_vehicles_root, "Include Players", {"ryanallvehiclesplayers"}, "If enabled, player-driven vehicles are affected too.", function(value)
-    all_vehicles_include_players = value
-end)
-
-util.create_tick_handler(function()
-    local player_ped = player_get_ped()
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
-
-    local vehicles = entity_get_all_nearby(player_coords, 250, NearbyEntities.Vehicles)
-    for _, vehicle in pairs(vehicles) do
-        local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
-        if all_vehicles_include_players or not PED.IS_PED_A_PLAYER(driver) then
-            local make_fast = nil
-            for i = 1, #vehicles_make_fast do
-                if vehicles_make_fast[i] == vehicle then make_fast = i end
-            end
-            if all_vehicles_make_fast and not make_fast then
-                vehicle_set_speed(vehicle, VehicleSpeed.Fast)
-                table.insert(vehicles_make_fast, vehicle)
-            elseif not all_vehicles_make_fast and make_fast then
-                vehicle_set_speed(vehicle, VehicleSpeed.Normal)
-                table.remove(vehicles_make_fast, make_fast)
-            end
-
-            local make_slow = nil
-            for i = 1, #vehicles_make_slow do
-                if vehicles_make_slow[i] == vehicle then make_slow = i end
-            end
-            if all_vehicles_make_slow and not make_slow then
-                vehicle_set_speed(vehicle, VehicleSpeed.Slow)
-                table.insert(vehicles_make_slow, vehicle)
-            elseif not all_vehicles_make_slow and make_slow then
-                vehicle_set_speed(vehicle, VehicleSpeed.Normal)
-                table.remove(vehicles_make_slow, make_slow)
-            end
-
-            local no_grip = nil
-            for i = 1, #vehicles_no_grip do
-                if vehicles_no_grip[i] == vehicle then no_grip = i end
-            end
-            if all_vehicles_no_grip and not no_grip then
-                vehicle_set_no_grip(vehicle, true)
-                table.insert(vehicles_no_grip, vehicle)
-            elseif not all_vehicles_no_grip and no_grip then
-                vehicle_set_no_grip(vehicle, false)
-                table.remove(vehicles_no_grip, no_grip)
-            end
-
-            local burst_tires = nil
-            for i = 1, #vehicles_burst_tires do
-                if vehicles_burst_tires[i] == vehicle then burst_tires = i end
-            end
-            if all_vehicles_burst_tires and not burst_tires then
-                vehicle_set_tires_bursted(vehicle, true)
-                table.insert(vehicles_burst_tires, vehicle)
-            elseif not all_vehicles_burst_tires and burst_tires then
-                vehicle_set_tires_bursted(vehicle, false)
-                table.remove(vehicles_burst_tires, burst_tires)
-            end
-
-            local kill_engine = nil
-            for i = 1, #vehicles_kill_engine do
-                if vehicles_kill_engine[i] == vehicle then kill_engine = i end
-            end
-            if all_vehicles_kill_engine and not kill_engine then
-                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-                table.insert(vehicles_kill_engine, vehicle)
-            elseif not all_vehicles_kill_engine and kill_engine then
-                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-                table.remove(vehicles_kill_engine, kill_engine)
-            end
-
-            local lock_doors = nil
-            for i = 1, #vehicles_lock_doors do
-                if vehicles_lock_doors[i] == vehicle then lock_doors = i end
-            end
-            if all_vehicles_lock_doors and not lock_doors then
-                vehicle_set_doors_locked(vehicle, true)
-                table.insert(vehicles_lock_doors, vehicle)
-            elseif not all_vehicles_lock_doors and lock_doors then
-                vehicle_set_doors_locked(vehicle, false)
-                table.remove(vehicles_lock_doors, lock_doors)
-            end
-
-            if all_vehicles_catapult then
-                vehicle_catapult(vehicle)
-            end
-
-            if not PED.IS_PED_A_PLAYER(driver) then
-                local flee = nil
-                for i = 1, #vehicles_flee do
-                    if vehicles_flee[i] == vehicle then flee = i end
-                end
-                if all_vehicles_flee and not flee then
-                    TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
-                    table.insert(vehicles_flee, vehicle)
-                elseif not all_vehicles_flee and flee then
-                    TASK.CLEAR_PED_TASKS(driver)
-                    table.remove(vehicles_flee, flee)
-                end
-            end
-        end
-    end
-
-    util.yield(500)
-end)
 
 -- -- All NPCs
 all_npcs_mode = "Off"
@@ -830,7 +644,6 @@ menu.toggle_loop(world_root, "No Cops", {"ryannocops"}, "Clears the area of cops
         end
     end
     util.yield(250)
-    -- SEARCHLIGHT
 end, false)
 
 -- -- Tiny People
@@ -848,7 +661,7 @@ end)
 -- -- Fireworks
 function do_fireworks(burst_type, coords, color)
     if firework_coords == nil then return end
-    
+
     coords = vector_add(firework_coords, coords)
     local ptfx = nil
     for _, ptfx_data in pairs(PTFX) do
@@ -892,14 +705,208 @@ util.create_tick_handler(function()
     end
 end)
 
+menu.divider(world_root, "Vehicle")
+world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
+world_all_vehicles_root = menu.list(world_root, "All Vehicles...", {"ryanallvehicles"}, "Control the vehicles around you.")
+
+-- -- Enter Closest Vehicle
+menu.action(world_closest_vehicle_root, "Enter", {"ryandrivevehicle"}, "Teleports into the closest vehicle.", function()
+    local closest_vehicle = vehicle_get_closest(ENTITY.GET_ENTITY_COORDS(player_get_ped(), true))
+    local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(closest_vehicle, -1)
+    
+    if VEHICLE.IS_VEHICLE_SEAT_FREE(closest_vehicle, -1) then
+        PED.SET_PED_INTO_VEHICLE(player_get_ped(), closest_vehicle, -1)
+        util.toast("Teleported into the closest vehicle.")
+    else
+        if PED.GET_PED_TYPE(driver) >= 4 then
+            entities.delete(driver)
+            PED.SET_PED_INTO_VEHICLE(player_get_ped(), closest_vehicle, -1)
+            util.toast("Teleported into the closest vehicle.")
+        elseif VEHICLE.ARE_ANY_VEHICLE_SEATS_FREE(closest_vehicle) then
+            for i=0, 10 do
+                if VEHICLE.IS_VEHICLE_SEAT_FREE(closest_vehicle, i) then
+                    PED.SET_PED_INTO_VEHICLE(player_get_ped(), closest_vehicle, i)
+                    break
+                end
+            end
+            util.toast("Teleported into the closest vehicle.")
+        else
+            util.toast("No nearby vehicles found.")
+        end
+    end
+end)
+
+-- -- Upgrade Closest Vehicle
+menu.action(world_closest_vehicle_root, "Upgrade", {"ryanupgradevehicle"}, "Upgrades the closest vehicle.", function()
+    local closest_vehicle = vehicle_get_closest(ENTITY.GET_ENTITY_COORDS(player_get_ped(), true))
+    entity_request_control_loop(closest_vehicle)
+    vehicle_set_upgraded(closest_vehicle, true)
+    util.toast("Upgraded the nearest car!")
+end)
+
+-- -- Downgrade Closest Vehicle
+menu.action(world_closest_vehicle_root, "Downgrade", {"ryandowngradevehicle"}, "Downgrades the closest vehicle.", function()
+    local closest_vehicle = vehicle_get_closest(ENTITY.GET_ENTITY_COORDS(player_get_ped(), true))
+    entity_request_control_loop(closest_vehicle)
+    vehicle_set_upgraded(closest_vehicle, false)
+    util.toast("Downgraded the nearest car!")
+end)
+
+-- -- All Vehicles
+all_vehicles_make_fast = false; vehicles_make_fast = {}
+all_vehicles_make_slow = false; vehicles_make_slow = {}
+all_vehicles_no_grip = false; vehicles_no_grip = {}
+all_vehicles_burst_tires = false; vehicles_burst_tires = {}
+all_vehicles_kill_engine = false; vehicles_kill_engine = {}
+all_vehicles_lock_doors = false; vehicles_lock_doors = {}
+all_vehicles_catapult = false
+all_vehicles_flee = false; vehicles_flee = {}
+all_vehicles_include_players = false
+
+menu.toggle(world_all_vehicles_root, "Make Fast", {"ryanallvehiclesfast"}, "Makes all nearby vehicles fast.", function(value)
+    all_vehicles_make_fast = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Make Slow", {"ryanallvehiclesslow"}, "Makes all nearby vehicles slow.", function(value)
+    all_vehicles_make_slow = value
+end, false)
+menu.toggle(world_all_vehicles_root, "No Grip", {"ryanallvehiclesnogrip"}, "Makes all nearby vehicles drift.", function(value)
+    all_vehicles_no_grip = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Burst Tires", {"ryanallvehiclesburst"}, "Makes all nearby vehicles have sudden tire loss.", function(value)
+    all_vehicles_burst_tires = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Kill Engine", {"ryanallvehiclesdead"}, "Makes all nearby vehicles dead.", function(value)
+    all_vehicles_kill_engine = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Lock Doors", {"ryanallvehicleslocked"}, "Locks all nearby vehicles.", function(value)
+    all_vehicles_lock_doors = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Catapult", {"ryanallvehiclescatapult"}, "Makes all nearby vehicles catapult in the air.", function(value)
+    all_vehicles_catapult = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Flee", {"ryanallvehiclesflee"}, "Makes all nearby vehicles flee.", function(value)
+    all_vehicles_flee = value
+end, false)
+menu.divider(world_all_vehicles_root, "Options")
+menu.toggle(world_all_vehicles_root, "Include Players", {"ryanallvehiclesplayers"}, "If enabled, player-driven vehicles are affected too.", function(value)
+    all_vehicles_include_players = value
+end)
+
+util.create_tick_handler(function()
+    local player_ped = player_get_ped()
+    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
+
+    local vehicles = entity_get_all_nearby(player_coords, 250, NearbyEntities.Vehicles)
+    for _, vehicle in pairs(vehicles) do
+        local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+        if all_vehicles_include_players or not PED.IS_PED_A_PLAYER(driver) then
+            if not PED.IS_PED_A_PLAYER(driver) then entity_request_control(vehicle)
+            else entity_request_control_loop(vehicle) end
+
+            local make_fast = nil
+            for i = 1, #vehicles_make_fast do
+                if vehicles_make_fast[i] == vehicle then make_fast = i end
+            end
+            if all_vehicles_make_fast and not make_fast then
+                vehicle_set_speed(vehicle, VehicleSpeed.Fast)
+                table.insert(vehicles_make_fast, vehicle)
+            elseif not all_vehicles_make_fast and make_fast then
+                vehicle_set_speed(vehicle, VehicleSpeed.Normal)
+                table.remove(vehicles_make_fast, make_fast)
+            end
+
+            local make_slow = nil
+            for i = 1, #vehicles_make_slow do
+                if vehicles_make_slow[i] == vehicle then make_slow = i end
+            end
+            if all_vehicles_make_slow and not make_slow then
+                vehicle_set_speed(vehicle, VehicleSpeed.Slow)
+                table.insert(vehicles_make_slow, vehicle)
+            elseif not all_vehicles_make_slow and make_slow then
+                vehicle_set_speed(vehicle, VehicleSpeed.Normal)
+                table.remove(vehicles_make_slow, make_slow)
+            end
+
+            local no_grip = nil
+            for i = 1, #vehicles_no_grip do
+                if vehicles_no_grip[i] == vehicle then no_grip = i end
+            end
+            if all_vehicles_no_grip and not no_grip then
+                vehicle_set_no_grip(vehicle, true)
+                table.insert(vehicles_no_grip, vehicle)
+            elseif not all_vehicles_no_grip and no_grip then
+                vehicle_set_no_grip(vehicle, false)
+                table.remove(vehicles_no_grip, no_grip)
+            end
+
+            local burst_tires = nil
+            for i = 1, #vehicles_burst_tires do
+                if vehicles_burst_tires[i] == vehicle then burst_tires = i end
+            end
+            if all_vehicles_burst_tires and not burst_tires then
+                vehicle_set_tires_bursted(vehicle, true)
+                table.insert(vehicles_burst_tires, vehicle)
+            elseif not all_vehicles_burst_tires and burst_tires then
+                vehicle_set_tires_bursted(vehicle, false)
+                table.remove(vehicles_burst_tires, burst_tires)
+            end
+
+            local kill_engine = nil
+            for i = 1, #vehicles_kill_engine do
+                if vehicles_kill_engine[i] == vehicle then kill_engine = i end
+            end
+            if all_vehicles_kill_engine and not kill_engine then
+                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+                table.insert(vehicles_kill_engine, vehicle)
+            elseif not all_vehicles_kill_engine and kill_engine then
+                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+                table.remove(vehicles_kill_engine, kill_engine)
+            end
+
+            local lock_doors = nil
+            for i = 1, #vehicles_lock_doors do
+                if vehicles_lock_doors[i] == vehicle then lock_doors = i end
+            end
+            if all_vehicles_lock_doors and not lock_doors then
+                vehicle_set_doors_locked(vehicle, true)
+                table.insert(vehicles_lock_doors, vehicle)
+            elseif not all_vehicles_lock_doors and lock_doors then
+                vehicle_set_doors_locked(vehicle, false)
+                table.remove(vehicles_lock_doors, lock_doors)
+            end
+
+            if all_vehicles_catapult then
+                vehicle_catapult(vehicle)
+            end
+
+            if not PED.IS_PED_A_PLAYER(driver) then
+                local flee = nil
+                for i = 1, #vehicles_flee do
+                    if vehicles_flee[i] == vehicle then flee = i end
+                end
+                if all_vehicles_flee and not flee then
+                    TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
+                    table.insert(vehicles_flee, vehicle)
+                elseif not all_vehicles_flee and flee then
+                    TASK.CLEAR_PED_TASKS(driver)
+                    table.remove(vehicles_flee, flee)
+                end
+            end
+        end
+    end
+
+    util.yield(500)
+end)
+
 
 -- Session Menu --
+menu.divider(session_root, "General")
 session_trolling_root = menu.list(session_root, "Trolling...", {"ryantrolling"}, "Trolling options on all players.")
 session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
 session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
 session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
 session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Kicks or trolls any player who stays inside for more than 5 minutes.")
-session_drivers_root = menu.list(session_root, "Drivers...", {"ryandrivers"}, "Lists the players driving vehicles.")
 
 -- -- Mass Trolling
 trolling_watch_time = 5000
@@ -929,30 +936,6 @@ menu.divider(session_trolling_root, "Vehicle")
 menu.action(session_trolling_root, "Tow", {"ryantowall"}, "Sends a tow truck to all players.", function()
     util.toast("Towing all players...")
     session_watch_and_do_command_all({"towtruck{name}"}, trolling_include_modders, trolling_watch_time)
-end)
-menu.action(session_trolling_root, "Make Fast", {"ryanmakefastall"}, "Makes everyone's vehicles fast.", function()
-    util.toast("Making all players' cars fast...")
-    session_watch_and_takeover_all(function(vehicle)
-        vehicle_set_speed(vehicle, VehicleSpeed.Fast)
-    end, trolling_include_modders, trolling_watch_time)
-end)
-menu.action(session_trolling_root, "Make Slow", {"ryanmakeslowall"}, "Makes everyone's vehicles slow.", function()
-    util.toast("Making all players' cars slow...")
-    session_watch_and_takeover_all(function(vehicle)
-        vehicle_set_speed(vehicle, VehicleSpeed.Slow)
-    end, trolling_include_modders, trolling_watch_time)
-end)
-menu.action(session_trolling_root, "No Grip", {"ryanmakenogripall"}, "Makes everyone's vehicles drift.", function()
-    util.toast("Making all players' cars drift...")
-    session_watch_and_takeover_all(function(vehicle)
-        vehicle_set_no_grip(vehicle, true)
-    end, trolling_include_modders, trolling_watch_time)
-end)
-menu.action(session_trolling_root, "Lock Doors", {"ryanlockall"}, "Makes everyone's vehicle's doors locked.", function()
-    util.toast("Making all players' cars locked...")
-    session_watch_and_takeover_all(function(vehicle)
-        vehicle_set_doors_locked(vehicle, true)
-    end, trolling_include_modders, trolling_watch_time)
 end)
 menu.action(session_trolling_root, "Burst Tires", {"ryanbursttiresall"}, "Bursts everyone's tires.", function()
     util.toast("Bursting all tires...")
@@ -1139,32 +1122,6 @@ util.create_tick_handler(function()
     util.yield(500)
 end)
 
--- -- Drivers
-drivers = {}
-drivers_refresh = 0
-drivers_refresh_text = menu.divider(session_drivers_root, "")
-
-util.create_thread(function()
-    while true do
-        if util.current_time_millis() - drivers_refresh >= 10000 then
-            for _, driver in pairs(drivers) do menu.delete(driver) end
-            drivers = {}
-            for _, player_id in pairs(players.list()) do
-                local vehicle = players.get_vehicle_model(player_id)
-                if vehicle ~= 0 then
-                    table.insert(drivers, menu.action(session_drivers_root, players.get_name(player_id), {"ryandriver" .. players.get_name(player_id)}, "", function()
-                        menu.trigger_commands("p " .. players.get_name(player_id))
-                    end))
-                end
-            end
-            drivers_refresh = util.current_time_millis()
-        else
-            menu.set_menu_name(drivers_refresh_text, "Refreshing In: " .. math.floor(11 - (util.current_time_millis() - drivers_refresh) / 1000))
-        end
-        util.yield()
-    end
-end)
-
 -- -- Mk II Chaos
 menu.toggle_loop(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and tells them to duel.", function()
     chat.send_message("This session is in Mk II Chaos mode! Every 3 minutes, everyone receives an Oppressor. Good luck.", false, true, true)
@@ -1193,15 +1150,47 @@ menu.toggle_loop(session_root, "Fake Money Drop", {"ryanfakemoneyall"}, "Drops f
     util.yield(125)
 end, false)
 
--- Teleport All To Me
-menu.toggle_loop(session_root, "Teleport All To Me", {"ryanteleportvehicles"}, "Forces every vehicle into the area.", function()
+-- Vehicles
+menu.divider(session_root, "Vehicle")
+session_drivers_root = menu.list(session_root, "Driver List...", {"ryandrivers"}, "Lists the players driving vehicles.")
+
+-- -- Drivers
+drivers = {}
+drivers_refresh = 0
+drivers_refresh_text = menu.divider(session_drivers_root, "")
+
+util.create_thread(function()
+    while true do
+        if util.current_time_millis() - drivers_refresh >= 10000 then
+            for _, driver in pairs(drivers) do menu.delete(driver) end
+            drivers = {}
+            for _, player_id in pairs(players.list()) do
+                local vehicle = players.get_vehicle_model(player_id)
+                if vehicle ~= 0 then
+                    table.insert(drivers, menu.action(session_drivers_root, players.get_name(player_id), {"ryandriver" .. players.get_name(player_id)}, "", function()
+                        menu.trigger_commands("p " .. players.get_name(player_id))
+                    end))
+                end
+            end
+            drivers_refresh = util.current_time_millis()
+        else
+            menu.set_menu_name(drivers_refresh_text, "Refreshing In: " .. math.floor(11 - (util.current_time_millis() - drivers_refresh) / 1000))
+        end
+        util.yield()
+    end
+end)
+
+-- Teleport All
+session_teleport_all_root = menu.list(session_root, "Teleport...", {"ryantpvehicles"}, "Forces every vehicle into an area.")
+    
+menu.toggle_loop(session_teleport_all_root, "To Me", {"ryantpme"}, "Teleports them to your location.", function()
     local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
     for _, player_id in pairs(players.list()) do
-        if vector_distance(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), coords) > 50.0 then
+        if vector_distance(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), coords) > 33.33 then
             player_teleport_car(player_id, vector_add(coords, {x = math.random(-10, 10), y = math.random(-10, 10), z = 0}))
         end
     end
-    util.yield(5000)
+    util.yield(3333)
 end)
 
 
@@ -1315,8 +1304,6 @@ function setup_player(player_id)
     -- Trolling --
     local player_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")
 
-
-    -- Vehicle --
     -- -- Speed
     local player_vehicle_speed_root = menu.list(player_vehicle_root, "Speed: -", {"ryanspeed"}, "Changes the speed of their vehicle.")
     menu.toggle(player_vehicle_speed_root, "Fast", {"ryanspeedfast"}, "Makes the speed extremely fast.", function(value)
