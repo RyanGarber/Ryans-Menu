@@ -1,4 +1,4 @@
-VERSION = "0.6.11"
+VERSION = "0.6.12"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -214,17 +214,34 @@ end)
 
 -- -- Forcefield
 forcefield_mode = "Off"
+forcefield_change = 2147483647
+forcefield_values = {["Off"] = true}
+
 forcefield_size = 10
 forcefield_force = 1
 
 for _, mode in pairs(ForcefieldModes) do
-    menu.toggle(self_forcefield_root, mode, {"ryanforcefield" .. mode:lower()}, "", function(value)
-        if value then
-            menu.trigger_commands("ryanforcefield" .. forcefield_mode:lower() .. " off")
+    menu.toggle(self_forcefield_root, mode, {"ryanforcefield" .. mode}, "", function(value)
+        if value and mode ~= forcefield_mode then
+            menu.trigger_commands("ryanforcefield" .. forcefield_mode .. " off")
             forcefield_mode = mode
         end
+
+        forcefield_change = util.current_time_millis()
+        forcefield_values[mode] = value
     end, mode == "Off")
 end
+
+util.create_tick_handler(function()
+    if util.current_time_millis() - forcefield_change > 500 then
+        local has_choice = false
+        for _, mode in pairs(ForcefieldModes) do
+            if forcefield_values[mode] then has_choice = true end
+        end
+        if not has_choice then menu.trigger_commands("ryanforcefieldoff on") end
+        forcefield_change = 2147483647
+    end
+end)
 
 menu.divider(self_forcefield_root, "Options")
 menu.slider(self_forcefield_root, "Size", {"ryanforcefieldsize"}, "Diameter of the forcefield sphere.", 10, 250, 10, 10, function(value)
@@ -234,71 +251,139 @@ menu.slider(self_forcefield_root, "Force", {"ryanforcefieldforce"}, "Force appli
     forcefield_force = value
 end)
 
-entities_destroyed = {}
+entities_exploded = {}
+entities_chaosed = {}
 util.create_tick_handler(function()
-    if forcefield_mode == "Push" then
+    if forcefield_mode ~= "Explode" then entities_exploded = {} end
+    if forcefield_mode ~= "Chaos" then entities_chaosed = {} end
+
+    if forcefield_mode == "Off" then
+        ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
+    else
         local player_ped = player_get_ped()
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-		local nearby = entity_get_all_nearby(player_coords, forcefield_size, NearbyEntities.All)
-		for _, entity in pairs(nearby) do
-			local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
-			local force = vector_normalize(vector_subtract(entity_coords, player_coords))
-            force = vector_multiply(force, forcefield_force)
-			if ENTITY.IS_ENTITY_A_PED(entity) then
-				if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
-					entity_request_control(entity)
-					PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-					ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-				end
-			elseif entity ~= entities.get_user_vehicle_as_handle() then
-				entity_request_control(entity)
-				ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-			end
-		end
-        entities_destroyed = {}
-    elseif forcefield_mode == "Destroy" then
-        ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
-
-        local player_ped = player_get_ped()
-        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-        local player_vehicle = entities.get_user_vehicle_as_handle()
-
-        local nearby = entity_get_all_nearby(player_coords, 200, NearbyEntities.All)
+        local nearby = entity_get_all_nearby(player_coords, forcefield_size, NearbyEntities.All)
         for _, entity in pairs(nearby) do
-            local was_destroyed = false
-            for _, destroyed_entity in pairs(entities_destroyed) do
-                if destroyed_entity == entity then was_destroyed = true end
-            end
-
-            if not was_destroyed then
-                if entity ~= player_ped and entity ~= player_vehicle then
-                    local coords = ENTITY.GET_ENTITY_COORDS(entity)
-                    FIRE.ADD_EXPLOSION(
-                        coords.x, coords.y, coords.z,
-                        29, 5.0, false, true, 0.0
-                    )
+            if forcefield_mode == "Push" then -- Push entities away
+                ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, true, false, false, 1, false)
+                
+                local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
+                local force = vector_normalize(vector_subtract(entity_coords, player_coords))
+                force = vector_multiply(force, forcefield_force * 0.25)
+                if ENTITY.IS_ENTITY_A_PED(entity) then
+                    if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                        entity_request_control(entity)
+                        PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                    end
+                elseif entity ~= entities.get_user_vehicle_as_handle() then
+                    entity_request_control(entity)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
-                table.insert(entities_destroyed, entity)
+            elseif forcefield_mode == "Pull" then -- Pull entities in
+                ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, true, false, false, 1, false)
+                
+                local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
+                local force = vector_normalize(vector_subtract(player_coords, entity_coords))
+                force = vector_multiply(force, forcefield_force * 0.25)
+                if ENTITY.IS_ENTITY_A_PED(entity) then
+                    if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                        entity_request_control(entity)
+                        PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                    end
+                elseif entity ~= entities.get_user_vehicle_as_handle() then
+                    entity_request_control(entity)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                end
+            elseif forcefield_mode == "Spin" then -- Spin entities around
+                local direction = util.current_time_millis() % 2000 >= 750 and -0.5 or 0.5
+                local force = {x = 0, y = 0, z = direction * forcefield_force}
+                if not ENTITY.IS_ENTITY_A_PED(entity) and entity ~= entities.get_user_vehicle_as_handle() then
+                    entity_request_control(entity)
+                    ENTITY.SET_ENTITY_HEADING(entity, ENTITY.GET_ENTITY_HEADING(entity) + 2.5 * forcefield_force)
+                end
+            elseif forcefield_mode == "Bounce" then -- Slam entities into ground
+                local direction = util.current_time_millis() % 2000 >= 750 and -0.5 or 0.5
+                local force = {x = 0, y = 0, z = direction * forcefield_force}
+                if ENTITY.IS_ENTITY_A_PED(entity) then
+                    if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                        entity_request_control(entity)
+                        PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.66, 0, false, false, true)
+                    end
+                elseif entity ~= entities.get_user_vehicle_as_handle() then
+                    entity_request_control(entity)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.66, 0, false, false, true)
+                end
+            elseif forcefield_mode == "Chaos" then -- Chaotic entities
+                if entities_chaosed[entity] == nil or util.current_time_millis() - entities_chaosed[entity] > 1000 then
+                    local amount = forcefield_force * 10
+                    local force = {
+                        x = math.random(0, 1) == 0 and -amount or amount,
+                        y = math.random(0, 1) == 0 and -amount or amount,
+                        z = 0
+                    }
+                    if ENTITY.IS_ENTITY_A_PED(entity) then
+                        if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                            entity_request_control(entity)
+                            PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                            ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
+                        end
+                    elseif entity ~= entities.get_user_vehicle_as_handle() then
+                        entity_request_control(entity)
+                        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
+                    end
+                    entities_chaosed[entity] = util.current_time_millis()
+                end
+            elseif forcefield_mode == "Destroy" then -- Explode entities
+                ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
+
+                if entities_exploded[entity] == nil then
+                    if entity ~= player_ped and entity ~= player_vehicle then
+                        local coords = ENTITY.GET_ENTITY_COORDS(entity)
+                        FIRE.ADD_EXPLOSION(
+                            coords.x, coords.y, coords.z,
+                            29, 5.0, false, true, 0.0
+                        )
+                    end
+                    entities_exploded[entity] = true
+                end
             end
         end
-    else
-        ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
-        entities_destroyed = {}
     end
-    return true
 end)
 
 -- -- Fire
-fire_finger_mode = "Off"
 self_fire_finger_root = menu.list(self_fire_root, "Finger...", {"ryanfirefinger"}, "Catches things on fire from a distance when pressing E.")
+
+fire_finger_mode = "Off"
+fire_finger_change = 2147483647
+fire_finger_values = {["Off"] = true}
+
 for _, mode in pairs(FireFingerModes) do
-    menu.toggle(self_fire_finger_root, mode, {"ryanfirefinger" .. mode:lower()}, "", function(value)
+    menu.toggle(self_fire_finger_root, mode, {"ryanfirefinger" .. mode}, "", function(value)
         if value then
-            menu.trigger_commands("ryanfirefinger" .. fire_finger_mode:lower() .. " off")
+            if mode ~= fire_finger_mode then
+                menu.trigger_commands("ryanfirefinger" .. fire_finger_mode .. " off")
+            end
             fire_finger_mode = mode
         end
+
+        fire_finger_change = util.current_time_millis()
+        fire_finger_values[mode] = value
     end, mode == "Off")
 end
+util.create_tick_handler(function()
+    if util.current_time_millis() - fire_finger_change > 500 then
+        local has_choice = false
+        for _, mode in pairs(FireFingerModes) do
+            if fire_finger_values[mode] then has_choice = true end
+        end
+        if not has_choice then menu.trigger_commands("ryanfirefingeroff on") end
+        fire_finger_change = 2147483647
+    end
+end)
 
 menu.toggle(self_fire_root, "Body", {"ryanfirebody"}, "Sets yourself on fire visually.", function(value)
     if value then
@@ -333,15 +418,33 @@ end)
 
 -- -- Crosshair
 crosshair_mode = "Off"
+crosshair_change = 2147483647
+crosshair_values = {["Off"] = true}
 
 for _, mode in pairs(CrosshairModes) do
     menu.toggle(self_crosshair_root, mode, {"ryancrosshair" .. mode:lower()}, "", function(value)
         if value then
-            menu.trigger_commands("ryancrosshair" .. crosshair_mode:lower() .. " off")
+            if mode ~= crosshair_mode then
+                menu.trigger_commands("ryancrosshair" .. crosshair_mode .. " off")
+            end
             crosshair_mode = mode
         end
+
+        crosshair_change = util.current_time_millis()
+        crosshair_values[mode] = value
     end, mode == "Off")
 end
+
+util.create_tick_handler(function()
+    if util.current_time_millis() - crosshair_change > 500 then
+        local has_choice = false
+        for _, mode in pairs(CrosshairModes) do
+            if crosshair_values[mode] then has_choice = true end
+        end
+        if not has_choice then menu.trigger_commands("ryancrosshairoff on") end
+        crosshair_change = 2147483647
+    end
+end)
 
 -- -- Seats
 switch_seats_actions = {}
@@ -364,6 +467,21 @@ util.create_tick_handler(function()
         switch_seats_actions = {}
     end
     util.yield(500)
+end)
+
+-- -- E-Brake
+ebrake = false
+menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while holding Shift.", function(value)
+    ebrake = value
+end)
+util.create_tick_handler(function()
+    if ebrake then
+        local player_ped = player_get_ped(players.user())
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
+        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == player_ped then
+            vehicle_set_no_grip(vehicle, PAD.IS_CONTROL_PRESSED(21, 21))
+        end
+    end
 end)
 
 -- -- God Finger
@@ -393,21 +511,6 @@ menu.toggle_loop(self_root, "All Players Visible", {"ryannoinvisible"}, "Makes a
         ENTITY.SET_ENTITY_VISIBLE(player_get_ped(player_id), true, 0)
     end
 end, false)
-
--- -- E-Brake
-ebrake = false
-menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while holding Shift.", function(value)
-    ebrake = value
-end)
-util.create_tick_handler(function()
-    if ebrake then
-        local player_ped = player_get_ped(players.user())
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
-        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == player_ped then
-            vehicle_set_no_grip(vehicle, PAD.IS_CONTROL_PRESSED(21, 21))
-        end
-    end
-end)
 
 
 -- World Menu --
@@ -609,15 +712,32 @@ end)
 
 -- -- All NPCs
 all_npcs_mode = "Off"
+all_npcs_change = 2147483647
+all_npcs_values = {["Off"] = true}
 
 for _, mode in pairs(NPCScenarios) do
-    menu.toggle(world_all_npcs_root, mode, {"ryanallnpcs" .. mode:lower()}, "", function(value)
+    menu.toggle(world_all_npcs_root, mode, {"ryanallnpcs" .. mode}, "", function(value)
         if value then
-            menu.trigger_commands("ryanallnpcs" .. all_npcs_mode:lower() .. " off")
-            all_npcs_mode = mode
+            if mode ~= all_npcs_mode then
+                menu.trigger_commands("ryanallnpcs" .. all_npcs_mode .. " off")
+                all_npcs_mode = mode
+            end
         end
+        all_npcs_change = util.current_time_millis()
+        all_npcs_values[mode] = value
     end, mode == "Off")
 end
+
+util.create_tick_handler(function()
+    if util.current_time_millis() - all_npcs_change > 500 then
+        local has_choice = false
+        for _, mode in pairs(NPCScenarios) do
+            if all_npcs_values[mode] then has_choice = true end
+        end
+        if not has_choice then menu.trigger_commands("ryanallnpcsoff on") end
+        all_npcs_change = 2147483647
+    end
+end)
 
 npcs_affected = {}
 util.create_tick_handler(function()
@@ -928,15 +1048,33 @@ end)
 
 -- -- Anti-Hermit
 antihermit_mode = "Off"
+antihermit_change = 2147483647
+antihermit_values = {["Off"] = true}
 
 for _, mode in pairs(AntihermitModes) do
-    menu.toggle(session_antihermit_root, mode, {"ryanantihermit" .. mode:lower()}, "", function(value)
+    menu.toggle(session_antihermit_root, mode, {"ryanantihermit" .. mode}, "", function(value)
         if value then
-            menu.trigger_commands("ryanantihermit" .. antihermit_mode:lower() .. " off")
-            antihermit_mode = mode
+            if mode ~= antihermit_mode then
+                menu.trigger_commands("ryanantihermit" .. antihermit_mode .. " off")
+                antihermit_mode = mode
+            end
         end
+
+        antihermit_change = util.current_time_millis()
+        antihermit_values[mode] = value
     end, mode == "Off")
 end
+
+util.create_tick_handler(function()
+    if util.current_time_millis() - antihermit_change > 500 then
+        local has_choice = false
+        for _, mode in pairs(AntihermitModes) do
+            if antihermit_values[mode] then has_choice = true end
+        end
+        if not has_choice then menu.trigger_commands("ryanantihermitoff on") end
+        antihermit_change = 2147483647
+    end
+end)
 
 hermits = {}
 hermit_list = {}
@@ -980,33 +1118,29 @@ end)
 
 -- -- Drivers
 drivers = {}
+drivers_refresh = 0
+drivers_refresh_text = menu.divider(session_drivers_root, "")
 
 util.create_thread(function()
     while true do
-        for _, driver in pairs(drivers) do menu.delete(driver) end
-        drivers = {}
-        for _, player_id in pairs(players.list()) do
-            -- session_drivers_root
-            local vehicle = players.get_vehicle_model(player_id)
-            if vehicle ~= 0 then
-                table.insert(drivers, menu.action(session_drivers_root, players.get_name(player_id), {"ryandriver" .. players.get_name(player_id)}, "", function()
-                    menu.trigger_commands("p " .. players.get_name(player_id))
-                end))
+        if util.current_time_millis() - drivers_refresh >= 10000 then
+            for _, driver in pairs(drivers) do menu.delete(driver) end
+            drivers = {}
+            for _, player_id in pairs(players.list()) do
+                local vehicle = players.get_vehicle_model(player_id)
+                if vehicle ~= 0 then
+                    table.insert(drivers, menu.action(session_drivers_root, players.get_name(player_id), {"ryandriver" .. players.get_name(player_id)}, "", function()
+                        menu.trigger_commands("p " .. players.get_name(player_id))
+                    end))
+                end
             end
+            drivers_refresh = util.current_time_millis()
+        else
+            menu.set_menu_name(drivers_refresh_text, "Refreshing In: " .. math.floor(11 - (util.current_time_millis() - drivers_refresh) / 1000))
         end
-        util.yield(1000)
+        util.yield()
     end
 end)
-
--- -- Fake Money Drop
-menu.toggle_loop(session_root, "Fake Money Drop", {"ryanfakemoneyall"}, "Drops fake money bags on all players.", function()
-    for _, player_id in pairs(players.list()) do
-        util.create_thread(function()
-            player_fake_money_drop(player_id)
-        end)
-    end
-    util.yield(125)
-end, false)
 
 -- -- Mk II Chaos
 menu.toggle_loop(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and tells them to duel.", function()
@@ -1025,6 +1159,27 @@ menu.toggle_loop(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone 
     STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(oppressor2)
     util.yield(180000)
 end, false)
+
+-- -- Fake Money Drop
+menu.toggle_loop(session_root, "Fake Money Drop", {"ryanfakemoneyall"}, "Drops fake money bags on all players.", function()
+    for _, player_id in pairs(players.list()) do
+        util.create_thread(function()
+            player_fake_money_drop(player_id)
+        end)
+    end
+    util.yield(125)
+end, false)
+
+-- Teleport All To Me
+menu.toggle_loop(session_root, "Teleport All To Me", {"ryanteleportvehicles"}, "Forces every vehicle into the area.", function()
+    local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
+    for _, player_id in pairs(players.list()) do
+        if vector_distance(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), coords) > 50.0 then
+            player_teleport_car(player_id, vector_add(coords, {x = math.random(-10, 10), y = math.random(-10, 10), z = 0}))
+        end
+    end
+    util.yield(5000)
+end)
 
 
 -- Stats Menu --

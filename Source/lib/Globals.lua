@@ -233,6 +233,10 @@ WeaponBones = {
 ForcefieldModes = {
     "Off",
     "Push",
+    "Pull",
+    "Spin",
+    "Bounce",
+    "Chaos",
     "Destroy"
 }
 

@@ -352,6 +352,20 @@ function player_flying_yacht(player_id)
     STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(black_ops)
 end
 
+function player_teleport_car(player_id, coords)
+    local name = PLAYER.GET_PLAYER_NAME(player_id)
+    --menu.trigger_commands("spectate" .. name .. " on")
+    --util.yield(1000)
+
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), true)
+    if vehicle ~= 0 then
+        entity_request_control_loop(vehicle)
+        for i=1, 3 do
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(vehicle, coords['x'], coords['y'], coords['z'], false, false, false)
+        end
+    end
+end
+
 -- Crashes --
 function player_crash_to_singleplayer(player_id)
     if player_id == players.user() then
