@@ -235,7 +235,9 @@ ForcefieldModes = {
     "Push",
     "Pull",
     "Spin",
-    "Bounce",
+    "Up",
+    "Down",
+    "Smash",
     "Chaos",
     "Destroy"
 }

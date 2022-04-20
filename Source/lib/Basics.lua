@@ -22,6 +22,10 @@ function basics_shuffle(list)
     return shuffled
 end
 
+function basics_command_name(display_name)
+	return display_name:lower():gsub(" ", "")
+end
+
 function basics_format_int(number)
     local i, j, minus, int, fraction = tostring(number):find('([-]?)(%d+)([.]?%d*)')
     int = int:reverse():gsub("(%d%d%d)", "%1,")

@@ -9,7 +9,7 @@ function ptfx_create_list(root, loop)
     for _, ptfx in pairs(PTFX) do
         menu.toggle_loop(root, ptfx[1], {"ryan" .. ptfx[1]:lower()}, "Plays the " .. ptfx[1] .. " effect.", function()
             loop(ptfx)
-        end, false)
+        end)
     end
 end
 
