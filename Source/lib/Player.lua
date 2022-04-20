@@ -401,7 +401,7 @@ function player_crash_to_desktop(player_id, mode)
 
     basics_show_text_message(Color.Purple, "Crash To Desktop", "Now spawning entities. This may take a while...")
     for _, crash_mode in pairs(CrashToDesktopMethods) do
-        if mode == crash_mode then util.toast("Beginning crash: " .. crash_mode .. ".") end
+        if mode == crash_mode then util.toast("Beginning crash: " .. crash_mode .. " on " .. players.get_name(player_id) .. ".") end
     end
 
     if mode == "Yo Momma" then
