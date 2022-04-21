@@ -71,8 +71,8 @@ function session_watch_and_takeover(action, player_id, wait_for)
     util.yield(750)
 
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-    if vehicle ~= NULL then
-        entity_request_control_loop(vehicle)
+    if vehicle ~= 0 then
+        entity_request_control_loop(vehicle, "session trolling")
         if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
             action(vehicle)
             util.yield(wait_for)

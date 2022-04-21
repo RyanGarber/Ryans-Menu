@@ -1,4 +1,4 @@
-VERSION = "0.6.13"
+VERSION = "0.6.14"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -52,6 +52,17 @@ end)
 async_http.dispatch()
 
 
+-- Debug --
+vehicle_takeovers = {}
+function save_vehicle_takeover(reason)
+    basics_keep(vehicle_takeovers, function(table, i, new_i)
+        return util.current_time_millis() - table[i][1] < 300000
+    end)
+    table.insert(vehicle_takeovers, {util.current_time_millis(), reason})
+    util.toast('Now ' .. #vehicle_takeovers .. ' takeovers')
+end
+
+
 -- Main Menu --
 self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Helpful options for yourself.")
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
@@ -59,10 +70,6 @@ session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling o
 stats_root = menu.list(menu.my_root(), "Stats", {"ryanstats"}, "Common stats you may want to edit.")
 chat_root = menu.list(menu.my_root(), "Chat", {"ryanchat"}, "Send special chat messages.")
 settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Settings for Ryan's Menu.")
-
-
---lights = {""}
---test = menu.list(menu.my_root(), "Test", {"ryantest"}, "")
 
 
 -- Self Menu --
@@ -273,12 +280,12 @@ util.create_tick_handler(function()
                 force = vector_multiply(force, forcefield_force * 0.25)
                 if ENTITY.IS_ENTITY_A_PED(entity) then
                     if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
-                        entity_request_control(entity)
+                        entity_request_control(entity, "push forcefield, ped")
                         PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
                         ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                     end
                 elseif entity ~= entities.get_user_vehicle_as_handle() then
-                    entity_request_control(entity)
+                    entity_request_control(entity, "push forcefield, vehicle")
                     ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif forcefield_mode == "Pull" then -- Pull entities in
@@ -289,41 +296,41 @@ util.create_tick_handler(function()
                 force = vector_multiply(force, forcefield_force * 0.25)
                 if ENTITY.IS_ENTITY_A_PED(entity) then
                     if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
-                        entity_request_control(entity)
+                        entity_request_control(entity, "pull forcefield, ped")
                         PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
                         ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                     end
                 elseif entity ~= entities.get_user_vehicle_as_handle() then
-                    entity_request_control(entity)
+                    entity_request_control(entity, "pull forcefield, vehicle")
                     ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif forcefield_mode == "Spin" then -- Spin entities around
                 if not ENTITY.IS_ENTITY_A_PED(entity) and entity ~= entities.get_user_vehicle_as_handle() then
-                    entity_request_control(entity)
+                    entity_request_control(entity, "spin forcefield")
                     ENTITY.SET_ENTITY_HEADING(entity, ENTITY.GET_ENTITY_HEADING(entity) + 2.5 * forcefield_force)
                 end
             elseif forcefield_mode == "Up" then -- Force entities into air
                 local force = {x = 0, y = 0, z = 0.5 * forcefield_force}
                 if ENTITY.IS_ENTITY_A_PED(entity) then
                     if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
-                        entity_request_control(entity)
+                        entity_request_control(entity, "up forcefield, ped")
                         PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
                         ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                     end
                 elseif entity ~= entities.get_user_vehicle_as_handle() then
-                    entity_request_control(entity)
+                    entity_request_control(entity, "up forcefield, vehicle")
                     ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif forcefield_mode == "Down" then -- Force entities into ground
                 local force = {x = 0, y = 0, z = -2 * forcefield_force}
                 if ENTITY.IS_ENTITY_A_PED(entity) then
                     if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
-                        entity_request_control(entity)
+                        entity_request_control(entity, "down forcefield, ped")
                         PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
                         ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                     end
                 elseif entity ~= entities.get_user_vehicle_as_handle() then
-                    entity_request_control(entity)
+                    entity_request_control(entity, "down forcefield, vehicle")
                     ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif forcefield_mode == "Smash" then -- Slam entities into ground
@@ -331,12 +338,12 @@ util.create_tick_handler(function()
                 local force = {x = 0, y = 0, z = direction * forcefield_force}
                 if ENTITY.IS_ENTITY_A_PED(entity) then
                     if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
-                        entity_request_control(entity)
+                        entity_request_control(entity, "smash forcefield, ped")
                         PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
                         ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                     end
                 elseif entity ~= entities.get_user_vehicle_as_handle() then
-                    entity_request_control(entity)
+                    entity_request_control(entity, "smash forcefield, vehicle")
                     ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif forcefield_mode == "Chaos" then -- Chaotic entities
@@ -349,12 +356,12 @@ util.create_tick_handler(function()
                     }
                     if ENTITY.IS_ENTITY_A_PED(entity) then
                         if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
-                            entity_request_control(entity)
+                            entity_request_control(entity, "chaos forcefield, ped")
                             PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
                             ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
                         end
                     elseif entity ~= entities.get_user_vehicle_as_handle() then
-                        entity_request_control(entity)
+                        entity_request_control(entity, "chaos forcefield, vehicle")
                         ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
                     end
                     entities_chaosed[entity] = util.current_time_millis()
@@ -532,12 +539,12 @@ util.create_tick_handler(function()
             force = vector_multiply(force, 0.4)
             if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
-                    entity_request_control(raycast.hit_entity)
+                    entity_request_control(raycast.hit_entity, "push god finger, ped")
                     PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
                     ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif raycast.hit_entity ~= entities.get_user_vehicle_as_handle() then
-                entity_request_control(raycast.hit_entity)
+                entity_request_control(raycast.hit_entity, "push god finger, vehicle")
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
         elseif god_finger_mode == "Pull" then -- Pull entities in
@@ -546,17 +553,17 @@ util.create_tick_handler(function()
             force = vector_multiply(force, 0.4)
             if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
-                    entity_request_control(raycast.hit_entity)
+                    entity_request_control(raycast.hit_entity, "pull god finger, ped")
                     PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
                     ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif raycast.hit_entity ~= entities.get_user_vehicle_as_handle() then
-                entity_request_control(raycast.hit_entity)
+                entity_request_control(raycast.hit_entity, "pull god finger, vehicle")
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
         elseif god_finger_mode == "Smash" then -- Smash entities
             if entities_smashed[raycast.hit_entity] == nil or util.current_time_millis() - entities_smashed[raycast.hit_entity] > 2500 then
-                entity_request_control(raycast.hit_entity)
+                entity_request_control(raycast.hit_entity, "smash god finger, ped")
                 entities_smashed[raycast.hit_entity] = util.current_time_millis()
             end
         elseif god_finger_mode == "Chaos" then -- Chaotic entities
@@ -569,12 +576,12 @@ util.create_tick_handler(function()
                 }
                 if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                     if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
-                        entity_request_control(raycast.hit_entity)
+                        entity_request_control(raycast.hit_entity, "chaos god finger, ped")
                         PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
                         ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
                     end
                 elseif raycast.hit_entity ~= entities.get_user_vehicle_as_handle() then
-                    entity_request_control(raycast.hit_entity)
+                    entity_request_control(raycast.hit_entity, "chaos god finger, vehicle")
                     ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
                 end
                 entities_chaosed[raycast.hit_entity] = util.current_time_millis()
@@ -786,14 +793,14 @@ menu.toggle_loop(world_root, "No Cops", {"ryannocops"}, "Clears the area of cops
         if ENTITY.IS_ENTITY_A_PED(entity) then
             for _, ped_type in pairs(PolicePeds) do
                 if PED.GET_PED_TYPE(entity) == ped_type then
-                    entity_request_control(entity)
+                    entity_request_control(entity, "no cops, ped")
                     entities.delete_by_handle(entity)
                 end
             end
         elseif ENTITY.IS_ENTITY_A_VEHICLE(entity) then
             for _, vehicle_model in pairs(PoliceVehicles) do
                 if VEHICLE.IS_VEHICLE_MODEL(entity, vehicle_model) then
-                    entity_request_control(entity)
+                    entity_request_control(entity, "no cops, vehicle")
                     entities.delete_by_handle(entity)
                 end
             end
@@ -895,7 +902,7 @@ end)
 -- -- Upgrade Closest Vehicle
 menu.action(world_closest_vehicle_root, "Upgrade", {"ryanupgradevehicle"}, "Upgrades the closest vehicle.", function()
     local closest_vehicle = vehicle_get_closest(ENTITY.GET_ENTITY_COORDS(player_get_ped(), true))
-    entity_request_control_loop(closest_vehicle)
+    entity_request_control_loop(closest_vehicle, "upgrade closest vehicle")
     vehicle_set_upgraded(closest_vehicle, true)
     util.toast("Upgraded the nearest car!")
 end)
@@ -903,7 +910,7 @@ end)
 -- -- Downgrade Closest Vehicle
 menu.action(world_closest_vehicle_root, "Downgrade", {"ryandowngradevehicle"}, "Downgrades the closest vehicle.", function()
     local closest_vehicle = vehicle_get_closest(ENTITY.GET_ENTITY_COORDS(player_get_ped(), true))
-    entity_request_control_loop(closest_vehicle)
+    entity_request_control_loop(closest_vehicle, "downgrade closest vehicle")
     vehicle_set_upgraded(closest_vehicle, false)
     util.toast("Downgraded the nearest car!")
 end)
@@ -963,11 +970,11 @@ util.create_tick_handler(function()
     for _, vehicle in pairs(vehicles) do
         local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
         
-        if (all_vehicles_include_players or not PED.IS_PED_A_PLAYER(driver))
-        or (all_vehicles_include_npcs or PED.IS_PED_A_PLAYER(driver)) then
+        if (all_vehicles_include_players and PED.IS_PED_A_PLAYER(driver))
+        or (all_vehicles_include_npcs and not PED.IS_PED_A_PLAYER(driver)) then
 
-            if not PED.IS_PED_A_PLAYER(driver) then entity_request_control(vehicle)
-            else entity_request_control_loop(vehicle) end
+            if not PED.IS_PED_A_PLAYER(driver) then entity_request_control(vehicle, "all vehicles, npc")
+            else entity_request_control_loop(vehicle, "all vehicles, player") end
 
             local make_fast = nil
             for i = 1, #vehicles_make_fast do
@@ -1302,6 +1309,7 @@ menu.toggle_loop(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone 
         local player_ped = player_get_ped(player_id)
         local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0.0, 5.0, 0.0)
         local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
+        entity_request_control_loop(vehicle)
         vehicle_set_upgraded(vehicle, true)
         ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
         VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
@@ -1676,7 +1684,7 @@ function setup_player(player_id)
     menu.toggle_loop(player_vehicle_root, "Catapult", {"ryancatapult"}, "Catapults their car non-stop.", function()
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
         if vehicle ~= 0 then
-            entity_request_control_loop(vehicle)
+            entity_request_control_loop(vehicle, "player vehicle, catapult")
             if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
                 vehicle_catapult(vehicle)
             end
@@ -1701,7 +1709,7 @@ function setup_player(player_id)
         local ped = entities.create_ped(1, el_rubio, ped_coords, ENTITY.GET_ENTITY_HEADING(player_get_ped(player_id)))
         STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(el_rubio)
         HUD.ADD_BLIP_FOR_ENTITY(ped)
-        entity_request_control_loop(ped)
+        entity_request_control_loop(ped, "pole-dancing el rubio")
         TASK.TASK_PLAY_ANIM(ped, "mini@strip_club@pole_dance@pole_dance1", "pd_dance_01", 8.0, 0, -1, 9, 0, false, false, false)
 
         util.yield(300000)
@@ -1932,7 +1940,7 @@ end)
 function get_control(player_id, action)
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
     if vehicle ~= 0 then
-        entity_request_control_loop(vehicle)
+        entity_request_control_loop(vehicle, "player vehicle, generic")
         if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
             action(vehicle)
         end

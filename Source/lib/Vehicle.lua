@@ -30,7 +30,6 @@ function vehicle_set_upgraded(vehicle, maxed)
 end
 
 function vehicle_set_speed(vehicle, mode)
-    entity_request_control_loop(vehicle)
     if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
         if mode == VehicleSpeed.Normal then
             VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, -1.0)
@@ -43,7 +42,6 @@ function vehicle_set_speed(vehicle, mode)
 end
 
 function vehicle_set_no_grip(vehicle, no_grip)
-    entity_request_control_loop(vehicle)
     VEHICLE.SET_VEHICLE_REDUCE_GRIP(vehicle, no_grip)
     if no_grip then 
         VEHICLE._SET_VEHICLE_REDUCE_TRACTION(vehicle, 0.0)
@@ -51,7 +49,6 @@ function vehicle_set_no_grip(vehicle, no_grip)
 end
 
 function vehicle_set_doors_locked(vehicle, value)
-    entity_request_control_loop(vehicle)
     VEHICLE.SET_VEHICLE_DOORS_LOCKED(vehicle, value and 4 or 0)
 end
 

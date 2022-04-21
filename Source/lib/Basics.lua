@@ -5,6 +5,40 @@ function basics_run(commands)
 	end
 end
 
+function basics_keep(table, keep)
+    local new_i = 1
+	local count = #table
+    for i = 1, count do
+        if keep(table, i, new_i) then
+            if i ~= new_i then
+                table[new_i] = table[i];
+                table[i] = nil;
+            end
+            new_i = new_i + 1;
+        else
+            table[i] = nil;
+        end
+    end
+    return table;
+end
+
+function basics_remove(table, element)
+    local new_i = 1
+	local count = #table
+    for i = 1, count do
+        if table[i] == element then
+            if i ~= new_i then
+                table[new_i] = table[i];
+                table[i] = nil;
+            end
+            new_i = new_i + 1;
+        else
+            table[i] = nil;
+        end
+    end
+    return table;
+end
+
 function basics_get_random(table) -- Credit: WiriScript
 	if rawget(table, 1) ~= nil then return table[math.random(1, #table)] end
 	local list = {}
