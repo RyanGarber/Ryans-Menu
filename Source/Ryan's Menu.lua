@@ -1,4 +1,4 @@
-VERSION = "0.6.12"
+VERSION = "0.6.13"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -66,10 +66,16 @@ settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Setting
 
 
 -- Self Menu --
+player_is_pointing = false
+entities_smashed = {}
+entities_chaosed = {}
+entities_exploded = {}
+
 menu.divider(self_root, "General")
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
 self_fire_root = menu.list(self_root, "Fire...", {"ryanfire"}, "An enhanced LanceScript burning man.")
 self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
+self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
 self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Add an on-screen crosshair.")
 
 -- -- PTFX
@@ -251,12 +257,7 @@ menu.slider(self_forcefield_root, "Force", {"ryanforcefieldforce"}, "Force appli
     forcefield_force = value
 end)
 
-entities_exploded = {}
-entities_chaosed = {}
 util.create_tick_handler(function()
-    if forcefield_mode ~= "Explode" then entities_exploded = {} end
-    if forcefield_mode ~= "Chaos" then entities_chaosed = {} end
-
     if forcefield_mode == "Off" then
         ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
     else
@@ -297,8 +298,6 @@ util.create_tick_handler(function()
                     ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif forcefield_mode == "Spin" then -- Spin entities around
-                local direction = util.current_time_millis() % 2000 >= 750 and -0.5 or 0.5
-                local force = {x = 0, y = 0, z = direction * forcefield_force}
                 if not ENTITY.IS_ENTITY_A_PED(entity) and entity ~= entities.get_user_vehicle_as_handle() then
                     entity_request_control(entity)
                     ENTITY.SET_ENTITY_HEADING(entity, ENTITY.GET_ENTITY_HEADING(entity) + 2.5 * forcefield_force)
@@ -309,11 +308,11 @@ util.create_tick_handler(function()
                     if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
                         entity_request_control(entity)
                         PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.66, 0, false, false, true)
+                        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                     end
                 elseif entity ~= entities.get_user_vehicle_as_handle() then
                     entity_request_control(entity)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.66, 0, false, false, true)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif forcefield_mode == "Down" then -- Force entities into ground
                 local force = {x = 0, y = 0, z = -2 * forcefield_force}
@@ -321,24 +320,24 @@ util.create_tick_handler(function()
                     if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
                         entity_request_control(entity)
                         PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.66, 0, false, false, true)
+                        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                     end
                 elseif entity ~= entities.get_user_vehicle_as_handle() then
                     entity_request_control(entity)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.66, 0, false, false, true)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
-            elseif forcefield_mode == "Mode" then -- Slam entities into ground
+            elseif forcefield_mode == "Smash" then -- Slam entities into ground
                 local direction = util.current_time_millis() % 3000 >= 1250 and -2 or 0.5
                 local force = {x = 0, y = 0, z = direction * forcefield_force}
                 if ENTITY.IS_ENTITY_A_PED(entity) then
                     if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
                         entity_request_control(entity)
                         PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.66, 0, false, false, true)
+                        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                     end
                 elseif entity ~= entities.get_user_vehicle_as_handle() then
                     entity_request_control(entity)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.66, 0, false, false, true)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif forcefield_mode == "Chaos" then -- Chaotic entities
                 if entities_chaosed[entity] == nil or util.current_time_millis() - entities_chaosed[entity] > 1000 then
@@ -431,12 +430,165 @@ end)
 
 util.create_tick_handler(function()
     if fire_finger_mode == "Always" or (fire_finger_mode == "When Pointing" and player_is_pointing) then
-        if PAD.IS_CONTROL_JUST_PRESSED(21, 86) then
+        if PAD.IS_CONTROL_JUST_PRESSED(21, Controls.VehicleDuck) then
             local raycast = basics_do_raycast(250.0)
             if raycast.did_hit then
                 FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
             end
         end
+    end
+end)
+
+-- -- God Finger
+self_god_finger_mode_root = menu.list(self_god_finger_root, "Mode", {"ryangodfingermode"}, "When God Finger is activated.")
+
+god_finger_mode = "Off"
+god_finger_change = 2147483647
+god_finger_values = {["Off"] = true}
+
+god_finger_target = nil
+god_finger_gravity = false
+god_finger_while_pointing = true
+god_finger_while_ducking = false
+
+for _, mode in pairs(GodFingerModes) do
+    menu.toggle(self_god_finger_mode_root, mode, {"ryangodfinger" .. basics_command_name(mode)}, "", function(value)
+        if value then
+            if mode ~= god_finger_mode then
+                menu.trigger_commands("ryangodfinger" .. basics_command_name(god_finger_mode) .. " off")
+            end
+            god_finger_mode = mode
+        end
+
+        god_finger_change = util.current_time_millis()
+        god_finger_values[mode] = value
+    end, mode == "Off")
+end
+util.create_tick_handler(function()
+    if util.current_time_millis() - god_finger_change > 500 then
+        local has_choice = false
+        for _, mode in pairs(GodFingerModes) do
+            if god_finger_values[mode] then has_choice = true end
+        end
+        if not has_choice then menu.trigger_commands("ryangodfingeroff on") end
+        god_finger_change = 2147483647
+    end
+end)
+
+menu.toggle(self_god_finger_root, "Anti-Gravity", {"ryangodfingergravity"}, "Takes away object gravity when god fingered.", function(value)
+    god_finger_gravity = value    
+end)
+
+menu.toggle(self_god_finger_root, "While Pointing", {"ryangodfingerpointing"}, "If enabled, god finger activates only while pointing.", function(value)
+    god_finger_while_pointing = value
+end, true)
+
+menu.toggle(self_god_finger_root, "While Ducking", {"ryangodfingerducking"}, "If enabled, god finger activates only while holding the X key / A button.", function(value)
+    god_finger_while_ducking = value
+end)
+
+util.create_tick_handler(function()
+    for entity, start_time in pairs(entities_smashed) do
+        local time_elapsed = util.current_time_millis() - start_time
+        if time_elapsed < 2500 then
+            local direction = time_elapsed > 1250 and -3 or 0.5
+            util.toast(direction)
+            local force = {x = 0, y = 0, z = direction * 4}
+            if ENTITY.IS_ENTITY_A_PED(entity) then
+                if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                    PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                end
+            elseif entity ~= entities.get_user_vehicle_as_handle() then
+                ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+            end
+        end
+    end
+
+    if (god_finger_mode == "Off") or (god_finger_while_pointing and not player_is_pointing)
+    or (god_finger_while_ducking and not PAD.IS_CONTROL_PRESSED(21, Controls.VehicleDuck)) then
+        god_finger_target = nil;
+        return
+    end
+
+    local raycast = basics_do_raycast(500.0, 2 + 8 + 16)
+    memory.write_int(memory.script_global(4516656 + 935), NETWORK.GET_NETWORK_TIME())
+    if raycast.did_hit and raycast.hit_entity ~= nil then
+        god_finger_target = raycast.hit_coords
+        basics_esp_box(raycast.hit_entity)
+
+        ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
+
+        if god_finger_gravity then
+            ENTITY.SET_ENTITY_HAS_GRAVITY(raycast.hit_entity, false)
+            VEHICLE.SET_VEHICLE_GRAVITY(raycast.hit_entity, false)
+        end
+
+        if god_finger_mode == "Default" then
+            FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 29, 25.0, false, true, 0.0, true)
+        elseif god_finger_mode == "Push" then -- Push entities away
+            local entity_coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
+            local force = vector_normalize(vector_subtract(entity_coords, ENTITY.GET_ENTITY_COORDS(player_get_ped())))
+            force = vector_multiply(force, 0.4)
+            if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
+                if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
+                    entity_request_control(raycast.hit_entity)
+                    PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                end
+            elseif raycast.hit_entity ~= entities.get_user_vehicle_as_handle() then
+                entity_request_control(raycast.hit_entity)
+                ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+            end
+        elseif god_finger_mode == "Pull" then -- Pull entities in
+            local entity_coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
+            local force = vector_normalize(vector_subtract(ENTITY.GET_ENTITY_COORDS(player_get_ped()), entity_coords))
+            force = vector_multiply(force, 0.4)
+            if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
+                if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
+                    entity_request_control(raycast.hit_entity)
+                    PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                end
+            elseif raycast.hit_entity ~= entities.get_user_vehicle_as_handle() then
+                entity_request_control(raycast.hit_entity)
+                ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+            end
+        elseif god_finger_mode == "Smash" then -- Smash entities
+            if entities_smashed[raycast.hit_entity] == nil or util.current_time_millis() - entities_smashed[raycast.hit_entity] > 2500 then
+                entity_request_control(raycast.hit_entity)
+                entities_smashed[raycast.hit_entity] = util.current_time_millis()
+            end
+        elseif god_finger_mode == "Chaos" then -- Chaotic entities
+            if entities_chaosed[raycast.hit_entity] == nil or util.current_time_millis() - entities_chaosed[raycast.hit_entity] > 1000 then
+                local amount = 20
+                local force = {
+                    x = math.random(0, 1) == 0 and -amount or amount,
+                    y = math.random(0, 1) == 0 and -amount or amount,
+                    z = 0
+                }
+                if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
+                    if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
+                        entity_request_control(raycast.hit_entity)
+                        PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
+                        ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
+                    end
+                elseif raycast.hit_entity ~= entities.get_user_vehicle_as_handle() then
+                    entity_request_control(raycast.hit_entity)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
+                end
+                entities_chaosed[raycast.hit_entity] = util.current_time_millis()
+            end
+        elseif god_finger_mode == "Explode" then -- Explode entities
+            if entities_exploded[raycast.hit_entity] == nil then
+                local coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
+                FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z,7, 100.0, false, true, 0.0)
+                entities_exploded[raycast.hit_entity] = true
+            end
+        end
+    else
+        god_finger_target = nil
+        ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
     end
 end)
 
@@ -467,27 +619,6 @@ util.create_tick_handler(function()
         end
         if not has_choice then menu.trigger_commands("ryancrosshairoff on") end
         crosshair_change = 2147483647
-    end
-end)
-
--- -- God Finger
-player_is_pointing = false
-god_finger_target = nil
-menu.toggle_loop(self_root, "God Finger", {"ryangodfinger"}, "Pushes objects away when pointing at them.", function(value)
-    if player_is_pointing then
-        local raycast = basics_do_raycast(500.0, 2 + 8 + 16)
-        memory.write_int(memory.script_global(4516656 + 935), NETWORK.GET_NETWORK_TIME())
-        if raycast.did_hit and raycast.hit_entity ~= nil then
-            god_finger_target = raycast.hit_coords
-            ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
-            FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 29, 25.0, false, true, 0.0, true)
-            basics_esp_box(raycast.hit_entity)
-        else
-            god_finger_target = nil
-            ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
-        end
-    else
-        god_finger_target = nil
     end
 end)
 
@@ -700,7 +831,7 @@ function do_fireworks(burst_type, coords, color)
 end
 
 firework_coords = nil -- {x = -1800, y = -1000, z = 85}
-menu.toggle(world_root, "Fireworks Show", {"ryanfireworkshow"}, "A nice display of liberty on the second worst beach in America.", function(value)
+menu.toggle(world_root, "Fireworks Show", {"ryanfireworkshow"}, "A nice display of liberty where you're standing. May trigger crash protections.", function(value)
     firework_coords = value and ENTITY.GET_ENTITY_COORDS(player_get_ped()) or nil
 end)
 util.create_tick_handler(function()
@@ -1334,6 +1465,11 @@ vehicle_tires = {}
 vehicle_engine = {}
 vehicle_upgrades = {}
 
+attach_vehicle_bones = {}
+attach_vehicle_notice = {}
+attach_vehicle_offset = {}
+attach_vehicle_root = {}
+
 function setup_player(player_id)
     local player_root = menu.player_root(player_id)
     menu.divider(player_root, "Ryan's Menu")
@@ -1601,6 +1737,22 @@ function setup_player(player_id)
         STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(tank)
     end)
 
+    -- -- Attach to Vehicle
+    attach_vehicle_root[player_id] = menu.list(player_trolling_root, "Attach To...", {"ryanattach"}, "Attaches to their vehicle on a specific bone.")
+    attach_vehicle_offset[player_id] = 0.0
+    attach_vehicle_notice[player_id] = nil
+    attach_vehicle_bones[player_id] = {}
+
+    menu.action(attach_vehicle_root[player_id], "Detach", {"ryandetach"}, "Detaches from anything you're attached to.", function()
+        util.toast("Detaching...")
+        ENTITY.DETACH_ENTITY(player_get_ped(), false, false)
+    end)
+    menu.slider(attach_vehicle_root[player_id], "Offset", {"ryanattachoffset"}, "Offset of the Z coordinate.", -25, 25, 1, 0, function(value)
+        attach_vehicle_offset[player_id] = value
+    end)
+    menu.divider(attach_vehicle_root[player_id], "Attach")
+
+
     -- -- PTFX Attack
     menu.toggle_loop(player_trolling_root, "PTFX Attack", {"ryanptfxattack"}, "Tries to lag the player with PTFX.", function()
         ptfx_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), "core", "exp_grd_petrol_pump_post", {r = 0, g = 0, b = 0})
@@ -1611,9 +1763,9 @@ function setup_player(player_id)
     menu.toggle(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function(value)
         money_drop[player_id] = value and true or nil
     end)
-    
 
-    -- -- No Godmode
+
+    -- -- Remove Godmode
     local remove_godmode_notice = 0
     menu.toggle_loop(player_trolling_root, "Remove Godmode", {"ryanremovegodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
         player_remove_godmode(player_id, true)
@@ -1720,6 +1872,53 @@ function setup_player(player_id)
         menu.trigger_commands("players")
     end)
 end
+
+bones = {
+    {"Center", nil},
+    {"Hood", "bonnet"},
+    {"Windshield", "windscreen"},
+    {"License Plate", "numberplate"},
+    {"Exhaust", "exhaust"},
+    {"Trunk", "boot"}
+}
+util.create_tick_handler(function()
+    for _, player_id in pairs(players.list()) do
+        if attach_vehicle_root[player_id] ~= nil then
+            local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), true)
+            if vehicle ~= 0 then
+                if #attach_vehicle_bones[player_id] == 0 then
+                    for i = 1, #bones do
+                        local bone = bones[i][2] ~= nil and ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, bones[i][2]) or 0
+                        if bone ~= -1 then
+                            table.insert(
+                                attach_vehicle_bones[player_id],
+                                menu.action(attach_vehicle_root[player_id], bones[i][1], {"ryanattach" .. bones[i][1]}, "Attaches to the bone.", function()
+                                    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), true)
+                                    ENTITY.ATTACH_ENTITY_TO_ENTITY(player_get_ped(), vehicle, bone, 0.0, -0.2, (bone == 0 and 2.0 or 1.0) + (attach_vehicle_offset[player_id] * 0.2), 1.0, 1.0, 1, true, true, true, false, 0, true)
+                                end)
+                            )
+                        end
+                    end
+                end
+
+                if attach_vehicle_notice[player_id] ~= nil then
+                    menu.delete(attach_vehicle_notice[player_id])
+                    attach_vehicle_notice[player_id] = nil
+                end
+            else
+                for _, bone in pairs(attach_vehicle_bones[player_id]) do menu.delete(bone) end
+                attach_vehicle_bones[player_id] = {}
+
+                if attach_vehicle_notice[player_id] ~= nil then
+                    menu.delete(attach_vehicle_notice[player_id])
+                    attach_vehicle_notice[player_id] = nil
+                end
+                attach_vehicle_notice[player_id] = menu.divider(attach_vehicle_root[player_id], "Vehicle Needed")
+            end
+        end
+    end
+    util.yield(500)
+end)
 
 util.create_thread(function()
     while true do

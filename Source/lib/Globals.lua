@@ -197,6 +197,10 @@ CrashToSingleplayerEvents = {
     {-1501164935, player_id, player_id, 1001, player_id}
 }
 
+Controls = {
+    VehicleDuck = 73
+}
+
 CrashToDesktopMethods = {
     "Yo Momma",
     "Vegetation",
@@ -252,6 +256,16 @@ FireFingerModes = {
     "Off",
     "When Pointing",
     "Always"
+}
+
+GodFingerModes = {
+    "Off",
+    "Default",
+    "Push",
+    "Pull",
+    "Smash",
+    "Chaos",
+    "Explode"
 }
 
 AntihermitModes = {
