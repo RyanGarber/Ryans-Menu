@@ -1150,7 +1150,7 @@ util.create_tick_handler(function()
     for _, vehicle in pairs(vehicles) do
         local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
 
-        if all_vehicles_include_own or driver ~= player_get_ped() then
+        if all_vehicles_include_own or vehicle ~= entities.get_user_vehicle_as_handle() then
             if (all_vehicles_include_players and PED.IS_PED_A_PLAYER(driver))
             or (all_vehicles_include_npcs and not PED.IS_PED_A_PLAYER(driver)) then
 
