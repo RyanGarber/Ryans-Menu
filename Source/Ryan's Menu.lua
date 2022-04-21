@@ -1,4 +1,4 @@
-VERSION = "0.6.14"
+VERSION = "0.7.0"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -918,45 +918,15 @@ end)
 all_vehicles_include_npcs = true
 all_vehicles_include_players = false
 
-all_vehicles_make_fast = false; vehicles_make_fast = {}
-all_vehicles_make_slow = false; vehicles_make_slow = {}
-all_vehicles_downgrade = false; vehicles_downgrade = {}
-all_vehicles_no_grip = false; vehicles_no_grip = {}
-all_vehicles_burst_tires = false; vehicles_burst_tires = {}
-all_vehicles_kill_engine = false; vehicles_kill_engine = {}
-all_vehicles_lock_doors = false; vehicles_lock_doors = {}
+all_vehicles_speed = nil
+all_vehicles_grip = nil
+all_vehicles_doors = nil
+all_vehicles_tires = nil
+all_vehicles_engine = nil
+all_vehicles_upgrades = nil
 all_vehicles_catapult = false
-all_vehicles_flee = false; vehicles_flee = {}
+all_vehicles_flee = false
 
-menu.toggle(world_all_vehicles_root, "Make Fast", {"ryanallvehiclesfast"}, "Makes all nearby vehicles fast.", function(value)
-    all_vehicles_make_fast = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Make Slow", {"ryanallvehiclesslow"}, "Makes all nearby vehicles slow.", function(value)
-    all_vehicles_make_slow = value
-end, false)
-menu.toggle(world_all_vehicles_root, "No Grip", {"ryanallvehiclesnogrip"}, "Makes all nearby vehicles drift.", function(value)
-    all_vehicles_no_grip = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Burst Tires", {"ryanallvehiclesburst"}, "Makes all nearby vehicles have sudden tire loss.", function(value)
-    all_vehicles_burst_tires = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Kill Engine", {"ryanallvehiclesdead"}, "Makes all nearby vehicles dead.", function(value)
-    all_vehicles_kill_engine = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Lock Doors", {"ryanallvehicleslocked"}, "Locks all nearby vehicles.", function(value)
-    all_vehicles_lock_doors = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Downgrade", {"ryanallvehiclesdowngrade"}, "Makes all nearby vehicles completely downgraded.", function(value)
-    all_vehicles_downgrade = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Catapult", {"ryanallvehiclescatapult"}, "Makes all nearby vehicles catapult in the air.", function(value)
-    all_vehicles_catapult = value
-end, false)
-menu.toggle(world_all_vehicles_root, "Flee", {"ryanallvehiclesflee"}, "Makes all nearby vehicles flee.", function(value)
-    all_vehicles_flee = value
-end, false)
-
-menu.divider(world_all_vehicles_root, "Options")
 menu.toggle(world_all_vehicles_root, "Include NPCs", {"ryanallvehiclesnpcs"}, "If enabled, player-driven vehicles are affected too.", function(value)
     all_vehicles_include_npcs = value
 end, true)
@@ -964,6 +934,209 @@ menu.toggle(world_all_vehicles_root, "Include Players", {"ryanallvehiclesplayers
     all_vehicles_include_players = value
 end)
 
+menu.divider(world_all_vehicles_root, "Options")
+
+-- -- Speed
+local all_vehicles_speed_root = menu.list(world_all_vehicles_root, "Speed: -", {"ryanallspeed"}, "Changes the speed of all vehicles.")
+menu.toggle(all_vehicles_speed_root, "Fast", {"ryanallspeedfast"}, "Makes the speed extremely fast.", function(value)
+    if value then
+        basics_run({
+            "ryanallspeednormal off",
+            "ryanallspeedslow off"
+        })
+        util.yield(250)
+        all_vehicles_speed = "fast"
+        menu.set_menu_name(all_vehicles_speed_root, "Speed: Fast")
+    else
+        all_vehicles_speed = nil
+        menu.set_menu_name(all_vehicles_speed_root, "Speed: -")
+    end
+end)
+menu.toggle(all_vehicles_speed_root, "Slow", {"ryanallspeedslow"}, "Makes the speed extremely slow.", function(value)
+    if value then
+        basics_run({
+            "ryanallspeedfast off",
+            "ryanallspeednormal off"
+        })
+        util.yield(250)
+        all_vehicles_speed = "slow"
+        menu.set_menu_name(all_vehicles_speed_root, "Speed: Slow")
+    else
+        all_vehicles_speed = nil
+        menu.set_menu_name(all_vehicles_speed_root, "Speed: -")
+    end
+end)
+menu.toggle(all_vehicles_speed_root, "Normal", {"ryanallspeednormal"}, "Makes the speed normal again.", function(value)
+    if value then
+        basics_run({
+            "ryanallspeedfast off",
+            "ryanallspeedslow off"
+        })
+        util.yield(250)
+        all_vehicles_speed = "normal"
+        menu.set_menu_name(all_vehicles_speed_root, "Speed: Normal")
+    else
+        all_vehicles_speed = nil
+        menu.set_menu_name(all_vehicles_speed_root, "Speed: -")
+    end
+end)
+
+-- -- Grip
+local all_vehicles_grip_root = menu.list(world_all_vehicles_root, "Grip: -", {"ryanallgrip"}, "Changes the grip of all vehicles' wheels.")
+menu.toggle(all_vehicles_grip_root, "None", {"ryanallgripnone"}, "Makes the tires have no grip.", function(value)
+    if value then
+        basics_run({
+            "ryanallgripfull off"
+        })
+        util.yield(250)
+        all_vehicles_grip = "none"
+        menu.set_menu_name(all_vehicles_grip_root, "Grip: None")
+    else
+        all_vehicles_grip = nil
+        menu.set_menu_name(all_vehicles_grip_root, "Grip: -")
+    end
+end)
+menu.toggle(all_vehicles_grip_root, "Full", {"ryanallgripfull"}, "Makes the grip normal again.", function(value)
+    if value then
+        basics_run({
+            "ryanallgripnone off"
+        })
+        util.yield(250)
+        all_vehicles_grip = "full"
+        menu.set_menu_name(all_vehicles_grip_root, "Grip: Full")
+    else
+        all_vehicles_grip = nil
+        menu.set_menu_name(all_vehicles_grip_root, "Grip: -")
+    end
+end)
+
+-- -- Doors
+local all_vehicles_doors_root = menu.list(world_all_vehicles_root, "Doors: -", {"ryanalldoors"}, "Changes all vehicles' door lock state.")
+menu.toggle(all_vehicles_doors_root, "Lock", {"ryanalldoorslock"}, "Locks the vehicle's doors.", function(value)
+    if value then
+        basics_run({
+            "ryanalldoorsunlock off"
+        })
+        util.yield(250)
+        all_vehicles_doors = "lock"
+        menu.set_menu_name(all_vehicles_doors_root, "Doors: Lock")
+    else
+        all_vehicles_doors = nil
+        menu.set_menu_name(all_vehicles_doors_root, "Doors: -")
+    end
+end)
+menu.toggle(all_vehicles_doors_root, "Unlock", {"ryanalldoorsunlock"}, "Unlocks the vehicle's doors.", function(value)
+    if value then
+        basics_run({
+            "ryanalldoorslock off"
+        })
+        util.yield(250)
+        all_vehicles_doors = "unlock"
+        menu.set_menu_name(all_vehicles_doors_root, "Doors: Unlock")
+    else
+        all_vehicles_doors = nil
+        menu.set_menu_name(all_vehicles_doors_root, "Doors: -")
+    end
+end)
+
+-- -- Tires
+local all_vehicles_tires_root = menu.list(world_all_vehicles_root, "Tires: -", {"ryanalltires"}, "Changes all vehicles' tire health.")
+menu.toggle(all_vehicles_tires_root, "Burst", {"ryanalltiresburst"}, "Makes the vehicle's tires burst.", function(value)
+    if value then
+        basics_run({
+            "ryanalltiresfix off"
+        })
+        util.yield(250)
+        all_vehicles_tires = "burst"
+        menu.set_menu_name(all_vehicles_tires_root, "Tires: Burst")
+    else
+        all_vehicles_tires = nil
+        menu.set_menu_name(all_vehicles_tires_root, "Tires: -")
+    end
+end)
+menu.toggle(all_vehicles_tires_root, "Fix", {"ryanalltiresfix"}, "Fixes the vehicle's tires.", function(value)
+    if value then
+        basics_run({
+            "ryanalltiresburst off"
+        })
+        util.yield(250)
+        all_vehicles_tires = "fix"
+        menu.set_menu_name(all_vehicles_tires_root, "Tires: Fix")
+    else
+        all_vehicles_tires = nil
+        menu.set_menu_name(all_vehicles_tires_root, "Tires: -")
+    end
+end)
+
+-- -- Engine
+local all_vehicles_engine_root = menu.list(world_all_vehicles_root, "Engine: -", {"ryanallengine"}, "Changes all vehicles' engine health.")
+menu.toggle(all_vehicles_engine_root, "Kill", {"ryanallenginekill"}, "Makes the vehicle's engine die.", function(value)
+    if value then
+        basics_run({
+            "ryanallenginefix off"
+        })
+        util.yield(250)
+        all_vehicles_engine = "kill"
+        menu.set_menu_name(all_vehicles_engine_root, "Engine: Kill")
+    else
+        all_vehicles_engine = nil
+        menu.set_menu_name(all_vehicles_engine_root, "Engine: -")
+    end
+end)
+menu.toggle(all_vehicles_engine_root, "Fix", {"ryanallenginefix"}, "Fixes the vehicle's engine.", function(value)
+    if value then
+        basics_run({
+            "ryanallenginekill off"
+        })
+        util.yield(250)
+        all_vehicles_engine = "fix"
+        menu.set_menu_name(all_vehicles_engine_root, "Engine: Fix")
+    else
+        all_vehicles_engine = nil
+        menu.set_menu_name(all_vehicles_engine_root, "Engine: -")
+    end
+end)
+
+-- -- Upgrades
+local all_vehicles_upgrades_root = menu.list(world_all_vehicles_root, "Upgrades: -", {"ryanallupgrades"}, "Changes all vehicles' upgrades.")
+menu.toggle(all_vehicles_upgrades_root, "All", {"ryanallupgradesall"}, "Fully upgrades the vehicle.", function(value)
+    if value then
+        basics_run({
+            "ryanallupgradesnone off"
+        })
+        util.yield(250)
+        all_vehicles_upgrades = "all"
+        menu.set_menu_name(all_vehicles_upgrades_root, "Upgrades: All")
+    else
+        all_vehicles_upgrades = nil
+        menu.set_menu_name(all_vehicles_upgrades_root, "Upgrades: -")
+    end
+end)
+menu.toggle(all_vehicles_upgrades_root, "None", {"ryanallupgradesnone"}, "Fully downgrades the vehicle.", function(value)
+    if value then
+        basics_run({
+            "ryanallupgradesall off"
+        })
+        util.yield(250)
+        all_vehicles_upgrades = "none"
+        menu.set_menu_name(all_vehicles_upgrades_root, "Upgrades: None")
+    else
+        all_vehicles_upgrades = nil
+        menu.set_menu_name(all_vehicles_upgrades_root, "Upgrades: -")
+    end
+end)
+
+-- -- Catapult
+menu.toggle(world_all_vehicles_root, "Catapult", {"ryanallcatapult"}, "Catapults their car non-stop.", function(value)
+    all_vehicles_catapult = value
+end)
+
+-- -- Flee
+menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Catapults their car non-stop.", function(value)
+    all_vehicles_flee = value
+end)
+
+-- -- Apply Changes
 util.create_tick_handler(function()
     local player_ped = player_get_ped()
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
@@ -979,106 +1152,56 @@ util.create_tick_handler(function()
             if not PED.IS_PED_A_PLAYER(driver) then entity_request_control(vehicle, "all vehicles, npc")
             else entity_request_control_loop(vehicle, "all vehicles, player") end
 
-            local make_fast = nil
-            for i = 1, #vehicles_make_fast do
-                if vehicles_make_fast[i] == vehicle then make_fast = i end
-            end
-            if all_vehicles_make_fast and not make_fast then
+            -- Speed
+            if all_vehicles_speed == "fast" then
                 vehicle_set_speed(vehicle, VehicleSpeed.Fast)
-                table.insert(vehicles_make_fast, vehicle)
-            elseif not all_vehicles_make_fast and make_fast then
-                vehicle_set_speed(vehicle, VehicleSpeed.Normal)
-                table.remove(vehicles_make_fast, make_fast)
-            end
-
-            local make_slow = nil
-            for i = 1, #vehicles_make_slow do
-                if vehicles_make_slow[i] == vehicle then make_slow = i end
-            end
-            if all_vehicles_make_slow and not make_slow then
+            elseif all_vehicles_speed == "slow" then
                 vehicle_set_speed(vehicle, VehicleSpeed.Slow)
-                table.insert(vehicles_make_slow, vehicle)
-            elseif not all_vehicles_make_slow and make_slow then
+            elseif all_vehicles_speed == "normal" then
                 vehicle_set_speed(vehicle, VehicleSpeed.Normal)
-                table.remove(vehicles_make_slow, make_slow)
             end
 
-            local no_grip = nil
-            for i = 1, #vehicles_no_grip do
-                if vehicles_no_grip[i] == vehicle then no_grip = i end
-            end
-            if all_vehicles_no_grip and not no_grip then
+            -- Grip
+            if all_vehicles_grip == "none" then
                 vehicle_set_no_grip(vehicle, true)
-                table.insert(vehicles_no_grip, vehicle)
-            elseif not all_vehicles_no_grip and no_grip then
+            elseif all_vehicles_grip == "full" then
                 vehicle_set_no_grip(vehicle, false)
-                table.remove(vehicles_no_grip, no_grip)
             end
 
-            local burst_tires = nil
-            for i = 1, #vehicles_burst_tires do
-                if vehicles_burst_tires[i] == vehicle then burst_tires = i end
-            end
-            if all_vehicles_burst_tires and not burst_tires then
-                vehicle_set_tires_bursted(vehicle, true)
-                table.insert(vehicles_burst_tires, vehicle)
-            elseif not all_vehicles_burst_tires and burst_tires then
-                vehicle_set_tires_bursted(vehicle, false)
-                table.remove(vehicles_burst_tires, burst_tires)
-            end
-
-            local kill_engine = nil
-            for i = 1, #vehicles_kill_engine do
-                if vehicles_kill_engine[i] == vehicle then kill_engine = i end
-            end
-            if all_vehicles_kill_engine and not kill_engine then
-                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-                table.insert(vehicles_kill_engine, vehicle)
-            elseif not all_vehicles_kill_engine and kill_engine then
-                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-                table.remove(vehicles_kill_engine, kill_engine)
-            end
-
-            local lock_doors = nil
-            for i = 1, #vehicles_lock_doors do
-                if vehicles_lock_doors[i] == vehicle then lock_doors = i end
-            end
-            if all_vehicles_lock_doors and not lock_doors then
+            -- Doors
+            if all_vehicles_doors == "lock" then
                 vehicle_set_doors_locked(vehicle, true)
-                table.insert(vehicles_lock_doors, vehicle)
-            elseif not all_vehicles_lock_doors and lock_doors then
+            elseif all_vehicles_doors == "unlock" then
                 vehicle_set_doors_locked(vehicle, false)
-                table.remove(vehicles_lock_doors, lock_doors)
             end
 
-            local downgrade = nil
-            for i = 1, #vehicles_downgrade do
-                if vehicles_downgrade[i] == vehicle then downgrade = i end
+            -- Tires
+            if all_vehicles_tires == "burst" then
+                vehicle_set_tires_bursted(vehicle, true)
+            elseif all_vehicles_tires == "fix" then
+                vehicle_set_tires_bursted(vehicle, false)
             end
-            if all_vehicles_downgrade and not downgrade then
-                vehicle_set_upgraded(vehicle, false)
-                table.insert(vehicles_downgrade, vehicle)
-            elseif not all_vehicles_downgrade and downgrade then
+
+            -- Engine
+            if all_vehicles_engine == "kill" then
+                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+            elseif all_vehicles_engine == "fix" then
+                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+            end
+
+            -- Upgrades
+            if all_vehicles_upgrades == "all" then
                 vehicle_set_upgraded(vehicle, true)
-                table.remove(vehicles_downgrade, downgrade)
+            elseif all_vehicles_upgrades == "none" then
+                vehicle_set_upgraded(vehicle, false)
             end
 
             if all_vehicles_catapult then
                 vehicle_catapult(vehicle)
             end
 
-            if not PED.IS_PED_A_PLAYER(driver) then
-                local flee = nil
-                for i = 1, #vehicles_flee do
-                    if vehicles_flee[i] == vehicle then flee = i end
-                end
-                if all_vehicles_flee and not flee then
-                    TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
-                    table.insert(vehicles_flee, vehicle)
-                elseif not all_vehicles_flee and flee then
-                    TASK.CLEAR_PED_TASKS(driver)
-                    table.remove(vehicles_flee, flee)
-                end
+            if all_vehicles_flee and not PED.IS_PED_A_PLAYER(driver) then
+                TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
             end
         end
     end
