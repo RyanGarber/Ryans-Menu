@@ -917,6 +917,7 @@ end)
 -- -- All Vehicles
 all_vehicles_include_npcs = true
 all_vehicles_include_players = false
+all_vehicles_include_own = false
 
 all_vehicles_speed = nil
 all_vehicles_grip = nil
@@ -932,6 +933,9 @@ menu.toggle(world_all_vehicles_root, "Include NPCs", {"ryanallvehiclesnpcs"}, "I
 end, true)
 menu.toggle(world_all_vehicles_root, "Include Players", {"ryanallvehiclesplayers"}, "If enabled, player-driven vehicles are affected too.", function(value)
     all_vehicles_include_players = value
+end)
+menu.toggle(world_all_vehicles_root, "Include Own Vehicle", {"ryanallvehiclesown"}, "If enabled, your current vehicle is affected too.", function(value)
+    all_vehicles_include_own = value
 end)
 
 menu.divider(world_all_vehicles_root, "Options")
@@ -1145,63 +1149,65 @@ util.create_tick_handler(function()
     local vehicles = entity_get_all_nearby(player_coords, 250, NearbyEntities.Vehicles)
     for _, vehicle in pairs(vehicles) do
         local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
-        
-        if (all_vehicles_include_players and PED.IS_PED_A_PLAYER(driver))
-        or (all_vehicles_include_npcs and not PED.IS_PED_A_PLAYER(driver)) then
 
-            if not PED.IS_PED_A_PLAYER(driver) then entity_request_control(vehicle, "all vehicles, npc")
-            else entity_request_control_loop(vehicle, "all vehicles, player") end
+        if all_vehicles_include_own or driver ~= player_get_ped() then
+            if (all_vehicles_include_players and PED.IS_PED_A_PLAYER(driver))
+            or (all_vehicles_include_npcs and not PED.IS_PED_A_PLAYER(driver)) then
 
-            -- Speed
-            if all_vehicles_speed == "fast" then
-                vehicle_set_speed(vehicle, VehicleSpeed.Fast)
-            elseif all_vehicles_speed == "slow" then
-                vehicle_set_speed(vehicle, VehicleSpeed.Slow)
-            elseif all_vehicles_speed == "normal" then
-                vehicle_set_speed(vehicle, VehicleSpeed.Normal)
-            end
+                if not PED.IS_PED_A_PLAYER(driver) then entity_request_control(vehicle, "all vehicles, npc")
+                else entity_request_control_loop(vehicle, "all vehicles, player") end
 
-            -- Grip
-            if all_vehicles_grip == "none" then
-                vehicle_set_no_grip(vehicle, true)
-            elseif all_vehicles_grip == "full" then
-                vehicle_set_no_grip(vehicle, false)
-            end
+                -- Speed
+                if all_vehicles_speed == "fast" then
+                    vehicle_set_speed(vehicle, VehicleSpeed.Fast)
+                elseif all_vehicles_speed == "slow" then
+                    vehicle_set_speed(vehicle, VehicleSpeed.Slow)
+                elseif all_vehicles_speed == "normal" then
+                    vehicle_set_speed(vehicle, VehicleSpeed.Normal)
+                end
 
-            -- Doors
-            if all_vehicles_doors == "lock" then
-                vehicle_set_doors_locked(vehicle, true)
-            elseif all_vehicles_doors == "unlock" then
-                vehicle_set_doors_locked(vehicle, false)
-            end
+                -- Grip
+                if all_vehicles_grip == "none" then
+                    vehicle_set_no_grip(vehicle, true)
+                elseif all_vehicles_grip == "full" then
+                    vehicle_set_no_grip(vehicle, false)
+                end
 
-            -- Tires
-            if all_vehicles_tires == "burst" then
-                vehicle_set_tires_bursted(vehicle, true)
-            elseif all_vehicles_tires == "fix" then
-                vehicle_set_tires_bursted(vehicle, false)
-            end
+                -- Doors
+                if all_vehicles_doors == "lock" then
+                    vehicle_set_doors_locked(vehicle, true)
+                elseif all_vehicles_doors == "unlock" then
+                    vehicle_set_doors_locked(vehicle, false)
+                end
 
-            -- Engine
-            if all_vehicles_engine == "kill" then
-                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-            elseif all_vehicles_engine == "fix" then
-                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-            end
+                -- Tires
+                if all_vehicles_tires == "burst" then
+                    vehicle_set_tires_bursted(vehicle, true)
+                elseif all_vehicles_tires == "fix" then
+                    vehicle_set_tires_bursted(vehicle, false)
+                end
 
-            -- Upgrades
-            if all_vehicles_upgrades == "all" then
-                vehicle_set_upgraded(vehicle, true)
-            elseif all_vehicles_upgrades == "none" then
-                vehicle_set_upgraded(vehicle, false)
-            end
+                -- Engine
+                if all_vehicles_engine == "kill" then
+                    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+                elseif all_vehicles_engine == "fix" then
+                    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+                end
 
-            if all_vehicles_catapult then
-                vehicle_catapult(vehicle)
-            end
+                -- Upgrades
+                if all_vehicles_upgrades == "all" then
+                    vehicle_set_upgraded(vehicle, true)
+                elseif all_vehicles_upgrades == "none" then
+                    vehicle_set_upgraded(vehicle, false)
+                end
 
-            if all_vehicles_flee and not PED.IS_PED_A_PLAYER(driver) then
-                TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
+                if all_vehicles_catapult then
+                    vehicle_catapult(vehicle)
+                end
+
+                if all_vehicles_flee and not PED.IS_PED_A_PLAYER(driver) then
+                    TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
+                end
             end
         end
     end
