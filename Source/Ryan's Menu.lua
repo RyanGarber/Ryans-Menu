@@ -921,6 +921,7 @@ all_vehicles_include_players = false
 
 all_vehicles_make_fast = false; vehicles_make_fast = {}
 all_vehicles_make_slow = false; vehicles_make_slow = {}
+all_vehicles_downgrade = false; vehicles_downgrade = {}
 all_vehicles_no_grip = false; vehicles_no_grip = {}
 all_vehicles_burst_tires = false; vehicles_burst_tires = {}
 all_vehicles_kill_engine = false; vehicles_kill_engine = {}
@@ -945,6 +946,9 @@ menu.toggle(world_all_vehicles_root, "Kill Engine", {"ryanallvehiclesdead"}, "Ma
 end, false)
 menu.toggle(world_all_vehicles_root, "Lock Doors", {"ryanallvehicleslocked"}, "Locks all nearby vehicles.", function(value)
     all_vehicles_lock_doors = value
+end, false)
+menu.toggle(world_all_vehicles_root, "Downgrade", {"ryanallvehiclesdowngrade"}, "Makes all nearby vehicles completely downgraded.", function(value)
+    all_vehicles_downgrade = value
 end, false)
 menu.toggle(world_all_vehicles_root, "Catapult", {"ryanallvehiclescatapult"}, "Makes all nearby vehicles catapult in the air.", function(value)
     all_vehicles_catapult = value
@@ -1046,6 +1050,18 @@ util.create_tick_handler(function()
             elseif not all_vehicles_lock_doors and lock_doors then
                 vehicle_set_doors_locked(vehicle, false)
                 table.remove(vehicles_lock_doors, lock_doors)
+            end
+
+            local downgrade = nil
+            for i = 1, #vehicles_downgrade do
+                if vehicles_downgrade[i] == vehicle then downgrade = i end
+            end
+            if all_vehicles_downgrade and not downgrade then
+                vehicle_set_upgraded(vehicle, false)
+                table.insert(vehicles_downgrade, vehicle)
+            elseif not all_vehicles_downgrade and downgrade then
+                vehicle_set_upgraded(vehicle, true)
+                table.remove(vehicles_downgrade, downgrade)
             end
 
             if all_vehicles_catapult then
