@@ -499,7 +499,6 @@ util.create_tick_handler(function()
         local time_elapsed = util.current_time_millis() - start_time
         if time_elapsed < 2500 then
             local direction = time_elapsed > 1250 and -3 or 0.5
-            util.toast(direction)
             local force = {x = 0, y = 0, z = direction * 4}
             if ENTITY.IS_ENTITY_A_PED(entity) then
                 if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
