@@ -511,7 +511,7 @@ util.create_tick_handler(function()
         end
     end
 
-    if (god_finger_mode == "Off") or (god_finger_while_pointing and not player_is_pointing)
+    if (god_finger_while_pointing and not player_is_pointing)
     or (god_finger_while_ducking and not PAD.IS_CONTROL_PRESSED(21, Controls.VehicleDuck)) then
         god_finger_target = nil;
         return
