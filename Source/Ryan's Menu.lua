@@ -51,16 +51,7 @@ end, function()
 end)
 async_http.dispatch()
 
-
--- Debug --
-vehicle_takeovers = {}
-function save_vehicle_takeover(reason)
-    basics_keep(vehicle_takeovers, function(table, i, new_i)
-        return util.current_time_millis() - table[i][1] < 300000
-    end)
-    table.insert(vehicle_takeovers, {util.current_time_millis(), reason})
-    util.toast('Now ' .. #vehicle_takeovers .. ' takeovers')
-end
+util.show_corner_help("<b>Welcome to Ryan's Menu!</b><br><br>Stay up to date for the best experience. Any problems or suggestions?<br>Discord: RyanCSG#1460")
 
 
 -- Main Menu --

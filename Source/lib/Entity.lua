@@ -29,7 +29,7 @@ function entity_get_all_nearby(coords, range, mode)
     return nearby_entities
 end
 
-function entity_request_control(entity) -- Credit: WiriScript
+function entity_request_control(entity, reason) -- Credit: WiriScript
     if not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) then
 		local network_id = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity)
 		NETWORK.SET_NETWORK_ID_CAN_MIGRATE(network_id, true)
@@ -38,7 +38,7 @@ function entity_request_control(entity) -- Credit: WiriScript
 	return NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity)
 end
 
-function entity_request_control_loop(entity) -- Credit: WiriScript
+function entity_request_control_loop(entity, reason) -- Credit: WiriScript
     local tick = 0
     while not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) and tick < 25 do
         util.yield()
