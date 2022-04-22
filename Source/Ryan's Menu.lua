@@ -1618,6 +1618,7 @@ vehicle_engine = {}
 vehicle_upgrades = {}
 
 attach_vehicle_bones = {}
+attach_vehicle_vehicle = {}
 attach_vehicle_notice = {}
 attach_vehicle_offset = {}
 attach_vehicle_root = {}
@@ -2037,19 +2038,20 @@ util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
         if attach_vehicle_root[player_id] ~= nil then
             local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), true)
-            if vehicle ~= 0 then
-                if #attach_vehicle_bones[player_id] == 0 then
-                    for i = 1, #bones do
-                        local bone = bones[i][2] ~= nil and ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, bones[i][2]) or 0
-                        if bone ~= -1 then
-                            table.insert(
-                                attach_vehicle_bones[player_id],
-                                menu.action(attach_vehicle_root[player_id], bones[i][1], {"ryanattach" .. bones[i][1]}, "Attaches to the bone.", function()
-                                    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), true)
-                                    ENTITY.ATTACH_ENTITY_TO_ENTITY(player_get_ped(), vehicle, bone, 0.0, -0.2, (bone == 0 and 2.0 or 1.0) + (attach_vehicle_offset[player_id] * 0.2), 1.0, 1.0, 1, true, true, true, false, 0, true)
-                                end)
-                            )
-                        end
+            if vehicle ~= attach_vehicle_vehicle[player_id] then
+                for _, bone in pairs(attach_vehicle_bones[player_id]) do menu.delete(bone) end
+                attach_vehicle_bones[player_id] = {}
+
+                for i = 1, #bones do
+                    local bone = bones[i][2] ~= nil and ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, bones[i][2]) or 0
+                    if bone ~= -1 then
+                        table.insert(
+                            attach_vehicle_bones[player_id],
+                            menu.action(attach_vehicle_root[player_id], bones[i][1], {"ryanattach" .. bones[i][1]}, "Attaches to the bone.", function()
+                                local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), true)
+                                ENTITY.ATTACH_ENTITY_TO_ENTITY(player_get_ped(), vehicle, bone, 0.0, -0.2, (bone == 0 and 2.0 or 1.0) + (attach_vehicle_offset[player_id] * 0.2), 1.0, 1.0, 1, true, true, true, false, 0, true)
+                            end)
+                        )
                     end
                 end
 
@@ -2057,7 +2059,7 @@ util.create_tick_handler(function()
                     menu.delete(attach_vehicle_notice[player_id])
                     attach_vehicle_notice[player_id] = nil
                 end
-            else
+            elseif vehicle == 0 then
                 for _, bone in pairs(attach_vehicle_bones[player_id]) do menu.delete(bone) end
                 attach_vehicle_bones[player_id] = {}
 
@@ -2067,6 +2069,8 @@ util.create_tick_handler(function()
                 end
                 attach_vehicle_notice[player_id] = menu.divider(attach_vehicle_root[player_id], "Vehicle Needed")
             end
+
+            attach_vehicle_vehicle[player_id] = vehicle
         end
     end
     util.yield(500)
