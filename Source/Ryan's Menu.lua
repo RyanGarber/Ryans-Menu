@@ -1365,6 +1365,13 @@ menu.action(session_crash_all_root, "Crash To Desktop", {"ryancrashallmultiplaye
         player_teleport_to(starting_coords)
     end
 end)
+menu.action(session_crash_all_root, "Crash Using Stand", {"ryanfootlettuce"}, "Attempts to crash using Stand's Burger King Foot Lettuce.", function()
+    for _, player_id in pairs(players.list(false, crash_all_friends)) do
+        if crash_all_modders or not players.is_marked_as_modder(player_id) then
+            menu.trigger_commands("footlettuce" .. players.get_name(player_id))
+        end
+    end
+end)
 
 menu.divider(session_crash_all_root, "Options")
 menu.toggle(session_crash_all_root, "Include Friends", {"ryanomnicrashfriends"}, "If enabled, friends are included in the Omnicrash.", function(value)
@@ -1434,8 +1441,11 @@ util.create_tick_handler(function()
                     end
                 else
                     if hermits[player_id] ~= nil then 
-                        util.toast(player_name .. " is no longer inside a building after " .. basics_format_time(util.current_time_millis() - hermits[player_id]) .. ".")
-                        hermits[player_id] = nil
+                        local time = basics_format_time(util.current_time_millis() - hermits[player_id])
+                        if time ~= "" then -- we should check *before* we do the formatting, but i'm tired
+                            util.toast(player_name .. " is no longer inside a building after " .. time .. ".")
+                            hermits[player_id] = nil
+                        end
                     end
                 end
             end
@@ -1936,7 +1946,8 @@ function setup_player(player_id)
             local player_ped = player_get_ped(player_id)
             local start_time = util.current_time_millis()
 
-            if VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) ~= player_ped then
+            local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+            if driver > 0 and driver ~= player_ped then
                 basics_show_text_message(Color.Red, "Steal Vehicle", players.get_name(player_id) .. " isn't the driver!")
             end
 
