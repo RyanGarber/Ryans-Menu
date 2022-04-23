@@ -1,4 +1,4 @@
-VERSION = "0.7.0"
+VERSION = "0.7.1"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -52,6 +52,32 @@ end)
 async_http.dispatch()
 
 util.show_corner_help("<b>Welcome to Ryan's Menu!</b><br><br>Stay up to date for the best experience. Any problems or suggestions?<br>Discord: RyanCSG#1460")
+
+
+-- Switching Sessions --
+local waiting_for_session = false
+local waiting_for_coords = nil
+util.create_tick_handler(function()
+    if not NETWORK.NETWORK_IS_SESSION_ACTIVE() then
+        waiting_for_session = true
+        waiting_for_coords = nil
+    end
+    if waiting_for_session then
+        if NETWORK.NETWORK_IS_SESSION_ACTIVE() then
+            waiting_for_session = false
+            waiting_for_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
+        end
+    end
+    if waiting_for_coords ~= nil then
+        local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
+        if vector_distance(coords, waiting_for_coords) > 0.1 then
+            waiting_for_coords = nil
+        end
+    end
+end)
+function is_switching_sessions()
+    return waiting_for_session or waiting_for_coords ~= nil
+end
 
 
 -- Main Menu --
@@ -223,6 +249,7 @@ forcefield_values = {["Off"] = true}
 
 forcefield_size = 10
 forcefield_force = 1
+forcefield_draw_sphere = false
 
 for _, mode in pairs(ForcefieldModes) do
     menu.toggle(self_forcefield_root, mode, {"ryanforcefield" .. basics_command_name(mode)}, "", function(value)
@@ -248,24 +275,28 @@ util.create_tick_handler(function()
 end)
 
 menu.divider(self_forcefield_root, "Options")
-menu.slider(self_forcefield_root, "Size", {"ryanforcefieldsize"}, "Diameter of the forcefield sphere.", 10, 250, 10, 10, function(value)
+forcefield_size_input = menu.slider(self_forcefield_root, "Size", {"ryanforcefieldsize"}, "Diameter of the forcefield sphere.", 10, 250, 10, 10, function(value)
     forcefield_size = value
 end)
 menu.slider(self_forcefield_root, "Force", {"ryanforcefieldforce"}, "Force applied by the forcefield.", 1, 100, 1, 1, function(value)
     forcefield_force = value
 end)
 
+menu.on_focus(forcefield_size_input, function() forcefield_draw_sphere = true end)
+menu.on_blur(forcefield_size_input, function() forcefield_draw_sphere = false end)
+
 util.create_tick_handler(function()
-    if forcefield_mode == "Off" then
-        ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
-    else
+    if forcefield_draw_sphere then
+        local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
+        GRAPHICS._DRAW_SPHERE(coords.x, coords.y, coords.z, forcefield_size, esp_color.r * 255, esp_color.g * 255, esp_color.b * 255, 0.3)
+    end
+
+    if forcefield_mode ~= "Off" then
         local player_ped = player_get_ped()
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
         local nearby = entity_get_all_nearby(player_coords, forcefield_size, NearbyEntities.All)
         for _, entity in pairs(nearby) do
             if forcefield_mode == "Push" then -- Push entities away
-                ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, true, false, false, 1, false)
-                
                 local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
                 local force = vector_normalize(vector_subtract(entity_coords, player_coords))
                 force = vector_multiply(force, forcefield_force * 0.25)
@@ -280,8 +311,6 @@ util.create_tick_handler(function()
                     ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif forcefield_mode == "Pull" then -- Pull entities in
-                ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, true, false, false, 1, false)
-                
                 local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
                 local force = vector_normalize(vector_subtract(player_coords, entity_coords))
                 force = vector_multiply(force, forcefield_force * 0.25)
@@ -358,8 +387,6 @@ util.create_tick_handler(function()
                     entities_chaosed[entity] = util.current_time_millis()
                 end
             elseif forcefield_mode == "Destroy" then -- Explode entities
-                ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
-
                 if entities_exploded[entity] == nil then
                     if entity ~= player_ped and entity ~= player_vehicle then
                         local coords = ENTITY.GET_ENTITY_COORDS(entity)
@@ -502,6 +529,8 @@ util.create_tick_handler(function()
         end
     end
 
+    ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, god_finger_mode == "Default", false, false, false, 1, false)
+
     if (god_finger_while_pointing and not player_is_pointing)
     or (god_finger_while_ducking and not PAD.IS_CONTROL_PRESSED(21, Controls.VehicleDuck)) then
         god_finger_target = nil;
@@ -513,9 +542,7 @@ util.create_tick_handler(function()
     if raycast.did_hit and raycast.hit_entity ~= nil then
         god_finger_target = raycast.hit_coords
         basics_esp_box(raycast.hit_entity)
-
-        ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, true, false, false, false, 1, false)
-
+        
         if god_finger_gravity then
             ENTITY.SET_ENTITY_HAS_GRAVITY(raycast.hit_entity, false)
             VEHICLE.SET_VEHICLE_GRAVITY(raycast.hit_entity, false)
@@ -585,7 +612,6 @@ util.create_tick_handler(function()
         end
     else
         god_finger_target = nil
-        ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, false, false, false, false, 1, false)
     end
 end)
 
@@ -620,9 +646,16 @@ util.create_tick_handler(function()
 end)
 
 -- -- All Players Visible
-menu.toggle_loop(self_root, "All Players Visible", {"ryannoinvisible"}, "Makes all invisible players visible again.", function()
+menu.toggle_loop(self_root, "All Entities Visible", {"ryannoinvisible"}, "Makes all invisible entities visible again.", function()
     for _, player_id in pairs(players.list()) do
-        ENTITY.SET_ENTITY_VISIBLE(player_get_ped(player_id), true, 0)
+        local player_ped = player_get_ped(player_id)
+        ENTITY.SET_ENTITY_ALPHA(player_ped, 255)
+        ENTITY.SET_ENTITY_VISIBLE(player_ped, true, 0)
+        local vehicle = VEHICLE.GET_VEHICLE_PED_IS_IN(player_ped, true)
+        if vehicle ~= 0 then
+            ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
+            ENTITY.SET_ENTITY_VISIBLE(vehicle, true, 0)
+        end
     end
 end)
 
@@ -671,6 +704,17 @@ util.create_tick_handler(function()
         end
     end
     util.yield(200)
+end)
+
+-- -- Searchlight
+searchlight = false
+menu.toggle(self_root, "Searchlight", {"ryansearchlight"}, "Enables searchlights on police vehicles.", function(value)
+    searchlight = value
+end)
+util.create_tick_handler(function()
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
+    if vehicle ~= 0 then VEHICLE.SET_VEHICLE_SEARCHLIGHT(vehicle, searchlight, true) end
+    util.yield(100)
 end)
 
 -- -- E-Brake
@@ -1405,7 +1449,7 @@ end)
 hermits = {}
 hermit_list = {}
 util.create_tick_handler(function()
-    if antihermit_mode ~= "Off" then
+    if not is_switching_sessions() then
         for _, player_id in pairs(players.list(false)) do
             if not players.is_marked_as_modder(player_id) then
                 local tracked = false
@@ -1413,36 +1457,98 @@ util.create_tick_handler(function()
                 if players.is_in_interior(player_id) then
                     if hermits[player_id] == nil then
                         hermits[player_id] = util.current_time_millis()
-                        util.toast(player_name .. " is now inside a building.")
+                        if antihermit_mode ~= "Off" then
+                            util.toast(player_name .. " is now inside a building.")
+                        end
                     elseif hermit_list[player_id] ~= nil then
                         hermits[player_id] = util.current_time_millis() - 210000
                         hermit_list[player_id] = nil
                     elseif util.current_time_millis() - hermits[player_id] >= 300000 then
                         hermits[player_id] = util.current_time_millis() - 210000
                         hermit_list[player_id] = true
-                        basics_show_text_message(Color.Purple, "Anti-Hermit", player_name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
-                        player_do_sms_spam(player_id, "You've been inside too long. Stop being weird and play the game!", 3000)
-                        if antihermit_mode == "Teleport Outside" then
-                            menu.trigger_commands("apt1" .. player_name)
-                        elseif antihermit_mode == "Kick" then
-                            menu.trigger_commands("kick" .. player_name)
-                        elseif antihermit_mode == "Crash" then
-                            menu.trigger_commands("footlettuce" .. player_name)
+                        if antihermit_mode ~= "Off" then
+                            basics_show_text_message(Color.Purple, "Anti-Hermit", player_name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
+                            player_do_sms_spam(player_id, "You've been inside too long. Stop being weird and play the game!", 1500)
+                            if antihermit_mode == "Teleport Outside" then
+                                menu.trigger_commands("apt1" .. player_name)
+                            elseif antihermit_mode == "Kick" then
+                                menu.trigger_commands("kick" .. player_name)
+                            elseif antihermit_mode == "Crash" then
+                                menu.trigger_commands("footlettuce" .. player_name)
+                            end
                         end
                     end
                 else
                     if hermits[player_id] ~= nil then 
                         local time = basics_format_time(util.current_time_millis() - hermits[player_id])
-                        if time ~= "" then -- we should check *before* we do the formatting, but i'm tired
-                            util.toast(player_name .. " is no longer inside a building after " .. time .. ".")
+                        if time ~= "" then
+                            if antihermit_mode ~= "Off" then
+                                util.toast(player_name .. " is no longer inside a building after " .. time .. ".")
+                            end
                             hermits[player_id] = nil
                         end
                     end
                 end
             end
         end
+    else
+        hermits = {}
+        hermit_list = {}
     end
     util.yield(500)
+end)
+
+-- -- Free Slots
+session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
+
+max_players_amount = 0
+max_players_include_modders = false
+
+max_players_prefer_kd = true
+max_players_prefer_modders = false
+
+menu.slider(session_max_players_root, "Amount", {"ryanmaxamount"}, "The maximum amount of players to allow in the session.", 0, 32, 0, 1, function(value)
+    max_players_amount = value
+end)
+menu.toggle(session_max_players_root, "Include Modders", {"ryanmaxincludemodders"}, "If enabled, modders will be kicked.", function(value)
+    max_players_include_modders = value
+end)
+
+menu.divider(session_max_players_root, "Kick")
+menu.toggle(session_max_players_root, "High K/D", {"ryanmaxpreferkd"}, "Kicks players with the highest K/D first.", function(value)
+    if value then menu.trigger_commands("ryanmaxprefermodders off") end
+    max_players_prefer_kd = value
+end, true)
+menu.toggle(session_max_players_root, "Modders", {"ryanmaxprefermodders"}, "Kicks players detected as modders first.", function(value)
+    if value then menu.trigger_commands("ryanmaxpreferkd off") end
+    max_players_modders = value
+end)
+
+util.create_tick_handler(function()
+    if max_players_amount ~= 0 then
+        local player_list = players.list()
+        if #player_list > max_players_amount then
+            table.sort(player_list, function(player_1, player_2)
+                if max_players_prefer_kd then
+                    return players.get_kd(player_1) > players.get_kd(player_2)
+                elseif max_players_prefer_modders then
+                    return (players.is_marked_as_modder(player_1) and 1 or 0) > (players.is_marked_as_modder(player_2) and 1 or 0)
+                end
+            end)
+
+            local kick_count = #player_list - max_players_amount
+            local kicked = 0
+            for i = 1, #player_list do
+                if player_list[i] ~= players.user() and kicked < kick_count then
+                    local reason = max_players_prefer_kd and ("having a " .. string.format("%.1f", players.get_kd(player_list[i])) .. " K/D") or ("being a modder")
+                    basics_show_text_message(Color.Purple, "Max Players", "Kicking " .. players.get_name(player_list[i]) .. " for " .. reason .. ".")
+                    menu.trigger_commands("kick" .. players.get_name(player_list[i]))
+                    kicked = kicked + 1
+                end
+            end
+        end
+    end
+    util.yield(1000)
 end)
 
 -- -- Mk II Chaos
@@ -1609,14 +1715,159 @@ util.create_tick_handler(function()
 end)
 
 
+-- Chat Menu --
+menu.divider(chat_root, "Translate")
+chat_new_message_root = menu.list(chat_root, "New Message...", {"ryanchatnew"})
+chat_history_root = menu.list(chat_root, "Message History...", {"ryanchathistory"})
+
+-- -- Send Message
+chat_message = ""
+chat_prefix = ""
+
+-- -- Message
+menu.text_input(chat_new_message_root, "Message", {"ryanchatmessage"}, "The message to send in chat.", function(value)
+    chat_message = value
+end, "")
+
+-- -- Send Message
+chat_send_root = menu.list(chat_new_message_root, "Send...", {"ryantranslatesend"}, "Translate and send the message.")
+menu.action(chat_send_root, "Send", {"ryanchatsend"}, "Send without translating.", function()
+    chat.send_message(chat_prefix .. chat_message, false, true, true)
+    menu.focus(chat_send_root)
+end)
+
+menu.divider(chat_new_message_root, "Options")
+
+-- -- Logo
+chat_prefix_root = menu.list(chat_new_message_root, "Logo: None", {"ryanchatlogo"}, "Adds a special logo to the beginning of the message.")
+menu.action(chat_prefix_root, "Rockstar", {"ryanchatlogors"}, "Adds the Rockstar logo.", function()
+    menu.set_menu_name(chat_prefix_root, "Logo: Rockstar")
+    menu.focus(chat_prefix_root)
+    chat_prefix = "∑ "
+end)
+menu.action(chat_prefix_root, "Rockstar Verified", {"ryanchatlogorsverified"}, "Adds the Rockstar Verified logo.", function()
+    menu.set_menu_name(chat_prefix_root, "Logo: Rockstar Verified")
+    menu.focus(chat_prefix_root)
+    chat_prefix = "¦ "
+end)
+menu.action(chat_prefix_root, "Lock", {"ryanchatlogors"}, "Adds the lock logo.", function()
+    menu.set_menu_name(chat_prefix_root, "Logo: Lock")
+    menu.focus(chat_prefix_root)
+    chat_prefix = "Ω "
+end)
+
+menu.divider(chat_send_root, "Translate")
+menu.action(chat_send_root, "Spanish", {"ryantranslatespanish"}, "Translate to Spanish.", function()
+    util.toast("Translating message to Spanish...")
+    session_translate_to(chat_prefix .. chat_message, "ES", false)
+    menu.focus(chat_send_root)
+end)
+menu.action(chat_send_root, "Russian", {"ryantranslaterussian"}, "Translate to Russian.", function()
+    util.toast("Translating message to Russian...")
+    session_translate_to(chat_prefix .. chat_message, "RU", true)
+    menu.focus(chat_send_root)
+end)
+menu.action(chat_send_root, "Russian (Cyrillic)", {"ryantranslatecyrillic"}, "Translate to Russian (Cyrillic).", function()
+    util.toast("Translating message to Russian (Cyrillic)...")
+    session_translate_to(chat_prefix .. chat_message, "RU", false)
+    menu.focus(chat_send_root)
+end)
+menu.action(chat_send_root, "French", {"ryantranslatefrench"}, "Translate to French.", function()
+    util.toast("Translating message to French...")
+    session_translate_to(chat_prefix .. chat_message, "FR", false)
+    menu.focus(chat_send_root)
+end)
+menu.action(chat_send_root, "German", {"ryantranslategerman"}, "Translate to German.", function()
+    util.toast("Translating message to German...")
+    session_translate_to(chat_prefix .. chat_message, "DE", false)
+    menu.focus(chat_send_root)
+end)
+menu.action(chat_send_root, "Italian", {"ryantranslateitalian"}, "Translate to Italian.", function()
+    util.toast("Translating message to Italian...")
+    session_translate_to(chat_prefix .. chat_message, "IT", false)
+    menu.focus(chat_send_root)
+end)
+
+menu.divider(chat_root, "Chat Options")
+
+-- -- Kick Money Beggars
+kick_money_beggars = false
+menu.toggle(chat_root, "Kick Money Beggars", {"ryankickbeggars"}, "Kicks anyone who begs for money.", function(value)
+    kick_money_beggars = value
+end)
+
+-- -- Kick Car Meeters
+kick_car_meeters = false
+menu.toggle(chat_root, "Kick Car Meeters", {"ryankickcarmeets"}, "Kicks anyone who suggests a car meet.", function(value)
+    kick_car_meeters = value
+end)
+
+chat_history = {}
+chat_index = 1
+chat.on_message(function(packet_sender, sender, message, is_team_chat)
+    --if sender ~= players.user() then
+    local message_lower = message:lower()
+    if kick_money_beggars then
+        if (message_lower:find("can") or message_lower:find("?") or message_lower:find("please") or message_lower:find("plz") or message_lower:find("pls") or message_lower:find("drop"))
+        and message_lower:find("money") then
+
+            basics_show_text_message(Color.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
+            menu.trigger_commands("footlettuce" .. players.get_name(sender))
+        end
+    end
+    if kick_car_meeters then
+        if (message_lower:find("want to") or message_lower:find("wanna") or message_lower:find("at") or message_lower:find("is") or message_lower:find("?"))
+        and message_lower:find("car") and message_lower:find("meet") then
+
+            basics_show_text_message(Color.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
+            menu.trigger_commands("footlettuce" .. players.get_name(sender))
+        end
+    end
+    --end
+
+    if #chat_history > 30 then
+        menu.delete(chat_history[1])
+        table.remove(chat_history, 1)
+    end
+    table.insert(
+        chat_history,
+        menu.action(chat_history_root, "\"" .. message .. "\"", {"ryanchathistory" .. chat_index}, "Translate this message into English.", function()
+            session_translate_from(message)
+        end)
+    )
+    chat_index = chat_index + 1
+end)
+
+
+-- Settings Menu --
+esp_color = {r = 0.29, g = 0.69, b = 1.0}
+menu.divider(settings_root, "Updates")
+menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
+menu.hyperlink(settings_root, "Website", "https://ryan.gq/menu/", "Opens the official website, for downloading the installer and viewing the changelog.")
+menu.divider(settings_root, "Options")
+menu.colour(settings_root, "ESP Color", {"ryanespcolor"}, "The color of on-screen ESP.", 0.29, 0.69, 1.0, 1.0, false, function(color)
+    esp_color.r = color.r
+    esp_color.g = color.g
+    esp_color.b = color.b
+end)
+menu.action(settings_root, "Allow Fireworks", {"ryanallowfireworks"}, "Disable Crash Event - Timeout to allow for fireworks.", function()
+    menu.focus(menu.ref_by_path("Online>Protections>Events>Crash Event>Timeout"))
+end)
+
+
 -- Player Options --
+ptfx_attack = {}
 money_drop = {}
+remove_godmode = {}
+remove_godmode_notice = {}
+
 vehicle_speed = {}
 vehicle_grip = {}
 vehicle_doors = {}
 vehicle_tires = {}
 vehicle_engine = {}
 vehicle_upgrades = {}
+vehicle_catapult = {}
 
 attach_vehicle_bones = {}
 attach_vehicle_vehicle = {}
@@ -1827,15 +2078,8 @@ function setup_player(player_id)
     end)
 
     -- -- Catapult
-    menu.toggle_loop(player_vehicle_root, "Catapult", {"ryancatapult"}, "Catapults their car non-stop.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-        if vehicle ~= 0 then
-            entity_request_control_loop(vehicle, "player vehicle, catapult")
-            if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-                vehicle_catapult(vehicle)
-            end
-        end
-        util.yield(500)
+    menu.toggle(player_vehicle_root, "Catapult", {"ryancatapult"}, "Catapults their car non-stop.", function(value)
+        vehicle_catapult[player_id] = value and true or nil
     end)
 
 
@@ -1908,9 +2152,8 @@ function setup_player(player_id)
 
 
     -- -- PTFX Attack
-    menu.toggle_loop(player_trolling_root, "PTFX Attack", {"ryanptfxattack"}, "Tries to lag the player with PTFX.", function()
-        ptfx_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), "core", "exp_grd_petrol_pump_post", {r = 0, g = 0, b = 0})
-        ptfx_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), "core", "exp_grd_petrol_pump", {r = 0, g = 0, b = 0})
+    menu.toggle(player_trolling_root, "PTFX Attack", {"ryanptfxattack"}, "Tries to lag the player with PTFX.", function(value)
+        ptfx_attack[player_id] = value and true or nil
     end)
 
     -- -- Fake Money Drop
@@ -1920,13 +2163,9 @@ function setup_player(player_id)
 
 
     -- -- Remove Godmode
-    local remove_godmode_notice = 0
-    menu.toggle_loop(player_trolling_root, "Remove Godmode", {"ryanremovegodmode"}, "Removes godmode from Kiddions users and their vehicles.", function()
-        player_remove_godmode(player_id, true)
-        if util.current_time_millis() - remove_godmode_notice >= 10000 then
-            util.toast("Still removing godmode from " .. players.get_name(player_id) .. ".")
-            remove_godmode_notice = util.current_time_millis()
-        end
+    menu.toggle(player_trolling_root, "Remove Godmode", {"ryanremovegodmode"}, "Removes godmode from Kiddions users and their vehicles.", function(value)
+        remove_godmode[player_id] = value and true or nil
+        remove_godmode_notice[player_id] = util.current_time_millis()
     end)
 
     -- -- Steal Vehicle
@@ -2038,6 +2277,14 @@ bones = {
 }
 util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
+        if remove_godmode[player_id] == true then
+            player_remove_godmode(player_id, true)
+            if util.current_time_millis() - remove_godmode_notice[player_id] >= 10000 then
+                util.toast("Still removing godmode from " .. players.get_name(player_id) .. ".")
+                remove_godmode_notice[player_id] = util.current_time_millis()
+            end
+        end
+
         if attach_vehicle_root[player_id] ~= nil then
             local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), true)
             if vehicle ~= attach_vehicle_vehicle[player_id] then
@@ -2084,6 +2331,13 @@ util.create_thread(function()
             player_fake_money_drop(player_id)
         end
         util.yield()
+    end
+end) 
+
+util.create_tick_handler(function()
+    for _, player_id in pairs(ptfx_attack) do
+        ptfx_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), "core", "exp_grd_petrol_pump_post", {r = 0, g = 0, b = 0})
+        ptfx_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), "core", "exp_grd_petrol_pump", {r = 0, g = 0, b = 0})
     end
 end)
 
@@ -2168,152 +2422,45 @@ util.create_tick_handler(function()
                 vehicle_set_upgraded(vehicle, false)
             end)
         end
-    end
-    util.yield(250)
-end)
 
-
--- Chat Menu --
-menu.divider(chat_root, "Translate")
-chat_new_message_root = menu.list(chat_root, "New Message...", {"ryanchatnew"})
-chat_history_root = menu.list(chat_root, "Message History...", {"ryanchathistory"})
-
--- -- Send Message
-chat_message = ""
-chat_prefix = ""
-
--- -- Message
-menu.text_input(chat_new_message_root, "Message", {"ryanchatmessage"}, "The message to send in chat.", function(value)
-    chat_message = value
-end, "")
-
--- -- Send Message
-chat_send_root = menu.list(chat_new_message_root, "Send...", {"ryantranslatesend"}, "Translate and send the message.")
-menu.action(chat_send_root, "Send", {"ryanchatsend"}, "Send without translating.", function()
-    chat.send_message(chat_prefix .. chat_message, false, true, true)
-    menu.focus(chat_send_root)
-end)
-
-menu.divider(chat_new_message_root, "Options")
-
--- -- Logo
-chat_prefix_root = menu.list(chat_new_message_root, "Logo: None", {"ryanchatlogo"}, "Adds a special logo to the beginning of the message.")
-menu.action(chat_prefix_root, "Rockstar", {"ryanchatlogors"}, "Adds the Rockstar logo.", function()
-    menu.set_menu_name(chat_prefix_root, "Logo: Rockstar")
-    menu.focus(chat_prefix_root)
-    chat_prefix = "∑ "
-end)
-menu.action(chat_prefix_root, "Rockstar Verified", {"ryanchatlogorsverified"}, "Adds the Rockstar Verified logo.", function()
-    menu.set_menu_name(chat_prefix_root, "Logo: Rockstar Verified")
-    menu.focus(chat_prefix_root)
-    chat_prefix = "¦ "
-end)
-menu.action(chat_prefix_root, "Lock", {"ryanchatlogors"}, "Adds the lock logo.", function()
-    menu.set_menu_name(chat_prefix_root, "Logo: Lock")
-    menu.focus(chat_prefix_root)
-    chat_prefix = "Ω "
-end)
-
-menu.divider(chat_send_root, "Translate")
-menu.action(chat_send_root, "Spanish", {"ryantranslatespanish"}, "Translate to Spanish.", function()
-    util.toast("Translating message to Spanish...")
-    session_translate_to(chat_prefix .. chat_message, "ES", false)
-    menu.focus(chat_send_root)
-end)
-menu.action(chat_send_root, "Russian", {"ryantranslaterussian"}, "Translate to Russian.", function()
-    util.toast("Translating message to Russian...")
-    session_translate_to(chat_prefix .. chat_message, "RU", true)
-    menu.focus(chat_send_root)
-end)
-menu.action(chat_send_root, "Russian (Cyrillic)", {"ryantranslatecyrillic"}, "Translate to Russian (Cyrillic).", function()
-    util.toast("Translating message to Russian (Cyrillic)...")
-    session_translate_to(chat_prefix .. chat_message, "RU", false)
-    menu.focus(chat_send_root)
-end)
-menu.action(chat_send_root, "French", {"ryantranslatefrench"}, "Translate to French.", function()
-    util.toast("Translating message to French...")
-    session_translate_to(chat_prefix .. chat_message, "FR", false)
-    menu.focus(chat_send_root)
-end)
-menu.action(chat_send_root, "German", {"ryantranslategerman"}, "Translate to German.", function()
-    util.toast("Translating message to German...")
-    session_translate_to(chat_prefix .. chat_message, "DE", false)
-    menu.focus(chat_send_root)
-end)
-menu.action(chat_send_root, "Italian", {"ryantranslateitalian"}, "Translate to Italian.", function()
-    util.toast("Translating message to Italian...")
-    session_translate_to(chat_prefix .. chat_message, "IT", false)
-    menu.focus(chat_send_root)
-end)
-
-menu.divider(chat_root, "Chat Options")
--- -- Kick Money Beggars
-kick_money_beggars = false
-menu.toggle(chat_root, "Kick Money Beggars", {"ryankickbeggars"}, "Kicks anyone who begs for money.", function(value)
-    kick_money_beggars = value
-end)
-
--- -- Kick Car Meeters
-kick_car_meeters = false
-menu.toggle(chat_root, "Kick Car Meeters", {"ryankickcarmeets"}, "Kicks anyone who suggests a car meet.", function(value)
-    kick_car_meeters = value
-end)
-
-chat_history = {}
-chat_index = 1
-chat.on_message(function(packet_sender, sender, message, is_team_chat)
-    --if sender ~= players.user() then
-    local message_lower = message:lower()
-    if kick_money_beggars then
-        if (message_lower:find("can") or message_lower:find("?") or message_lower:find("please") or message_lower:find("plz") or message_lower:find("pls") or message_lower:find("drop"))
-        and message_lower:find("money") then
-
-            basics_show_text_message(Color.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
-            menu.trigger_commands("footlettuce" .. players.get_name(sender))
+        -- Catapult
+        if vehicle_catapult[player_id] == true then
+            get_control(player_id, function(vehicle)
+                vehicle_catapult(vehicle)
+            end)
         end
     end
-    if kick_car_meeters then
-        if (message_lower:find("want to") or message_lower:find("wanna") or message_lower:find("at") or message_lower:find("is") or message_lower:find("?"))
-        and message_lower:find("car") and message_lower:find("meet") then
-
-            basics_show_text_message(Color.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
-            menu.trigger_commands("footlettuce" .. players.get_name(sender))
-        end
-    end
-    --end
-
-    if #chat_history > 30 then
-        menu.delete(chat_history[1])
-        table.remove(chat_history, 1)
-    end
-    table.insert(
-        chat_history,
-        menu.action(chat_history_root, "\"" .. message .. "\"", {"ryanchathistory" .. chat_index}, "Translate this message into English.", function()
-            session_translate_from(message)
-        end)
-    )
-    chat_index = chat_index + 1
+    util.yield(333)
 end)
 
+function cleanup_player(player_id)
+    money_drop[player_id] = nil
+    ptfx_attack[player_id] = nil
+    remove_godmode[player_id] = nil
+    remove_godmode_notice[player_id] = nil
+    
+    vehicle_speed[player_id] = nil
+    vehicle_grip[player_id] = nil
+    vehicle_doors[player_id] = nil
+    vehicle_tires[player_id] = nil
+    vehicle_engine[player_id] = nil
+    vehicle_upgrades[player_id] = nil
+    vehicle_catapult[player_id] = nil
+    
+    attach_vehicle_bones[player_id] = nil
+    attach_vehicle_vehicle[player_id] = nil
+    attach_vehicle_notice[player_id] = nil
+    attach_vehicle_offset[player_id] = nil
+    attach_vehicle_root[player_id] = nil
 
--- Settings Menu --
-esp_color = {r = 0.29, g = 0.69, b = 1.0}
-menu.divider(settings_root, "Updates")
-menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
-menu.hyperlink(settings_root, "Website", "https://ryan.gq/menu/", "Opens the official website, for downloading the installer and viewing the changelog.")
-menu.divider(settings_root, "Options")
-menu.colour(settings_root, "ESP Color", {"ryanespcolor"}, "The color of on-screen ESP.", 0.29, 0.69, 1.0, 1.0, false, function(color)
-    esp_color.r = color.r
-    esp_color.g = color.g
-    esp_color.b = color.b
-end)
-menu.action(settings_root, "Allow Fireworks", {"ryanallowfireworks"}, "Disable Crash Event - Timeout to allow for fireworks.", function()
-    menu.focus(menu.ref_by_path("Online>Protections>Events>Crash Event>Timeout"))
-end)
+    hermits[player_id] = nil
+    hermit_list[player_id] = nil
+end
 
 
 -- Initialize --
 players.on_join(function(player_id) setup_player(player_id) end)
+players.on_leave(function(player_id) cleanup_player(player_id) end)
 players.dispatch_on_join()
 
 util.keep_running()
