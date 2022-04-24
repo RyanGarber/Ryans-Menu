@@ -2412,17 +2412,17 @@ util.create_tick_handler(function()
             if vehicle_speed[player_id] == "fast" and vehicle_state[vehicle].speed ~= "fast" then
                 mod_vehicle(vehicle, function()
                     vehicle_set_speed(vehicle, VehicleSpeed.Fast)
-                    vehicle_state[vehicle] = "fast"
+                    vehicle_state[vehicle].speed = "fast"
                 end, true)
             elseif vehicle_speed[player_id] == "slow" and vehicle_state[vehicle].speed ~= "slow" then
                 mod_vehicle(vehicle, function()
                     vehicle_set_speed(vehicle, VehicleSpeed.Slow)
-                    vehicle_state[vehicle] = "slow"
+                    vehicle_state[vehicle].speed = "slow"
                 end, true)
             elseif vehicle_speed[player_id] == "normal" and vehicle_state[vehicle].speed ~= "normal" then
                 mod_vehicle(vehicle, function()
                     vehicle_set_speed(vehicle, VehicleSpeed.Normal)
-                    vehicle_state[vehicle] = "normal"
+                    vehicle_state[vehicle].speed = "normal"
                 end, true)
             end
 
