@@ -1,4 +1,4 @@
-VERSION = "0.7.1"
+VERSION = "0.7.2"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -706,17 +706,6 @@ util.create_tick_handler(function()
     util.yield(200)
 end)
 
--- -- Searchlight
-searchlight = false
-menu.toggle(self_root, "Searchlight", {"ryansearchlight"}, "Enables searchlights on police vehicles.", function(value)
-    searchlight = value
-end)
-util.create_tick_handler(function()
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
-    if vehicle ~= 0 then VEHICLE.SET_VEHICLE_SEARCHLIGHT(vehicle, searchlight, true) end
-    util.yield(100)
-end)
-
 -- -- E-Brake
 ebrake = false
 menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while holding Shift.", function(value)
@@ -730,6 +719,24 @@ util.create_tick_handler(function()
             vehicle_set_no_grip(vehicle, PAD.IS_CONTROL_PRESSED(21, 21))
         end
     end
+end)
+
+-- -- Searchlight
+searchlight = false
+menu.toggle(self_root, "Searchlight", {"ryansearchlight"}, "Enables searchlights on police vehicles.", function(value)
+    searchlight = value
+end)
+util.create_tick_handler(function()
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
+    if vehicle ~= 0 then
+        local is_police_vehicle = false
+        for _, police_vehicle in pairs(PoliceVehicles) do
+            if vehicle == police_vehicle then is_police_vehicle = true end
+        end
+        
+        if is_police_vehicle then VEHICLE.SET_VEHICLE_SEARCHLIGHT(vehicle, searchlight, true) end
+    end
+    util.yield(100)
 end)
 
 
@@ -1175,6 +1182,15 @@ menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Catapults their c
     all_vehicles_flee = value
 end)
 
+function mod_vehicle(vehicle, action, take_control)
+    if take_control then entity_request_control_loop(vehicle, "vehicle trolling, generic") end
+    if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
+        action(vehicle)
+    end
+end
+
+all_vehicles_state = {}
+
 -- -- Apply Changes
 util.create_tick_handler(function()
     local player_ped = player_get_ped()
@@ -1184,63 +1200,105 @@ util.create_tick_handler(function()
     local vehicles = entity_get_all_nearby(player_coords, 250, NearbyEntities.Vehicles)
     for _, vehicle in pairs(vehicles) do
         local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+        local is_a_player = PED.IS_PED_A_PLAYER(driver)
 
         if all_vehicles_include_own or vehicle ~= entities.get_user_vehicle_as_handle() then
-            if (all_vehicles_include_players and PED.IS_PED_A_PLAYER(driver))
-            or (all_vehicles_include_npcs and not PED.IS_PED_A_PLAYER(driver)) then
-
-                if not PED.IS_PED_A_PLAYER(driver) then entity_request_control(vehicle, "all vehicles, npc")
-                else entity_request_control_loop(vehicle, "all vehicles, player") end
+            if (all_vehicles_include_players and is_a_player) or (all_vehicles_include_npcs and not is_a_player) then
+                if is_a_player and all_vehicles_state[vehicle] == nil then all_vehicles_state[vehicle] = {} end
+                if not is_a_player then entity_request_control(vehicle, "all vehicles, npc") end
 
                 -- Speed
-                if all_vehicles_speed == "fast" then
-                    vehicle_set_speed(vehicle, VehicleSpeed.Fast)
-                elseif all_vehicles_speed == "slow" then
-                    vehicle_set_speed(vehicle, VehicleSpeed.Slow)
-                elseif all_vehicles_speed == "normal" then
-                    vehicle_set_speed(vehicle, VehicleSpeed.Normal)
+                if all_vehicles_speed == "fast" and (not is_a_player or all_vehicles_state[vehicle].speed ~= "fast") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_speed(vehicle, VehicleSpeed.Fast)
+                        if is_a_player then all_vehicles_state[vehicle].speed = "fast" end
+                    end, is_a_player)
+                elseif all_vehicles_speed == "slow" and (not is_a_player or all_vehicles_state[vehicle].speed ~= "slow") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_speed(vehicle, VehicleSpeed.Slow)
+                        if is_a_player then all_vehicles_state[vehicle].speed = "slow" end
+                    end, is_a_player)
+                elseif all_vehicles_speed == "normal" and (not is_a_player or all_vehicles_state[vehicle].speed ~= "normal") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_speed(vehicle, VehicleSpeed.Normal)
+                        if is_a_player then all_vehicles_state[vehicle].speed = "normal" end
+                    end, is_a_player)
                 end
 
                 -- Grip
-                if all_vehicles_grip == "none" then
-                    vehicle_set_no_grip(vehicle, true)
-                elseif all_vehicles_grip == "full" then
-                    vehicle_set_no_grip(vehicle, false)
+                if all_vehicles_grip == "none" and (not is_a_player or all_vehicles_state[vehicle].grip ~= "none") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_no_grip(vehicle, true)
+                        if is_a_player then all_vehicles_state[vehicle].grip = "off" end
+                    end, is_a_player)
+                elseif all_vehicles_grip == "full" and (not is_a_player or all_vehicles_state[vehicle].grip ~= "full") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_no_grip(vehicle, false)
+                        if is_a_player then all_vehicles_state[vehicle].grip = "full" end
+                    end, is_a_player)
                 end
 
                 -- Doors
-                if all_vehicles_doors == "lock" then
-                    vehicle_set_doors_locked(vehicle, true)
-                elseif all_vehicles_doors == "unlock" then
-                    vehicle_set_doors_locked(vehicle, false)
+                if all_vehicles_doors == "lock" and (not is_a_player or all_vehicles_state[vehicle].doors ~= "lock") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_doors_locked(vehicle, true)
+                        if is_a_player then all_vehicles_state[vehicle].doors = "lock" end
+                    end, is_a_player)
+                elseif all_vehicles_doors == "unlock" and (not is_a_player or all_vehicles_state[vehicle].doors ~= "unlock") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_doors_locked(vehicle, false)
+                        if is_a_player then all_vehicles_state[vehicle].doors = "unlock" end
+                    end, is_a_player)
                 end
 
                 -- Tires
-                if all_vehicles_tires == "burst" then
-                    vehicle_set_tires_bursted(vehicle, true)
-                elseif all_vehicles_tires == "fix" then
-                    vehicle_set_tires_bursted(vehicle, false)
+                if all_vehicles_tires == "burst" and (not is_a_player or all_vehicles_state[vehicle].tires ~= "burst") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_tires_bursted(vehicle, true)
+                        if is_a_player then all_vehicles_state[vehicle].tires = "burst" end
+                    end, is_a_player)
+                elseif all_vehicles_tires == "fix" and (not is_a_player or all_vehicles_state[vehicle].tires ~= "fix") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_tires_bursted(vehicle, false)
+                        if is_a_player then all_vehicles_state[vehicle].tires = "fix" end
+                    end, is_a_player)
                 end
 
                 -- Engine
-                if all_vehicles_engine == "kill" then
-                    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-                elseif all_vehicles_engine == "fix" then
-                    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+                if all_vehicles_engine == "kill" and (not is_a_player or all_vehicles_state[vehicle].engine ~= "kill") then
+                    mod_vehicle(vehicle, function()
+                        VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+                        if is_a_player then all_vehicles_state[vehicle].engine = "kill" end
+                    end, is_a_player)
+                elseif all_vehicles_engine == "fix" and (not is_a_player or all_vehicles_state[vehicle].engine ~= "fix") then
+                    mod_vehicle(vehicle, function()
+                        VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+                        if is_a_player then all_vehicles_state[vehicle].engine = "fix" end
+                    end, is_a_player)
                 end
 
                 -- Upgrades
-                if all_vehicles_upgrades == "all" then
-                    vehicle_set_upgraded(vehicle, true)
-                elseif all_vehicles_upgrades == "none" then
-                    vehicle_set_upgraded(vehicle, false)
+                if all_vehicles_upgrades == "all" and (not is_a_player or all_vehicles_state[vehicle].upgrades ~= "all") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_upgraded(vehicle, true)
+                        if is_a_player then all_vehicles_state[vehicle].upgrades = "all" end
+                    end, is_a_player)
+                elseif all_vehicles_upgrades == "none" and (not is_a_player or all_vehicles_state[vehicle].upgrades ~= "none") then
+                    mod_vehicle(vehicle, function()
+                        vehicle_set_upgraded(vehicle, false)
+                        if is_a_player then all_vehicles_state[vehicle].upgrades = "none" end
+                    end, is_a_player)
                 end
 
                 if all_vehicles_catapult then
-                    vehicle_catapult(vehicle)
+                    if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
+                        mod_vehicle(vehicle, function()
+                            ENTITY.APPLY_FORCE_TO_ENTITY(vehicle, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
+                        end, is_a_player)
+                    end
                 end
 
-                if all_vehicles_flee and not PED.IS_PED_A_PLAYER(driver) then
+                if all_vehicles_flee and not is_a_player then
                     TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
                 end
             end
@@ -1841,9 +1899,11 @@ end)
 
 -- Settings Menu --
 esp_color = {r = 0.29, g = 0.69, b = 1.0}
+
 menu.divider(settings_root, "Updates")
 menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
 menu.hyperlink(settings_root, "Website", "https://ryan.gq/menu/", "Opens the official website, for downloading the installer and viewing the changelog.")
+
 menu.divider(settings_root, "Options")
 menu.colour(settings_root, "ESP Color", {"ryanespcolor"}, "The color of on-screen ESP.", 0.29, 0.69, 1.0, 1.0, false, function(color)
     esp_color.r = color.r
@@ -1854,12 +1914,13 @@ menu.action(settings_root, "Allow Fireworks", {"ryanallowfireworks"}, "Disable C
     menu.focus(menu.ref_by_path("Online>Protections>Events>Crash Event>Timeout"))
 end)
 
-
 -- Player Options --
 ptfx_attack = {}
 money_drop = {}
 remove_godmode = {}
 remove_godmode_notice = {}
+
+vehicle_state = {}
 
 vehicle_speed = {}
 vehicle_grip = {}
@@ -2341,96 +2402,106 @@ util.create_tick_handler(function()
     end
 end)
 
-function get_control(player_id, action)
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), false)
-    if vehicle ~= 0 then
-        entity_request_control_loop(vehicle, "player vehicle, generic")
-        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-            action(vehicle)
-        end
-    end
-end
-
 util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
-        -- Speed
-        if vehicle_speed[player_id] == "fast" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_speed(vehicle, VehicleSpeed.Fast)
-            end)
-        elseif vehicle_speed[player_id] == "slow" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_speed(vehicle, VehicleSpeed.Slow)
-            end)
-        elseif vehicle_speed[player_id] == "normal" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_speed(vehicle, VehicleSpeed.Normal)
-            end)
-        end
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(player_id), true)
+        if vehicle ~= 0 then
+            if vehicle_state[vehicle] == nil then vehicle_state[vehicle] = {} end
+            
+            -- Speed
+            if vehicle_speed[player_id] == "fast" and vehicle_state[vehicle].speed ~= "fast" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_speed(vehicle, VehicleSpeed.Fast)
+                    vehicle_state[vehicle] = "fast"
+                end, true)
+            elseif vehicle_speed[player_id] == "slow" and vehicle_state[vehicle].speed ~= "slow" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_speed(vehicle, VehicleSpeed.Slow)
+                    vehicle_state[vehicle] = "slow"
+                end, true)
+            elseif vehicle_speed[player_id] == "normal" and vehicle_state[vehicle].speed ~= "normal" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_speed(vehicle, VehicleSpeed.Normal)
+                    vehicle_state[vehicle] = "normal"
+                end, true)
+            end
 
-        -- Grip
-        if vehicle_grip[player_id] == "none" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_no_grip(vehicle, true)
-            end)
-        elseif vehicle_grip[player_id] == "full" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_no_grip(vehicle, false)
-            end)
-        end
+            -- Grip
+            if vehicle_grip[player_id] == "none" and vehicle_state[vehicle].grip ~= "none" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_no_grip(vehicle, true)
+                    vehicle_state[vehicle].grip = "none"
+                end, true)
+            elseif vehicle_grip[player_id] == "full" and vehicle_state[vehicle].grip ~= "full" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_no_grip(vehicle, false)
+                    vehicle_state[vehicle].grip = "full"
+                end, true)
+            end
 
-        -- Doors
-        if vehicle_doors[player_id] == "lock" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_doors_locked(vehicle, true)
-            end)
-        elseif vehicle_doors[player_id] == "unlock" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_doors_locked(vehicle, false)
-            end)
-        end
+            -- Doors
+            if vehicle_doors[player_id] == "lock" and vehicle_state[vehicle].doors ~= "lock" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_doors_locked(vehicle, true)
+                    vehicle_state[vehicle].doors = "lock"
+                end, true)
+            elseif vehicle_doors[player_id] == "unlock"  and vehicle_state[vehicle].doors ~= "unlock" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_doors_locked(vehicle, false)
+                    vehicle_state[vehicle].doors = "unlock"
+                end, true)
+            end
 
-        -- Tires
-        if vehicle_tires[player_id] == "burst" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_tires_bursted(vehicle, true)
-            end)
-        elseif vehicle_tires[player_id] == "fix" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_tires_bursted(vehicle, false)
-            end)
-        end
+            -- Tires
+            if vehicle_tires[player_id] == "burst" and vehicle_state[vehicle].tires ~= "burst" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_tires_bursted(vehicle, true)
+                    vehicle_state[vehicle].tires = "burst"
+                end, true)
+            elseif vehicle_tires[player_id] == "fix" and vehicle_state[vehicle].tires ~= "fix" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_tires_bursted(vehicle, false)
+                    vehicle_state[vehicle].tires = "fix"
+                end, true)
+            end
 
-        -- Engine
-        if vehicle_engine[player_id] == "kill" then
-            get_control(player_id, function(vehicle)
-                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-            end)
-        elseif vehicle_engine[player_id] == "fix" then
-            get_control(player_id, function(vehicle)
-                VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-            end)
-        end
+            -- Engine
+            if vehicle_engine[player_id] == "kill" and vehicle_state[vehicle].engine ~= "kill" then
+                mod_vehicle(vehicle, function()
+                    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+                    vehicle_state[vehicle].engine = "kill"
+                end, true)
+            elseif vehicle_engine[player_id] == "fix" and vehicle_state[vehicle].engine ~= "fix" then
+                mod_vehicle(vehicle, function()
+                    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+                    vehicle_speed[vehicle].engine = "fix"
+                end, true)
+            end
 
-        -- Upgrades
-        if vehicle_upgrades[player_id] == "all" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_upgraded(vehicle, true)
-            end)
-        elseif vehicle_upgrades[player_id] == "none" then
-            get_control(player_id, function(vehicle)
-                vehicle_set_upgraded(vehicle, false)
-            end)
-        end
+            -- Upgrades
+            if vehicle_upgrades[player_id] == "all" and vehicle_state[vehicle].upgrades ~= "all" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_upgraded(vehicle, true)
+                    vehicle_state[vehicle].upgrades = "all"
+                end, true)
+            elseif vehicle_upgrades[player_id] == "none" and vehicle_state[vehicle].upgrades ~= "none" then
+                mod_vehicle(vehicle, function()
+                    vehicle_set_upgraded(vehicle, false)
+                    vehicle_state[vehicle].upgrades = "none"
+                end, true)
+            end
 
-        -- Catapult
-        if vehicle_catapult[player_id] == true then
-            get_control(player_id, function(vehicle)
-                vehicle_catapult(vehicle)
-            end)
+            -- Catapult
+            if vehicle_catapult[player_id] == true then
+                if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
+                    mod_vehicle(vehicle, function()
+                        ENTITY.APPLY_FORCE_TO_ENTITY(vehicle, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
+                    end, true)
+                end
+            end
         end
     end
-    util.yield(333)
+    util.yield(250)
 end)
 
 function cleanup_player(player_id)
