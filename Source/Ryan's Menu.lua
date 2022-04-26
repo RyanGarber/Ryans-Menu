@@ -1556,7 +1556,7 @@ util.create_tick_handler(function()
     util.yield(500)
 end)
 
--- -- Free Slots
+-- -- Max Players
 session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
 
 max_players_amount = 0
@@ -1597,7 +1597,8 @@ util.create_tick_handler(function()
             local kick_count = #player_list - max_players_amount
             local kicked = 0
             for i = 1, #player_list do
-                if player_list[i] ~= players.user() and kicked < kick_count then
+                local can_kick = max_players_include_modders or not players.is_marked_as_modder(player_list[i])
+                if player_list[i] ~= players.user() and can_kick and kicked < kick_count then
                     local reason = max_players_prefer_kd and ("having a " .. string.format("%.1f", players.get_kd(player_list[i])) .. " K/D") or ("being a modder")
                     basics_show_text_message(Color.Purple, "Max Players", "Kicking " .. players.get_name(player_list[i]) .. " for " .. reason .. ".")
                     menu.trigger_commands("kick" .. players.get_name(player_list[i]))
