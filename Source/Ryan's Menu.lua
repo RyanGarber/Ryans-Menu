@@ -1884,16 +1884,16 @@ end)
 
 menu.divider(chat_root, "Chat Options")
 
--- -- Kick Money Beggars
-kick_money_beggars = false
-menu.toggle(chat_root, "Kick Money Beggars", {"ryankickbeggars"}, "Kicks anyone who begs for money.", function(value)
-    kick_money_beggars = value
+-- -- Crashes Money Beggars
+crash_money_beggars = false
+menu.toggle(chat_root, "Crash Money Beggars", {"ryancrashbeggars"}, "Crashes anyone who begs for money.", function(value)
+    crash_money_beggars = value
 end)
 
--- -- Kick Car Meeters
-kick_car_meeters = false
-menu.toggle(chat_root, "Kick Car Meeters", {"ryankickcarmeets"}, "Kicks anyone who suggests a car meet.", function(value)
-    kick_car_meeters = value
+-- -- Crashes Car Meeters
+crash_car_meeters = false
+menu.toggle(chat_root, "Crash Car Meeters", {"ryancrashcarmeets"}, "Crashes anyone who suggests a car meet.", function(value)
+    crash_car_meeters = value
 end)
 
 chat_history = {}
@@ -1901,19 +1901,19 @@ chat_index = 1
 chat.on_message(function(packet_sender, sender, message, is_team_chat)
     --if sender ~= players.user() then
     local message_lower = message:lower()
-    if kick_money_beggars then
+    if crash_money_beggars then
         if (message_lower:find("can") or message_lower:find("?") or message_lower:find("please") or message_lower:find("plz") or message_lower:find("pls") or message_lower:find("drop"))
         and message_lower:find("money") then
 
-            basics_show_text_message(Color.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
+            basics_show_text_message(Color.Purple, "Crash Money Beggars", players.get_name(sender) .. " is being crashed for begging for money drops.")
             menu.trigger_commands("ngcrash" .. players.get_name(sender))
         end
     end
-    if kick_car_meeters then
+    if crash_car_meeters then
         if (message_lower:find("want to") or message_lower:find("wanna") or message_lower:find("at") or message_lower:find("is") or message_lower:find("?"))
         and message_lower:find("car") and message_lower:find("meet") then
 
-            basics_show_text_message(Color.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
+            basics_show_text_message(Color.Purple, "Crash Car Meeters", players.get_name(sender) .. " is being crashed for suggesting a car meet.")
             menu.trigger_commands("ngcrash" .. players.get_name(sender))
         end
     end
@@ -2310,7 +2310,7 @@ function setup_player(player_id)
     local removal_block_joins = false
     local removal_message = ""
     
-    menu.text_input(player_removal_root, "Spam Message", {"ryanremovalspam"}, "The message to spam before kicking.", function(value)
+    menu.text_input(player_removal_root, "Spam Message", {"ryanremovalspam"}, "The message to spam before removing the player.", function(value)
         removal_message = value
     end, removal_message)
     menu.toggle(player_removal_root, "Block Joins", {"ryanremovalblockjoins"}, "Block joins by this player.", function(value)
