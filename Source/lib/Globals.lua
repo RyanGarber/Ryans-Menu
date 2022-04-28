@@ -198,7 +198,9 @@ CrashToSingleplayerEvents = {
 }
 
 Controls = {
-    VehicleDuck = 73
+    Horn = 86,
+    Duck = 73,
+    Sprint = 21
 }
 
 CrashToDesktopMethods = {

@@ -25,7 +25,7 @@ function vehicle_set_upgraded(vehicle, maxed)
         if maxed then
             mod = VEHICLE.GET_NUM_VEHICLE_MODS(vehicle, i) - 1
         end
-        VEHICLE.SET_VEHICLE_MOD(vehicle, i, mod, false)
+        VEHICLE.SET_VEHICLE_MOD(vehicle, i, mod, maxed)
     end
 end
 

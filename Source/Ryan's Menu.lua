@@ -79,6 +79,18 @@ function is_switching_sessions()
     return waiting_for_session or waiting_for_coords ~= nil
 end
 
+util.create_tick_handler(function()
+    if PAD.IS_CONTROL_JUST_PRESSED(21, Controls.Horn) then
+        local elegible_players = basics_keep(
+            players.list(false),
+            function(table, i, new_i)
+                return not players.is_godmode(table[i])
+            end
+        )
+        local player_id = basics_get_random(elegible_players)
+        util.toast(players.get_name(player_id))
+    end
+end)
 
 -- Main Menu --
 self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Helpful options for yourself.")
@@ -455,7 +467,7 @@ end)
 
 util.create_tick_handler(function()
     if fire_finger_mode == "Always" or (fire_finger_mode == "When Pointing" and player_is_pointing) then
-        if PAD.IS_CONTROL_JUST_PRESSED(21, Controls.VehicleDuck) then
+        if PAD.IS_CONTROL_JUST_PRESSED(21, Controls.Duck) then
             local raycast = basics_do_raycast(250.0)
             if raycast.did_hit then
                 FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
@@ -532,7 +544,7 @@ util.create_tick_handler(function()
     ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, god_finger_mode == "Default", false, false, false, 1, false)
 
     if (god_finger_while_pointing and not player_is_pointing)
-    or (god_finger_while_ducking and not PAD.IS_CONTROL_PRESSED(21, Controls.VehicleDuck)) then
+    or (god_finger_while_ducking and not PAD.IS_CONTROL_PRESSED(21, Controls.Duck)) then
         god_finger_target = nil;
         return
     end
@@ -651,7 +663,7 @@ menu.toggle_loop(self_root, "All Entities Visible", {"ryannoinvisible"}, "Makes 
         local player_ped = player_get_ped(player_id)
         ENTITY.SET_ENTITY_ALPHA(player_ped, 255)
         ENTITY.SET_ENTITY_VISIBLE(player_ped, true, 0)
-        local vehicle = VEHICLE.GET_VEHICLE_PED_IS_IN(player_ped, true)
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, true)
         if vehicle ~= 0 then
             ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
             ENTITY.SET_ENTITY_VISIBLE(vehicle, true, 0)
@@ -660,12 +672,11 @@ menu.toggle_loop(self_root, "All Entities Visible", {"ryannoinvisible"}, "Makes 
 end)
 
 menu.divider(self_root, "Vehicle")
-self_seats_root = menu.list(self_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
 
 -- -- Seats
-function seat_name(i)
-    return (i == -1 and "Driver" or "Seat " .. (i + 2))
-end
+self_seats_root = menu.list(self_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
+
+function seat_name(i) return (i == -1 and "Driver" or "Seat " .. (i + 2)) end
 
 switch_seats_actions = {}
 switch_seats_notice = nil
@@ -706,6 +717,21 @@ util.create_tick_handler(function()
     util.yield(200)
 end)
 
+-- -- Police
+self_police_root = menu.list(self_root, "Police...", {"ryanpolice"}, "Controls various aspects of police vehicles.")
+
+-- -- Mute Siren
+mute_siren = false
+menu.toggle(self_police_root, "Mute Siren", {"ryanmutesiren"}, "Mutes the siren on police vehicles.", function(value)
+    mute_siren = value
+end)
+
+-- -- Searchlight
+searchlight = false
+menu.toggle(self_police_root, "Searchlight", {"ryansearchlight"}, "Enables searchlights on police vehicles.", function(value)
+    searchlight = value
+end)
+
 -- -- E-Brake
 ebrake = false
 menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while holding Shift.", function(value)
@@ -716,29 +742,19 @@ util.create_tick_handler(function()
         local player_ped = player_get_ped(players.user())
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
         if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == player_ped then
-            vehicle_set_no_grip(vehicle, PAD.IS_CONTROL_PRESSED(21, 21))
+            vehicle_set_no_grip(vehicle, PAD.IS_CONTROL_PRESSED(21, Controls.Sprint))
         end
     end
 end)
 
--- -- Searchlight
-searchlight = false
-menu.toggle(self_root, "Searchlight", {"ryansearchlight"}, "Enables searchlights on police vehicles.", function(value)
-    searchlight = value
-end)
 util.create_tick_handler(function()
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
     if vehicle ~= 0 then
-        local is_police_vehicle = false
-        for _, police_vehicle in pairs(PoliceVehicles) do
-            if vehicle == police_vehicle then is_police_vehicle = true end
-        end
-        
-        if is_police_vehicle then VEHICLE.SET_VEHICLE_SEARCHLIGHT(vehicle, searchlight, true) end
+        VEHICLE.SET_VEHICLE_SEARCHLIGHT(vehicle, searchlight, true)
+        VEHICLE.SET_VEHICLE_HAS_MUTED_SIRENS(vehicle, mute_siren)
     end
     util.yield(100)
 end)
-
 
 -- World Menu --
 menu.divider(world_root, "General")
@@ -967,7 +983,9 @@ all_vehicles_doors = nil
 all_vehicles_tires = nil
 all_vehicles_engine = nil
 all_vehicles_upgrades = nil
+
 all_vehicles_catapult = false
+all_vehicles_alarm = false
 all_vehicles_flee = false
 
 menu.toggle(world_all_vehicles_root, "Include NPCs", {"ryanallvehiclesnpcs"}, "If enabled, player-driven vehicles are affected too.", function(value)
@@ -1173,12 +1191,17 @@ menu.toggle(all_vehicles_upgrades_root, "None", {"ryanallupgradesnone"}, "Fully 
 end)
 
 -- -- Catapult
-menu.toggle(world_all_vehicles_root, "Catapult", {"ryanallcatapult"}, "Catapults their car non-stop.", function(value)
+menu.toggle(world_all_vehicles_root, "Catapult", {"ryanallcatapult"}, "Catapults their vehicle non-stop.", function(value)
     all_vehicles_catapult = value
 end)
 
+-- -- Alarm
+menu.toggle(world_all_vehicles_root, "Alarm", {"ryanallalarm"}, "Triggers their vehicle's theft alarm.", function(value)
+    all_vehicles_alarm = value
+end)
+
 -- -- Flee
-menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Catapults their car non-stop.", function(value)
+menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Makes NPCs flee you.", function(value)
     all_vehicles_flee = value
 end)
 
@@ -1290,6 +1313,7 @@ util.create_tick_handler(function()
                     end, is_a_player)
                 end
 
+                -- Catapult
                 if all_vehicles_catapult then
                     if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
                         mod_vehicle(vehicle, function()
@@ -1298,6 +1322,17 @@ util.create_tick_handler(function()
                     end
                 end
 
+                -- Alarm
+                if all_vehicles_alarm then
+                    if not VEHICLE.IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
+                        mod_vehicle(vehicle, function()
+                            VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
+                            VEHICLE.START_VEHICLE_ALARM(vehicle)
+                        end, is_a_player)
+                    end
+                end
+
+                -- Flee
                 if all_vehicles_flee and not is_a_player then
                     TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
                 end
@@ -1458,10 +1493,10 @@ menu.action(session_crash_all_root, "Crash To Desktop", {"ryancrashallmultiplaye
         player_teleport_to(starting_coords)
     end
 end)
-menu.action(session_crash_all_root, "Crash Using Stand", {"ryanfootlettuce"}, "Attempts to crash using Stand's Burger King Foot Lettuce.", function()
+menu.action(session_crash_all_root, "Crash Using Stand", {"ryannextgen"}, "Attempts to crash using Stand's Burger King Foot Lettuce.", function()
     for _, player_id in pairs(players.list(false, crash_all_friends)) do
         if crash_all_modders or not players.is_marked_as_modder(player_id) then
-            menu.trigger_commands("footlettuce" .. players.get_name(player_id))
+            menu.trigger_commands("ngcrash" .. players.get_name(player_id))
         end
     end
 end)
@@ -1532,7 +1567,7 @@ util.create_tick_handler(function()
                             elseif antihermit_mode == "Kick" then
                                 menu.trigger_commands("kick" .. player_name)
                             elseif antihermit_mode == "Crash" then
-                                menu.trigger_commands("footlettuce" .. player_name)
+                                menu.trigger_commands("ngcrash" .. player_name)
                             end
                         end
                     end
@@ -1871,7 +1906,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
         and message_lower:find("money") then
 
             basics_show_text_message(Color.Purple, "Kick Money Beggars", players.get_name(sender) .. " is being kicked for begging for money drops.")
-            menu.trigger_commands("footlettuce" .. players.get_name(sender))
+            menu.trigger_commands("ngcrash" .. players.get_name(sender))
         end
     end
     if kick_car_meeters then
@@ -1879,7 +1914,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
         and message_lower:find("car") and message_lower:find("meet") then
 
             basics_show_text_message(Color.Purple, "Kick Car Meeters", players.get_name(sender) .. " is being kicked for suggesting a car meet.")
-            menu.trigger_commands("footlettuce" .. players.get_name(sender))
+            menu.trigger_commands("ngcrash" .. players.get_name(sender))
         end
     end
     --end
@@ -1929,7 +1964,9 @@ vehicle_doors = {}
 vehicle_tires = {}
 vehicle_engine = {}
 vehicle_upgrades = {}
+
 vehicle_catapult = {}
+vehicle_alarm = {}
 
 attach_vehicle_bones = {}
 attach_vehicle_vehicle = {}
@@ -2111,7 +2148,7 @@ function setup_player(player_id)
     end)
 
     -- -- Upgrades
-    local player_vehicle_upgrades_root = menu.list(player_vehicle_root, "Upgrades: -", {"ryanengine"}, "Changes their vehicle's upgrades.")
+    local player_vehicle_upgrades_root = menu.list(player_vehicle_root, "Upgrades: -", {"ryanupgrades"}, "Changes their vehicle's upgrades.")
     menu.toggle(player_vehicle_upgrades_root, "All", {"ryanupgradesall"}, "Fully upgrades the vehicle.", function(value)
         if value then
             basics_run({
@@ -2142,6 +2179,11 @@ function setup_player(player_id)
     -- -- Catapult
     menu.toggle(player_vehicle_root, "Catapult", {"ryancatapult"}, "Catapults their car non-stop.", function(value)
         vehicle_catapult[player_id] = value and true or nil
+    end)
+
+    -- -- Alarm
+    menu.toggle(player_vehicle_root, "Alarm", {"ryanalarm"}, "Triggers their vehicle's theft alarm.", function(value)
+        vehicle_alarm[player_id] = value and true or nil
     end)
 
 
@@ -2492,11 +2534,35 @@ util.create_tick_handler(function()
                 end, true)
             end
 
+            -- Alarm
+            if vehicle_alarm[player_id] == "on" and vehicle_state[vehicle].alarm ~= "on" then
+                mod_vehicle(vehicle, function()
+                    VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
+                    VEHICLE.START_VEHICLE_ALARM(vehicle)
+                    vehicle_state[vehicle].alarm = "on"
+                end, true)
+            elseif vehicle_alarm[player_id] == "off" and vehicle_state[vehicle].alarm ~= "off" then
+                mod_vehicle(vehicle, function()
+                    VEHICLE.SET_VEHICLE_ALARM(false)
+                    vehicle_state[vehicle].alarm = "off"
+                end, true)
+            end
+
             -- Catapult
             if vehicle_catapult[player_id] == true then
                 if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
                     mod_vehicle(vehicle, function()
                         ENTITY.APPLY_FORCE_TO_ENTITY(vehicle, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
+                    end, true)
+                end
+            end
+
+            -- Alarm
+            if vehicle_alarm[player_id] == true then
+                if not VEHICLE.IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
+                    mod_vehicle(vehicle, function()
+                        VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
+                        VEHICLE.START_VEHICLE_ALARM(vehicle)
                     end, true)
                 end
             end
