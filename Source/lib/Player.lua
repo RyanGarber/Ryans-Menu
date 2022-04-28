@@ -20,6 +20,18 @@ function player_teleport_with_vehicle_to(coords)
     end
 end
 
+function player_explode(player_id, with_earrape)
+    local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id))
+    FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z, 0, 100, true, false, 150, false)
+    if with_earrape then
+        audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
+        coords.z = 2000.0
+        audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
+        coords.z = -2000.0
+        audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
+    end
+end
+
 function player_get_money(player_id)
     return players.get_wallet(player_id) + players.get_bank(player_id)
 end

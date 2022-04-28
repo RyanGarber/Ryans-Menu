@@ -1,22 +1,20 @@
 function session_explode_all(with_earrape)
-    for _, player_id in pairs(players.list()) do
-        local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id))
-        FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z, 0, 100, true, false, 150, false)
-        
-        if with_earrape then -- Credit: Bed Sound
-            for i = 1, #BedSoundCoords do
-                local coords = BedSoundCoords[i]
-                audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
-                coords.z = 2000.0
-                audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
-                coords.z = -2000.0
-                audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
+    if with_earrape then -- Credit: Bed Sound
+        for i = 1, #BedSoundCoords do
+            local coords = BedSoundCoords[i]
+            audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
+            coords.z = 2000.0
+            audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
+            coords.z = -2000.0
+            audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
 
-                for _, player_id in pairs(players.list()) do
-                    audio_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)), "WastedSounds", "Bed", 999999999)
-                end
+            for _, player_id in pairs(players.list()) do
             end
         end
+    end
+    
+    for _, player_id in pairs(players.list()) do
+        player_explode(player_id, with_earrape)
     end
 end
 

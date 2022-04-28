@@ -1,4 +1,4 @@
-VERSION = "0.7.2"
+VERSION = "0.7.3"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -79,18 +79,6 @@ function is_switching_sessions()
     return waiting_for_session or waiting_for_coords ~= nil
 end
 
-util.create_tick_handler(function()
-    if PAD.IS_CONTROL_JUST_PRESSED(21, Controls.Horn) then
-        local elegible_players = basics_keep(
-            players.list(false),
-            function(table, i, new_i)
-                return not players.is_godmode(table[i])
-            end
-        )
-        local player_id = basics_get_random(elegible_players)
-        util.toast(players.get_name(player_id))
-    end
-end)
 
 -- Main Menu --
 self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Helpful options for yourself.")
@@ -477,7 +465,7 @@ util.create_tick_handler(function()
 end)
 
 -- -- God Finger
-self_god_finger_mode_root = menu.list(self_god_finger_root, "Mode", {"ryangodfingermode"}, "When God Finger is activated.")
+self_god_finger_mode_root = menu.list(self_god_finger_root, "Force", {"ryangodfingerforce"}, "The type of force to apply, if any.")
 
 god_finger_mode = "Off"
 god_finger_change = 2147483647
@@ -486,13 +474,14 @@ god_finger_values = {["Off"] = true}
 god_finger_target = nil
 god_finger_gravity = false
 god_finger_while_pointing = true
-god_finger_while_ducking = false
+god_finger_while_pressing_e = false
+god_finger_while_pressing_x = false
 
 for _, mode in pairs(GodFingerModes) do
-    menu.toggle(self_god_finger_mode_root, mode, {"ryangodfinger" .. basics_command_name(mode)}, "", function(value)
+    menu.toggle(self_god_finger_mode_root, mode, {"ryangodfingerforce" .. basics_command_name(mode)}, "", function(value)
         if value then
             if mode ~= god_finger_mode then
-                menu.trigger_commands("ryangodfinger" .. basics_command_name(god_finger_mode) .. " off")
+                menu.trigger_commands("ryangodfingerforce" .. basics_command_name(god_finger_mode) .. " off")
             end
             god_finger_mode = mode
         end
@@ -507,21 +496,26 @@ util.create_tick_handler(function()
         for _, mode in pairs(GodFingerModes) do
             if god_finger_values[mode] then has_choice = true end
         end
-        if not has_choice then menu.trigger_commands("ryangodfingeroff on") end
+        if not has_choice then menu.trigger_commands("ryangodfingerforceoff on") end
         god_finger_change = 2147483647
     end
 end)
 
-menu.toggle(self_god_finger_root, "Anti-Gravity", {"ryangodfingergravity"}, "Takes away object gravity when god fingered.", function(value)
+menu.toggle(self_god_finger_root, "Anti-Gravity", {"ryangodfingerantigravity"}, "Takes away object gravity when god fingered.", function(value)
     god_finger_gravity = value    
 end)
 
-menu.toggle(self_god_finger_root, "While Pointing", {"ryangodfingerpointing"}, "If enabled, god finger activates only while pointing.", function(value)
+menu.divider(self_god_finger_root, "Activate")
+menu.toggle(self_god_finger_root, "While Pointing", {"ryangodfingerpointing"}, "If enabled, god finger activates while pointing.", function(value)
     god_finger_while_pointing = value
 end, true)
 
-menu.toggle(self_god_finger_root, "While Ducking", {"ryangodfingerducking"}, "If enabled, god finger activates only while holding the X key / A button.", function(value)
-    god_finger_while_ducking = value
+menu.toggle(self_god_finger_root, "While Pressing E", {"ryangodfingerpressinge"}, "If enabled, god finger activates while holding the E key / left stick.", function(value)
+    god_finger_while_pressing_e = value
+end)
+
+menu.toggle(self_god_finger_root, "While Pressing X", {"ryangodfingerpressingx"}, "If enabled, god finger activates while holding the X key / A button.", function(value)
+    god_finger_while_pressing_x = value
 end)
 
 util.create_tick_handler(function()
@@ -543,8 +537,10 @@ util.create_tick_handler(function()
 
     ENTITY.SET_ENTITY_PROOFS(player_get_ped(), false, false, god_finger_mode == "Default", false, false, false, 1, false)
 
-    if (god_finger_while_pointing and not player_is_pointing)
-    or (god_finger_while_ducking and not PAD.IS_CONTROL_PRESSED(21, Controls.Duck)) then
+    if not (god_finger_while_pointing and player_is_pointing)
+    and not (god_finger_while_pressing_x and PAD.IS_CONTROL_PRESSED(21, Controls.Duck))
+    and not (god_finger_while_pressing_e and PAD.IS_CONTROL_PRESSED(21, Controls.Horn)) then
+        
         god_finger_target = nil;
         return
     end
@@ -657,20 +653,6 @@ util.create_tick_handler(function()
     end
 end)
 
--- -- All Players Visible
-menu.toggle_loop(self_root, "All Entities Visible", {"ryannoinvisible"}, "Makes all invisible entities visible again.", function()
-    for _, player_id in pairs(players.list()) do
-        local player_ped = player_get_ped(player_id)
-        ENTITY.SET_ENTITY_ALPHA(player_ped, 255)
-        ENTITY.SET_ENTITY_VISIBLE(player_ped, true, 0)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, true)
-        if vehicle ~= 0 then
-            ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
-            ENTITY.SET_ENTITY_VISIBLE(vehicle, true, 0)
-        end
-    end
-end)
-
 menu.divider(self_root, "Vehicle")
 
 -- -- Seats
@@ -722,7 +704,7 @@ self_police_root = menu.list(self_root, "Police...", {"ryanpolice"}, "Controls v
 
 -- -- Mute Siren
 mute_siren = false
-menu.toggle(self_police_root, "Mute Siren", {"ryanmutesiren"}, "Mutes the siren on police vehicles.", function(value)
+menu.toggle(self_police_root, "Mute Siren", {"ryanmutesiren"}, "Mutes the siren on police vehicles (locally.)", function(value)
     mute_siren = value
 end)
 
@@ -737,24 +719,47 @@ ebrake = false
 menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while holding Shift.", function(value)
     ebrake = value
 end)
+
+horn_smite = false
+menu.toggle(self_root, "Horn Smite", {"ryanhornsmite"}, "Smites a random player every time your horn is honked.", function(value)
+    horn_smite = value
+end)
+
 util.create_tick_handler(function()
     if ebrake then
         local player_ped = player_get_ped(players.user())
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
-        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == player_ped then
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
+        if vehicle ~= 0 and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == player_ped then
             vehicle_set_no_grip(vehicle, PAD.IS_CONTROL_PRESSED(21, Controls.Sprint))
         end
     end
 end)
 
 util.create_tick_handler(function()
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), true)
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped(), false)
     if vehicle ~= 0 then
         VEHICLE.SET_VEHICLE_SEARCHLIGHT(vehicle, searchlight, true)
         VEHICLE.SET_VEHICLE_HAS_MUTED_SIRENS(vehicle, mute_siren)
+
+        if horn_smite and PAD.IS_CONTROL_JUST_PRESSED(21, Controls.Horn) then
+            local elegible_players = basics_keep(
+                players.list(),
+                function(table, i, new_i)
+                    return not players.is_godmode(table[i])
+                end
+            )
+
+            if #elegible_players == 0 then
+                basics_show_text_message(Color.Red, "Horn Smite", "There are no elegible players to smite.")
+            else
+                local player_id = basics_get_random(elegible_players)
+                player_explode(player_id, true)
+                basics_show_text_message(Color.Purple, "Horn Smite", "The gods have spoken, and " .. players.get_name(player_id) .. " is the chosen one.")
+            end
+        end
     end
-    util.yield(100)
 end)
+
 
 -- World Menu --
 menu.divider(world_root, "General")
@@ -925,6 +930,20 @@ util.create_tick_handler(function()
     end
 end)
 
+-- -- All Entities Visible
+menu.toggle_loop(world_root, "All Entities Visible", {"ryannoinvisible"}, "Makes all invisible entities visible again.", function()
+    for _, player_id in pairs(players.list()) do
+        local player_ped = player_get_ped(player_id)
+        ENTITY.SET_ENTITY_ALPHA(player_ped, 255)
+        ENTITY.SET_ENTITY_VISIBLE(player_ped, true, 0)
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, true)
+        if vehicle ~= 0 then
+            ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
+            ENTITY.SET_ENTITY_VISIBLE(vehicle, true, 0)
+        end
+    end
+end)
+
 menu.divider(world_root, "Vehicle")
 world_closest_vehicle_root = menu.list(world_root, "Closest Vehicle...", {"ryanclosestvehicle"}, "Useful options for nearby vehicles.")
 world_all_vehicles_root = menu.list(world_root, "All Vehicles...", {"ryanallvehicles"}, "Control the vehicles around you.")
@@ -987,6 +1006,7 @@ all_vehicles_upgrades = nil
 all_vehicles_catapult = false
 all_vehicles_alarm = false
 all_vehicles_flee = false
+all_vehicles_delete = false
 
 menu.toggle(world_all_vehicles_root, "Include NPCs", {"ryanallvehiclesnpcs"}, "If enabled, player-driven vehicles are affected too.", function(value)
     all_vehicles_include_npcs = value
@@ -1205,6 +1225,11 @@ menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Makes NPCs flee y
     all_vehicles_flee = value
 end)
 
+-- -- Delete
+menu.toggle(world_all_vehicles_root, "Delete", {"ryanalldelete"}, "Deletes their vehicle.", function(value)
+    all_vehicles_delete = value
+end)
+
 function mod_vehicle(vehicle, action, take_control)
     if take_control then entity_request_control_loop(vehicle, "vehicle trolling, generic") end
     if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
@@ -1335,6 +1360,11 @@ util.create_tick_handler(function()
                 -- Flee
                 if all_vehicles_flee and not is_a_player then
                     TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
+                end
+
+                -- Delete
+                if all_vehicles_delete then
+                    entities.delete_by_handle(vehicle)
                 end
             end
         end
@@ -1646,35 +1676,32 @@ util.create_tick_handler(function()
 end)
 
 -- -- Mk II Chaos
-menu.toggle_loop(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and tells them to duel.", function()
-    chat.send_message("This session is in Mk II Chaos mode! Every 3 minutes, everyone receives an Oppressor. Good luck.", false, true, true)
-    local oppressor2 = util.joaat("oppressor2")
-    basics_request_model(oppressor2)
-    for _, player_id in pairs(players.list()) do
-        local player_ped = player_get_ped(player_id)
-        local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0.0, 5.0, 0.0)
-        local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
-        entity_request_control_loop(vehicle)
-        vehicle_set_upgraded(vehicle, true)
-        ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
-        VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
-        VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
-    end
-    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(oppressor2)
-    util.yield(180000)
+mk2_chaos = false
+menu.toggle(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and tells them to duel.", function(value)
+    mk2_chaos = value    
 end)
 
--- -- Fake Money Drop
-menu.toggle_loop(session_root, "Fake Money Drop", {"ryanfakemoneyall"}, "Drops fake money bags on all players.", function()
-    for _, player_id in pairs(players.list()) do
-        util.create_thread(function()
-            player_fake_money_drop(player_id)
-        end)
+util.create_tick_handler(function()
+    if mk2_chaos then
+        chat.send_message("This session is in Mk II Chaos mode! Every 3 minutes, everyone receives an Oppressor. Good luck.", false, true, true)
+        local oppressor2 = util.joaat("oppressor2")
+        basics_request_model(oppressor2)
+        for _, player_id in pairs(players.list()) do
+            local player_ped = player_get_ped(player_id)
+            local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0.0, 5.0, 0.0)
+            local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
+            entity_request_control_loop(vehicle)
+            vehicle_set_upgraded(vehicle, true)
+            ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
+            VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
+            VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
+        end
+        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(oppressor2)
+        util.yield(180000)
     end
-    util.yield(125)
 end)
 
--- Vehicles
+-- Vehicle
 menu.divider(session_root, "Vehicle")
 session_drivers_root = menu.list(session_root, "Driver List...", {"ryandrivers"}, "Lists the players driving vehicles.")
 
@@ -1882,7 +1909,14 @@ menu.action(chat_send_root, "Italian", {"ryantranslateitalian"}, "Translate to I
     menu.focus(chat_send_root)
 end)
 
+
 menu.divider(chat_root, "Chat Options")
+
+-- -- Commands
+enable_commands = false
+menu.toggle(chat_root, "Enable Commands", {"ryancommands"}, "Enables commands for all players. Use !commands for a list.", function(value)
+    enable_commands = value
+end)
 
 -- -- Crashes Money Beggars
 crash_money_beggars = false
@@ -1896,10 +1930,25 @@ menu.toggle(chat_root, "Crash Car Meeters", {"ryancrashcarmeets"}, "Crashes anyo
     crash_car_meeters = value
 end)
 
+function reply(message)
+    chat.send_message("∑ " .. message .. " ∑", false, true, true)
+end
+
 chat_history = {}
 chat_index = 1
+
+chat_commands = {
+    {"help", {}, "Lists the available commands and their usage.", nil},
+    {"nuke", {}, "Drops a nuke on the session.", "ryannukestart"},
+    {"crash", {"player"}, "Crashes a player to their desktop.", "ryandesktop{1}"},
+    {"tank", {"player"}, "Drops a tank on a player's head.", "ryanfallingtank{1}"},
+    {"cage", {"player"}, "Cages a player, over and over again.", "autocage{1} on"},
+    {"carslow", {"player"}, "Makes a player's car slow.", "ryanspeedslow{1} on"},
+    {"carlock", {"player"}, "Locks a player in their car.", "ryandoorslock{1} on"},
+    {"cardelete", {"player"}, "Deletes the player's car.", "ryandelete{1} on"}
+}
+
 chat.on_message(function(packet_sender, sender, message, is_team_chat)
-    --if sender ~= players.user() then
     local message_lower = message:lower()
     if crash_money_beggars then
         if (message_lower:find("can") or message_lower:find("?") or message_lower:find("please") or message_lower:find("plz") or message_lower:find("pls") or message_lower:find("drop"))
@@ -1917,7 +1966,69 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
             menu.trigger_commands("ngcrash" .. players.get_name(sender))
         end
     end
-    --end
+
+    if message_lower:sub(1, 1) == "!" then
+        local command_found = false
+        for _, command in pairs(chat_commands) do
+            if message_lower:sub(1, command[1]:len() + 1) == "!" .. command[1] then
+                command_found = true
+
+                -- Split Arguments
+                local args = {}
+                local required_args = ""
+                for arg in message:sub(command[1]:len() + 2):gmatch("%S+") do table.insert(args, arg) end
+                for _, arg in pairs(command[2]) do required_args = required_args .. " [" .. arg .. "]" end
+                if #args < #command[2] then
+                    reply("Usage: !" .. command[1] .. required_args)
+                else
+                    -- Parse Arguments
+                    local has_error = false
+                    for i, arg_type in pairs(command[2]) do
+                        if arg_type == "player" then
+                            local player_found = false
+                            for _, player_id in pairs(players.list()) do
+                                if players.get_name(player_id):lower():find(args[i]:lower()) == 1 then
+                                    args[i] = player_id
+                                    player_found = true
+                                end
+                            end
+                            if not player_found then
+                                reply("Player '" .. args[i] .. "' could not be found.")
+                                has_error = true
+                            end
+                        end
+                    end
+
+                    -- Handle Command
+                    if not has_error then
+                        if command[4] ~= nil then
+                            local raw_command = command[4]
+                            for i, arg_type in pairs(command[2]) do
+                                if arg_type == "player" then raw_command = raw_command:gsub("{" .. i .. "}", players.get_name(args[i])) end
+                            end
+                            menu.trigger_commands(raw_command)
+                            reply("Successfully executed command!")
+                        elseif command[1] == "help" then
+                            local cmd_list = ""
+                            for i, cmd in pairs(chat_commands) do
+                                if i ~= 1 then
+                                    local cmd_args = ""
+                                    local cmd_exact = #args > 0 and cmd[1] == args[1]
+                                    for _, arg in pairs(cmd[2]) do cmd_args = cmd_args .. " [" .. arg .. "]" end
+                                    if #args == 0 or cmd_exact then
+                                        cmd_list = cmd_list .. "!" .. cmd[1] .. cmd_args .. (cmd_exact and ": " .. cmd[3] or "") .. ", "
+                                    end
+                                end 
+                            end
+                            if cmd_list:len() > 0 then reply(cmd_list:sub(1, cmd_list:len() - 2))
+                            else reply("Unknown command. Use !commands for a list of them.") end
+                        end
+                    end
+                end
+            end
+        end
+        if not command_found then reply("Unknown command. Use !commands for a list of them.") end
+    end
 
     if #chat_history > 30 then
         menu.delete(chat_history[1])
@@ -1967,6 +2078,7 @@ vehicle_upgrades = {}
 
 vehicle_catapult = {}
 vehicle_alarm = {}
+vehicle_delete = {}
 
 attach_vehicle_bones = {}
 attach_vehicle_vehicle = {}
@@ -2186,6 +2298,11 @@ function setup_player(player_id)
         vehicle_alarm[player_id] = value and true or nil
     end)
 
+    -- -- Alarm
+    menu.toggle(player_vehicle_root, "Delete", {"ryandelete"}, "Deletes their vehicle.", function(value)
+        vehicle_delete[player_id] = value and true or nil
+    end)
+
 
     -- Entities --
     local player_trolling_entities_root = menu.list(player_trolling_root, "Entities...", {"ryanentities"}, "Entity trolling options.")
@@ -2226,7 +2343,7 @@ function setup_player(player_id)
     end)
     
     -- -- Falling Tank
-    menu.action(player_trolling_entities_root, "Falling Tank", {"ryantankkamikaze"}, "Send a tank straight from heaven.", function()
+    menu.action(player_trolling_entities_root, "Falling Tank", {"ryanfallingtank"}, "Send a tank straight from heaven.", function()
 		local player_ped = player_get_ped(player_id)
         local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
         coords.z = coords.z + 10
@@ -2565,6 +2682,12 @@ util.create_tick_handler(function()
                         VEHICLE.START_VEHICLE_ALARM(vehicle)
                     end, true)
                 end
+            end
+
+            -- Alarm
+            if vehicle_delete[player_id] == true then
+                -- SET_AS_MISSION_VEHICLE
+                entities.delete_by_handle(vehicle)
             end
         end
     end
