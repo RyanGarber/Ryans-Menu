@@ -735,9 +735,6 @@ menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while ho
     ebrake = value
 end)
 
-horn_smite = false
-
-
 util.create_tick_handler(function()
     if ebrake then
         local player_ped = player_get_ped(players.user())
@@ -765,7 +762,7 @@ util.create_tick_handler(function()
 
                 local nearest_distance = 2147483647
                 local nearest_player = nil
-                for _, player_id in pairs(players.list(false)) do
+                for _, player_id in pairs(players.list()) do
                     local player_ped = player_get_ped(player_id)
                     if PED.GET_VEHICLE_PED_IS_IN(player_ped, false) ~= vehicle then
                         local distance = vector_distance(coords, ENTITY.GET_ENTITY_COORDS(player_ped))
@@ -784,7 +781,8 @@ util.create_tick_handler(function()
             else
                 local player_id = basics_get_random(elegible_players)
                 player_explode(player_id, true)
-                basics_show_text_message(Color.Purple, "Horn Smite", "The gods have spoken, and " .. players.get_name(player_id) .. " is the chosen one.")
+                ptfx_play_at_coords(ENTITY.GET_ENTITY_COORDS(player_id), "core", "exp_grd_petrol_pump", {r = 1, g = 1, b = 1})
+                basics_show_text_message(Color.Purple, "Horn Smite", "I have spoken... " .. players.get_name(player_id) .. " is the chosen one.")
             end
         end
     end
@@ -929,7 +927,7 @@ function do_fireworks(burst_type, coords, color)
     audio_play_at_coords(vector_add(coords, {x = 75, y = 75, z = 0}), "PLAYER_SWITCH_CUSTOM_SOUNDSET", "Hit_Out", 100)
 end
 
-firework_coords = nil -- {x = -1800, y = -1000, z = 85}
+firework_coords = nil
 menu.toggle(world_root, "Fireworks Show", {"ryanfireworkshow"}, "A nice display of liberty where you're standing. May trigger crash protections.", function(value)
     firework_coords = value and ENTITY.GET_ENTITY_COORDS(player_get_ped()) or nil
 end)
