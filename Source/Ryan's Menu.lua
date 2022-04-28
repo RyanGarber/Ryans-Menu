@@ -714,6 +714,21 @@ menu.toggle(self_police_root, "Searchlight", {"ryansearchlight"}, "Enables searc
     searchlight = value
 end)
 
+-- -- Horn Smite
+self_horn_smite_root = menu.list(self_root, "Horn Smite...", {"ryanhornsmite"}, "Smites a player every time your horn is honked.")
+
+horn_smite_random = false
+horn_smite_nearest = false
+
+menu.toggle(self_horn_smite_root, "Nearest Player", {"ryanhornsmitenearest"}, "Smites the nearest player outside of your vehicle.", function(value)
+    if value then menu.trigger_commands("ryanhornsmiterandom off") end
+    horn_smite_nearest = value
+end)
+menu.toggle(self_horn_smite_root, "Random Player", {"ryanhornsmiterandom"}, "Smites a random player, including you.", function(value)
+    if value then menu.trigger_commands("ryanhornsmitenearest off") end
+    horn_smite_random = value
+end)
+
 -- -- E-Brake
 ebrake = false
 menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while holding Shift.", function(value)
@@ -721,9 +736,7 @@ menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while ho
 end)
 
 horn_smite = false
-menu.toggle(self_root, "Horn Smite", {"ryanhornsmite"}, "Smites a random player every time your horn is honked.", function(value)
-    horn_smite = value
-end)
+
 
 util.create_tick_handler(function()
     if ebrake then
@@ -741,13 +754,30 @@ util.create_tick_handler(function()
         VEHICLE.SET_VEHICLE_SEARCHLIGHT(vehicle, searchlight, true)
         VEHICLE.SET_VEHICLE_HAS_MUTED_SIRENS(vehicle, mute_siren)
 
-        if horn_smite and PAD.IS_CONTROL_JUST_PRESSED(21, Controls.Horn) then
-            local elegible_players = basics_keep(
-                players.list(),
-                function(table, i, new_i)
-                    return not players.is_godmode(table[i])
+        if PAD.IS_CONTROL_JUST_PRESSED(21, Controls.Horn) then
+            local elegible_players = {}
+            if horn_smite_random then
+                elegible_players = basics_keep(players.list(), function(table, i, new_i) return not players.is_godmode(table[i]) end)
+            else
+                local ped = player_get_ped()
+                local coords = ENTITY.GET_ENTITY_COORDS(ped)
+                local vehicle = PED.GET_VEHICLE_PED_IS_IN(ped, false)
+
+                local nearest_distance = 2147483647
+                local nearest_player = nil
+                for _, player_id in pairs(players.list(false)) do
+                    local player_ped = player_get_ped(player_id)
+                    if PED.GET_VEHICLE_PED_IS_IN(player_ped, false) ~= vehicle then
+                        local distance = vector_distance(coords, ENTITY.GET_ENTITY_COORDS(player_ped))
+                        if distance < nearest_distance then
+                            nearest_distance = distance
+                            nearest_player = player_id
+                        end
+                    end                    
                 end
-            )
+
+                if nearest_player ~= nil then elegible_players = {nearest_player} end
+            end
 
             if #elegible_players == 0 then
                 basics_show_text_message(Color.Red, "Horn Smite", "There are no elegible players to smite.")
