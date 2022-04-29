@@ -7,9 +7,6 @@ function session_explode_all(with_earrape)
             audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
             coords.z = -2000.0
             audio_play_at_coords(coords, "WastedSounds", "Bed", 999999999)
-
-            for _, player_id in pairs(players.list()) do
-            end
         end
     end
     

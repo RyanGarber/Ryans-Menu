@@ -750,12 +750,12 @@ util.create_tick_handler(function()
     if vehicle ~= 0 then
         VEHICLE.SET_VEHICLE_SEARCHLIGHT(vehicle, searchlight, true)
         VEHICLE.SET_VEHICLE_HAS_MUTED_SIRENS(vehicle, mute_siren)
-
-        if PAD.IS_CONTROL_JUST_PRESSED(21, Controls.Horn) then
+        
+        if (horn_smite_random or horn_smite_nearest) and PAD.IS_CONTROL_JUST_PRESSED(21, Controls.Horn) then
             local elegible_players = {}
             if horn_smite_random then
                 elegible_players = basics_keep(players.list(), function(table, i, new_i) return not players.is_godmode(table[i]) end)
-            else
+            elseif horn_smite_nearest then
                 local ped = player_get_ped()
                 local coords = ENTITY.GET_ENTITY_COORDS(ped)
                 local vehicle = PED.GET_VEHICLE_PED_IS_IN(ped, false)
