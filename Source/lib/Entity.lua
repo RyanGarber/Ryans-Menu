@@ -1,7 +1,8 @@
 function entity_get_all_nearby(coords, range, mode)
     mode = mode or NearbyEntitiesModes.All
     
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_get_ped())
+    local player_ped = player_get_ped()
+    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
     local nearby_entities = {}
 
     if mode == NearbyEntities.Peds or mode == NearbyEntities.All then
@@ -16,7 +17,7 @@ function entity_get_all_nearby(coords, range, mode)
     end
 
     if mode == NearbyEntities.Vehicles or mode == NearbyEntities.All then
-        for _, vehicle in ipairs(entities.get_all_vehicles_as_handles()) do
+        for _, vehicle in pairs(entities.get_all_vehicles_as_handles()) do
             if vehicle ~= player_vehicle then
                 local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
                 if vector_distance(coords, vehicle_coords) <= range then

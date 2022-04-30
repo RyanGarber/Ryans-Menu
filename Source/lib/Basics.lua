@@ -121,6 +121,10 @@ function basics_request_model(model)
     end
 end
 
+function basics_free_model(model)
+	STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(model)
+end
+
 function basics_request_animations(animation_group)
     STREAMING.REQUEST_ANIM_DICT(animation_group)
     while not STREAMING.HAS_ANIM_DICT_LOADED(animation_group) do

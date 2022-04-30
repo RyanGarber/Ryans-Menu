@@ -305,8 +305,8 @@ Color = {
 
 NearbyEntities = {
     All = 1,
-    Peds = 3,
-    Vehicles = 2
+    Vehicles = 2,
+    Peds = 3
 }
 
 VehicleSpeed = {

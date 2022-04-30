@@ -228,6 +228,23 @@ function player_fake_money_drop(player_id)
     entities.delete_by_handle(bag)
 end
 
+
+-- Entity Cleanup --
+player_entities = {}
+function player_delete_entities(player_id)
+    if player_entities[player_id] == nil then return end
+
+    for _, entity in ipairs(player_entities[player_id]) do entities.delete_by_handle(entity) end
+    player_entities[player_id] = {}
+end
+
+function player_add_entity(player_id, entity)
+    if player_entities[player_id] == nil then player_entities[player_id] = {} end
+    table.insert(player_entities[player_id], entity)
+end
+
+
+-- Entities --
 function player_trash_pickup(player_id)
     util.toast("Sending the trash man to " .. players.get_name(player_id) .. "...")
 
@@ -235,10 +252,16 @@ function player_trash_pickup(player_id)
     local trash_man = util.joaat("s_m_y_garbage"); basics_request_model(trash_man)
     local player_ped = player_get_ped(player_id)
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+    local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
 
     local weapons = {"weapon_pistol", "weapon_pumpshotgun"}
     local coords_ptr = memory.alloc()
     local node_ptr = memory.alloc()
+
+    local army = util.joaat("army")
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, army, player_group)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player_group, army)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, army, army)
 
     if not PATHFIND.GET_RANDOM_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, 80, 0, 0, 0, coords_ptr, node_ptr) then
         player_coords.x = player_coords.x + math.random(-7, 7)
@@ -248,12 +271,13 @@ function player_trash_pickup(player_id)
 
     local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
     local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    player_add_entity(player_id, vehicle)
     entity_face_entity(vehicle, player_ped, true)
     VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
-    ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
 
     for seat = -1, 2 do
         local npc = entities.create_ped(5, trash_man, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        player_add_entity(player_id, npc)
         local weapon = basics_get_random(weapons)
 
         PED.SET_PED_RANDOM_COMPONENT_VARIATION(npc, 0)
@@ -261,9 +285,10 @@ function player_trash_pickup(player_id)
         PED.SET_PED_NEVER_LEAVES_GROUP(npc, true)
         PED.SET_PED_COMBAT_ATTRIBUTES(npc, 1, true)
         PED.SET_PED_INTO_VEHICLE(npc, vehicle, seat)
-        ENTITY.SET_ENTITY_INVINCIBLE(npc, false)
         TASK.TASK_COMBAT_PED(npc, player_ped, 0, 16)
         PED.SET_PED_KEEP_TASK(npc, true)
+        PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, army)
+        HUD.ADD_BLIP_FOR_ENTITY(vehicle)
 
         util.create_tick_handler(function()
             if TASK.GET_SCRIPT_TASK_STATUS(npc, 0x2E85A751) == 7 then
@@ -284,13 +309,23 @@ end
 
 function player_go_karts(player_id, ped_type)
     local player_ped = player_get_ped(player_id)
+    local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
+
     local veto = util.joaat("veto2"); basics_request_model(veto)
     local driver = util.joaat(ped_type); basics_request_model(driver)
+    local army = util.joaat("army")
+
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, driver, army)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, army, driver)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, driver, driver)
+    
     for i = 1, 4 do
         local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 5 - i, -10.0, 0.0)
         local vehicle = entities.create_vehicle(veto, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
+        player_add_entity(player_id, vehicle)
         for i = -1, VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(veto) - 2 do
             local ped = entities.create_ped(1, driver, coords, 0.0)
+            player_add_entity(player_id, ped)
             if i == -1 then
                 TASK.TASK_VEHICLE_CHASE(ped, player_ped)
             end
@@ -299,7 +334,9 @@ function player_go_karts(player_id, ped_type)
             WEAPON.GIVE_WEAPON_TO_PED(ped, util.joaat("weapon_appistol"), 1000, false, true)
             PED.SET_PED_COMBAT_ATTRIBUTES(ped, 5, true)
             PED.SET_PED_COMBAT_ATTRIBUTES(ped, 46, true)
+            PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, driver)
             TASK.TASK_COMBAT_PED(ped, player_ped, 0, 16)
+            HUD.ADD_BLIP_FOR_ENTITY(vehicle)
         end
     end
 end
@@ -308,7 +345,7 @@ function player_flying_yacht(player_id)
     local yacht = util.joaat("prop_cj_big_boat"); basics_request_model(yacht)
     local buzzard = util.joaat("buzzard2"); basics_request_model(buzzard)
     local black_ops = util.joaat("s_m_y_blackops_01"); basics_request_model(black_ops)
-    local army = util.joaat("ARMY")
+    local army = util.joaat("army")
 
     local player_ped =  player_get_ped(player_id)
     local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
@@ -320,9 +357,11 @@ function player_flying_yacht(player_id)
 
     local vehicle = entities.create_vehicle(buzzard, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
     local attachment = entities.create_object(yacht, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    player_add_entity(player_id, attachment); player_add_entity(player_id, vehicle)
     NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
     if ENTITY.DOES_ENTITY_EXIST(vehicle) then
         local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        player_add_entity(player_id, ped)
         PED.SET_PED_INTO_VEHICLE(ped, vehicle)
         
         coords.x = coords.x + math.random(-20, 20)
@@ -345,12 +384,12 @@ function player_flying_yacht(player_id)
 
         for seat = 1, 2 do 
             local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+            player_add_entity(player_id, ped)
             PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
             WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
             PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
             PED.SET_PED_MAX_HEALTH(ped, 500)
             ENTITY.SET_ENTITY_HEALTH(ped, 500)
-            ENTITY.SET_ENTITY_INVINCIBLE(ped, true)
             PED.SET_PED_SHOOT_RATE(ped, 1000)
             PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, army)
             TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
@@ -364,11 +403,96 @@ function player_flying_yacht(player_id)
     STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(black_ops)
 end
 
+function player_send_military(player_id)
+    local player_ped = player_get_ped(player_id)
+    local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
+    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+
+    local black_ops = util.joaat("s_m_y_blackops_01"); basics_request_model(black_ops)
+    local army = util.joaat("army")
+    local vehicles = {"apc", "apc", "crusader", "crusader", "crusader"}
+    for i = 1, #vehicles do
+        vehicles[i] = util.joaat(vehicles[i])
+        basics_request_model(vehicles[i])
+    end
+
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, army, player_group)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player_group, army)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, army, army)
+
+    for i = 1, #vehicles do
+        local coords_ptr = memory.alloc()
+        local node_ptr = memory.alloc()
+
+        if not PATHFIND.GET_RANDOM_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, 80, 0, 0, 0, coords_ptr, node_ptr) then
+            player_coords.x = player_coords.x + math.random(-20, 20)
+            player_coords.y = player_coords.y + math.random(-20, 20)
+            PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords_ptr, 1, 100, 2.5)
+        end
+
+        local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
+        local vehicle = entities.create_vehicle(vehicles[i], coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        player_add_entity(player_id, vehicle)
+        entity_face_entity(vehicle, player_ped, true)
+        VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
+        vehicle_set_speed(vehicle, VehicleSpeed.Fast)
+
+        local seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicles[i])
+        for seat = -1, seats - 2 do
+            local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+            player_add_entity(player_id, ped)
+            PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
+            WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
+            PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
+            PED.SET_PED_MAX_HEALTH(ped, 500)
+            ENTITY.SET_ENTITY_HEALTH(ped, 500)
+            PED.SET_PED_SHOOT_RATE(ped, 1000)
+            PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, army)
+            TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
+        end
+
+        if i < 3 then HUD.ADD_BLIP_FOR_ENTITY(vehicle) end
+    end
+
+    for i = 1, #vehicles do STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(vehicles[i]) end
+end
+
+function player_send_swat(player_id)
+    local player_ped = player_get_ped(player_id)
+    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+    local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
+
+    local swat = util.joaat("s_m_y_swat_01"); basics_request_model(swat)
+    local army = util.joaat("army")
+
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, army, player_group)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player_group, army)
+    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, army, army)
+    
+    local e = {}
+    for i = 1, 4 do
+        local coords = vector_add(player_coords, {x = math.random(-3, 3), y = math.random(-3, 3), z = 0})
+        local ped = entities.create_ped(5, swat, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        player_add_entity(player_id, ped)
+        table.insert(e, ped)
+
+        WEAPON.GIVE_WEAPON_TO_PED(ped, -1312131151, -1, false, true)
+        PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
+        PED.SET_PED_MAX_HEALTH(ped, 500)
+        ENTITY.SET_ENTITY_INVINCIBLE(ped, true)
+        PED.SET_PED_SHOOT_RATE(ped, 1000)
+        WEAPON.SET_PED_INFINITE_AMMO(ped, true, -1312131151)
+        WEAPON.SET_PED_INFINITE_AMMO_CLIP(ped, true)
+        PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, army)
+        TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 100, 0)
+        util.yield(375)
+    end
+
+    STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(swat)
+end
+
 function player_teleport_car(player_id, coords)
     local name = PLAYER.GET_PLAYER_NAME(player_id)
-    --menu.trigger_commands("spectate" .. name .. " on")
-    --util.yield(1000)
-
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), true)
     if vehicle ~= 0 then
         entity_request_control_loop(vehicle, "teleport player vehicle")

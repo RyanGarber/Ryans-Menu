@@ -1,4 +1,4 @@
-VERSION = "0.7.3"
+VERSION = "0.7.4"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -10,11 +10,7 @@ notified_of_requirements = false
 
 function exists(name) return filesystem.exists(filesystem.scripts_dir() .. name) end
 while not exists("lib\\natives-1640181023.lua") or not exists("lib\\natives-1627063482.lua") do
-    if not notified_of_requirements then
-        local ref = menu.ref_by_path("Stand>Lua Scripts>Repository>WiriScript")
-        menu.focus(ref)
-        notified_of_requirements = true
-    end
+    if not notified_of_requirements then notified_of_requirements = true end
 
     util.toast("Ryan's Menu requires WiriScript and LanceScript to function. Please enable them to continue.")
     util.yield(2000)
@@ -803,6 +799,8 @@ all_npcs_mode = "Off"
 all_npcs_change = 2147483647
 all_npcs_values = {["Off"] = true}
 
+all_npcs_include_vehicles = true
+
 for _, mode in pairs(NPCScenarios) do
     menu.toggle(world_all_npcs_root, mode, {"ryanallnpcs" .. mode}, "", function(value)
         if value then
@@ -827,6 +825,11 @@ util.create_tick_handler(function()
     end
 end)
 
+menu.divider(world_all_npcs_root, "Options")
+menu.toggle(world_all_npcs_root, "Include Vehicles", {"ryanallnpcsvehicles"}, "If enabled, NPCs will get out of their cars.", function(value)
+    all_npcs_include_vehicles = value
+end, true)
+
 npcs_affected = {}
 util.create_tick_handler(function()
     if all_npcs_mode ~= "Off" then
@@ -837,16 +840,14 @@ util.create_tick_handler(function()
         elseif all_npcs_mode == "Janitor" then scenario = "WORLD_HUMAN_JANITOR" end
 
         local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
-        for _, ped in pairs(entity_get_all_nearby(coords, 200, NearbyEntities.Peds)) do
-            if not PED.IS_PED_A_PLAYER(ped) and not PED.IS_PED_IN_ANY_VEHICLE(ped) then
-                local was_affected = false
-                for _, npc in pairs(npcs_affected) do
-                    if npc == ped then was_affected = true end
-                end
-                if not was_affected then
+        for _, ped in pairs(entity_get_all_nearby(coords, 250, NearbyEntities.Peds)) do
+            local vehicle = PED.GET_VEHICLE_PED_IS_IN(ped, false)
+            if not PED.IS_PED_A_PLAYER(ped) and (all_npcs_include_vehicles or vehicle == 0) then
+                if npcs_affected[ped] ~= all_npcs_mode then
+                    if vehicle ~= 0 then ENTITY.SET_ENTITY_VELOCITY(vehicle, 0.0, 0.0, 0.0) end
                     TASK.CLEAR_PED_TASKS_IMMEDIATELY(ped)
-                    TASK.TASK_START_SCENARIO_IN_PLACE(ped, all_npcs_mode, 0, true)
-                    table.insert(npcs_affected, ped)
+                    TASK.TASK_START_SCENARIO_IN_PLACE(ped, scenario, 0, true)
+                    npcs_affected[ped] = all_npcs_mode
                 end
             end
         end
@@ -1724,7 +1725,7 @@ util.create_tick_handler(function()
             VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
             VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
         end
-        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(oppressor2)
+        basics_free_model(oppressor2)
         util.yield(180000)
     end
 end)
@@ -1942,7 +1943,7 @@ menu.divider(chat_root, "Chat Options")
 
 -- -- Commands
 enable_commands = false
-menu.toggle(chat_root, "Enable Commands", {"ryancommands"}, "Enables commands for all players. Use !commands for a list.", function(value)
+menu.toggle(chat_root, "Enable Commands", {"ryancommands"}, "Enables commands for all players. Use !help for a list.", function(value)
     enable_commands = value
 end)
 
@@ -1995,7 +1996,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
         end
     end
 
-    if message_lower:sub(1, 1) == "!" then
+    if enable_commands and message_lower:sub(1, 1) == "!" then
         local command_found = false
         for _, command in pairs(chat_commands) do
             if message_lower:sub(1, command[1]:len() + 1) == "!" .. command[1] then
@@ -2049,13 +2050,13 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
                                 end 
                             end
                             if cmd_list:len() > 0 then reply(cmd_list:sub(1, cmd_list:len() - 2))
-                            else reply("Unknown command. Use !commands for a list of them.") end
+                            else reply("Unknown command. Use !help for a list of them.") end
                         end
                     end
                 end
             end
         end
-        if not command_found then reply("Unknown command. Use !commands for a list of them.") end
+        if not command_found then reply("Unknown command. Use !help for a list of them.") end
     end
 
     if #chat_history > 30 then
@@ -2094,6 +2095,7 @@ ptfx_attack = {}
 money_drop = {}
 remove_godmode = {}
 remove_godmode_notice = {}
+entities_message = {}
 
 vehicle_state = {}
 
@@ -2113,6 +2115,17 @@ attach_vehicle_vehicle = {}
 attach_vehicle_notice = {}
 attach_vehicle_offset = {}
 attach_vehicle_root = {}
+
+function spam_then(player_id, action)
+    local do_spam = entities_message[player_id] ~= nil and entities_message[player_id] ~= "" and entities_message[player_id] ~= " "
+    if do_spam then
+        basics_show_text_message(Color.Purple, "Entity Trolling", "Spamming " .. players.get_name(player_id) .. " and then spawning entities on them...")
+        player_do_sms_spam(player_id, entities_message[player_id], 1250)
+    else
+        basics_show_text_message(Color.Purple, "Entity Trolling", "Spawning entities on " .. players.get_name(player_id) .. "!")
+    end
+    action()
+end
 
 function setup_player(player_id)
     local player_root = menu.player_root(player_id)
@@ -2337,52 +2350,75 @@ function setup_player(player_id)
     
     -- -- Stripper El Rubio
     menu.action(player_trolling_entities_root, "Pole-Dancing El Rubio", {"ryanelrubio"}, "Spawns an El Rubio whose fortune has been stolen, leading him to the pole.", function()
-        local ped_coords = vector_add(
-            ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)),
-            {x = math.random(-5, 5), y = math.random(-5, 5), z = 0}
-        )
-
-        local el_rubio = util.joaat("csb_juanstrickler"); basics_request_model(el_rubio)
-        basics_request_animations("mini@strip_club@pole_dance@pole_dance1")
-
-        local ped = entities.create_ped(1, el_rubio, ped_coords, ENTITY.GET_ENTITY_HEADING(player_get_ped(player_id)))
-        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(el_rubio)
-        HUD.ADD_BLIP_FOR_ENTITY(ped)
-        entity_request_control_loop(ped, "pole-dancing el rubio")
-        TASK.TASK_PLAY_ANIM(ped, "mini@strip_club@pole_dance@pole_dance1", "pd_dance_01", 8.0, 0, -1, 9, 0, false, false, false)
-
-        util.yield(300000)
-        entities.delete_by_handle(ped)
+        spam_then(player_id, function()
+            local ped_coords = vector_add(
+                ENTITY.GET_ENTITY_COORDS(player_get_ped(player_id)),
+                {x = math.random(-5, 5), y = math.random(-5, 5), z = 0}
+            )
+    
+            local el_rubio = util.joaat("csb_juanstrickler"); basics_request_model(el_rubio)
+            basics_request_animations("mini@strip_club@pole_dance@pole_dance1")
+    
+            local ped = entities.create_ped(1, el_rubio, ped_coords, ENTITY.GET_ENTITY_HEADING(player_get_ped(player_id)))
+            basics_free_model(el_rubio)
+            HUD.ADD_BLIP_FOR_ENTITY(ped)
+            entity_request_control_loop(ped, "pole-dancing el rubio")
+            TASK.TASK_PLAY_ANIM(ped, "mini@strip_club@pole_dance@pole_dance1", "pd_dance_01", 8.0, 0, -1, 9, 0, false, false, false)
+    
+            util.yield(300000)
+            entities.delete_by_handle(ped)
+        end)
     end)
 
     -- -- Transgender Go-Karts
     menu.action(player_trolling_entities_root, "Transgender Go-Karts", {"ryanmilitarykarts"}, "Spawns a military squad in go-karts.", function()
-        player_go_karts(player_id, "a_m_m_tranvest_01")
+        spam_then(player_id, function() player_go_karts(player_id, "a_m_m_tranvest_01") end)
+    end)
+
+    -- -- Military Squad
+    menu.action(player_trolling_entities_root, "Military Squad", {"ryanmilitarysquad"}, "Send an entire fucking military squad.", function()
+		spam_then(player_id, function() player_send_military(player_id) end)
+    end)
+
+    -- -- SWAT Raid
+    menu.action(player_trolling_entities_root, "SWAT Raid", {"ryanswatraid"}, "Sends a SWAT team to kill them, brutally.", function()
+        spam_then(player_id, function() player_send_swat(player_id) end)
     end)
 
     -- -- Trash Pickup
     menu.action(player_trolling_entities_root, "Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
-        player_trash_pickup(player_id)
+        spam_then(player_id, function() player_trash_pickup(player_id) end)
     end)
 
     -- -- Flying Yacht
     menu.action(player_trolling_entities_root, "Flying Yacht", {"ryanflyingyacht"}, "Send the magic school yacht to fuck their shit up.", function()
-        player_flying_yacht(player_id)
+        spam_then(player_id, function() player_flying_yacht(player_id) end)
     end)
     
     -- -- Falling Tank
     menu.action(player_trolling_entities_root, "Falling Tank", {"ryanfallingtank"}, "Send a tank straight from heaven.", function()
-		local player_ped = player_get_ped(player_id)
-        local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-        coords.z = coords.z + 10
+		spam_then(player_id, function()
+            local player_ped = player_get_ped(player_id)
+            local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+            coords.z = coords.z + 10
 
-        local tank = util.joaat("rhino"); basics_request_model(tank)
-        local entity = entities.create_vehicle(tank, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-        ENTITY.SET_ENTITY_LOAD_COLLISION_FLAG(entity, true)
-        ENTITY.SET_ENTITY_MAX_SPEED(entity, 64)
-        ENTITY.APPLY_FORCE_TO_ENTITY(entity, 3, 0.0, 0.0, -1000.00, 0.0, 0.0, 0.0, 0, true, true, false, true)
-        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(tank)
+            local tank = util.joaat("rhino"); basics_request_model(tank)
+            local entity = entities.create_vehicle(tank, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+            ENTITY.SET_ENTITY_LOAD_COLLISION_FLAG(entity, true)
+            ENTITY.SET_ENTITY_MAX_SPEED(entity, 64)
+            ENTITY.APPLY_FORCE_TO_ENTITY(entity, 3, 0.0, 0.0, -1000.00, 0.0, 0.0, 0.0, 0, true, true, false, true)
+            basics_free_model(tank)
+        end)
     end)
+
+    menu.divider(player_trolling_entities_root, "Options")
+    menu.text_input(player_trolling_entities_root, "Spam Message", {"ryanentitiesspam"}, "The message to spam before spawning entities.", function(value)
+        entities_message[player_id] = value
+    end, entities_message[player_id] or "")
+    menu.action(player_trolling_entities_root, "Delete All", {"ryanentitiesdelete"}, "Deletes all previously spawned entities.", function()
+        player_delete_entities(player_id)
+    end)
+
 
     -- -- Attach to Vehicle
     attach_vehicle_root[player_id] = menu.list(player_trolling_root, "Attach To...", {"ryanattach"}, "Attaches to their vehicle on a specific bone.")
@@ -2727,6 +2763,7 @@ function cleanup_player(player_id)
     ptfx_attack[player_id] = nil
     remove_godmode[player_id] = nil
     remove_godmode_notice[player_id] = nil
+    entities_message[player_id] = nil
     
     vehicle_speed[player_id] = nil
     vehicle_grip[player_id] = nil
@@ -2735,6 +2772,8 @@ function cleanup_player(player_id)
     vehicle_engine[player_id] = nil
     vehicle_upgrades[player_id] = nil
     vehicle_catapult[player_id] = nil
+    vehicle_alarm[player_id] = nil
+    vehicle_delete[player_id] = nil
     
     attach_vehicle_bones[player_id] = nil
     attach_vehicle_vehicle[player_id] = nil
@@ -2744,6 +2783,8 @@ function cleanup_player(player_id)
 
     hermits[player_id] = nil
     hermit_list[player_id] = nil
+
+    player_delete_entities(player_id)
 end
 
 
