@@ -403,14 +403,15 @@ function player_flying_yacht(player_id)
     STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(black_ops)
 end
 
-function player_send_military(player_id)
+function player_send_military(player_id, with_crusaders)
     local player_ped = player_get_ped(player_id)
     local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
     local black_ops = util.joaat("s_m_y_blackops_01"); basics_request_model(black_ops)
     local army = util.joaat("army")
-    local vehicles = {"apc", "apc", "crusader", "crusader", "crusader"}
+    local vehicles = with_crusaders and {"apc", "apc", "crusader", "crusader", "crusader"} or {"apc", "apc"}
+
     for i = 1, #vehicles do
         vehicles[i] = util.joaat(vehicles[i])
         basics_request_model(vehicles[i])
@@ -436,6 +437,7 @@ function player_send_military(player_id)
         entity_face_entity(vehicle, player_ped, true)
         VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
         vehicle_set_speed(vehicle, VehicleSpeed.Fast)
+        vehicle_set_upgraded(vehicle, true)
 
         local seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicles[i])
         for seat = -1, seats - 2 do

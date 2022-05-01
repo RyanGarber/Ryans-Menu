@@ -153,3 +153,40 @@ function session_watch_and_do_command_all(commands, modders, wait_for)
 
     session_watch_in_progress = false
 end
+
+function session_watch_and_do_all(action, modders, wait_for)
+    if session_watch_in_progress then
+        basics_show_text_message(Color.Red, "Session Trolling", "Mass trolling is already in progress. Wait for it to end or stop it.")
+        return
+    end
+
+    session_watch_in_progress = true
+    basics_show_text_message(Color.Purple, "Session Trolling", "Session trolling has begun. Sit tight and enjoy the show!")
+    
+    menu.trigger_commands("otr on")
+    menu.trigger_commands("invisibility on")
+    menu.trigger_commands("levitation on")
+
+    local starting_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped(), true)
+    for _, player_id in pairs(players.list()) do
+        if not session_watch_in_progress then break end
+        if player_id ~= players.user() and not players.is_in_interior(player_id) then
+            if modders or not players.is_marked_as_modder(player_id) then
+                local player_name = players.get_name(player_id)
+                menu.trigger_commands("tp" .. player_name)
+                util.yield(1250)
+                if player_name ~= "**invalid**" then
+                    action(player_id)
+                end
+                util.yield(wait_for)
+            end
+        end
+    end
+    player_teleport_to(starting_coords)
+
+    menu.trigger_commands("otr off")
+    menu.trigger_commands("invisibility off")
+    menu.trigger_commands("levitation off")
+
+    session_watch_in_progress = false
+end

@@ -102,10 +102,10 @@ self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "A
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
 ptfx_disable = false
 
-self_ptfx_body_root = menu.list(self_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body other players can see.")
-self_ptfx_weapon_root = menu.list(self_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon other players can see.")
-self_ptfx_vehicle_root = menu.list(self_ptfx_root, "Vehicle...", {"ryanptfxvehicle"}, "Special FX on your vehicle other players can see.")
-self_ptfx_pointing_root = menu.list(self_ptfx_root, "Pointing...", {"ryanptfxpointing"}, "Special FX when pointing other players can see.")
+self_ptfx_body_root = menu.list(self_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body.")
+self_ptfx_weapon_root = menu.list(self_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon.")
+self_ptfx_vehicle_root = menu.list(self_ptfx_root, "Vehicle...", {"ryanptfxvehicle"}, "Special FX on your vehicle.")
+self_ptfx_god_finger_root = menu.list(self_ptfx_root, "God Finger...", {"ryanptfxgodfinger"}, "Special FX when using God Finger.")
 
 menu.divider(self_ptfx_root, "Options")
 menu.colour(self_ptfx_root, "Color", {"ryanptfxcolor"}, "Some PTFX options allow for custom colors.", 1.0, 1.0, 1.0, 1.0, false, function(color)
@@ -121,20 +121,33 @@ end)
 self_ptfx_body_head_root = menu.list(self_ptfx_body_root, "Head...", {"ryanptfxhead"}, "Special FX on your head.")
 self_ptfx_body_hands_root = menu.list(self_ptfx_body_root, "Hands...", {"ryanptfxhands"}, "Special FX on your hands.")
 self_ptfx_body_feet_root = menu.list(self_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
+self_ptfx_body_pointer_root = menu.list(self_ptfx_body_root, "Pointer...", {"ryanptfxpointer"}, "Special FX on your finger when pointing.")
 
 ptfx_create_list(self_ptfx_body_head_root, function(ptfx)
+    if ptfx_disable then return end
     ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Head, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 ptfx_create_list(self_ptfx_body_hands_root, function(ptfx)
+    if ptfx_disable then return end
     ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Hands, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
+
 ptfx_create_list(self_ptfx_body_feet_root, function(ptfx)
+    if ptfx_disable then return end
     ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Feet, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
+end)
+
+ptfx_create_list(self_ptfx_body_pointer_root, function(ptfx)
+    if ptfx_disable then return end
+    if player_is_pointing == 3 then
+        ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
+        util.yield(ptfx[4])
+    end
 end)
 
 -- -- Vehicle PTFX
@@ -206,20 +219,17 @@ ptfx_create_list(self_ptfx_weapon_impact_root, function(ptfx)
     end
 end)
 
--- -- Pointing PTFX
-self_ptfx_pointing_finger_root = menu.list(self_ptfx_pointing_root, "Finger...", {"ryanptfxpointingfinger"}, "Special FX on your left finger.")
-self_ptfx_pointing_crosshair_root = menu.list(self_ptfx_pointing_root, "Crosshair...", {"ryanptfxpointingcrosshair"}, "Special FX on your crosshair.")
-self_ptfx_pointing_god_finger_root = menu.list(self_ptfx_pointing_root, "Target...", {"ryanptfxpointingtarget"}, "Special FX on your target when using God Finger.")
+-- -- God Finger PTFX
+self_ptfx_god_finger_crosshair_root = menu.list(self_ptfx_god_finger_root, "Crosshair...", {"ryanptfxgodfingercrosshair"}, "Special FX wherever you point when using God Finger.")
+self_ptfx_god_finger_entities_root = menu.list(self_ptfx_god_finger_root, "Entities...", {"ryanptfxgodfingerentities"}, "Special FX only on entities when using God Finger.")
 
-ptfx_create_list(self_ptfx_pointing_finger_root, function(ptfx)
-    if ptfx_disable then return end
-    if memory.read_int(memory.script_global(4516656 + 930)) == 3 then
-        ptfx_play_on_entity_bones(player_get_ped(), PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
-        util.yield(ptfx[4])
-    end
-end)
+menu.divider(self_ptfx_god_finger_root, "Options")
+ptfx_god_finger_attached = true
+menu.toggle(self_ptfx_god_finger_root, "Attach To Entity", {"ryanptfxgodfingerattach"}, "If enabled, PTFX is attached to the entity being God Fingered.", function(value)
+    ptfx_god_finger_attached = value
+end, true)
 
-ptfx_create_list(self_ptfx_pointing_crosshair_root, function(ptfx)
+ptfx_create_list(self_ptfx_god_finger_crosshair_root, function(ptfx)
     if ptfx_disable then return end
     if player_is_pointing then
         local raycast = basics_do_raycast(1000.0)
@@ -230,10 +240,11 @@ ptfx_create_list(self_ptfx_pointing_crosshair_root, function(ptfx)
     end
 end)
 
-ptfx_create_list(self_ptfx_pointing_god_finger_root, function(ptfx)
+ptfx_create_list(self_ptfx_god_finger_entities_root, function(ptfx)
     if ptfx_disable then return end
     if god_finger_target ~= nil then
-        ptfx_play_at_coords(god_finger_target, ptfx[2], ptfx[3], ptfx_color)
+        if ptfx_god_finger_attached then ptfx_play_on_entity(god_finger_target, ptfx[2], ptfx[3], ptfx_color)
+        else ptfx_play_at_coords(god_finger_target, ptfx[2], ptfx[3], ptfx_color) end
         util.yield(ptfx[4])
     end
 end)
@@ -1434,6 +1445,12 @@ menu.action(session_trolling_root, "Police", {"ryanattackallpolice"}, "Sends the
     util.toast("Sending a police car after all players...")
     session_watch_and_do_command_all({"sendpolicecar{name}"}, trolling_include_modders, trolling_watch_time)
 end)
+menu.action(session_trolling_root, "Military Squad", {"ryanattackallmilitary"}, "Sends a military squad to attack all players..", function()
+    util.toast("Sending a military squad after all players...")
+    session_watch_and_do_all(function(player_id)
+        player_send_military(player_id, false)
+    end, trolling_include_modders, trolling_watch_time)
+end)
 
 menu.divider(session_trolling_root, "Vehicle")
 menu.action(session_trolling_root, "Tow", {"ryantowall"}, "Sends a tow truck to all players.", function()
@@ -1498,12 +1515,14 @@ menu.text_input(session_nuke_root, "Spam Message", {"ryannukemessage"}, "The mes
 end, "Get Ryan's Menu for Stand!")
 
 -- -- Dox Players
-menu.action(session_dox_root, "Richest & Poorest", {"ryanrichest"}, "Shares the name of the richest and poorest players.", function()
+menu.divider(session_dox_root, "Highest & Lowest")
+menu.action(session_dox_root, "Money", {"ryanrichest"}, "Shares the name of the richest and poorest players.", function()
     player_list_by_money()
 end)
 menu.action(session_dox_root, "K/D Ratio", {"ryankd"}, "Shares the name of the highest and lowest K/D players.", function()
     player_list_by_kd()
 end)
+menu.divider(session_dox_root, "List All")
 menu.action(session_dox_root, "Godmode", {"ryangodmode"}, "Shares the name of the players in godmode.", function()
     player_list_by_godmode()
 end)
@@ -1561,11 +1580,11 @@ menu.action(session_crash_all_root, "Crash Using Stand", {"ryannextgen"}, "Attem
 end)
 
 menu.divider(session_crash_all_root, "Options")
-menu.toggle(session_crash_all_root, "Include Friends", {"ryanomnicrashfriends"}, "If enabled, friends are included in the Omnicrash.", function(value)
-    crash_all_friends = value
-end)
 menu.toggle(session_crash_all_root, "Include Modders", {"ryanomnicrashmodders"}, "If enabled, modders are included in the Omnicrash.", function(value)
     crash_all_modders = value
+end)
+menu.toggle(session_crash_all_root, "Include Friends", {"ryanomnicrashfriends"}, "If enabled, friends are included in the Omnicrash.", function(value)
+    crash_all_friends = value
 end)
 
 -- -- Anti-Hermit
@@ -1654,44 +1673,60 @@ end)
 session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
 
 max_players_amount = 0
-max_players_include_modders = false
 
 max_players_prefer_kd = true
 max_players_prefer_modders = false
 
+max_players_include_modders = false
+max_players_include_friends = false
+
 menu.slider(session_max_players_root, "Amount", {"ryanmaxamount"}, "The maximum amount of players to allow in the session.", 0, 32, 0, 1, function(value)
     max_players_amount = value
 end)
-menu.toggle(session_max_players_root, "Include Modders", {"ryanmaxincludemodders"}, "If enabled, modders will be kicked.", function(value)
-    max_players_include_modders = value
-end)
 
-menu.divider(session_max_players_root, "Kick")
+menu.divider(session_max_players_root, "Prefer Kicking")
+menu.toggle(session_max_players_root, "Modders", {"ryanmaxprefermodders"}, "Kicks players detected as modders first.", function(value)
+    if value then
+        menu.trigger_commands("ryanmaxpreferkd off")
+        if not max_players_include_modders then menu.trigger_commands("ryanmaxincludemodders on") end
+    end
+    max_players_modders = value
+end)
 menu.toggle(session_max_players_root, "High K/D", {"ryanmaxpreferkd"}, "Kicks players with the highest K/D first.", function(value)
-    if value then menu.trigger_commands("ryanmaxprefermodders off") end
+    if value then
+        menu.trigger_commands("ryanmaxprefermodders off")
+    end
     max_players_prefer_kd = value
 end, true)
-menu.toggle(session_max_players_root, "Modders", {"ryanmaxprefermodders"}, "Kicks players detected as modders first.", function(value)
-    if value then menu.trigger_commands("ryanmaxpreferkd off") end
-    max_players_modders = value
+
+menu.divider(session_max_players_root, "Options")
+menu.toggle(session_max_players_root, "Include Modders", {"ryanmaxincludemodders"}, "If enabled, modders will be kicked.", function(value)
+    if not value then menu.trigger_commands("ryanmaxprefermodders off") end
+    max_players_include_modders = value
+end)
+menu.toggle(session_max_players_root, "Include Friends", {"ryanmaxincludefriends"}, "If enabled, friends will be kicked.", function(value)
+    max_players_include_modders = value
 end)
 
 util.create_tick_handler(function()
     if max_players_amount ~= 0 then
         local player_list = players.list()
         if #player_list > max_players_amount then
-            table.sort(player_list, function(player_1, player_2)
-                if max_players_prefer_kd then
-                    return players.get_kd(player_1) > players.get_kd(player_2)
-                elseif max_players_prefer_modders then
-                    return (players.is_marked_as_modder(player_1) and 1 or 0) > (players.is_marked_as_modder(player_2) and 1 or 0)
-                end
-            end)
+            if max_players_prefer_kd or max_players_prefer_modders then
+                table.sort(player_list, function(player_1, player_2)
+                    if max_players_prefer_kd then
+                        return players.get_kd(player_1) > players.get_kd(player_2)
+                    elseif max_players_prefer_modders then
+                        return (players.get_tags_string(player_1):find("M") and 1 or 0) > (players.get_tags_string(player_2):find("M") and 1 or 0)
+                    end
+                end)
+            end
 
             local kick_count = #player_list - max_players_amount
             local kicked = 0
             for i = 1, #player_list do
-                local can_kick = max_players_include_modders or not players.is_marked_as_modder(player_list[i])
+                local can_kick = (max_players_include_modders or not players.get_tags_string(player_list[i]):find("M"))
+                             and (max_players_include_friends or not players.get_tags_string(player_list[i]):find("F"))
                 if player_list[i] ~= players.user() and can_kick and kicked < kick_count then
                     local reason = max_players_prefer_kd and ("having a " .. string.format("%.1f", players.get_kd(player_list[i])) .. " K/D") or ("being a modder")
                     basics_show_text_message(Color.Purple, "Max Players", "Kicking " .. players.get_name(player_list[i]) .. " for " .. reason .. ".")
@@ -2377,7 +2412,7 @@ function setup_player(player_id)
 
     -- -- Military Squad
     menu.action(player_trolling_entities_root, "Military Squad", {"ryanmilitarysquad"}, "Send an entire fucking military squad.", function()
-		spam_then(player_id, function() player_send_military(player_id) end)
+		spam_then(player_id, function() player_send_military(player_id, true) end)
     end)
 
     -- -- SWAT Raid
