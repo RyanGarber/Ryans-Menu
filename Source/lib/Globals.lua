@@ -282,7 +282,16 @@ NPCScenarios = {
     "Musician", -- "WORLD_HUMAN_MUSICIAN"
     "Human Statue", -- "WORLD_HUMAN_HUMAN_STATUE"
     "Paparazzi", -- "WORLD_HUMAN_PAPARAZZI"
-    "Janitor" -- "WORLD_HUMAN_JANITOR"
+    "Janitor", -- "WORLD_HUMAN_JANITOR"
+    "Nude",
+    "Delete"
+}
+
+BeachPeds = {
+    0xC79F6928, 0xB920CC2B, 0x403DB4FD, 0x787FA588,
+    0x8427D398, 0xC1534DF2, 0xD1FEB884, 0x23C7DC11,
+    0xE7A963D9, 0xB91A86BC, 0x7E0961B8, 0xCA56FA52,
+    0xC2E31A0A, 0x303638A7
 }
 
 BedSoundCoords = {

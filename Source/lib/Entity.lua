@@ -1,5 +1,5 @@
 function entity_get_all_nearby(coords, range, mode)
-    mode = mode or NearbyEntitiesModes.All
+    mode = mode or NearbyEntities.All
     
     local player_ped = player_get_ped()
     local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)

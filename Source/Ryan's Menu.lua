@@ -1,4 +1,4 @@
-VERSION = "0.7.4"
+VERSION = "0.7.5"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -173,7 +173,7 @@ ptfx_create_list(self_ptfx_vehicle_exhaust_root, function(ptfx)
 end)
 
 -- -- Weapon PTFX
-self_ptfx_weapon_aiming_root = menu.list(self_ptfx_weapon_root, "Aiming...", {"ryanptfxaiming"}, "Special FX when aiming at a spot.")
+self_ptfx_weapon_aiming_root = menu.list(self_ptfx_weapon_root, "Crosshair...", {"ryanptfxcrosshair"}, "Special FX when aiming at a spot.")
 self_ptfx_weapon_muzzle_root = menu.list(self_ptfx_weapon_root, "Muzzle...", {"ryanptfxmuzzle"}, "Special FX on the end of your weapon's barrel.")
 self_ptfx_weapon_muzzle_flash_root = menu.list(self_ptfx_weapon_root, "Muzzle Flash...", {"ryanptfxmuzzleflash"}, "Special FX on the end of your weapon's barrel when firing.")
 self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
@@ -410,7 +410,7 @@ util.create_tick_handler(function()
 end)
 
 -- -- Fire
-self_fire_finger_root = menu.list(self_fire_root, "Finger...", {"ryanfirefinger"}, "Catches things on fire from a distance when pressing E.")
+self_fire_finger_root = menu.list(self_fire_root, "Finger...", {"ryanfirefinger"}, "Catches things on fire from a distance when pressing X.")
 
 fire_finger_mode = "Off"
 fire_finger_change = 2147483647
@@ -508,7 +508,7 @@ util.create_tick_handler(function()
     end
 end)
 
-menu.toggle(self_god_finger_root, "Anti-Gravity", {"ryangodfingerantigravity"}, "Takes away object gravity when god fingered.", function(value)
+menu.toggle(self_god_finger_root, "Anti-Gravity", {"ryangodfingerantigravity"}, "Takes away object gravity when God Fingered.", function(value)
     god_finger_gravity = value    
 end)
 
@@ -630,6 +630,7 @@ util.create_tick_handler(function()
     end
 end)
 
+
 -- -- Crosshair
 crosshair_mode = "Off"
 crosshair_change = 2147483647
@@ -739,6 +740,7 @@ end)
 -- -- E-Brake
 ebrake = false
 menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your car drift while holding Shift.", function(value)
+    if not value then vehicle_set_no_grip(vehicle, false) end
     ebrake = value
 end)
 
@@ -810,7 +812,7 @@ all_npcs_mode = "Off"
 all_npcs_change = 2147483647
 all_npcs_values = {["Off"] = true}
 
-all_npcs_include_vehicles = true
+all_npcs_include_vehicles = false
 
 for _, mode in pairs(NPCScenarios) do
     menu.toggle(world_all_npcs_root, mode, {"ryanallnpcs" .. mode}, "", function(value)
@@ -839,7 +841,7 @@ end)
 menu.divider(world_all_npcs_root, "Options")
 menu.toggle(world_all_npcs_root, "Include Vehicles", {"ryanallnpcsvehicles"}, "If enabled, NPCs will get out of their cars.", function(value)
     all_npcs_include_vehicles = value
-end, true)
+end, false)
 
 npcs_affected = {}
 util.create_tick_handler(function()
@@ -850,14 +852,35 @@ util.create_tick_handler(function()
         elseif all_npcs_mode == "Paparazzi" then scenario = "WORLD_HUMAN_PAPARAZZI"
         elseif all_npcs_mode == "Janitor" then scenario = "WORLD_HUMAN_JANITOR" end
 
-        local coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
-        for _, ped in pairs(entity_get_all_nearby(coords, 250, NearbyEntities.Peds)) do
+        local player_coords = ENTITY.GET_ENTITY_COORDS(player_get_ped())
+        for _, ped in pairs(entity_get_all_nearby(player_coords, 250, NearbyEntities.Peds)) do
             local vehicle = PED.GET_VEHICLE_PED_IS_IN(ped, false)
             if not PED.IS_PED_A_PLAYER(ped) and (all_npcs_include_vehicles or vehicle == 0) then
                 if npcs_affected[ped] ~= all_npcs_mode then
-                    if vehicle ~= 0 then ENTITY.SET_ENTITY_VELOCITY(vehicle, 0.0, 0.0, 0.0) end
-                    TASK.CLEAR_PED_TASKS_IMMEDIATELY(ped)
-                    TASK.TASK_START_SCENARIO_IN_PLACE(ped, scenario, 0, true)
+                    if all_npcs_mode == "Nude" then
+                        local heading = ENTITY.GET_ENTITY_HEADING(ped)
+                        local coords = ENTITY.GET_ENTITY_COORDS(ped)
+
+                        local is_beach_model = false
+                        for i = 1, #BeachPeds do
+                            if PED.IS_PED_MODEL(ped, BeachPeds[i]) then util.toast("Found beach model"); is_beach_model = true end
+                        end
+                        entities.delete_by_handle(ped)
+                        ped = entities.create_ped(0, util.joaat("a_f_y_topless_01"), coords, heading)
+                        PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                        TASK.CLEAR_PED_TASKS_IMMEDIATELY(ped)
+
+                        local beach_tasks, task = {"WORLD_HUMAN_SUNBATHE", "WORLD_HUMAN_SUNBATHE_BACK"}, math.random(1, 3)
+                        if not is_beach_model or task == 3 then TASK.TASK_WANDER_STANDARD(ped, 10.0, 10)
+                        else TASK.TASK_START_SCENARIO_IN_PLACE(ped, beach_tasks[task], 0, false) end
+                    elseif all_npcs_mode == "Delete" then
+                        if vehicle ~= 0 then entities.delete_by_handle(vehicle) end
+                        entities.delete_by_handle(ped)
+                    else
+                        if vehicle ~= 0 then ENTITY.SET_ENTITY_VELOCITY(vehicle, 0.0, 0.0, 0.0) end
+                        TASK.CLEAR_PED_TASKS_IMMEDIATELY(ped)
+                        TASK.TASK_START_SCENARIO_IN_PLACE(ped, scenario, 0, false)
+                    end
                     npcs_affected[ped] = all_npcs_mode
                 end
             end
@@ -1046,6 +1069,7 @@ all_vehicles_upgrades = nil
 all_vehicles_catapult = false
 all_vehicles_alarm = false
 all_vehicles_flee = false
+all_vehicles_blind = false
 all_vehicles_delete = false
 
 menu.toggle(world_all_vehicles_root, "Include NPCs", {"ryanallvehiclesnpcs"}, "If enabled, player-driven vehicles are affected too.", function(value)
@@ -1265,6 +1289,11 @@ menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Makes NPCs flee y
     all_vehicles_flee = value
 end)
 
+-- -- Road Rage
+menu.toggle(world_all_vehicles_root, "Blind", {"ryanallblind"}, "Makes NPCs drive without regard for what's around them.", function(value)
+    all_vehicles_blind = value
+end)
+
 -- -- Delete
 menu.toggle(world_all_vehicles_root, "Delete", {"ryanalldelete"}, "Deletes their vehicle.", function(value)
     all_vehicles_delete = value
@@ -1400,6 +1429,18 @@ util.create_tick_handler(function()
                 -- Flee
                 if all_vehicles_flee and not is_a_player then
                     TASK.TASK_SMART_FLEE_PED(driver, player_get_ped(), 250.0, -1, false, false)
+                end
+
+                -- Blind
+                if all_vehicles_blind and not is_a_player then
+                    PED.SET_DRIVER_AGGRESSIVENESS(driver, 1.0)
+                    local coords = vector_add(ENTITY.GET_ENTITY_COORDS(vehicle), {x = math.random(-500, 500), y = math.random(-500, 500), z = 0})
+                    local ground_z = memory.alloc_int()
+
+                    --TASK.TASK_VEHICLE_DRIVE_WANDER(driver, vehicle, 10.0, 4719104)
+                    MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false)
+                    TASK.TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE(driver, vehicle, coords.x, coords.y, memory.read_int(ground_z), 150.0, 524800, 20.0)
+                    memory.free(ground_z)
                 end
 
                 -- Delete
@@ -1752,7 +1793,7 @@ util.create_tick_handler(function()
         basics_request_model(oppressor2)
         for _, player_id in pairs(players.list()) do
             local player_ped = player_get_ped(player_id)
-            local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0.0, 5.0, 0.0)
+            local coords = vector_add(ENTITY.GET_ENTITY_COORDS(player_ped), {x = 0.0, y = 5.0, z = 0.0})
             local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
             entity_request_control_loop(vehicle)
             vehicle_set_upgraded(vehicle, true)
@@ -2140,6 +2181,7 @@ vehicle_doors = {}
 vehicle_tires = {}
 vehicle_engine = {}
 vehicle_upgrades = {}
+vehicle_godmode = {}
 
 vehicle_catapult = {}
 vehicle_alarm = {}
@@ -2361,6 +2403,35 @@ function setup_player(player_id)
         else
             vehicle_upgrades[player_id] = nil
             menu.set_menu_name(player_vehicle_upgrades_root, "Upgrades: -")
+        end
+    end)
+
+    -- -- Godmode
+    local player_vehicle_godmode_root = menu.list(player_vehicle_root, "Godmode: -", {"ryangodmode"}, "Makes their vehicle indestructible.")
+    menu.toggle(player_vehicle_godmode_root, "On", {"ryangodmodeon"}, "Enables godmode.", function(value)
+        if value then
+            basics_run({
+                "ryangodmodeoff" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_godmode[player_id] = "on"
+            menu.set_menu_name(player_vehicle_godmode_root, "Godmode: On")
+        else
+            vehicle_godmode[player_id] = nil
+            menu.set_menu_name(player_vehicle_godmode_root, "Godmode: -")
+        end
+    end)
+    menu.toggle(player_vehicle_godmode_root, "Off", {"ryangodmodeoff"}, "Disables godmode.", function(value)
+        if value then
+            basics_run({
+                "ryangodmodeon" .. player_name .. " off"
+            })
+            util.yield(250)
+            vehicle_godmode[player_id] = "off"
+            menu.set_menu_name(player_vehicle_godmode_root, "Godmode: Off")
+        else
+            vehicle_godmode[player_id] = nil
+            menu.set_menu_name(player_vehicle_godmode_root, "Godmode: -")
         end
     end)
 
@@ -2750,17 +2821,16 @@ util.create_tick_handler(function()
                 end, true)
             end
 
-            -- Alarm
-            if vehicle_alarm[player_id] == "on" and vehicle_state[vehicle].alarm ~= "on" then
+            -- Godmode
+            if vehicle_godmode[player_id] == "on" and vehicle_state[vehicle].godmode ~= "on" then
                 mod_vehicle(vehicle, function()
-                    VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
-                    VEHICLE.START_VEHICLE_ALARM(vehicle)
-                    vehicle_state[vehicle].alarm = "on"
+                    ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
+                    vehicle_state[vehicle].godmode = "on"
                 end, true)
-            elseif vehicle_alarm[player_id] == "off" and vehicle_state[vehicle].alarm ~= "off" then
+            elseif vehicle_godmode[player_id] == "off" and vehicle_state[vehicle].godmode ~= "off" then
                 mod_vehicle(vehicle, function()
-                    VEHICLE.SET_VEHICLE_ALARM(false)
-                    vehicle_state[vehicle].alarm = "off"
+                    ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
+                    vehicle_state[vehicle].godmode = "off"
                 end, true)
             end
 
@@ -2806,6 +2876,7 @@ function cleanup_player(player_id)
     vehicle_tires[player_id] = nil
     vehicle_engine[player_id] = nil
     vehicle_upgrades[player_id] = nil
+    vehicle_godmode[player_id] = nil
     vehicle_catapult[player_id] = nil
     vehicle_alarm[player_id] = nil
     vehicle_delete[player_id] = nil
