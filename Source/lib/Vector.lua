@@ -1,64 +1,66 @@
-function vector_add(vector_1, vector_2)
-    return {x = vector_1.x + vector_2.x, y = vector_1.y + vector_2.y, z = vector_1.z + vector_2.z}
-end
+Ryan.Vector = {
+	Add = function(vector_1, vector_2)
+		return {x = vector_1.x + vector_2.x, y = vector_1.y + vector_2.y, z = vector_1.z + vector_2.z}
+	end,
 
-function vector_subtract(vector_1, vector_2)
-    return {x = vector_1.x - vector_2.x, y = vector_1.y - vector_2.y, z = vector_1.z - vector_2.z}
-end
+	Subtract = function(vector_1, vector_2)
+		return {x = vector_1.x - vector_2.x, y = vector_1.y - vector_2.y, z = vector_1.z - vector_2.z}
+	end,
 
-function vector_multiply(vector, amount)
-    return {x = vector.x * amount, y = vector.y * amount, z = vector.z * amount}
-end
+	Multiply = function(vector_1, vector_2)
+		return {x = vector.x * amount, y = vector.y * amount, z = vector.z * amount}
+	end,
 
-function vector_distance(vector_1, vector_2)
-    return vector_magnitude(vector_subtract(vector_1, vector_2))
-end
+	Distance = function(vector_1, vector_2)
+		return Ryan.Vector.Magnitude(Ryan.Vector.Subtract(vector_1, vector_2))
+	end,
 
-function vector_magnitude(vector)
-    return math.sqrt(vector.x ^ 2 + vector.y ^ 2 + vector.z ^ 2)
-end
+	Magnitude = function(vector)
+		return math.sqrt(vector.x ^ 2 + vector.y ^ 2 + vector.z ^ 2)
+	end,
 
-function vector_normalize(vector)
-    return vector_multiply(vector, 1 / vector_magnitude(vector))
-end
+	Normalize = function(vector)
+		return Ryan.Vector.Multiply(vector, 1 / Ryan.Vector.Magnitude(vector))
+	end,
 
-function vector_v3_to_object(X, Y, Z)
-    return {x = X, y = Y, z = Z}
-end
+	RotationToDirection = function(rotation)
+		rotation = { 
+			x = (math.pi / 180) * rotation.x, 
+			y = (math.pi / 180) * rotation.y, 
+			z = (math.pi / 180) * rotation.z 
+		}
+		return {
+			x = -math.sin(rotation.z) * math.abs(math.cos(rotation.x)), 
+			y = math.cos(rotation.z) * math.abs(math.cos(rotation.x)), 
+			z = math.sin(rotation.x)
+		}
+	end,
 
-function vector_rotation_to_direction(rotation) -- Credit: WiriScript
-	rotation = { 
-		x = (math.pi / 180) * rotation.x, 
-		y = (math.pi / 180) * rotation.y, 
-		z = (math.pi / 180) * rotation.z 
-	}
-	return {
-		x = -math.sin(rotation.z) * math.abs(math.cos(rotation.x)), 
-		y = math.cos(rotation.z) * math.abs(math.cos(rotation.x)), 
-		z = math.sin(rotation.x)
-	}
-end
+	DirectionToRotation = function(direction)
+		return {
+			x = math.asin(direction.z / Ryan.Vector.Magnitude(direction)) * (180 / math.pi),
+			y = 0.0,
+			z = -math.atan(direction.x, direction.y) * (180 / math.pi)
+		}
+	end,
 
-function vector_direction_to_rotation(direction) -- Credit: WiriScript
-	return {
-		x = math.asin(direction.z / vector_magnitude(direction)) * (180 / math.pi),
-		y = 0.0,
-		z = -math.atan(direction.x, direction.y) * (180 / math.pi)
-	}
-end
+	GetOffsetFromCamera = function(distance)
+		local position = CAM.GET_FINAL_RENDERED_CAM_COORD()
+		local rotation = CAM.GET_FINAL_RENDERED_CAM_ROT(2)
+		local direction = Ryan.Vector.RotationToDirection(rotation)
+		local offset = {
+			x = position.x + direction.x * distance,
+			y = position.y + direction.y * distance,
+			z = position.z + direction.z * distance 
+		}
+		return offset
+	end,
 
-function vector_offset_from_camera(distance) -- Credit: WiriScript
-	local position = CAM.GET_FINAL_RENDERED_CAM_COORD()
-    local rotation = CAM.GET_FINAL_RENDERED_CAM_ROT(2)
-	local direction = vector_rotation_to_direction(rotation)
-	local offset = {
-		x = position.x + direction.x * distance,
-		y = position.y + direction.y * distance,
-		z = position.z + direction.z * distance 
-	}
-	return offset
-end
+	FromV3 = function(x, y, z)
+		return {x = x, y = y, z = z}
+	end,
 
-function vector_to_string(vector)
-	return "{" .. math.floor(vector.x) .. ", " .. math.floor(vector.y) .. ", " .. math.floor(vector.z) .. "}"
-end
+	ToString = function(vector)
+		return "{" .. math.floor(vector.x) .. ", " .. math.floor(vector.y) .. ", " .. math.floor(vector.z) .. "}"
+	end
+}

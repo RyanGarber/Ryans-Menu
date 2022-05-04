@@ -1,63 +1,81 @@
-function stats_hash(stat_type, stat_name)
-    local prefix = nil
-    if stat_type == Stats.Global then prefix = "MPPLY"
-    else prefix = "MP" .. stats_get_int(stats_hash(Stats.Global, "LAST_MP_CHAR")) end
-    return util.joaat(prefix .. "_" .. stat_name)
-end
+Ryan.Stats = {
+    Type = {
+        Global = 1,
+        Character = 2
+    },
 
-function stats_get_int(key)
-    local value = memory.alloc_int()
-    STATS.STAT_GET_INT(key, value, -1)
-    return memory.read_int(value)
-end
+    GetHash = function(stat_type, stat_name)
+        local prefix = nil
+        if stat_type == Ryan.Stats.Type.Global then prefix = "MPPLY"
+        else prefix = "MP" .. Ryan.Stats.GetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Global, "LAST_MP_CHAR")) end
+        return util.joaat(prefix .. "_" .. stat_name)
+    end,
 
-function stats_set_int(key, value)
-    STATS.STAT_SET_INT(key, value, true)
-end
+    GetInteger = function(key)
+        local value = memory.alloc_int()
+        STATS.STAT_GET_INT(key, value, -1)
+        return memory.read_int(value)
+    end,
 
-function stats_set_office_money(command, click_type, amount)
-    menu.show_warning(command, click_type, "Make sure you have at least 1 crate of Special Cargo to sell before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell that cargo.", function()
-        stats_set_int(stats_hash(Stats.Character, "LIFETIME_CONTRA_EARNINGS"), amount)
+    SetInteger = function(key, value)
+        STATS.STAT_SET_INT(key, value, true)
+    end,
 
-        stats_set_int(stats_hash(Stats.Character, "LIFETIME_BUY_COMPLETE"), 1000)
-        stats_set_int(stats_hash(Stats.Character, "LIFETIME_SELL_COMPLETE"), 1000)
-        stats_set_int(stats_hash(Stats.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000)
-        stats_set_int(stats_hash(Stats.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000)
+    -- Specific Stats --
+    SetOfficeMoney = function(command, click_type, amount)
+        menu.show_warning(command, click_type, "Make sure you have at least 1 crate of Special Cargo to sell before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell that cargo.", function()
+            Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_CONTRA_EARNINGS"), amount)
+    
+            Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BUY_COMPLETE"), 1000)
+            Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_SELL_COMPLETE"), 1000)
+            Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000)
+            Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000)
+    
+            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "CEO Office Money", "Done! Switch sessions and start a Special Cargo sale to apply your changes.")
+        end)
+    end,
 
-        basics_show_text_message(Color.Purple, "CEO Office Money", "Done! Switch sessions and start a Special Cargo sale to apply your changes.")
-    end)
-end
+    SetMCClutter = function(command, click_type, amount)
+        menu.show_warning(command, click_type, "Make sure you have at least 1 unit of stock to sell, in every business, before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell all of those, one by one.", function()
+            for i=0, 5 do
+                Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BKR_SELL_EARNINGS" .. i), amount)
+    
+                if i == 0 then i = "" end
+                Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BIKER_BUY_COMPLET" .. i), 1000)
+                Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BIKER_BUY_UNDERTA" .. i), 1000)
+                Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BIKER_SELL_COMPLET" .. i), 1000)
+                Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BIKER_SELL_UNDERTA" .. i), 1000)
+            end
+    
+            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "M.C. Clubhouse Clutter", "Done! Switch sessions and start a sale in every business to apply changes.")
+        end)
+    end,
 
-function stats_set_mc_clutter(command, click_type, amount)
-    menu.show_warning(command, click_type, "Make sure you have at least 1 unit of stock to sell, in every business, before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell all of those, one by one.", function()
-        for i=0, 5 do
-            stats_set_int(stats_hash(Stats.Character, "LIFETIME_BKR_SELL_EARNINGS" .. i), amount)
+    GetKills = function()
+        return Ryan.Stats.GetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Global, "KILLS_PLAYERS"))
+    end,
 
-            if i == 0 then i = "" end
-            stats_set_int(stats_hash(Stats.Character, "LIFETIME_BIKER_BUY_COMPLET" .. i), 1000)
-            stats_set_int(stats_hash(Stats.Character, "LIFETIME_BIKER_BUY_UNDERTA" .. i), 1000)
-            stats_set_int(stats_hash(Stats.Character, "LIFETIME_BIKER_SELL_COMPLET" .. i), 1000)
-            stats_set_int(stats_hash(Stats.Character, "LIFETIME_BIKER_SELL_UNDERTA" .. i), 1000)
+    GetDeaths = function()
+        return Ryan.Stats.GetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Global, "DEATHS_PLAYER"))
+    end,
+
+    SetKills = function(kills)
+        Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Global, "KILLS_PLAYERS"), kills)
+        Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "KILLS_PLAYERS"), kills)
+    end,
+
+    SetDeaths = function(deaths)
+        Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Global, "DEATHS_PLAYER"), deaths)
+        Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "DEATHS_PLAYER"), deaths)
+    end,
+
+    SetFavoriteRadioStation = function()
+        local station_name = AUDIO.GET_PLAYER_RADIO_STATION_NAME()
+        if station_name ~= nil then
+            STATS.STAT_SET_INT(Ryan.Stats.GetHash(Ryan.Stats.Type.Global, "MOST_FAVORITE_STATION"), util.joaat(station_name), true)
+            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Favorite Radio Station", "Your favorite radio station has been updated!")
+        else
+            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Favorite Radio Station", "You're not currently listening to the radio.")
         end
-
-        basics_show_text_message(Color.Purple, "M.C. Clubhouse Clutter", "Done! Switch sessions and start a sale in every business to apply changes.")
-    end)
-end
-
-function stats_get_kills()
-    return stats_get_int(stats_hash(Stats.Global, "KILLS_PLAYERS"))
-end
-
-function stats_set_kills(kills)
-    stats_set_int(stats_hash(Stats.Global, "KILLS_PLAYERS"), kills)
-    stats_set_int(stats_hash(Stats.Character, "KILLS_PLAYERS"), kills)
-end
-
-function stats_get_deaths()
-    return stats_get_int(stats_hash(Stats.Global, "DEATHS_PLAYER"))
-end
-
-function stats_set_deaths(deaths)
-    stats_set_int(stats_hash(Stats.Global, "DEATHS_PLAYER"), deaths)
-    stats_set_int(stats_hash(Stats.Character, "DEATHS_PLAYER"), deaths)
-end
+    end
+}
