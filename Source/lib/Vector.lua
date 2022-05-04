@@ -7,7 +7,7 @@ Ryan.Vector = {
 		return {x = vector_1.x - vector_2.x, y = vector_1.y - vector_2.y, z = vector_1.z - vector_2.z}
 	end,
 
-	Multiply = function(vector_1, vector_2)
+	Multiply = function(vector, amount)
 		return {x = vector.x * amount, y = vector.y * amount, z = vector.z * amount}
 	end,
 
