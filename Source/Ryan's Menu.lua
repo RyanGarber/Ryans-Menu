@@ -135,7 +135,7 @@ end)
 
 Ryan.PTFX.CreateList(self_ptfx_body_pointer_root, function(ptfx)
     if ptfx_disable then return end
-    if player_is_pointing == 3 then
+    if player_is_pointing then
         Ryan.PTFX.PlayOnEntityBones(Ryan.Player.GetPed(), Ryan.Globals.PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
@@ -2622,7 +2622,17 @@ function setup_player(player_id)
     for _, mode in pairs(Ryan.Globals.CrashToDesktopMethods) do
         menu.action(player_crash_to_desktop_root, mode, {"ryan" .. mode}, "Attempts to crash using the " .. mode .. " method.", function(click_type)
             Ryan.Player.SpamTextsAndBlockJoins(player_id, removal_block_joins, removal_message, function()
-                Ryan.Player.CrashToDesktop(player_id, mode)
+                local starting_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+                local in_danger_zone = Ryan.Vector.Distance(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id)), starting_coords) < Ryan.Globals.SafeCrashDistance
+                if in_danger_zone then
+                    Ryan.Player.Teleport(Ryan.Globals.SafeCrashCoords)
+                    util.yield(1000)
+                end
+                Ryan.Player.CrashToDesktop(player_id)
+                if in_danger_zone then
+                    util.yield(Ryan.Globals.SafeCrashDuration)
+                    Ryan.Player.Teleport(starting_coords)
+                end
             end)
         end)
     end
