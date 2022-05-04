@@ -1,6 +1,6 @@
 Ryan.Player = {
     GetPed = function(player_id)
-        player_id = player_id or PLAYER.PLAYER_ID()
+        player_id = player_id or players.user()
         return PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
     end,
 
@@ -135,16 +135,24 @@ Ryan.Player = {
         end
     end,
 
-    CrashToDesktop = function(player_id)
+    CrashToDesktop = function(player_id, mode, safely)
         if player_id == players.user() then
             Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Crash To Desktop", "I don't need to explain why what you just tried to do was not very smart, do I?")
             return
+        end
+
+        local starting_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+        local in_danger_zone = Ryan.Vector.Distance(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id)), starting_coords) < Ryan.Globals.SafeCrashDistance
+
+        if safely and in_danger_zone then
+            Ryan.Player.Teleport(Ryan.Globals.SafeCrashCoords)
+            util.yield(1000)
         end
     
         if not mode then
             for _, crash_mode in pairs(Ryan.Globals.CrashToDesktopMethods) do
                 util.create_thread(function()
-                    Ryan.Player.CrashToDesktop(player_id, crash_mode)
+                    Ryan.Player.CrashToDesktop(player_id, crash_mode, false)
                 end)
             end
             return
@@ -219,6 +227,11 @@ Ryan.Player = {
             local ped = entities.create_ped(0, 762327283, player_coords, 0)
             util.yield(100)
             entities.delete_by_handle(ped)
+        end
+
+        if safely and in_danger_zone then
+            util.yield(Ryan.Globals.SafeCrashDuration)
+            Ryan.Player.Teleport(starting_coords)
         end
     end
 }

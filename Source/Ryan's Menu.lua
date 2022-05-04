@@ -1590,7 +1590,7 @@ menu.action(session_crash_all_root, "Crash To Desktop", {"ryancrashallmultiplaye
     for _, player_id in pairs(players.list(false, crash_all_friends)) do
         if crash_all_modders or not players.is_marked_as_modder(player_id) then
             util.create_thread(function()
-                Ryan.Player.CrashToDesktop(player_id, "Yo Momma")
+                Ryan.Player.CrashToDesktop(player_id, "Yo Momma", false)
             end)
         end
     end
@@ -2604,17 +2604,7 @@ function setup_player(player_id)
     
     menu.action(player_crash_to_desktop_root, "Do All", {"ryandesktop"}, "Attempts to crash using all known entities.", function(click_type)
         Ryan.Player.SpamTextsAndBlockJoins(player_id, removal_block_joins, removal_message, function()
-            local starting_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
-            local in_danger_zone = Ryan.Vector.Distance(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id)), starting_coords) < Ryan.Globals.SafeCrashDistance
-            if in_danger_zone then
-                Ryan.Player.Teleport(Ryan.Globals.SafeCrashCoords)
-                util.yield(1000)
-            end
-            Ryan.Player.CrashToDesktop(player_id)
-            if in_danger_zone then
-                util.yield(Ryan.Globals.SafeCrashDuration)
-                Ryan.Player.Teleport(starting_coords)
-            end
+            Ryan.Player.CrashToDesktop(player_id, nil, true)
         end)
     end)
 
@@ -2622,17 +2612,7 @@ function setup_player(player_id)
     for _, mode in pairs(Ryan.Globals.CrashToDesktopMethods) do
         menu.action(player_crash_to_desktop_root, mode, {"ryan" .. mode}, "Attempts to crash using the " .. mode .. " method.", function(click_type)
             Ryan.Player.SpamTextsAndBlockJoins(player_id, removal_block_joins, removal_message, function()
-                local starting_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
-                local in_danger_zone = Ryan.Vector.Distance(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id)), starting_coords) < Ryan.Globals.SafeCrashDistance
-                if in_danger_zone then
-                    Ryan.Player.Teleport(Ryan.Globals.SafeCrashCoords)
-                    util.yield(1000)
-                end
-                Ryan.Player.CrashToDesktop(player_id)
-                if in_danger_zone then
-                    util.yield(Ryan.Globals.SafeCrashDuration)
-                    Ryan.Player.Teleport(starting_coords)
-                end
+                Ryan.Player.CrashToDesktop(player_id, mode, true)
             end)
         end)
     end
