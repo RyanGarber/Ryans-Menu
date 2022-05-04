@@ -2730,7 +2730,7 @@ util.create_tick_handler(function()
                 end, true)
             elseif vehicle_speed[player_id] == "normal" and vehicle_state[vehicle].speed ~= "normal" then
                 mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetSpeed(vehicle, .Vehicle.Speed.Normal)
+                    Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Normal)
                     vehicle_state[vehicle].speed = "normal"
                 end, true)
             end
