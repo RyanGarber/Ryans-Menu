@@ -80,7 +80,7 @@ Ryan.Trolling = {
             Ryan.Trolling.AddEntity(player_id, vehicle)
             Ryan.Entity.FaceEntity(vehicle, player_ped, true)
             VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
-            vehicle_set_speed(vehicle, Ryan.Vehicle.Speed.Fast)
+            Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Fast)
             Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
 
             local seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicles[i])
