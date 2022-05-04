@@ -268,6 +268,7 @@ Ryan.Trolling = {
 
         local tank = util.joaat("rhino"); Ryan.Basics.RequestModel(tank)
         local entity = entities.create_vehicle(tank, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        Ryan.Trolling.AddEntity(player_id, entity)
         ENTITY.SET_ENTITY_LOAD_COLLISION_FLAG(entity, true)
         ENTITY.SET_ENTITY_MAX_SPEED(entity, 64)
         ENTITY.APPLY_FORCE_TO_ENTITY(entity, 3, 0.0, 0.0, -1000.00, 0.0, 0.0, 0.0, 0, true, true, false, true)

@@ -1307,7 +1307,7 @@ util.create_tick_handler(function()
 
         if all_vehicles_include_own or vehicle ~= entities.get_user_vehicle_as_handle() then
             if (all_vehicles_include_players and is_a_player) or (all_vehicles_include_npcs and not is_a_player) then
-                if is_a_player and all_vehicles_state[vehicle] == nil then all_vehicles_state[vehicle] = {} end
+                if all_vehicles_state[vehicle] == nil then all_vehicles_state[vehicle] = {} end
                 if not is_a_player then Ryan.Entity.RequestControl(vehicle) end
 
                 -- Speed
@@ -1413,20 +1413,21 @@ util.create_tick_handler(function()
                 end
 
                 -- Flee
-                if all_vehicles_flee and not is_a_player then
-                    TASK.TASK_SMART_FLEE_PED(driver, Ryan.Player.GetPed(), 250.0, -1, false, false)
+                if all_vehicles_flee and not is_a_player and all_vehicles_state[vehicle].flee ~= true then
+                    TASK.TASK_SMART_FLEE_PED(driver, Ryan.Player.GetPed(), 500.0, -1, false, false)
+                    all_vehicles_state[vehicle].flee = true
                 end
 
                 -- Blind
-                if all_vehicles_blind and not is_a_player then
+                if all_vehicles_blind and not is_a_player and (all_vehicles_state[vehicle].blind ~= true or math.random(1, 10) >= 8) then
                     PED.SET_DRIVER_AGGRESSIVENESS(driver, 1.0)
                     local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(vehicle), {x = math.random(-500, 500), y = math.random(-500, 500), z = 0})
-                    local ground_z = memory.alloc_int()
-
                     --TASK.TASK_VEHICLE_DRIVE_WANDER(driver, vehicle, 10.0, 4719104)
-                    MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false)
-                    TASK.TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE(driver, vehicle, coords.x, coords.y, memory.read_int(ground_z), 150.0, 524800, 20.0)
-                    memory.free(ground_z)
+                    --MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false)
+                    TASK.TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE(driver, vehicle, coords.x, coords.y, coords.z, 150.0, 524800, 20.0)
+                    --memory.free(ground_z)
+
+                    all_vehicles_state[vehicle].blind = true
                 end
 
                 -- Delete
