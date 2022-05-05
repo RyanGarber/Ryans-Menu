@@ -221,20 +221,13 @@ Ryan.Globals = {
     SafeCrashDuration = 10000,
     SafeCrashCoords = {x = 4500, y = -4400, z = 0},
 
-    PlayerBones = {
-        Head = {"IK_Head"},
-        Hands = {"IK_L_Hand", "IK_R_Hand"},
-        Pointer = {"IK_L_Hand"},
-        Feet = {"IK_L_Foot", "IK_R_Foot"}
-    },
-    
-    VehicleBones = {
-        Wheels = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"},
-        Exhaust = {"exhaust", "exhaust_2", "exhaust_3", "exhaust_4", "exhaust_5", "exhaust_6", "exhaust_7", "exhaust_8"}
-    },
-    
-    WeaponBones = {
-        Muzzle = {"gun_vfx_eject"}
+    VehicleAttachBones = {
+        {"Center", nil},
+        {"Hood", "bonnet"},
+        {"Windshield", "windscreen"},
+        {"License Plate", "numberplate"},
+        {"Exhaust", "exhaust"},
+        {"Trunk", "boot"}
     },
 
     ForcefieldModes = {

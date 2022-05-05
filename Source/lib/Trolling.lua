@@ -261,7 +261,7 @@ Ryan.Trolling = {
     FallingTank = function(player_id)
         local player_ped = Ryan.Player.GetPed(player_id)
         local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-        coords.z = coords.z + 10
+        coords.z = coords.z + 5
 
         local tank = util.joaat("rhino"); Ryan.Basics.RequestModel(tank)
         local entity = entities.create_vehicle(tank, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)

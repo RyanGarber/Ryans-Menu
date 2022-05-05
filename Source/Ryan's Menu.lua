@@ -116,27 +116,27 @@ self_ptfx_body_pointer_root = menu.list(self_ptfx_body_root, "Pointer...", {"rya
 
 Ryan.PTFX.CreateList(self_ptfx_body_head_root, function(ptfx)
     if ptfx_disable then return end
-    Ryan.PTFX.PlayOnEntityBones(Ryan.Player.GetPed(), Ryan.Globals.PlayerBones.Head, ptfx[2], ptfx[3], ptfx_color)
+    Ryan.PTFX.PlayOnEntityBones(Ryan.Player.GetPed(), Ryan.PTFX.PlayerBones.Head, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 Ryan.PTFX.CreateList(self_ptfx_body_hands_root, function(ptfx)
     if ptfx_disable then return end
-    Ryan.PTFX.PlayOnEntityBones(Ryan.Player.GetPed(), Ryan.Globals.PlayerBones.Hands, ptfx[2], ptfx[3], ptfx_color)
+    Ryan.PTFX.PlayOnEntityBones(Ryan.Player.GetPed(), Ryan.PTFX.PlayerBones.Hands, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 
 Ryan.PTFX.CreateList(self_ptfx_body_feet_root, function(ptfx)
     if ptfx_disable then return end
-    Ryan.PTFX.PlayOnEntityBones(Ryan.Player.GetPed(), Ryan.Globals.PlayerBones.Feet, ptfx[2], ptfx[3], ptfx_color)
+    Ryan.PTFX.PlayOnEntityBones(Ryan.Player.GetPed(), Ryan.PTFX.PlayerBones.Feet, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 Ryan.PTFX.CreateList(self_ptfx_body_pointer_root, function(ptfx)
     if ptfx_disable then return end
     if player_is_pointing then
-        Ryan.PTFX.PlayOnEntityBones(Ryan.Player.GetPed(), Ryan.Globals.PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
+        Ryan.PTFX.PlayOnEntityBones(Ryan.Player.GetPed(), Ryan.PTFX.PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -149,7 +149,7 @@ Ryan.PTFX.CreateList(self_ptfx_vehicle_wheels_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(), true)
     if vehicle ~= 0 then
-        Ryan.PTFX.PlayOnEntityBones(vehicle, Ryan.Globals.VehicleBones.Wheels, ptfx[2], ptfx[3], ptfx_color)
+        Ryan.PTFX.PlayOnEntityBones(vehicle, Ryan.PTFX.VehicleBones.Wheels, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -158,7 +158,7 @@ Ryan.PTFX.CreateList(self_ptfx_vehicle_exhaust_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(), true)
     if vehicle ~= 0 then
-        Ryan.PTFX.PlayOnEntityBones(vehicle, Ryan.Globals.VehicleBones.Exhaust, ptfx[2], ptfx[3], ptfx_color)
+        Ryan.PTFX.PlayOnEntityBones(vehicle, Ryan.PTFX.VehicleBones.Exhaust, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -184,7 +184,7 @@ Ryan.PTFX.CreateList(self_ptfx_weapon_muzzle_root, function(ptfx)
     if ptfx_disable then return end
     local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(Ryan.Player.GetPed())
     if weapon ~= NULL then
-        Ryan.PTFX.PlayAtEntityBoneCoords(weapon, Ryan.Globals.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
+        Ryan.PTFX.PlayAtEntityBoneCoords(weapon, Ryan.PTFX.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -195,7 +195,7 @@ Ryan.PTFX.CreateList(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
     if PED.IS_PED_SHOOTING(player_ped) then
         local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_ped)
         if weapon ~= NULL then
-            Ryan.PTFX.PlayAtEntityBoneCoords(weapon, Ryan.Globals.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
+            Ryan.PTFX.PlayAtEntityBoneCoords(weapon, Ryan.PTFX.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
             util.yield(ptfx[4])
         end
     end
@@ -2628,14 +2628,6 @@ function setup_player(player_id)
     end)
 end
 
-bones = {
-    {"Center", nil},
-    {"Hood", "bonnet"},
-    {"Windshield", "windscreen"},
-    {"License Plate", "numberplate"},
-    {"Exhaust", "exhaust"},
-    {"Trunk", "boot"}
-}
 util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
         if remove_godmode[player_id] == true then
@@ -2652,12 +2644,13 @@ util.create_tick_handler(function()
                 for _, bone in pairs(attach_vehicle_bones[player_id]) do menu.delete(bone) end
                 attach_vehicle_bones[player_id] = {}
 
-                for i = 1, #bones do
-                    local bone = bones[i][2] ~= nil and ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, bones[i][2]) or 0
+                for i = 1, #Ryan.Globals.VehicleAttachBones do
+                    local bone = Ryan.Globals.VehicleAttachBones[i][2] ~= nil and ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, Ryan.Globals.VehicleAttachBones[i][2]) or 0
+
                     if bone ~= -1 then
                         table.insert(
                             attach_vehicle_bones[player_id],
-                            menu.action(attach_vehicle_root[player_id], bones[i][1], {"ryanattach" .. bones[i][1]}, "Attaches to the bone.", function()
+                            menu.action(attach_vehicle_root[player_id], Ryan.Globals.VehicleAttachBones[i][1], {"ryanattach" .. Ryan.Globals.VehicleAttachBones[i][1]}, "Attaches to the bone.", function()
                                 local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id), true)
                                 ENTITY.ATTACH_ENTITY_TO_ENTITY(Ryan.Player.GetPed(), vehicle, bone, 0.0, -0.2, (bone == 0 and 2.0 or 1.0) + (attach_vehicle_offset[player_id] * 0.2), 1.0, 1.0, 1, true, true, true, false, 0, true)
                             end)
@@ -2882,7 +2875,7 @@ while true do
             0.5, 0.5,
             0.5, 0.5,
             0.0,
-            {["r"] = 1.0, ["g"] = 1.0, ["b"] = 1.0, ["a"] = 1.0}
+            {r = 1.0, g = 1.0, b = 1.0, a = 1.0}
         )
     end
     util.yield()

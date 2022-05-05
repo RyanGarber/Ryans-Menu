@@ -72,7 +72,7 @@ Ryan.Vehicle = {
         end
     end,
 
-    Catapult = function()
+    Catapult = function(vehicle)
         ENTITY.APPLY_FORCE_TO_ENTITY(vehicle, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
     end
 }
