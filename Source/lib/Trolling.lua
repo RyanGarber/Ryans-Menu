@@ -1,14 +1,16 @@
 Ryan.Trolling = {
     Entities = {},
 
-    AddEntity = function(player_id, entity)
+    AddEntity = function(player_id, entity, with_blip)
         if Ryan.Trolling.Entities[player_id] == nil then Ryan.Trolling.Entities[player_id] = {} end
         table.insert(Ryan.Trolling.Entities[player_id], entity)
+        if with_blip then HUD.ADD_BLIP_FOR_ENTITY(entity) end
     end,
 
     DeleteEntities = function(player_id)
         if Ryan.Trolling.Entities[player_id] == nil then return end
-        for _, entity in ipairs(Ryan.Trolling.Entities[player_id]) do entities.delete_by_handle(entity) end
+
+        for _, entity in pairs(Ryan.Trolling.Entities[player_id]) do entities.delete_by_handle(entity) end
         Ryan.Trolling.Entities[player_id] = {}
     end,
     
@@ -28,10 +30,10 @@ Ryan.Trolling = {
         for i = 1, 4 do
             local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 5 - i, -10.0, 0.0)
             local vehicle = entities.create_vehicle(veto, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
-            Ryan.Trolling.AddEntity(player_id, vehicle)
+            Ryan.Trolling.AddEntity(player_id, vehicle, i == 1)
             for i = -1, VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(veto) - 2 do
                 local ped = entities.create_ped(1, driver, coords, 0.0)
-                Ryan.Trolling.AddEntity(player_id, ped)
+                Ryan.Trolling.AddEntity(player_id, ped, false)
                 if i == -1 then
                     TASK.TASK_VEHICLE_CHASE(ped, player_ped)
                 end
@@ -42,7 +44,6 @@ Ryan.Trolling = {
                 PED.SET_PED_COMBAT_ATTRIBUTES(ped, 46, true)
                 PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, driver)
                 TASK.TASK_COMBAT_PED(ped, player_ped, 0, 16)
-                HUD.ADD_BLIP_FOR_ENTITY(vehicle)
             end
         end
     end,
@@ -77,7 +78,7 @@ Ryan.Trolling = {
 
             local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
             local vehicle = entities.create_vehicle(vehicles[i], coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-            Ryan.Trolling.AddEntity(player_id, vehicle)
+            Ryan.Trolling.AddEntity(player_id, vehicle, i < 3)
             Ryan.Entity.FaceEntity(vehicle, player_ped, true)
             VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
             Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Fast)
@@ -86,7 +87,7 @@ Ryan.Trolling = {
             local seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicles[i])
             for seat = -1, seats - 2 do
                 local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-                Ryan.Trolling.AddEntity(player_id, ped)
+                Ryan.Trolling.AddEntity(player_id, ped, false)
                 PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
                 WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
                 PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
@@ -96,8 +97,6 @@ Ryan.Trolling = {
                 PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, army)
                 TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
             end
-
-            if i < 3 then HUD.ADD_BLIP_FOR_ENTITY(vehicle) end
         end
 
         for i = 1, #vehicles do STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(vehicles[i]) end
@@ -115,12 +114,10 @@ Ryan.Trolling = {
         PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player_group, army)
         PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, army, army)
         
-        local e = {}
         for i = 1, 4 do
             local coords = Ryan.Vector.Add(player_coords, {x = math.random(-3, 3), y = math.random(-3, 3), z = 0})
             local ped = entities.create_ped(5, swat, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-            Ryan.Trolling.AddEntity(player_id, ped)
-            table.insert(e, ped)
+            Ryan.Trolling.AddEntity(player_id, ped, i == 1)
 
             WEAPON.GIVE_WEAPON_TO_PED(ped, -1312131151, -1, false, true)
             PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
@@ -163,13 +160,13 @@ Ryan.Trolling = {
 
         local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
         local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-        Ryan.Trolling.AddEntity(player_id, vehicle)
+        Ryan.Trolling.AddEntity(player_id, vehicle, true)
         Ryan.Entity.FaceEntity(vehicle, player_ped, true)
         VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
 
         for seat = -1, 2 do
             local npc = entities.create_ped(5, trash_man, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-            Ryan.Trolling.AddEntity(player_id, npc)
+            Ryan.Trolling.AddEntity(player_id, npc, false)
             local weapon = Ryan.Basics.GetRandomItemInTable(weapons)
 
             PED.SET_PED_RANDOM_COMPONENT_VARIATION(npc, 0)
@@ -215,11 +212,11 @@ Ryan.Trolling = {
 
         local vehicle = entities.create_vehicle(buzzard, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
         local attachment = entities.create_object(yacht, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-        Ryan.Trolling.AddEntity(player_id, attachment); Ryan.Trolling.AddEntity(player_id, vehicle)
+        Ryan.Trolling.AddEntity(player_id, attachment, false); Ryan.Trolling.AddEntity(player_id, vehicle, true)
         NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
         if ENTITY.DOES_ENTITY_EXIST(vehicle) then
             local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-            Ryan.Trolling.AddEntity(player_id, ped)
+            Ryan.Trolling.AddEntity(player_id, ped, false)
             PED.SET_PED_INTO_VEHICLE(ped, vehicle)
             
             coords.x = coords.x + math.random(-20, 20)
@@ -242,7 +239,7 @@ Ryan.Trolling = {
 
             for seat = 1, 2 do 
                 local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-                Ryan.Trolling.AddEntity(player_id, ped)
+                Ryan.Trolling.AddEntity(player_id, ped, false)
                 PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
                 WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
                 PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
@@ -268,7 +265,7 @@ Ryan.Trolling = {
 
         local tank = util.joaat("rhino"); Ryan.Basics.RequestModel(tank)
         local entity = entities.create_vehicle(tank, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-        Ryan.Trolling.AddEntity(player_id, entity)
+        Ryan.Trolling.AddEntity(player_id, entity, true)
         ENTITY.SET_ENTITY_LOAD_COLLISION_FLAG(entity, true)
         ENTITY.SET_ENTITY_MAX_SPEED(entity, 64)
         ENTITY.APPLY_FORCE_TO_ENTITY(entity, 3, 0.0, 0.0, -1000.00, 0.0, 0.0, 0.0, 0, true, true, false, true)
