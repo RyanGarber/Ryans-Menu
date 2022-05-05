@@ -47,6 +47,38 @@ Ryan.Player = {
         end
     end,
 
+    StealVehicle = function(player_id)
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id), true)
+        if vehicle ~= 0 then
+            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Steal Vehicle", "Stealing " .. players.get_name(player_id) .. "'s vehicle. Please wait.")
+            local player_ped = Ryan.Player.GetPed(player_id)
+            local start_time = util.current_time_millis()
+
+            local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+            if driver > 0 and driver ~= player_ped then
+                Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Steal Vehicle", players.get_name(player_id) .. " isn't the driver!")
+            end
+
+            local kicked = true
+            menu.trigger_commands("vehkick" .. players.get_name(player_id))
+            
+            while VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == player_ped do
+                if util.current_time_millis() - start_time > 10000 then
+                    Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Steal Vehicle", "Failed to kick " .. players.get_name(player_id) .. " from their vehicle.")
+                    kicked = false
+                    break
+                end
+                util.yield()
+            end
+            if kicked then
+                Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Steal Vehicle", "Teleporting into " .. players.get_name(player_id) .. "'s vehicle.")
+                PED.SET_PED_INTO_VEHICLE(Ryan.Player.GetPed(), vehicle, -1)
+            end
+        else
+            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Steal Vehicle", players.get_name(player_id) .. " is not in a vehicle.")
+        end
+    end,
+
     Explode = function(player_id, with_earrape)
         local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id))
         FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z, 0, 100, true, false, 150, false)
