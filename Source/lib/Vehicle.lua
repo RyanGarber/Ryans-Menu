@@ -94,11 +94,11 @@ Ryan.Vehicle = {
             if driver_player_id ~= nil then
                 Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Steal Vehicle", "Stealing the vehicle...")
                 menu.trigger_commands("vehkick" .. players.get_name(driver_player_id))
-            else
+            elseif driver ~= 0 then
                 entities.delete_by_handle(driver)
             end
             
-            while VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == driver do
+            while driver ~= 0 and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == driver do
                 if util.current_time_millis() - start_time > 10000 then
                     Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Steal Vehicle", "Failed to kick the driver of the vehicle.")
                     failed_to_kick = true
