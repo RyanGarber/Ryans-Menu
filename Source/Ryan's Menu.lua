@@ -464,6 +464,7 @@ god_finger_values = {["Off"] = true}
 
 god_finger_target = nil
 god_finger_gravity = false
+god_finger_steal = false
 god_finger_while_pointing = true
 god_finger_while_pressing_e = false
 god_finger_while_pressing_x = false
@@ -492,8 +493,12 @@ util.create_tick_handler(function()
     end
 end)
 
-menu.toggle(self_god_finger_root, "Anti-Gravity", {"ryangodfingerantigravity"}, "Takes away object gravity when God Fingered.", function(value)
-    god_finger_gravity = value    
+menu.toggle(self_god_finger_root, "Anti-Gravity", {"ryangodfingergravity"}, "Takes away object gravity when God Fingered.", function(value)
+    god_finger_gravity = value
+end)
+
+menu.toggle(self_god_finger_root, "Steal Vehicle", {"ryangodfingersteal"}, "Steals any vehicle you God Finger.", function(value)
+    god_finger_steal = value
 end)
 
 menu.divider(self_god_finger_root, "Activate")
@@ -541,6 +546,11 @@ util.create_tick_handler(function()
     if raycast.did_hit and raycast.hit_entity ~= nil then
         god_finger_target = raycast.hit_coords
         Ryan.Entity.DrawESP(raycast.hit_entity, esp_color)
+
+        if god_finger_steal and ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
+            Ryan.Vehicle.Steal(raycast.hit_entity)
+            return
+        end
         
         if god_finger_gravity then
             ENTITY.SET_ENTITY_HAS_GRAVITY(raycast.hit_entity, false)
@@ -2447,24 +2457,7 @@ function setup_player(player_id)
     
     -- -- Stripper El Rubio
     menu.action(player_trolling_entities_root, "Pole-Dancing El Rubio", {"ryanelrubio"}, "Spawns an El Rubio whose fortune has been stolen, leading him to the pole.", function()
-        spam_then(player_id, function()
-            local ped_coords = Ryan.Vector.Add(
-                ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id)),
-                {x = math.random(-5, 5), y = math.random(-5, 5), z = 0}
-            )
-    
-            local el_rubio = util.joaat("csb_juanstrickler"); Ryan.Basics.RequestModel(el_rubio)
-            Ryan.Basics.RequestAnimations("mini@strip_club@pole_dance@pole_dance1")
-    
-            local ped = entities.create_ped(1, el_rubio, ped_coords, ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed(player_id)))
-            Ryan.Basics.FreeModel(el_rubio)
-            HUD.ADD_BLIP_FOR_ENTITY(ped)
-            Ryan.Entity.RequestControlLoop(ped)
-            TASK.TASK_PLAY_ANIM(ped, "mini@strip_club@pole_dance@pole_dance1", "pd_dance_01", 8.0, 0, -1, 9, 0, false, false, false)
-    
-            util.yield(300000)
-            entities.delete_by_handle(ped)
-        end)
+        spam_then(player_id, function() Ryan.Trolling.StripperElRubio(player_id) end)
     end)
 
     -- -- Transgender Go-Karts
@@ -2506,8 +2499,8 @@ function setup_player(player_id)
     end)
 
 
-    -- -- Attach to Vehicle
-    attach_vehicle_root[player_id] = menu.list(player_trolling_root, "Attach To...", {"ryanattach"}, "Attaches to their vehicle on a specific bone.")
+    -- -- Attach
+    attach_vehicle_root[player_id] = menu.list(player_trolling_root, "Attach...", {"ryanattach"}, "Attaches to their vehicle on a specific bone.")
     attach_vehicle_offset[player_id] = 0.0
     attach_vehicle_notice[player_id] = nil
     attach_vehicle_bones[player_id] = {}
@@ -2519,7 +2512,7 @@ function setup_player(player_id)
     menu.slider(attach_vehicle_root[player_id], "Offset", {"ryanattachoffset"}, "Offset of the Z coordinate.", -25, 25, 1, 0, function(value)
         attach_vehicle_offset[player_id] = value
     end)
-    menu.divider(attach_vehicle_root[player_id], "Attach")
+    menu.divider(attach_vehicle_root[player_id], "Attach To")
 
 
     -- -- PTFX Attack
@@ -2541,7 +2534,9 @@ function setup_player(player_id)
 
     -- -- Steal Vehicle
     menu.action(player_trolling_root, "Steal Vehicle", {"ryansteal"}, "Steals the player's car.", function()
-        Ryan.Player.StealVehicle(player_id)
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id))
+        if vehicle ~= 0 then Ryan.Vehicle.Steal(vehicle)
+        else Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Steal Vehicle", players.get_name(player_id) .. " is not in a vehicle.") end
     end)
 
 

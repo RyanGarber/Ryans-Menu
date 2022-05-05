@@ -74,5 +74,42 @@ Ryan.Vehicle = {
 
     Catapult = function(vehicle)
         ENTITY.APPLY_FORCE_TO_ENTITY(vehicle, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
-    end
+    end,
+
+    Steal = function(vehicle)
+        if vehicle ~= 0 then
+            local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+            local failed_to_kick = false
+            local start_time = util.current_time_millis()
+
+            local driver_player_id = nil
+            if driver ~= 0 and PED.IS_PED_A_PLAYER(driver) then
+                for _, player_id in pairs(players.list()) do
+                    if Ryan.Player.GetPed(player_id) == driver then
+                        driver_player_id = player_id
+                    end
+                end
+            end
+
+            if driver_player_id ~= nil then
+                Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Steal Vehicle", "Stealing the vehicle...")
+                menu.trigger_commands("vehkick" .. players.get_name(driver_player_id))
+            else
+                entities.delete_by_handle(driver)
+            end
+            
+            while VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == driver do
+                if util.current_time_millis() - start_time > 10000 then
+                    Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Steal Vehicle", "Failed to kick the driver of the vehicle.")
+                    failed_to_kick = true
+                    break
+                end
+                util.yield()
+            end
+            if not failed_to_kick then
+                Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Steal Vehicle", "Teleporting into the vehicle.")
+                PED.SET_PED_INTO_VEHICLE(Ryan.Player.GetPed(), vehicle, -1)
+            end
+        end
+    end,
 }
