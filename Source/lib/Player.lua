@@ -155,6 +155,10 @@ Ryan.Player = {
                     Ryan.Player.CrashToDesktop(player_id, crash_mode, false)
                 end)
             end
+            if safely and in_danger_zone then
+                util.yield(Ryan.Globals.SafeCrashDuration)
+                Ryan.Player.Teleport(starting_coords)
+            end
             return
         end
     
