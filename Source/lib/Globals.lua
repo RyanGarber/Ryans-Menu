@@ -317,5 +317,11 @@ Ryan.Globals = {
         Red = 6
     },
 
-    CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. "Ryan's Menu\\Crosshair.png")
+    _CrosshairTexture = nil,
+    GetCrosshairTexture = function()
+        if Ryan.Globals._CrosshairTexture == nil then
+            Ryan.Globals._CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. "Ryan's Menu\\Crosshair.png")
+        end
+        return Ryan.Globals._CrosshairTexture
+    end
 }
