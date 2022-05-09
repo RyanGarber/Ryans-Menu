@@ -1,4 +1,4 @@
-VERSION = "0.7.6"
+VERSION = "0.7.7"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -88,6 +88,7 @@ self_fire_root = menu.list(self_root, "Fire...", {"ryanfire"}, "An enhanced Lanc
 self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
 self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
 self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Add an on-screen crosshair.")
+self_spotlight_root = menu.list(world_root, "Spotlight...", {"ryanspotlight"}, "Makes your vehicle glow.")
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
@@ -627,7 +628,6 @@ util.create_tick_handler(function()
     end
 end)
 
-
 -- -- Crosshair
 crosshair_mode = "Off"
 crosshair_change = 2147483647
@@ -659,18 +659,17 @@ util.create_tick_handler(function()
 end)
 
 -- -- Spotlight
-self_spotlight_root = menu.list(self_root, "Spotlight...", {"ryanspotlight"}, "Makes your vehicle glow.")
 spotlight_offset = 3.0
 spotlight_intensity = 1
 
-menu.toggle_loop(self_spotlight_root, "On Body", {"ryanspotlighton"}, "Enables the spotlight.", function()
+menu.action(self_spotlight_root, "Add To Body", {"ryanspotlightbody"}, "Adds spotlights to your body.", function()
     local player_ped = Ryan.Player.GetPed()
-    if player_ped ~= 0 then Ryan.Entity.Spotlight(player_ped, spotlight_offset, spotlight_color, spotlight_range, spotlight_intensity) end
+    if player_ped ~= 0 then Ryan.Entity.AddSpotlight(player_ped, spotlight_offset, spotlight_color, spotlight_range, spotlight_intensity) end
 end)
 
-menu.toggle_loop(self_spotlight_root, "On Vehicle", {"ryanspotlighton"}, "Enables the spotlight.", function()
+menu.action(self_spotlight_root, "Add To Vehicle", {"ryanspotlightvehicle"}, "Adds spotlights to your vehicle.", function()
     local player_id, player_ped = players.user(), Ryan.Player.GetPed()
-    local vehicle = entities.get_user_vehicle_as_handle(player_id)
+    local vehicle = entities.get_user_vehicle_as_handle()
     if vehicle ~= 0 then Ryan.Entity.AddSpotlight(vehicle, spotlight_offset, spotlight_intensity) end
 end)
 
@@ -680,9 +679,6 @@ menu.slider(self_spotlight_root, "Offset", {"ryanspotlightoffset"}, "How far the
 end)
 menu.slider(self_spotlight_root, "Intensity", {"ryanspotlightintensity"}, "How bright the light is.", 1, 50, 1, 1, function(value)
     spotlight_intensity = value
-end)
-menu.action(self_spotlight_root, "Delete All", {"ryanspotlightdelete"}, "Deletes all spotlights.", function()
-    Ryan.Entity.DeleteSpotlights()
 end)
 
 menu.divider(self_root, "Vehicle")
@@ -731,50 +727,50 @@ util.create_tick_handler(function()
     util.yield(200)
 end)
 
-
--- -- Horn Smite
-self_horn_smite_root = menu.list(self_root, "Horn Smite...", {"ryanhornsmite"}, "Smites a player every time your horn is honked.")
-
-horn_smite_random = false
-horn_smite_nearest = false
-
-menu.toggle(self_horn_smite_root, "Nearest Player", {"ryanhornsmitenearest"}, "Smites the nearest player outside of your vehicle.", function(value)
-    if value then menu.trigger_commands("ryanhornsmiterandom off") end
-    horn_smite_nearest = value
-end)
-menu.toggle(self_horn_smite_root, "Random Player", {"ryanhornsmiterandom"}, "Smites a random player, including you.", function(value)
-    if value then menu.trigger_commands("ryanhornsmitenearest off") end
-    horn_smite_random = value
-end)
-
--- -- Horn Smite
-self_strafe_run_root = menu.list(self_root, "Strafe Run...", {"ryanstraferun"}, "Explosions on the ground while you drive or fly.")
+-- -- Strafe Run
+self_strafe_run_root = menu.list(self_root, "Strafe Run...", {"ryanstraferun"}, "Explodes entities the ground while you drive or fly.")
 
 strafe_run_enabled = false
-strafe_run_constant = false
+strafe_run_radius = 5
+strafe_run_draw_sphere = false
 
-menu.toggle(self_strafe_run_root, "Enabled", {"ryanstraferunenabled"}, "Enables the strafe run.", function(value)
+menu.toggle(self_strafe_run_root, "Enabled", {"ryanstraferunenabled"}, "Enables the strafe run when pressing the Shift key / A button.", function(value)
     strafe_run_enabled = value
 end)
-menu.toggle(self_strafe_run_root, "Constant Explosions", {"ryanstraferunconstant"}, "Creates non-stop explosions with no delay in between.", function(value)
-    strafe_run_constant = value
+strafe_run_radius_input = menu.slider(self_strafe_run_root, "Radius", {"ryanstraferunradius"}, "The radius in which entities on the ground will be exploded.", 1, 50, 5, 1, function(value)
+    strafe_run_radius = value
 end)
+
+menu.on_focus(strafe_run_radius_input, function() strafe_run_draw_sphere = true end)
+menu.on_blur(strafe_run_radius_input, function() strafe_run_draw_sphere = false end)
 
 util.create_tick_handler(function()
-    if strafe_run_enabled then
-        local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+    local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+
+    if strafe_run_enabled or strafe_run_draw_sphere then
         local ground_z_ptr = memory.alloc(4)
         MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z_ptr, false)
-        local ground_z = memory.read_float(ground_z_ptr)
-        memory.free(ground_z_ptr)
-        FIRE.ADD_EXPLOSION(
-            coords.x, coords.y, ground_z,
-            9, 100.0, true, false, 1.0
-        )
-        util.yield(strafe_run_constant and 333 or 1000)
+        coords.z = memory.read_float(ground_z_ptr); memory.free(ground_z_ptr)
+    end
+
+    if strafe_run_enabled then
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(), false)
+        if vehicle ~= 0 and PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.Sprint) then
+            local z = coords.z; coords = ENTITY.GET_ENTITY_COORDS(vehicle); coords.z = z
+            for _, entity in pairs(Ryan.Entity.GetAllNearby(coords, strafe_run_radius, Ryan.Entity.Type.All)) do
+                local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
+                FIRE.ADD_EXPLOSION(
+                    entity_coords.x, entity_coords.y, entity_coords.z,
+                    29, 100.0, false, true, 0.0
+                )
+            end
+        end
+    end
+
+    if strafe_run_draw_sphere then
+        GRAPHICS._DRAW_SPHERE(coords.x, coords.y, coords.z, strafe_run_radius, esp_color.r * 255, esp_color.g * 255, esp_color.b * 255, 0.3)
     end
 end)
-
 
 -- -- E-Brake
 ebrake = false
@@ -793,51 +789,6 @@ util.create_tick_handler(function()
     end
 end)
 
-util.create_tick_handler(function()
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(), false)
-    if vehicle ~= 0 then
-        VEHICLE.SET_VEHICLE_SEARCHLIGHT(vehicle, searchlight, true)
-        VEHICLE.SET_VEHICLE_HAS_MUTED_SIRENS(vehicle, mute_siren)
-        
-        if (horn_smite_random or horn_smite_nearest) and PAD.IS_CONTROL_JUST_PRESSED(21, Ryan.Globals.Controls.Horn) then
-            local elegible_players = {}
-            if horn_smite_random then
-                elegible_players = Ryan.Basics.KeepItemsInTable(players.list(), function(table, i, new_i)
-                    return not players.is_godmode(table[i])
-                end)
-            elseif horn_smite_nearest then
-                local ped = Ryan.Player.GetPed()
-                local coords = ENTITY.GET_ENTITY_COORDS(ped)
-                local vehicle = PED.GET_VEHICLE_PED_IS_IN(ped, false)
-
-                local nearest_distance = 2147483647
-                local nearest_player = nil
-                for _, player_id in pairs(players.list()) do
-                    local player_ped = Ryan.Player.GetPed(player_id)
-                    if PED.GET_VEHICLE_PED_IS_IN(player_ped, false) ~= vehicle then
-                        local distance = Ryan.Vector.Distance(coords, ENTITY.GET_ENTITY_COORDS(player_ped))
-                        if distance < nearest_distance then
-                            nearest_distance = distance
-                            nearest_player = player_id
-                        end
-                    end                    
-                end
-
-                if nearest_player ~= nil then elegible_players = {nearest_player} end
-            end
-
-            if #elegible_players == 0 then
-                Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Horn Smite", "There are no elegible players to smite.")
-            else
-                local player_id = Ryan.Basics.GetRandomItemInTable(elegible_players)
-                Ryan.Player.Explode(player_id, true)
-                Ryan.PTFX.PlayAtCoords(ENTITY.GET_ENTITY_COORDS(player_id), "core", "exp_grd_petrol_pump", {r = 1, g = 1, b = 1})
-                Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Horn Smite", "I have spoken... " .. players.get_name(player_id) .. " is the chosen one.")
-            end
-        end
-    end
-end)
-
 
 -- World Menu --
 menu.divider(world_root, "General")
@@ -847,6 +798,27 @@ world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Cha
 world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
 world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
 world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
+
+-- -- Action Figures
+for i = 1, #Ryan.Globals.ActionFigures do
+    menu.action(world_action_figures_root, "Action Figure " .. i, {"ryanactionfigure" .. i}, "Teleports to action figure #" .. i, function()
+        Ryan.Player.Teleport({x = Ryan.Globals.ActionFigures[i][1], y = Ryan.Globals.ActionFigures[i][2], z = Ryan.Globals.ActionFigures[i][3]})
+    end)
+end
+
+-- -- Signal Jammers
+for i = 1, #Ryan.Globals.SignalJammers do
+    menu.action(world_signal_jammers_root, "Signal Jammer " .. i, {"ryansignaljammer" .. i}, "Teleports to signal jammer #" .. i, function()
+        Ryan.Player.TeleportWithVehicle({x = Ryan.Globals.SignalJammers[i][1], y = Ryan.Globals.SignalJammers[i][2], z = Ryan.Globals.SignalJammers[i][3]})
+    end)
+end
+
+-- -- Playing Cards
+for i = 1, #Ryan.Globals.PlayingCards do
+    menu.action(world_playing_cards_root, "Playing Card " .. i, {"ryanplayingcard" .. i}, "Teleports to playing card #" .. i, function()
+        Ryan.Player.TeleportWithVehicle({x = Ryan.Globals.PlayingCards[i][1], y = Ryan.Globals.PlayingCards[i][2], z = Ryan.Globals.PlayingCards[i][3]})
+    end)
+end
 
 -- -- All NPCs
 all_npcs_mode = "Off"
@@ -929,27 +901,6 @@ util.create_tick_handler(function()
     end
     util.yield(250)
 end)
-
--- -- Action Figures
-for i = 1, #Ryan.Globals.ActionFigures do
-    menu.action(world_action_figures_root, "Action Figure " .. i, {"ryanactionfigure" .. i}, "Teleports to action figure #" .. i, function()
-        Ryan.Player.Teleport({x = Ryan.Globals.ActionFigures[i][1], y = Ryan.Globals.ActionFigures[i][2], z = Ryan.Globals.ActionFigures[i][3]})
-    end)
-end
-
--- -- Signal Jammers
-for i = 1, #Ryan.Globals.SignalJammers do
-    menu.action(world_signal_jammers_root, "Signal Jammer " .. i, {"ryansignaljammer" .. i}, "Teleports to signal jammer #" .. i, function()
-        Ryan.Player.TeleportWithVehicle({x = Ryan.Globals.SignalJammers[i][1], y = Ryan.Globals.SignalJammers[i][2], z = Ryan.Globals.SignalJammers[i][3]})
-    end)
-end
-
--- -- Playing Cards
-for i = 1, #Ryan.Globals.PlayingCards do
-    menu.action(world_playing_cards_root, "Playing Card " .. i, {"ryanplayingcard" .. i}, "Teleports to playing card #" .. i, function()
-        Ryan.Player.TeleportWithVehicle({x = Ryan.Globals.PlayingCards[i][1], y = Ryan.Globals.PlayingCards[i][2], z = Ryan.Globals.PlayingCards[i][3]})
-    end)
-end
 
 -- -- No Cops
 menu.toggle_loop(world_root, "No Cops", {"ryannocops"}, "Clears the area of cops while enabled.", function()
@@ -2231,6 +2182,7 @@ vehicle_godmode = {}
 
 vehicle_catapult = {}
 vehicle_alarm = {}
+vehicle_spotlight = {}
 vehicle_delete = {}
 
 attach_vehicle_bones = {}
@@ -2491,7 +2443,12 @@ function setup_player(player_id)
         vehicle_alarm[player_id] = value and true or nil
     end)
 
-    -- -- Alarm
+    -- -- Spotlight
+    menu.toggle(player_vehicle_root, "Spotlight", {"ryanspotlight"}, "Attaches blindingly bright lights to their vehicle.", function(value)
+        vehicle_spotlight[player_id] = value and true or nil
+    end)
+
+    -- -- Delete
     menu.toggle(player_vehicle_root, "Delete", {"ryandelete"}, "Deletes their vehicle.", function(value)
         vehicle_delete[player_id] = value and true or nil
     end)
@@ -2829,7 +2786,12 @@ util.create_tick_handler(function()
                 end
             end
 
-            -- Alarm
+            -- Spotlight
+            if vehicle_spotlight[player_id] == true then
+                Ryan.Entity.AddSpotlight(vehicle, 4.0, 6)
+            end
+
+            -- Delete
             if vehicle_delete[player_id] == true then
                 -- SET_AS_MISSION_VEHICLE
                 entities.delete_by_handle(vehicle)
@@ -2853,8 +2815,10 @@ function cleanup_player(player_id)
     vehicle_engine[player_id] = nil
     vehicle_upgrades[player_id] = nil
     vehicle_godmode[player_id] = nil
+
     vehicle_catapult[player_id] = nil
     vehicle_alarm[player_id] = nil
+    vehicle_spotlight[player_id] = nil
     vehicle_delete[player_id] = nil
     
     attach_vehicle_bones[player_id] = nil
