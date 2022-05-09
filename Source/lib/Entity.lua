@@ -122,12 +122,14 @@ Ryan.Entity = {
 
     AddSpotlight = function(entity, offset, intensity)
         if ENTITY.IS_ENTITY_A_VEHICLE(entity) then
-            local trailer_ptr = memory.alloc_int()
-            VEHICLE.GET_VEHICLE_TRAILER_VEHICLE(entity, trailer_ptr)
-            local trailer = memory.read_int(trailer_ptr); memory.free(trailer_ptr)
-            if trailer ~= 0 then
-                Ryan.Entity.AddSpotlight(trailer, offset, intensity)
-                return
+            if VEHICLE.IS_VEHICLE_MODEL(entity, 1518533038) or VEHICLE.IS_VEHICLE_MODEL(387748548) then
+                local trailer_ptr = memory.alloc_int()
+                VEHICLE.GET_VEHICLE_TRAILER_VEHICLE(entity, trailer_ptr)
+                local trailer = memory.read_int(trailer_ptr); memory.free(trailer_ptr)
+                if trailer ~= 0 then
+                    Ryan.Entity.AddSpotlight(trailer, offset, intensity)
+                    return
+                end
             end
         end
 
