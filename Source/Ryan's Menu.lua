@@ -99,10 +99,10 @@ self_ptfx_vehicle_root = menu.list(self_ptfx_root, "Vehicle...", {"ryanptfxvehic
 self_ptfx_god_finger_root = menu.list(self_ptfx_root, "God Finger...", {"ryanptfxgodfinger"}, "Special FX when using God Finger.")
 
 menu.divider(self_ptfx_root, "Options")
-menu.colour(self_ptfx_root, "Color", {"ryanptfxcolor"}, "Some PTFX options allow for custom colors.", 1.0, 1.0, 1.0, 1.0, false, function(color)
-    ptfx_color.r = color.r
-    ptfx_color.g = color.g
-    ptfx_color.b = color.b
+menu.colour(self_ptfx_root, "Color", {"ryanptfxcolor"}, "Some PTFX options allow for custom colors.", 1.0, 1.0, 1.0, 1.0, false, function(value)
+    ptfx_color.r = value.r
+    ptfx_color.g = value.g
+    ptfx_color.b = value.b
 end)
 menu.toggle(self_ptfx_root, "Disable", {"ryanptfxoff"}, "Disables PTFX but keeps your settings.", function(value)
     ptfx_disable = value
@@ -377,13 +377,13 @@ util.create_tick_handler(function()
                     end
                     entities_chaosed[entity] = util.current_time_millis()
                 end
-            elseif forcefield_mode == "Destroy" then -- Explode entities
+            elseif forcefield_mode == "Explode" then -- Explode entities
                 if entities_exploded[entity] == nil then
                     if entity ~= player_ped and entity ~= player_vehicle then
                         local coords = ENTITY.GET_ENTITY_COORDS(entity)
                         FIRE.ADD_EXPLOSION(
                             coords.x, coords.y, coords.z,
-                            29, 5.0, false, true, 0.0
+                            7, 5.0, false, true, 0.0
                         )
                     end
                     entities_exploded[entity] = true
@@ -615,7 +615,10 @@ util.create_tick_handler(function()
         elseif god_finger_mode == "Explode" then -- Explode entities
             if entities_exploded[raycast.hit_entity] == nil then
                 local coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
-                FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z,7, 100.0, false, true, 0.0)
+                FIRE.ADD_EXPLOSION(
+                    coords.x, coords.y, coords.z,
+                    7, 100.0, false, true, 0.0
+                )
                 entities_exploded[raycast.hit_entity] = true
             end
         end
@@ -653,6 +656,33 @@ util.create_tick_handler(function()
         if not has_choice then menu.trigger_commands("ryancrosshairoff on") end
         crosshair_change = 2147483647
     end
+end)
+
+-- -- Spotlight
+self_spotlight_root = menu.list(self_root, "Spotlight...", {"ryanspotlight"}, "Makes your vehicle glow.")
+spotlight_offset = 3.0
+spotlight_intensity = 1
+
+menu.toggle_loop(self_spotlight_root, "On Body", {"ryanspotlighton"}, "Enables the spotlight.", function()
+    local player_ped = Ryan.Player.GetPed()
+    if player_ped ~= 0 then Ryan.Entity.Spotlight(player_ped, spotlight_offset, spotlight_color, spotlight_range, spotlight_intensity) end
+end)
+
+menu.toggle_loop(self_spotlight_root, "On Vehicle", {"ryanspotlighton"}, "Enables the spotlight.", function()
+    local player_id, player_ped = players.user(), Ryan.Player.GetPed()
+    local vehicle = entities.get_user_vehicle_as_handle(player_id)
+    if vehicle ~= 0 then Ryan.Entity.AddSpotlight(vehicle, spotlight_offset, spotlight_intensity) end
+end)
+
+menu.divider(self_spotlight_root, "Options")
+menu.slider(self_spotlight_root, "Offset", {"ryanspotlightoffset"}, "How far the lights are away from the model.", 1, 100, 30, 1, function(value)
+    spotlight_offset = value / 10.0
+end)
+menu.slider(self_spotlight_root, "Intensity", {"ryanspotlightintensity"}, "How bright the light is.", 1, 50, 1, 1, function(value)
+    spotlight_intensity = value
+end)
+menu.action(self_spotlight_root, "Delete All", {"ryanspotlightdelete"}, "Deletes all spotlights.", function()
+    Ryan.Entity.DeleteSpotlights()
 end)
 
 menu.divider(self_root, "Vehicle")
@@ -701,20 +731,6 @@ util.create_tick_handler(function()
     util.yield(200)
 end)
 
--- -- Police
-self_police_root = menu.list(self_root, "Police...", {"ryanpolice"}, "Controls various aspects of police vehicles.")
-
--- -- Mute Siren
-mute_siren = false
-menu.toggle(self_police_root, "Mute Siren", {"ryanmutesiren"}, "Mutes the siren on police vehicles (locally.)", function(value)
-    mute_siren = value
-end)
-
--- -- Searchlight
-searchlight = false
-menu.toggle(self_police_root, "Searchlight", {"ryansearchlight"}, "Enables searchlights on police vehicles.", function(value)
-    searchlight = value
-end)
 
 -- -- Horn Smite
 self_horn_smite_root = menu.list(self_root, "Horn Smite...", {"ryanhornsmite"}, "Smites a player every time your horn is honked.")
@@ -730,6 +746,35 @@ menu.toggle(self_horn_smite_root, "Random Player", {"ryanhornsmiterandom"}, "Smi
     if value then menu.trigger_commands("ryanhornsmitenearest off") end
     horn_smite_random = value
 end)
+
+-- -- Horn Smite
+self_strafe_run_root = menu.list(self_root, "Strafe Run...", {"ryanstraferun"}, "Explosions on the ground while you drive or fly.")
+
+strafe_run_enabled = false
+strafe_run_constant = false
+
+menu.toggle(self_strafe_run_root, "Enabled", {"ryanstraferunenabled"}, "Enables the strafe run.", function(value)
+    strafe_run_enabled = value
+end)
+menu.toggle(self_strafe_run_root, "Constant Explosions", {"ryanstraferunconstant"}, "Creates non-stop explosions with no delay in between.", function(value)
+    strafe_run_constant = value
+end)
+
+util.create_tick_handler(function()
+    if strafe_run_enabled then
+        local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+        local ground_z_ptr = memory.alloc(4)
+        MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z_ptr, false)
+        local ground_z = memory.read_float(ground_z_ptr)
+        memory.free(ground_z_ptr)
+        FIRE.ADD_EXPLOSION(
+            coords.x, coords.y, ground_z,
+            9, 100.0, true, false, 1.0
+        )
+        util.yield(strafe_run_constant and 333 or 1000)
+    end
+end)
+
 
 -- -- E-Brake
 ebrake = false
@@ -1610,7 +1655,7 @@ menu.action(session_crash_all_root, "Crash To Desktop", {"ryancrashallmultiplaye
         Ryan.Player.Teleport(starting_coords)
     end
 end)
-menu.action(session_crash_all_root, "Crash Using Stand", {"ryannextgen"}, "Attempts to crash using Stand's Burger King Foot Lettuce.", function()
+menu.action(session_crash_all_root, "Crash Using Stand", {"ryannextgen"}, "Attempts to crash using Stand's Next-Gen crashmocf.", function()
     for _, player_id in pairs(players.list(false, crash_all_friends)) do
         if crash_all_modders or not players.is_marked_as_modder(player_id) then
             menu.trigger_commands("ngcrash" .. players.get_name(player_id))
@@ -2158,10 +2203,10 @@ menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed 
 menu.hyperlink(settings_root, "Website", "https://ryan.gq/menu/", "Opens the official website, for downloading the installer and viewing the changelog.")
 
 menu.divider(settings_root, "Options")
-menu.colour(settings_root, "ESP Color", {"ryanespcolor"}, "The color of on-screen ESP.", 0.29, 0.69, 1.0, 1.0, false, function(color)
-    esp_color.r = color.r
-    esp_color.g = color.g
-    esp_color.b = color.b
+menu.colour(settings_root, "ESP Color", {"ryanespcolor"}, "The color of on-screen ESP.", 0.29, 0.69, 1.0, 1.0, false, function(value)
+    esp_color.r = value.r
+    esp_color.g = value.g
+    esp_color.b = value.b
 end)
 menu.action(settings_root, "Allow Fireworks", {"ryanallowfireworks"}, "Disable Crash Event - Timeout to allow for fireworks.", function()
     menu.focus(menu.ref_by_path("Online>Protections>Events>Crash Event>Timeout"))
@@ -2649,8 +2694,8 @@ end)
 
 util.create_thread(function()
     while true do
-        for player_id, _ in pairs(money_drop) do
-            Ryan.Trolling.FakeMoneyDrop(player_id)
+        for player_id, enabled in pairs(money_drop) do
+            if enabled then Ryan.Trolling.FakeMoneyDrop(player_id) end
         end
         util.yield()
     end
@@ -2846,5 +2891,6 @@ while true do
             {r = 1.0, g = 1.0, b = 1.0, a = 1.0}
         )
     end
+    
     util.yield()
 end

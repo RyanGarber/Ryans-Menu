@@ -78,7 +78,7 @@ $.get('https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/MANIFEST').d
         for(let type in contents) {
             if(type == 'main') continue;
             
-            if(fs.existsSync(luaScriptsFolder + '\\' + type)) fs.mkdirSync(luaScriptsFolder + '\\' + type);
+            if(!fs.existsSync(luaScriptsFolder + '\\' + type)) fs.mkdirSync(luaScriptsFolder + '\\' + type);
             if(fs.existsSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu')) {
                 fs.rmSync(luaScriptsFolder + '\\' + type + '\\Ryan\'s Menu', {recursive: true, force: true});
             }

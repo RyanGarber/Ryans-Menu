@@ -239,7 +239,17 @@ Ryan.Globals = {
         "Down",
         "Smash",
         "Chaos",
-        "Destroy"
+        "Explode"
+    },
+
+    GodFingerModes = {
+        "Off",
+        "Default",
+        "Push",
+        "Pull",
+        "Smash",
+        "Chaos",
+        "Explode"
     },
 
     CrosshairModes = {
@@ -252,16 +262,6 @@ Ryan.Globals = {
         "Off",
         "When Pointing",
         "Always"
-    },
-
-    GodFingerModes = {
-        "Off",
-        "Default",
-        "Push",
-        "Pull",
-        "Smash",
-        "Chaos",
-        "Explode"
     },
 
     AntihermitModes = {

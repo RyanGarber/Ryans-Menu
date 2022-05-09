@@ -29,10 +29,10 @@ Ryan.Vehicle = {
         VEHICLE.SET_VEHICLE_MOD_KIT(vehicle, 0)
         for i=0, 50 do
             local mod = -1
-            if maxed then
+            if fully_upgraded then
                 mod = VEHICLE.GET_NUM_VEHICLE_MODS(vehicle, i) - 1
             end
-            VEHICLE.SET_VEHICLE_MOD(vehicle, i, mod, maxed)
+            VEHICLE.SET_VEHICLE_MOD(vehicle, i, mod, fully_upgraded)
         end
     end,
 

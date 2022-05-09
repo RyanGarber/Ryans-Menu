@@ -116,5 +116,58 @@ Ryan.Entity = {
         end
         v3.free(minimum)
         v3.free(maximum)
+    end,
+
+    Spotlights = {},
+
+    AddSpotlight = function(entity, offset, intensity)
+        local coords = ENTITY.GET_ENTITY_COORDS(entity)
+        local model = ENTITY.GET_ENTITY_MODEL(entity)
+
+        local minimum_ptr, maximum_ptr = memory.alloc(), memory.alloc()
+        MISC.GET_MODEL_DIMENSIONS(model, minimum_ptr, maximum_ptr)
+        local minimum = memory.read_vector3(minimum_ptr); memory.free(minimum_ptr)
+        local maximum = memory.read_vector3(maximum_ptr); memory.free(maximum_ptr)
+
+        local wall_light = util.joaat("prop_wall_light_15a")
+
+        if Ryan.Entity.Spotlights[entity] == nil then
+            for i = 1, intensity do
+                Ryan.Entity.Spotlights[entity] = {}
+
+                local trailer_length = 0.0
+                
+                if ENTITY.IS_ENTITY_A_VEHICLE(entity) then
+                    local trailer_ptr = memory.alloc_int()
+                    VEHICLE.GET_VEHICLE_TRAILER_VEHICLE(entity, trailer_ptr)
+                    local trailer = memory.read_int(trailer_ptr); memory.free(trailer_ptr)
+                    if trailer ~= 0 then Ryan.Entity.AddSpotlight(trailer, offset, intensity) end
+                end
+                
+                local offsets = {
+                    {x = 0.0, y = 0.0, z = (maximum.z * offset)},
+                    {x = 0.0, y = 0.0, z = (-maximum.z * offset)},
+                    {x = 0.0, y = (maximum.y * offset), z = 0.0},
+                    {x = 0.0, y = (-maximum.y * offset), z = 0.0},
+                    {x = (maximum.x * offset), y = 0.0, z = 0.0},
+                    {x = (-maximum.x * offset), y = 0.0, z = 0.0}
+                }
+
+                for i = 1, #offsets do
+                    local light = entities.create_object(wall_light, {x = coords.x + offsets[i].x, y = coords.y + offsets[i].y, z = coords.z + offsets[i].z})
+                    table.insert(Ryan.Entity.Spotlights[entity], light)
+
+                    local rotation = Ryan.Vector.DirectionToRotation(Ryan.Vector.Normalize(Ryan.Vector.Subtract(ENTITY.GET_ENTITY_COORDS(light), ENTITY.GET_ENTITY_COORDS(entity))))
+                    ENTITY.ATTACH_ENTITY_TO_ENTITY(light, entity, 0, offsets[i].x, offsets[i].y, offsets[i].z, rotation.x, rotation.y, rotation.z, false, false, false, false, 0, true)
+                end
+            end
+        end
+    end,
+
+    DeleteSpotlights = function()
+        for entity, spotlights in pairs(Ryan.Entity.Spotlights) do
+            for i = 1, #spotlights do entities.delete_by_handle(spotlights[i]) end
+        end
+        Ryan.Entity.Spotlights = {}
     end
 }
