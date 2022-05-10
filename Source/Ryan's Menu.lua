@@ -1,4 +1,4 @@
-VERSION = "0.7.7"
+VERSION = "0.8.0"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -28,65 +28,67 @@ end
 
 
 -- Check for Updates --
-updating = 1
-async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
-    latest_version = manifest:sub(1, manifest:find("\n") - 1)
-    manifest = Ryan.JSON.Decode(manifest:sub(manifest:find("\n"), manifest:len()))
-    if latest_version ~= VERSION then
-        util.show_corner_help("<b>Updating Ryan's Menu</b><br>Now downloading v" .. latest_version .. ". Please wait...")
-        
-        -- -- Download Update
-        updating = 2
-        local files_total, files_done = 0, 0
-        for directory, files in pairs(manifest) do
-            files_total = files_total + (directory == "main" and 1 or #files)
-        end
+--if not debug.getinfo(1, "S").source:lower():find("dev") then
+    updating = 1
+    async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
+        latest_version = manifest:sub(1, manifest:find("\n") - 1)
+        manifest = Ryan.JSON.Decode(manifest:sub(manifest:find("\n"), manifest:len()))
+        if latest_version ~= VERSION then
+            util.show_corner_help("<b>Updating Ryan's Menu</b><br>Now downloading v" .. latest_version .. ". Please wait...")
+            
+            -- -- Download Update
+            updating = 2
+            local files_total, files_done = 0, 0
+            for directory, files in pairs(manifest) do
+                files_total = files_total + (directory == "main" and 1 or #files)
+            end
 
-        function on_update()
-            util.show_corner_help("<b>Update Complete</b><br>Please restart Ryan's Menu to start using version " .. latest_version .. ".")
-            Ryan.Basics.ShowTextMessage(49, "Auto-Update", "Updated! Please restart Ryan's Menu to continue.")
-            menu.focus(menu.ref_by_command_name("stopluaryansmenu"))
-            util.stop_script()
-        end
+            function on_update()
+                util.show_corner_help("<b>Update Complete</b><br>Please restart Ryan's Menu to start using version " .. latest_version .. ".")
+                Ryan.Basics.ShowTextMessage(49, "Auto-Update", "Updated! Please restart Ryan's Menu to continue.")
+                menu.focus(menu.ref_by_command_name("stopluaryansmenu"))
+                util.stop_script()
+            end
 
-        for directory, files in pairs(manifest) do
-            if directory == "main" then
-                async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. files, function(contents)
-                    local destination = assert(io.open(filesystem.scripts_dir() .. files, "w"))
-                    destination:write(contents)
-                    assert(destination:close())
-                    files_done = files_done + 1
-                    if files_done == files_total then on_update() end
-                end)
-                async_http.dispatch()
-            else
-                filesystem.mkdirs(filesystem.scripts_dir() .. directory .. "\\" .. "Ryan's Menu")
-                for _, file in pairs(files) do
-                    async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. directory .. "/" .. file, function(contents)
-                        local destination = assert(io.open(filesystem.scripts_dir() .. directory .. "\\Ryan's Menu\\" .. file, file:find(".png") and "wb" or "w"))
+            for directory, files in pairs(manifest) do
+                if directory == "main" then
+                    async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. files, function(contents)
+                        local destination = assert(io.open(filesystem.scripts_dir() .. files, "w"))
                         destination:write(contents)
                         assert(destination:close())
                         files_done = files_done + 1
                         if files_done == files_total then on_update() end
                     end)
                     async_http.dispatch()
+                else
+                    filesystem.mkdirs(filesystem.scripts_dir() .. directory .. "\\" .. "Ryan's Menu")
+                    for _, file in pairs(files) do
+                        async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. directory .. "/" .. file, function(contents)
+                            local destination = assert(io.open(filesystem.scripts_dir() .. directory .. "\\Ryan's Menu\\" .. file, file:find(".png") and "wb" or "w"))
+                            destination:write(contents)
+                            assert(destination:close())
+                            files_done = files_done + 1
+                            if files_done == files_total then on_update() end
+                        end)
+                        async_http.dispatch()
+                    end
                 end
             end
+        else
+            Ryan.Basics.ShowTextMessage(49, "Auto-Update", "You're up to date. Enjoy!")
+            Ryan.Audio.PlayFromEntity(Ryan.Player.GetPed(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
+            updating = 0
         end
-    else
-        Ryan.Basics.ShowTextMessage(49, "Auto-Update", "You're up to date. Enjoy!")
-        Ryan.Audio.PlayFromEntity(Ryan.Player.GetPed(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
-        updating = 0
-    end
-end, function()
-    Ryan.Basics.ShowTextMessage(6, "Auto-Update", "Failed to get the latest version. Use the installer instead.")
-end)
-async_http.dispatch()
+    end, function()
+        Ryan.Basics.ShowTextMessage(6, "Auto-Update", "Failed to get the latest version. Use the installer instead.")
+    end)
+    async_http.dispatch()
 
-while updating ~= 0 do
-    if updating == 2 then util.toast("Downloading files for Ryan's Menu...") end
-    util.yield(333)
-end
+    while updating ~= 0 do
+        if updating == 2 then util.toast("Downloading files for Ryan's Menu...") end
+        util.yield(333)
+    end
+--end
 
 Ryan.Basics.RequestModel(2628187989)
 Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. "Ryan's Menu\\Crosshair.png")
