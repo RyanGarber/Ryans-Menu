@@ -141,7 +141,6 @@ self_fire_root = menu.list(self_root, "Fire...", {"ryanfire"}, "An enhanced Lanc
 self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
 self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
 self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Add an on-screen crosshair.")
-self_spotlight_root = menu.list(world_root, "Spotlight...", {"ryanspotlight"}, "Makes your vehicle glow.")
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
@@ -711,29 +710,6 @@ util.create_tick_handler(function()
     end
 end)
 
--- -- Spotlight
-spotlight_offset = 3.0
-spotlight_intensity = 1
-
-menu.action(self_spotlight_root, "Add To Body", {"ryanspotlightbody"}, "Adds spotlights to your body.", function()
-    local player_ped = Ryan.Player.GetPed()
-    if player_ped ~= 0 then Ryan.Entity.AddSpotlight(player_ped, spotlight_offset, spotlight_color, spotlight_range, spotlight_intensity) end
-end)
-
-menu.action(self_spotlight_root, "Add To Vehicle", {"ryanspotlightvehicle"}, "Adds spotlights to your vehicle.", function()
-    local player_id, player_ped = players.user(), Ryan.Player.GetPed()
-    local vehicle = entities.get_user_vehicle_as_handle()
-    if vehicle ~= 0 then Ryan.Entity.AddSpotlight(vehicle, spotlight_offset, spotlight_intensity) end
-end)
-
-menu.divider(self_spotlight_root, "Options")
-menu.slider(self_spotlight_root, "Offset", {"ryanspotlightoffset"}, "How far the lights are away from the model.", 1, 100, 30, 1, function(value)
-    spotlight_offset = value / 10.0
-end)
-menu.slider(self_spotlight_root, "Intensity", {"ryanspotlightintensity"}, "How bright the light is.", 1, 50, 1, 1, function(value)
-    spotlight_intensity = value
-end)
-
 menu.divider(self_root, "Vehicle")
 
 -- -- Seats
@@ -845,9 +821,35 @@ end)
 
 -- World Menu --
 menu.divider(world_root, "General")
+world_spotlight_root = menu.list(world_root, "Spotlight...", {"ryanspotlight"}, "Makes your vehicle glow.")
 world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
 world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Changes the action NPCs are currently performing.")
 
+
+-- -- Spotlight
+spotlight_offset = 3.0
+spotlight_intensity = 1
+
+menu.action(world_spotlight_root, "Add To Body", {"ryanspotlightbody"}, "Adds spotlights to your body.", function()
+    local player_ped = Ryan.Player.GetPed()
+    if player_ped ~= 0 then Ryan.Entity.AddSpotlight(player_ped, spotlight_offset, spotlight_color, spotlight_range, spotlight_intensity) end
+end)
+
+menu.action(world_spotlight_root, "Add To Vehicle", {"ryanspotlightvehicle"}, "Adds spotlights to your vehicle.", function()
+    local player_id, player_ped = players.user(), Ryan.Player.GetPed()
+    local vehicle = entities.get_user_vehicle_as_handle()
+    if vehicle ~= 0 then Ryan.Entity.AddSpotlight(vehicle, spotlight_offset, spotlight_intensity) end
+end)
+
+menu.divider(world_spotlight_root, "Options")
+menu.slider(world_spotlight_root, "Offset", {"ryanspotlightoffset"}, "How far the lights are away from the model.", 1, 100, 30, 1, function(value)
+    spotlight_offset = value / 10.0
+end)
+menu.slider(world_spotlight_root, "Intensity", {"ryanspotlightintensity"}, "How bright the light is.", 1, 50, 1, 1, function(value)
+    spotlight_intensity = value
+end)
+
+-- -- Collectibles
 world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
 world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
 world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
