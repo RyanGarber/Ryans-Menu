@@ -1,44 +1,95 @@
 VERSION = "0.7.7"
 MANIFEST = {
-    lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
+    lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
 }
 
 Ryan = {}
 
+
 -- Requirements --
 function exists(name) return filesystem.exists(filesystem.scripts_dir() .. name) end
 for required_directory, required_files in pairs(MANIFEST) do
     for _, required_file in pairs(required_files) do
-        while not exists(required_directory .. "\\Ryan's Menu\\" .. required_file) do
-            util.toast("Ryan's Menu is missing a required file (" .. required_file .. ") and must be reinstalled.")
-            util.yield(2000)
-        end
-        if required_directory == 'lib' then
+        if not exists(required_directory .. "\\Ryan's Menu\\" .. required_file) then
+            if required_file == "Basics.lua" or required_file == "JSON.lua" or required_file == "Natives.lua" then
+                while not exists(required_directory .. "\\Ryan's Menu\\" .. required_file) do
+                    util.toast("Ryan's Menu is missing a required file and must be reinstalled.")
+                    util.yield(2000)
+                end
+            else
+                VERSION = "-1"
+            end
+        elseif required_directory == 'lib' then
             require(required_directory .. "\\Ryan's Menu\\" .. required_file:sub(0, -5))
         end
     end
 end
 
-Ryan.Basics.RequestModel(2628187989)
-
 
 -- Check for Updates --
+updating = 1
 async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
     latest_version = manifest:sub(1, manifest:find("\n") - 1)
+    manifest = Ryan.JSON.Decode(manifest:sub(manifest:find("\n"), manifest:len()))
     if latest_version ~= VERSION then
-        Ryan.Basics.ShowTextMessage(6, "v" .. VERSION, "This version is outdated. Press Get Latest Version to get v" .. latest_version .. ".")
-        menu.trigger_commands("ryansettings")
+        util.show_corner_help("<b>Updating Ryan's Menu</b><br>Now downloading v" .. latest_version .. ". Please wait...")
+        
+        -- -- Download Update
+        updating = 2
+        local files_total, files_done = 0, 0
+        for directory, files in pairs(manifest) do
+            files_total = files_total + (directory == "main" and 1 or #files)
+        end
+
+        function on_update()
+            util.show_corner_help("<b>Update Complete</b><br>Please restart Ryan's Menu to start using version " .. latest_version .. ".")
+            Ryan.Basics.ShowTextMessage(49, "Auto-Update", "Updated! Please restart Ryan's Menu to continue.")
+            menu.focus(menu.ref_by_command_name("stopluaryansmenu"))
+            util.stop_script()
+        end
+
+        for directory, files in pairs(manifest) do
+            if directory == "main" then
+                async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. files, function(contents)
+                    local destination = assert(io.open(filesystem.scripts_dir() .. files, "w"))
+                    destination:write(contents)
+                    assert(destination:close())
+                    files_done = files_done + 1
+                    if files_done == files_total then on_update() end
+                end)
+                async_http.dispatch()
+            else
+                filesystem.mkdirs(filesystem.scripts_dir() .. directory .. "\\" .. "Ryan's Menu")
+                for _, file in pairs(files) do
+                    async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. directory .. "/" .. file, function(contents)
+                        local destination = assert(io.open(filesystem.scripts_dir() .. directory .. "\\Ryan's Menu\\" .. file, file:find(".png") and "wb" or "w"))
+                        destination:write(contents)
+                        assert(destination:close())
+                        files_done = files_done + 1
+                        if files_done == files_total then on_update() end
+                    end)
+                    async_http.dispatch()
+                end
+            end
+        end
     else
-        Ryan.Basics.ShowTextMessage(49, "v" .. VERSION, VERSION:find("6.9") and "nice" or "You're up to date. Enjoy!")
+        Ryan.Basics.ShowTextMessage(49, "Auto-Update", "You're up to date. Enjoy!")
+        Ryan.Audio.PlayFromEntity(Ryan.Player.GetPed(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
+        updating = 0
     end
-    Ryan.Audio.PlayFromEntity(Ryan.Player.GetPed(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
 end, function()
-    Ryan.Basics.ShowTextMessage(6, "v" .. VERSION, "Failed to get the latest version. Go to Settings to check manually.")
+    Ryan.Basics.ShowTextMessage(6, "Auto-Update", "Failed to get the latest version. Use the installer instead.")
 end)
 async_http.dispatch()
 
-util.show_corner_help("<b>Welcome to Ryan's Menu!</b><br><br>Stay up to date for the best experience. Any problems or suggestions?<br>Discord: RyanCSG#1460")
+while updating ~= 0 do
+    if updating == 2 then util.toast("Downloading files for Ryan's Menu...") end
+    util.yield(333)
+end
+
+Ryan.Basics.RequestModel(2628187989)
+Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. "Ryan's Menu\\Crosshair.png")
 
 
 -- Switching Sessions --
