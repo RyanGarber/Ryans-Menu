@@ -2853,9 +2853,10 @@ util.create_tick_handler(function()
             end
 
             -- Spotlight
-            if vehicle_spotlight[player_id] == true then
+            if vehicle_spotlight[player_id] == true and vehicle_state[vehicle].spotlight ~= true then
                 mod_vehicle(vehicle, function()
-                    Ryan.Entity.AddSpotlight(vehicle, 4.0, 6)
+                    Ryan.Entity.AddSpotlight(vehicle, 7.5, 10)
+                    vehicle_state[vehicle].spotlight = true
                 end, true)
             end
 
