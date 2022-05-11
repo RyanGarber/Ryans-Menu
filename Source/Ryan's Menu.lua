@@ -28,7 +28,7 @@ end
 
 
 -- Check for Updates --
---if not debug.getinfo(1, "S").source:lower():find("dev") then
+if not debug.getinfo(1, "S").source:lower():find("dev") then
     updating = 1
     async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
         latest_version = manifest:sub(1, manifest:find("\n") - 1)
@@ -88,7 +88,7 @@ end
         if updating == 2 then util.toast("Downloading files for Ryan's Menu...") end
         util.yield(333)
     end
---end
+end
 
 Ryan.Basics.RequestModel(2628187989)
 Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. "Ryan's Menu\\Crosshair.png")
