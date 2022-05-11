@@ -1,4 +1,4 @@
-VERSION = "0.8.0"
+VERSION = "0.8.1a1"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -2901,6 +2901,10 @@ util.keep_running()
 while true do
     player_is_pointing = memory.read_int(memory.script_global(4516656 + 930)) == 3
     if crosshair_mode == "Always" or (crosshair_mode == "When Pointing" and player_is_pointing) then
+        local weapon = WEAPON.GET_SELECTED_PED_WEAPON(Ryan.Player.GetPed())
+        if WEAPON.GET_WEAPONTYPE_GROUP(weapon) ~= -1212426201 then
+            HUD.HIDE_HUD_COMPONENT_THIS_FRAME(14)
+        end
         directx.draw_texture(
             Ryan.Globals.CrosshairTexture,
             0.03, 0.03,
