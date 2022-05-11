@@ -1,61 +1,38 @@
 {
   "name": "ryans-menu-installer",
-  "version": "1.0.1",
-  "description": "An installer for Ryan's Menu, a lua script for the Stand mod menu.",
+  "version": "1.0.0",
+  "description": "Installer for Ryan's Menu, a Lua script for Stand.",
   "main": "main.js",
-  "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/RyanGarber/Ryans-Menu.git"
   },
   "author": "Ryan Garber",
-  "license": "ISC",
+  "license": "UNLICENSED",
   "bugs": {
     "url": "https://github.com/RyanGarber/Ryans-Menu/issues"
   },
   "homepage": "https://github.com/RyanGarber/Ryans-Menu#readme",
-  "devDependencies": {
-    "@electron-forge/cli": "^6.0.0-beta.63",
-    "@electron-forge/maker-deb": "^6.0.0-beta.63",
-    "@electron-forge/maker-rpm": "^6.0.0-beta.63",
-    "@electron-forge/maker-squirrel": "^6.0.0-beta.63",
-    "@electron-forge/maker-zip": "^6.0.0-beta.63",
-    "@electron/remote": "^2.0.8",
-    "electron": "^18.0.1"
-  },
   "dependencies": {
-    "@electron/remote": "^2.0.8",
-    "electron-squirrel-startup": "^1.0.0"
+    "https": "^1.0.0"
   },
-  "config": {
-    "forge": {
-      "packagerConfig": {},
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "ryans_menu_installer"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin"
-          ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        }
-      ]
+  "devDependencies": {
+    "nwjs-builder-phoenix": "^1.15.0"
+  },
+  "scripts": {
+    "start": "run --x86 --mirror https://dl.nwjs.io/ .",
+    "dist": "build --tasks win-x86 --mirror https://dl.nwjs.io/ ."
+  },
+  "build": {
+    "nwVersion": "0.14.7",
+    "packed": true,
+    "win": {
+        "productName": "Install Ryan's Menu",
+        "companyName": "RyanGQ",
+        "icon": "logo.ico"
     }
+  },
+  "window": {
+      "icon": "logo.png"
   }
 }
