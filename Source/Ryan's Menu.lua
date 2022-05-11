@@ -963,7 +963,7 @@ menu.toggle_loop(world_root, "No Cops", {"ryannocops"}, "Clears the area of cops
     MISC.CLEAR_AREA_OF_COPS(coords.x, coords.y, coords.z, 500, 0) -- might as well
     for _, entity in pairs(Ryan.Entity.GetAllNearby(coords, 500, Ryan.Entity.Type.All)) do
         if ENTITY.IS_ENTITY_A_PED(entity) then
-            for _, ped_type in pairs(Ryan.Globals.PolicePeds) do
+            for _, ped_type in pairs(Ryan.Globals.PolicePedTypes) do
                 if PED.GET_PED_TYPE(entity) == ped_type then
                     Ryan.Entity.RequestControl(entity)
                     entities.delete_by_handle(entity)
