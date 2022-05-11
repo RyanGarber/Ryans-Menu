@@ -832,7 +832,7 @@ spotlight_intensity = 1
 
 menu.action(world_spotlight_root, "Add To Body", {"ryanspotlightbody"}, "Adds spotlights to your body.", function()
     local player_ped = Ryan.Player.GetPed()
-    if player_ped ~= 0 then Ryan.Entity.AddSpotlight(player_ped, spotlight_offset, spotlight_color, spotlight_range, spotlight_intensity) end
+    if player_ped ~= 0 then Ryan.Entity.AddSpotlight(player_ped, spotlight_offset, spotlight_intensity) end
 end)
 
 menu.action(world_spotlight_root, "Add To Vehicle", {"ryanspotlightvehicle"}, "Adds spotlights to your vehicle.", function()

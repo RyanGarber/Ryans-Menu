@@ -16,7 +16,7 @@ $.get('https://raw.githubusercontent.com/RyanGarber/Ryans-Menu/main/MANIFEST').d
     if(fs.existsSync(luaScriptsFolder + '\\Ryan\'s Menu.lua')) {
         try {
             let installedScript = fs.readFileSync(luaScriptsFolder + '\\Ryan\'s Menu.lua', 'utf8');
-            let installedVersion = installedScript.split('\n')[0].slice(11, -1);
+            let installedVersion = installedScript.split('\n')[0].replace('VERSION = "', '').replace('"', '');
             $('.install-type').text(installedVersion == version ? 'Reinstall' : 'Update');
             $('#installed-version').text('You currently have v' + installedVersion + '.');
         }
