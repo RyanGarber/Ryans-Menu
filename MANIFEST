@@ -1,4 +1,4 @@
-0.8.1b1
+0.8.1r1
 {
     "main": "Ryan's Menu.lua",
     "lib": ["Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"],
