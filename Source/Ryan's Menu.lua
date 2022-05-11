@@ -832,13 +832,17 @@ spotlight_intensity = 1
 
 menu.action(world_spotlight_root, "Add To Body", {"ryanspotlightbody"}, "Adds spotlights to your body.", function()
     local player_ped = Ryan.Player.GetPed()
-    if player_ped ~= 0 then Ryan.Entity.AddSpotlight(player_ped, spotlight_offset, spotlight_intensity) end
+    if player_ped ~= 0 then
+        Ryan.Entity.AddSpotlight(player_ped, spotlight_offset, spotlight_intensity)
+    end
 end)
 
 menu.action(world_spotlight_root, "Add To Vehicle", {"ryanspotlightvehicle"}, "Adds spotlights to your vehicle.", function()
     local player_id, player_ped = players.user(), Ryan.Player.GetPed()
     local vehicle = entities.get_user_vehicle_as_handle()
-    if vehicle ~= 0 then Ryan.Entity.AddSpotlight(vehicle, spotlight_offset, spotlight_intensity) end
+    if vehicle ~= 0 then
+        Ryan.Entity.AddSpotlight(vehicle, spotlight_offset, spotlight_intensity)
+    end
 end)
 
 menu.divider(world_spotlight_root, "Options")
@@ -847,6 +851,13 @@ menu.slider(world_spotlight_root, "Offset", {"ryanspotlightoffset"}, "How far th
 end)
 menu.slider(world_spotlight_root, "Intensity", {"ryanspotlightintensity"}, "How bright the light is.", 1, 50, 1, 1, function(value)
     spotlight_intensity = value
+end)
+menu.action(world_spotlight_root, "Remove All", {"ryanspotlightremove"}, "Removes previously added spotlights.", function()
+    Ryan.Entity.DetachAll(Ryan.Player.GetPed())
+    local vehicle = entities.get_user_vehicle_as_handle()
+    if vehicle ~= 0 then
+        Ryan.Entity.DetachAll(vehicle)
+    end
 end)
 
 -- -- Collectibles
@@ -2843,13 +2854,17 @@ util.create_tick_handler(function()
 
             -- Spotlight
             if vehicle_spotlight[player_id] == true then
-                Ryan.Entity.AddSpotlight(vehicle, 4.0, 6)
+                mod_vehicle(vehicle, function()
+                    Ryan.Entity.AddSpotlight(vehicle, 4.0, 6)
+                end, true)
             end
 
             -- Delete
             if vehicle_delete[player_id] == true then
-                -- SET_AS_MISSION_VEHICLE
-                entities.delete_by_handle(vehicle)
+                mod_vehicle(vehicle, function()
+                    -- SET_AS_MISSION_VEHICLE
+                    entities.delete_by_handle(vehicle)
+                end, true)
             end
         end
     end

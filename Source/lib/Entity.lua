@@ -147,23 +147,37 @@ Ryan.Entity = {
 
         local wall_light = util.joaat("prop_wall_light_15a")
 
-        if Ryan.Entity.Spotlights[entity] == nil then
-            for i = 1, intensity do
-                Ryan.Entity.Spotlights[entity] = true
+        if Ryan.Entity.Spotlights[entity] ~= nil then
+            Ryan.Entity.DetachAll(entity)
+        end
 
-                local offsets = {
-                    {x = 0.0, y = 0.0, z = (maximum.z * offset - 0.5)},
-                    {x = 0.0, y = 0.0, z = (-maximum.z * offset - 0.5)},
-                    {x = 0.0, y = (maximum.y * offset * 0.66), z = -0.5},
-                    {x = 0.0, y = (-maximum.y * offset * 0.66), z = -0.5},
-                    {x = (maximum.x * offset), y = 0.0, z = -0.5},
-                    {x = (-maximum.x * offset), y = 0.0, z = -0.5}
-                }
-                for i = 1, #offsets do
-                    local light = entities.create_object(wall_light, {x = coords.x + offsets[i].x, y = coords.y + offsets[i].y, z = coords.z + offsets[i].z})
-                    local rotation = Ryan.Vector.DirectionToRotation(Ryan.Vector.Normalize(Ryan.Vector.Subtract(ENTITY.GET_ENTITY_COORDS(light), ENTITY.GET_ENTITY_COORDS(entity))))
-                    ENTITY.ATTACH_ENTITY_TO_ENTITY(light, entity, 0, offsets[i].x, offsets[i].y, offsets[i].z, rotation.x, rotation.y, rotation.z, false, false, false, false, 0, true)
-                end
+        for i = 1, intensity do
+            Ryan.Entity.Spotlights[entity] = true
+
+            local offsets = {
+                {x = 0.0, y = 0.0, z = (maximum.z * offset - 0.5)},
+                {x = 0.0, y = 0.0, z = (-maximum.z * offset - 0.5)},
+                {x = 0.0, y = (maximum.y * offset * 0.66), z = -0.5},
+                {x = 0.0, y = (-maximum.y * offset * 0.66), z = -0.5},
+                {x = (maximum.x * offset), y = 0.0, z = -0.5},
+                {x = (-maximum.x * offset), y = 0.0, z = -0.5}
+            }
+            for i = 1, #offsets do
+                local light = entities.create_object(wall_light, {x = coords.x + offsets[i].x, y = coords.y + offsets[i].y, z = coords.z + offsets[i].z})
+                local rotation = Ryan.Vector.DirectionToRotation(Ryan.Vector.Normalize(Ryan.Vector.Subtract(ENTITY.GET_ENTITY_COORDS(light), ENTITY.GET_ENTITY_COORDS(entity))))
+                ENTITY.ATTACH_ENTITY_TO_ENTITY(light, entity, 0, offsets[i].x, offsets[i].y, offsets[i].z, rotation.x, rotation.y, rotation.z, false, false, false, false, 0, true)
+            end
+        end
+    end,
+
+    DetachAll = function(entity)
+        local objects = entities.get_all_objects_as_handles()
+        for _, object in pairs(objects) do
+            if ENTITY.IS_ENTITY_ATTACHED_TO_ENTITY(object, entity) then
+                Ryan.Entity.RequestControlLoop(object)
+                ENTITY.DETACH_ENTITY(object, false, false)
+                util.yield()
+                entities.delete_by_handle(object)
             end
         end
     end
