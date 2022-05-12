@@ -1,4 +1,4 @@
-VERSION = "0.8.1r1"
+VERSION = "0.8.1r2"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -2217,7 +2217,7 @@ esp_color = {r = 0.29, g = 0.69, b = 1.0}
 
 menu.divider(settings_root, "Updates")
 menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
-menu.hyperlink(settings_root, "Website", "https://ryan.gq/menu/", "Opens the official website, for downloading the installer and viewing the changelog.")
+menu.hyperlink(settings_root, "Website", "https://gta.ryanmade.site/", "Opens the official website, for downloading the installer and viewing the changelog.")
 
 menu.divider(settings_root, "Options")
 menu.colour(settings_root, "ESP Color", {"ryanespcolor"}, "The color of on-screen ESP.", 0.29, 0.69, 1.0, 1.0, false, function(value)

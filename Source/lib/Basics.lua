@@ -143,7 +143,7 @@ Ryan.Basics = {
 	end,
 
 	TranslateFrom = function(message)
-		async_http.init("ryans.hopto.org:8090", "/translate?text=" .. message .. "&language=EN", function(result)
+		async_http.init("gta.ryanmade.site", "/translate?text=" .. message .. "&language=EN", function(result)
 			Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Translation", result)
 		end, function()
 			util.toast("Failed to translate message.")
@@ -152,7 +152,7 @@ Ryan.Basics = {
 	end,
 
 	TranslateTo = function(message, language, latin)
-		async_http.init("ryans.hopto.org:8090", "/translate?text=" .. message .. "&language=" .. language, function(result)
+		async_http.init("gta.ryanmade.site", "/translate?text=" .. message .. "&language=" .. language, function(result)
 			if latin then
 				for from, to in pairs(Ryan.Globals.CyrillicAlphabet) do
 					result = result:gsub(from, to)
