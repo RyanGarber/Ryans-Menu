@@ -1,4 +1,4 @@
-VERSION = "0.8.1r2"
+VERSION = "0.8.2"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -1848,7 +1848,7 @@ end)
 
 util.create_tick_handler(function()
     if mk2_chaos then
-        chat.send_message("This session is in Mk II Chaos mode! Every 3 minutes, everyone receives an Oppressor. Good luck.", false, true, true)
+        chat.send_message("This session is in Mk II Chaos mode! Type \"!mk2\" in chat at any time to get one. Good luck.", false, true, true)
         local oppressor2 = util.joaat("oppressor2")
         Ryan.Basics.RequestModel(oppressor2)
         for _, player_id in pairs(players.list()) do
@@ -2107,13 +2107,14 @@ chat_index = 1
 
 chat_commands = {
     {"help", {}, "Lists the available commands and their usage.", nil},
-    {"nuke", {}, "Drops a nuke on the session.", "ryannukestart"},
+    {"nuke", {}, "Drops a nuke on the session.", "ryannukestart", nil},
     {"crash", {"player"}, "Crashes a player to their desktop.", "ryandesktop{1}"},
     {"tank", {"player"}, "Drops a tank on a player's head.", "ryanfallingtank{1}"},
     {"cage", {"player"}, "Cages a player, over and over again.", "autocage{1} on"},
     {"carslow", {"player"}, "Makes a player's car slow.", "ryanspeedslow{1} on"},
     {"carlock", {"player"}, "Locks a player in their car.", "ryandoorslock{1} on"},
-    {"cardelete", {"player"}, "Deletes the player's car.", "ryandelete{1} on"}
+    {"cardelete", {"player"}, "Deletes the player's car.", "ryandelete{1} on"},
+    {"mk2", {}, "Spawns an Oppressor Mk II.", nil}
 }
 
 chat.on_message(function(packet_sender, sender, message, is_team_chat)
@@ -2135,7 +2136,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
         end
     end
 
-    if enable_commands and message_lower:sub(1, 1) == "!" then
+    if ((mk2_chaos and message_lower:sub(1, 5) == "!mk2") or enable_commands) and message_lower:sub(1, 1) == "!" then
         local command_found = false
         for _, command in pairs(chat_commands) do
             if message_lower:sub(1, command[1]:len() + 1) == "!" .. command[1] then
@@ -2190,6 +2191,18 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
                             end
                             if cmd_list:len() > 0 then reply(cmd_list:sub(1, cmd_list:len() - 2))
                             else reply("Unknown command. Use !help for a list of them.") end
+                        elseif command[1] == "mk2" then
+                            local oppressor2 = util.joaat("oppressor2")
+                            Ryan.Basics.RequestModel(oppressor2)
+                            local player_ped = Ryan.Player.GetPed(sender)
+                            local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(player_ped), {x = 0.0, y = 5.0, z = 0.0})
+                            local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
+                            Ryan.Entity.RequestControlLoop(vehicle)
+                            Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
+                            ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
+                            VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
+                            VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
+                            Ryan.Basics.FreeModel(oppressor2)
                         end
                     end
                 end
@@ -2249,6 +2262,7 @@ vehicle_godmode = {}
 vehicle_catapult = {}
 vehicle_alarm = {}
 vehicle_spotlight = {}
+vehicle_leash = {}
 vehicle_delete = {}
 
 attach_vehicle_bones = {}
@@ -2512,6 +2526,11 @@ function setup_player(player_id)
     -- -- Spotlight
     menu.toggle(player_vehicle_root, "Spotlight", {"ryanspotlight"}, "Attaches blindingly bright lights to their vehicle.", function(value)
         vehicle_spotlight[player_id] = value and true or nil
+    end)
+
+    -- -- Leash
+    menu.toggle(player_vehicle_root, "Leash", {"ryanleash"}, "Brings their vehicle with you like a leash.", function(value)
+        vehicle_leash[player_id] = value and true or nil
     end)
 
     -- -- Delete
@@ -2860,6 +2879,19 @@ util.create_tick_handler(function()
                 end, true)
             end
 
+            -- Leash
+            if vehicle_leash[player_id] == true then
+                local player_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+                local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+                if Ryan.Vector.Distance(vehicle_coords, player_coords) > 5 then
+                    local force = Ryan.Vector.Normalize(Ryan.Vector.Subtract(player_coords, vehicle_coords))
+                    Ryan.Entity.RequestControl(vehicle)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(vehicle, 1, force.x * 5, force.y * 5, force.z * 5, 0, 0, 0.5, 0, false, false, true)
+                else
+                    ENTITY.SET_ENTITY_VELOCITY(vehicle, 0, 0, 0)
+                end
+            end
+
             -- Delete
             if vehicle_delete[player_id] == true then
                 mod_vehicle(vehicle, function()
@@ -2891,6 +2923,7 @@ function cleanup_player(player_id)
     vehicle_alarm[player_id] = nil
     vehicle_spotlight[player_id] = nil
     vehicle_delete[player_id] = nil
+    vehicle_leash[player_id] = nil
     
     attach_vehicle_bones[player_id] = nil
     attach_vehicle_vehicle[player_id] = nil
