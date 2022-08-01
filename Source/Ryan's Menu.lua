@@ -758,8 +758,8 @@ god_finger_while_pressing_e = false
 
 god_finger_player_effects = {["kick"] = false, ["crash"] = false}
 god_finger_vehicle_effects = create_vehicle_effects_table({["gravity"] = false, ["steal"] = false })
-god_finger_npc_effects = {["flee"] = false, ["delete"] = false}
-god_finger_world_effects = {["fire"] = false}
+god_finger_npc_effects = {["nude"] = false, ["flee"] = false, ["delete"] = false}
+god_finger_world_effects = {["nude"] = false, ["fire"] = false}
 
 -- -- Player
 menu.toggle(self_god_finger_player_root, "Kick", {"ryangodfingerkick"}, "Kick the player.", function(value)
@@ -778,11 +778,17 @@ menu.toggle(self_god_finger_vehicle_root, "Steal", {"ryangodfingersteal"}, "Stea
 end)
 
 -- -- World
+menu.toggle(self_god_finger_world_root, "Spawn Nude", {"ryangodfingerspawnnude"}, "Spawn a nude NPC.", function(value)
+    god_finger_world_effects.nude = value
+end)
 menu.toggle(self_god_finger_world_root, "Fire", {"ryangodfingerfire"}, "Start a fire.", function(value)
     god_finger_world_effects.fire = value
 end)
 
 -- -- NPC
+menu.toggle(self_god_finger_npc_root, "Be Nude", {"ryangodfingerbenude"}, "Make the NPC nude.", function(value)
+    god_finger_npc_effects.nude = value
+end)
 menu.toggle(self_god_finger_npc_root, "Flee", {"ryangodfingerflee"}, "Make the NPC flee the area.", function(value)
     god_finger_npc_effects.flee = value
 end)
@@ -804,7 +810,9 @@ for _, mode in pairs(Ryan.Globals.GodFingerForces) do
     end, false)
 end
 
+-- God Finger Handler
 last_fire = -1
+last_nude = -1
 util.create_tick_handler(function()
     for entity, start_time in pairs(entities_smashed) do
         local time_elapsed = util.current_time_millis() - start_time
@@ -831,12 +839,31 @@ util.create_tick_handler(function()
     memory.write_int(memory.script_global(4521801 + 935), NETWORK.GET_NETWORK_TIME())
 
     -- World
-    if god_finger_world_effects["fire"] then
-        local raycast = Ryan.Basics.Raycast(250.0)
-        if god_finger_world_effects["fire"] and util.current_time_millis() - last_fire > 750 then
+    if god_finger_world_effects.nude then
+        if util.current_time_millis() - last_nude > 1500 then
+            last_nude = util.current_time_millis()
+
+            local raycast = Ryan.Basics.Raycast(50.0)
+            if raycast.did_hit then
+                Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
+                local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
+                local ped = entities.create_ped(0, util.joaat("a_f_y_topless_01"), raycast.hit_coords, heading)
+                util.yield()
+                PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                --TASK.TASK_START_SCENARIO_IN_PLACE(ped, util.joaat("WORLD_HUMAN_YOGA"), 0, false)
+            end
+        end
+    end
+
+    if god_finger_world_effects.fire then
+        if util.current_time_millis() - last_fire > 750 then
             last_fire = util.current_time_millis()
-            if raycast.hit_entity then FIRE.START_ENTITY_FIRE(raycast.hit_entity) end
-            FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
+
+            local raycast = Ryan.Basics.Raycast(250.0)
+            if raycast.did_hit then
+                if raycast.hit_entity then FIRE.START_ENTITY_FIRE(raycast.hit_entity) end
+                FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
+            end
         end
     end
 
@@ -848,7 +875,8 @@ util.create_tick_handler(function()
         if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
             local ped = raycast.hit_entity
 
-            if PED.IS_PED_A_PLAYER(ped) then -- Player
+            -- Player
+            if PED.IS_PED_A_PLAYER(ped) then
                 local player_id = NETWORK.NETWORK_GET_PLAYER_INDEX_FROM_PED(ped)
                 local player_name = players.get_name(player_id)
                 if god_finger_player_effects.kick then
@@ -857,10 +885,25 @@ util.create_tick_handler(function()
                 if god_finger_player_effects.crash then
                     Ryan.Basics.RunCommands({"ngcrash" .. player_name, "footlettuce" .. player_name})
                 end
-            else -- Ped
+            -- Ped
+            else
+                if god_finger_npc_effects.nude then
+                    local heading = ENTITY.GET_ENTITY_HEADING(ped)
+                    local coords = ENTITY.GET_ENTITY_COORDS(ped)
+                    
+                    Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
+                    entities.delete_by_handle(ped)
+                    
+                    ped = entities.create_ped(0, util.joaat("a_f_y_topless_01"), coords, heading)
+                    PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                    TASK.CLEAR_PED_TASKS_IMMEDIATELY(ped)
+                    TASK.TASK_WANDER_STANDARD(ped, 10.0, 10)
+                end
+                
                 if god_finger_npc_effects.flee then
                     TASK.TASK_SMART_FLEE_PED(ped, Ryan.Player.GetPed(), 500.0, -1, false, false)
                 end
+                
                 if god_finger_npc_effects.delete then
                     entities.delete_by_handle(ped)
                 end
@@ -1326,7 +1369,7 @@ util.create_tick_handler(function()
                 if npcs_affected[ped] ~= all_npcs_mode then
                     if all_npcs_mode == "Nude" then
                         if vehicle ~= 0 then ENTITY.SET_ENTITY_VELOCITY(vehicle, 0.0, 0.0, 0.0) end
-                        if math.random(1, 10) == 1 then
+                        if math.random(1, 20) == 1 then
                             local heading = ENTITY.GET_ENTITY_HEADING(ped)
                             local coords = ENTITY.GET_ENTITY_COORDS(ped)
                             
