@@ -846,11 +846,11 @@ util.create_tick_handler(function()
             local raycast = Ryan.Basics.Raycast(50.0)
             if raycast.did_hit then
                 Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
+                Ryan.Basics.RequestAnimations("amb@world_human_yoga@female@base")
                 local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
                 local ped = entities.create_ped(0, util.joaat("a_f_y_topless_01"), raycast.hit_coords, heading)
-                util.yield()
                 PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
-                --TASK.TASK_START_SCENARIO_IN_PLACE(ped, util.joaat("WORLD_HUMAN_YOGA"), 0, false)
+                TASK.TASK_PLAY_ANIM(ped, "amb@world_human_yoga@female@base", "base_a", 8.0, 0, -1, 9, 0, false, false, false)
             end
         end
     end
