@@ -114,8 +114,6 @@ Ryan.Entity = {
             GRAPHICS.DRAW_LINE(offset5.x, offset5.y, offset5.z, offset6.x, offset6.y, offset6.z, color.r, color.g, color.b, 255)
             GRAPHICS.DRAW_LINE(offset7.x, offset7.y, offset7.z, offset8.x, offset8.y, offset8.z, color.r, color.g, color.b, 255)
         end
-        v3.free(minimum)
-        v3.free(maximum)
     end,
 
     Spotlights = {},
@@ -126,7 +124,7 @@ Ryan.Entity = {
                 if VEHICLE.IS_VEHICLE_MODEL(entity, Ryan.Globals.Haulers[i]) then
                     local trailer_ptr = memory.alloc_int()
                     VEHICLE.GET_VEHICLE_TRAILER_VEHICLE(entity, trailer_ptr)
-                    local trailer = memory.read_int(trailer_ptr); memory.free(trailer_ptr)
+                    local trailer = memory.read_int(trailer_ptr)
                     if trailer ~= 0 then
                         Ryan.Entity.AddSpotlight(trailer, offset, intensity)
                         return
@@ -142,8 +140,8 @@ Ryan.Entity = {
 
         local minimum_ptr, maximum_ptr = memory.alloc(), memory.alloc()
         MISC.GET_MODEL_DIMENSIONS(model, minimum_ptr, maximum_ptr)
-        local minimum = memory.read_vector3(minimum_ptr); memory.free(minimum_ptr)
-        local maximum = memory.read_vector3(maximum_ptr); memory.free(maximum_ptr)
+        local minimum = memory.read_vector3(minimum_ptr)
+        local maximum = memory.read_vector3(maximum_ptr)
 
         local wall_light = util.joaat("prop_wall_light_15a")
 

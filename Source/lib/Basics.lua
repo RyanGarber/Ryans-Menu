@@ -80,6 +80,15 @@ Ryan.Basics = {
 	    return formatted:sub(3)
 	end,
 
+	RaycastFlags = {
+		World = 1,
+		Vehicles = 2,
+		Peds = 8,
+		Objects = 16,
+		Water = 32,
+		Foliage = 256
+	},
+
 	Raycast = function(distance, flags)
 		flags = flags or -1
 		local result = {}
@@ -94,18 +103,15 @@ Ryan.Basics = {
 			SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
 				origin.x, origin.y, origin.z,
 				destination.x, destination.y, destination.z,
-				flags, PLAYER.PLAYER_PED_ID(), 1
+				flags or -1, PLAYER.PLAYER_PED_ID(), 1
 			), did_hit, hit_coords, hit_normal, hit_entity
 		)
+
 		result.did_hit = memory.read_byte(did_hit) ~= 0
 		result.hit_coords = Ryan.Vector.FromV3(v3.get(hit_coords))
 		result.hit_normal = Ryan.Vector.FromV3(v3.get(hit_normal))
 		result.hit_entity = memory.read_int(hit_entity)
-	
-		memory.free(did_hit)
-		v3.free(hit_coords)
-		v3.free(hit_normal)
-		memory.free(hit_entity)
+
 		return result
 	end,
 

@@ -67,15 +67,5 @@ Ryan.Stats = {
     SetDeaths = function(deaths)
         Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Global, "DEATHS_PLAYER"), deaths)
         Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "DEATHS_PLAYER"), deaths)
-    end,
-
-    SetFavoriteRadioStation = function()
-        local station_name = AUDIO.GET_PLAYER_RADIO_STATION_NAME()
-        if station_name ~= nil then
-            STATS.STAT_SET_INT(Ryan.Stats.GetHash(Ryan.Stats.Type.Global, "MOST_FAVORITE_STATION"), util.joaat(station_name), true)
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Favorite Radio Station", "Your favorite radio station has been updated!")
-        else
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Favorite Radio Station", "You're not currently listening to the radio.")
-        end
     end
 }

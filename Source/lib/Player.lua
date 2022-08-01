@@ -1,6 +1,6 @@
 Ryan.Player = {
     GetPed = function(player_id)
-        player_id = player_id or players.user()
+        if not player_id then return players.user_ped() end
         return PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
     end,
 

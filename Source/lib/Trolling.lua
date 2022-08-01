@@ -90,7 +90,7 @@ Ryan.Trolling = {
                 PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords_ptr, 1, 100, 2.5)
             end
 
-            local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
+            local coords = memory.read_vector3(coords_ptr)
             local vehicle = entities.create_vehicle(vehicles[i], coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
             Ryan.Trolling.AddEntity(player_id, vehicle, i < 3)
             Ryan.Entity.FaceEntity(vehicle, player_ped, true)
@@ -172,7 +172,7 @@ Ryan.Trolling = {
             PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords_ptr, 1, 100, 2.5)
         end
 
-        local coords = memory.read_vector3(coords_ptr); memory.free(coords_ptr); memory.free(node_ptr)
+        local coords = memory.read_vector3(coords_ptr)
         local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
         Ryan.Trolling.AddEntity(player_id, vehicle, true)
         Ryan.Entity.FaceEntity(vehicle, player_ped, true)
