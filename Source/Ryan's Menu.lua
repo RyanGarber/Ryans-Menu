@@ -778,7 +778,7 @@ menu.toggle(self_god_finger_vehicle_root, "Steal", {"ryangodfingersteal"}, "Stea
 end)
 
 -- -- World
-menu.toggle(self_god_finger_world_root, "Spawn Nude", {"ryangodfingerspawnnude"}, "Spawn a nude NPC.", function(value)
+menu.toggle(self_god_finger_world_root, "Nude Yoga", {"ryangodfingernudeyoga"}, "Spawn a nude NPC doing yoga.", function(value)
     god_finger_world_effects.nude = value
 end)
 menu.toggle(self_god_finger_world_root, "Fire", {"ryangodfingerfire"}, "Start a fire.", function(value)
