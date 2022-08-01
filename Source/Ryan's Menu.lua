@@ -1173,6 +1173,7 @@ menu.action(self_root, "Become Nude", {"ryannude"}, "Make yourself a stripper wi
     local Vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(), false)
     local seat = -1 -- TODO
     PLAYER.SET_PLAYER_MODEL(players.user(), util.joaat("a_f_y_topless_01"))
+    util.yield(500)
     PED.SET_PED_COMPONENT_VARIATION(Ryan.Player.GetPed(), 8, 1, -1, 0)
     if vehicle ~= 0 then PED.SET_PED_INTO_VEHICLE(Ryan.Player.GetPed(), vehicle, seat) end
 end)
