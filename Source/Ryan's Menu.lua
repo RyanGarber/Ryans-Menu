@@ -1012,7 +1012,7 @@ for _, mode in pairs(Ryan.Globals.NPCScenarios) do
                 all_npcs_mode = mode
             end
         end
-        
+
         all_npcs_change = util.current_time_millis()
         all_npcs_values[mode] = value
     end, mode == "Off")
@@ -1247,14 +1247,6 @@ end)
 menu.toggle(world_all_vehicles_root, "Blind", {"ryanallblind"}, "Makes NPCs blind and aggressive.", function(value)
     all_vehicles_effects["blind"] = value
 end)
-
-
-function mod_vehicle(vehicle, action, take_control)
-    if take_control then Ryan.Entity.RequestControlLoop(vehicle) end
-    if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-        action(vehicle)
-    end
-end
 
 -- -- Apply Changes
 all_vehicles_state = {}
