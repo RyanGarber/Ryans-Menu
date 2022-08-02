@@ -14,21 +14,6 @@ Ryan.Trolling = {
         Ryan.Trolling.Entities[player_id] = {}
     end,
 
-    StripperElRubio = function(player_id)
-        local ped_coords = Ryan.Vector.Add(
-            ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id)),
-            {x = math.random(-5, 5), y = math.random(-5, 5), z = 0}
-        )
-
-        local el_rubio = util.joaat("csb_juanstrickler"); Ryan.Basics.RequestModel(el_rubio)
-        Ryan.Basics.RequestAnimations("mini@strip_club@pole_dance@pole_dance1")
-
-        local ped = entities.create_ped(1, el_rubio, ped_coords, ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed(player_id)))
-        TASK.TASK_PLAY_ANIM(ped, "mini@strip_club@pole_dance@pole_dance1", "pd_dance_01", 8.0, 0, -1, 9, 0, false, false, false)
-        Ryan.Trolling.AddEntity(player_id, ped, true)
-        Ryan.Basics.FreeModel(el_rubio)
-    end,
-
     GoKarts = function(player_id, ped_type)
         local player_ped = Ryan.Player.GetPed(player_id)
         local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)

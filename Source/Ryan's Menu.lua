@@ -2594,11 +2594,6 @@ function setup_player(player_id)
     -- Entities --
     local player_trolling_entities_root = menu.list(player_trolling_root, "Entities...", {"ryanentities"}, "Entity trolling options.")
     
-    -- -- Stripper El Rubio
-    menu.action(player_trolling_entities_root, "Pole-Dancing El Rubio", {"ryanelrubio"}, "Spawns an El Rubio whose fortune has been stolen, leading him to the pole.", function()
-        spam_then(player_id, function() Ryan.Trolling.StripperElRubio(player_id) end)
-    end)
-
     -- -- Transgender Go-Karts
     menu.action(player_trolling_entities_root, "Transgender Go-Karts", {"ryanmilitarykarts"}, "Spawns a military squad in go-karts.", function()
         spam_then(player_id, function() Ryan.Trolling.GoKarts(player_id, "a_m_m_tranvest_01") end)
