@@ -120,291 +120,6 @@ function is_switching_sessions()
 end
 
 
--- Vehicle Effects --
-function create_vehicle_effects_table(more_effects)
-    effects = {
-        ["speed"] = nil,
-        ["grip"] = nil,
-        ["doors"] = nil,
-        ["tires"] = nil,
-        ["engine"] = nil,
-        ["upgrades"] = nil,
-        ["godmode"] = nil,
-        ["gravity"] = nil,
-        ["catapult"] = nil,
-        ["alarm"] = nil,
-        ["delete"] = nil
-    }
-    for key, value in pairs(more_effects) do effects[key] = value end
-    return effects
-end
-
-function create_vehicle_effects_list(root, command_prefix, command_suffix, table)
-    -- Speed
-    local speed_root = menu.list(root, "Speed: -", {command_prefix .. "speed"}, "Changes the speed of the vehicle.")
-    menu.toggle(speed_root, "Fast", {command_prefix .. "speedfast"}, "Makes the speed extremely fast.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "speednormal" .. command_suffix .. " off",
-                command_prefix .. "speedslow" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["speed"] = "fast"
-            menu.set_menu_name(speed_root, "Speed: Fast")
-        else
-            table["speed"] = nil
-            menu.set_menu_name(speed_root, "Speed: -")
-        end
-    end)
-    menu.toggle(speed_root, "Slow", {command_prefix .. "speedslow"}, "Makes the speed extremely slow.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .."speedfast" .. command_suffix .. " off",
-                command_prefix .."speednormal" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["speed"] = "slow"
-            menu.set_menu_name(speed_root, "Speed: Slow")
-        else
-            table["speed"] = nil
-            menu.set_menu_name(speed_root, "Speed: -")
-        end
-    end)
-    menu.toggle(speed_root, "Normal", {command_prefix .. "speednormal"}, "Makes the speed normal again.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "speedfast" .. command_suffix .. " off",
-                command_prefix .. "speedslow" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["speed"] = "normal"
-            menu.set_menu_name(speed_root, "Speed: Normal")
-        else
-            table["speed"] = nil
-            menu.set_menu_name(speed_root, "Speed: -")
-        end
-    end)
-
-    -- Grip
-    local grip_root = menu.list(root, "Grip: -", {command_prefix .. "grip"}, "Changes the grip of the vehicle's tires.")
-    menu.toggle(grip_root, "None", {command_prefix .. "gripnone"}, "Makes the tires have no grip.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "gripnormal" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["grip"] = "none"
-            menu.set_menu_name(grip_root, "Grip: None")
-        else
-            table["grip"] = nil
-            menu.set_menu_name(grip_root, "Grip: -")
-        end
-    end)
-    menu.toggle(grip_root, "Normal", {command_prefix .. "gripnormal"}, "Makes the grip normal again.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "gripnone" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["grip"] = "normal"
-            menu.set_menu_name(grip_root, "Grip: Normal")
-        else
-            table["grip"] = nil
-            menu.set_menu_name(grip_root, "Grip: -")
-        end
-    end)
-
-    -- Doors
-    local doors_root = menu.list(root, "Doors: -", {command_prefix .. "doors"}, "Changes the vehicle's door lock state.")
-    menu.toggle(doors_root, "Lock", {command_prefix .. "doorslock"}, "Locks the vehicle's doors.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "doorsunlock" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["doors"] = "lock"
-            menu.set_menu_name(doors_root, "Doors: Lock")
-        else
-            table["doors"] = nil
-            menu.set_menu_name(doors_root, "Doors: -")
-        end
-    end)
-    menu.toggle(doors_root, "Unlock", {command_prefix .. "doorsunlock"}, "Unlocks the vehicle's doors.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "doorslock" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["doors"] = "unlock"
-            menu.set_menu_name(doors_root, "Doors: Unlock")
-        else
-            table["doors"] = nil
-            menu.set_menu_name(doors_root, "Doors: -")
-        end
-    end)
-
-    -- Tires
-    local tires_root = menu.list(root, "Tires: -", {command_prefix .. "tires"}, "Changes the vehicle's tire health.")
-    menu.toggle(tires_root, "Burst", {command_prefix .. "tiresburst"}, "Makes the vehicle's tires burst.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "tiresfix" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["tires"] = "burst"
-            menu.set_menu_name(tires_root, "Tires: Burst")
-        else
-            table["tires"] = nil
-            menu.set_menu_name(tires_root, "Tires: -")
-        end
-    end)
-    menu.toggle(tires_root, "Fix", {command_prefix .. "tiresfix"}, "Fixes the vehicle's tires.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "tiresburst" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["tires"] = "fix"
-            menu.set_menu_name(tires_root, "Tires: Fix")
-        else
-            table["tires"] = nil
-            menu.set_menu_name(tires_root, "Tires: -")
-        end
-    end)
-
-    -- Engine
-    local engine_root = menu.list(root, "Engine: -", {command_prefix .. "engine"}, "Changes the vehicle's engine health.")
-    menu.toggle(engine_root, "Kill", {command_prefix .. "enginekill"}, "Makes the vehicle's engine die.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "enginefix" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["engine"] = "kill"
-            menu.set_menu_name(engine_root, "Engine: Kill")
-        else
-            table["engine"] = nil
-            menu.set_menu_name(engine_root, "Engine: -")
-        end
-    end)
-    menu.toggle(engine_root, "Fix", {command_prefix .. "enginefix"}, "Fixes the vehicle's engine.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "enginekill" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["engine"] = "fix"
-            menu.set_menu_name(engine_root, "Engine: Fix")
-        else
-            table["engine"] = nil
-            menu.set_menu_name(engine_root, "Engine: -")
-        end
-    end)
-
-    -- Upgrades
-    local upgrades_root = menu.list(root, "Upgrades: -", {command_prefix .. "upgrades"}, "Changes the vehicle's upgrades.")
-    menu.toggle(upgrades_root, "All", {command_prefix .. "upgradesall"}, "Fully upgrades the vehicle.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "upgradesnone" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["upgrades"] = "all"
-            menu.set_menu_name(upgrades_root, "Upgrades: All")
-        else
-            table["upgrades"] = nil
-            menu.set_menu_name(upgrades_root, "Upgrades: -")
-        end
-    end)
-    menu.toggle(upgrades_root, "None", {command_prefix .. "upgradesnone"}, "Fully downgrades the vehicle.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "upgradesall" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["upgrades"] = "none"
-            menu.set_menu_name(upgrades_root, "Upgrades: None")
-        else
-            table["upgrades"] = nil
-            menu.set_menu_name(upgrades_root, "Upgrades: -")
-        end
-    end)
-
-    -- Godmode
-    local godmode_root = menu.list(root, "Godmode: -", {command_prefix .. "godmode"}, "Changes the vehicle's godmode state.")
-    menu.toggle(godmode_root, "On", {command_prefix .. "godmodeon"}, "Makes the vehicle indestructible.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "godmodeoff" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["godmode"] = "on"
-            menu.set_menu_name(godmode_root, "Godmode: On")
-        else
-            table["godmode"] = nil
-            menu.set_menu_name(godmode_root, "Godmode: -")
-        end
-    end)
-    menu.toggle(godmode_root, "Off", {command_prefix .. "godmodeoff"}, "Makes the vehicle destructible.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "godmodeon" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["godmode"] = "off"
-            menu.set_menu_name(godmode_root, "Godmode: Off")
-        else
-            table["godmode"] = nil
-            menu.set_menu_name(godmode_root, "Godmode: -")
-        end
-    end)
-
-    -- Gravity
-    local gravity_root = menu.list(root, "Gravity: -", {command_prefix .. "gravity"}, "Changes the vehicle's gravity.")
-    menu.toggle(gravity_root, "None", {command_prefix .. "gravitynone"}, "Disables gravity on the vehicle.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "gravitynormal" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["gravity"] = "none"
-            menu.set_menu_name(gravity_root, "Gravity: None")
-        else
-            table["gravity"] = nil
-            menu.set_menu_name(gravity_root, "Gravity: -")
-        end
-    end)
-    menu.toggle(gravity_root, "Normal", {command_prefix .. "gravitynormal"}, "Enables gravity on the vehicle.", function(value)
-        if value then
-            Ryan.Basics.RunCommands({
-                command_prefix .. "gravitynone" .. command_suffix .. " off"
-            })
-            util.yield(250)
-            table["gravity"] = "normal"
-            menu.set_menu_name(gravity_root, "Gravity: Normal")
-        else
-            table["gravity"] = nil
-            menu.set_menu_name(gravity_root, "Gravity: -")
-        end
-    end)
-
-    -- Alarm
-    menu.toggle(root, "Theft Alarm", {command_prefix .. "alarm"}, "Triggers the vehicle's theft alarm.", function(value)
-        table["alarm"] = value
-    end)
-
-    -- Catapult
-    menu.toggle(root, "Catapult", {command_prefix .. "catapult"}, "Catapults the vehicle non-stop.", function(value)
-        table["catapult"] = value
-    end)
-
-    -- Delete
-    menu.toggle(root, "Delete", {command_prefix .. "delete"}, "Deletes their vehicle.", function(value)
-        table["delete"] = value
-    end)
-end
-
-
 -- Main Menu --
 self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Helpful options for yourself.")
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
@@ -757,7 +472,7 @@ god_finger_while_pointing = false
 god_finger_while_holding_e = false
 
 god_finger_player_effects = {["kick"] = false, ["crash"] = false}
-god_finger_vehicle_effects = create_vehicle_effects_table({["gravity"] = false, ["steal"] = false })
+god_finger_vehicle_effects = Ryan.Vehicle.CreateEffectTable({["flee"] = false, ["blind"] = false, ["steal"] = false })
 god_finger_npc_effects = {["nude"] = false, ["flee"] = false, ["delete"] = false}
 god_finger_world_effects = {["nude"] = false, ["brutality"] = false, ["fire"] = false}
 
@@ -770,9 +485,7 @@ menu.toggle(self_god_finger_player_root, "Crash", {"ryangodfingercrash"}, "Crash
 end)
 
 -- -- Vehicle
-create_vehicle_effects_list(self_god_finger_vehicle_root, "ryangodfinger", "", god_finger_vehicle_effects)
-god_finger_vehicle_state = {}
-
+Ryan.Vehicle.CreateEffectList(self_god_finger_vehicle_root, "ryangodfinger", "", god_finger_vehicle_effects)
 menu.toggle(self_god_finger_vehicle_root, "Steal", {"ryangodfingersteal"}, "Steals the vehicle.", function(value)
     god_finger_vehicle_effects.steal = value
 end)
@@ -817,6 +530,9 @@ end
 last_nude = -1
 last_brutality = -1
 last_fire = -1
+last_catapult = -1
+
+god_finger_vehicle_state = {}
 
 util.create_tick_handler(function()
     for entity, start_time in pairs(entities_smashed) do
@@ -979,145 +695,16 @@ util.create_tick_handler(function()
         if ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
             local vehicle = raycast.hit_entity
             local is_a_player = PED.IS_PED_A_PLAYER(VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1))
-            if god_finger_vehicle_state[vehicle] == nil then god_finger_vehicle_state[vehicle] = {} end
     
-            -- -- Speed
-            if god_finger_vehicle_effects.speed == "fast" and (not is_a_player or god_finger_vehicle_state[vehicle].speed ~= "fast") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetSpeed(raycast.hit_entity, Ryan.Vehicle.Speed.Fast)
-                    if is_a_player then god_finger_vehicle_state[vehicle].speed = "fast" end
-                end, is_a_player)
-            elseif god_finger_vehicle_effects.speed == "slow" and (not is_a_player or god_finger_vehicle_state[vehicle].speed ~= "slow") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Slow)
-                    if is_a_player then god_finger_vehicle_state[vehicle].speed = "slow" end
-                end, is_a_player)
-            elseif god_finger_vehicle_effects.speed == "normal" and (not is_a_player or god_finger_vehicle_state[vehicle].speed ~= "normal") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Normal)
-                    if is_a_player then god_finger_vehicle_state[vehicle].speed = "normal" end
-                end, is_a_player)
-            end
+            Ryan.Vehicle.ApplyEffects(vehicle, god_finger_vehicle_effects, god_finger_vehicle_state, is_a_player)
 
-            -- -- Grip
-            if god_finger_vehicle_effects.grip == "none" and (not is_a_player or god_finger_vehicle_state[vehicle].grip ~= "none") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetNoGrip(vehicle, true)
-                    if is_a_player then god_finger_vehicle_state[vehicle].grip = "none" end
-                end, is_a_player)
-            elseif god_finger_vehicle_effects.grip == "normal" and (not is_a_player or god_finger_vehicle_state[vehicle].grip ~= "normal") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetNoGrip(vehicle, false)
-                    if is_a_player then god_finger_vehicle_state[vehicle].grip = "normal" end
-                end, is_a_player)
-            end
-
-            -- -- Doors
-            if god_finger_vehicle_effects.doors == "lock" and (not is_a_player or god_finger_vehicle_state[vehicle].doors ~= "lock") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetDoorsLocked(vehicle, true)
-                    if is_a_player then god_finger_vehicle_state[vehicle].doors = "lock" end
-                end, is_a_player)
-            elseif god_finger_vehicle_effects.doors == "unlock" and (not is_a_player or god_finger_vehicle_state[vehicle].doors ~= "unlock") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetDoorsLocked(vehicle, false)
-                    if is_a_player then god_finger_vehicle_state[vehicle].doors = "unlock" end
-                end, is_a_player)
-            end
-
-            -- -- Tires
-            if god_finger_vehicle_effects.tires == "burst" and (not is_a_player or god_finger_vehicle_state[vehicle].tires ~= "burst") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetTiresBursted(vehicle, true)
-                    if is_a_player then god_finger_vehicle_state[vehicle].tires = "burst" end
-                end, is_a_player)
-            elseif god_finger_vehicle_effects.tires == "fix" and (not is_a_player or god_finger_vehicle_state[vehicle].tires ~= "fix") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetTiresBursted(vehicle, false)
-                    if is_a_player then god_finger_vehicle_state[vehicle].tires = "fix" end
-                end, is_a_player)
-            end
-
-            -- -- Engine
-            if god_finger_vehicle_effects.engine == "kill" and (not is_a_player or god_finger_vehicle_state[vehicle].engine ~= "kill") then
-                mod_vehicle(vehicle, function()
-                    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-                    if is_a_player then god_finger_vehicle_state[vehicle].engine = "kill" end
-                end, is_a_player)
-            elseif god_finger_vehicle_effects.engine == "fix" and (not is_a_player or god_finger_vehicle_state[vehicle].engine ~= "fix") then
-                mod_vehicle(vehicle, function()
-                    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-                    if is_a_player then god_finger_vehicle_state[vehicle].engine = "fix" end
-                end, is_a_player)
-            end
-
-            -- -- Upgrades
-            if god_finger_vehicle_effects.upgrades == "all" and (not is_a_player or god_finger_vehicle_state[vehicle].upgrades ~= "all") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
-                    if is_a_player then god_finger_vehicle_state[vehicle].upgrades = "all" end
-                end, is_a_player)
-            elseif god_finger_vehicle_effects.upgrades == "none" and (not is_a_player or god_finger_vehicle_state[vehicle].upgrades ~= "none") then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetFullyUpgraded(vehicle, false)
-                    if is_a_player then god_finger_vehicle_state[vehicle].upgrades = "none" end
-                end, is_a_player)
-            end
-
-            -- -- Godmode
-            if god_finger_vehicle_effects.godmode == "on" and (not is_a_player or god_finger_vehicle_state[vehicle].godmode ~= "on") then
-                mod_vehicle(vehicle, function()
-                    ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
-                    if is_a_player then god_finger_vehicle_state[vehicle].godmode = "on" end
-                end, is_a_player)
-            elseif god_finger_vehicle_effects.godmode == "off" and (not is_a_player or god_finger_vehicle_state[vehicle].godmode ~= "off") then
-                mod_vehicle(vehicle, function()
-                    ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
-                    if is_a_player then god_finger_vehicle_state[vehicle].godmode = "off" end
-                end, is_a_player)
-            end
-
-            -- -- Gravity
-            if god_finger_vehicle_effects.gravity == "none" and (not is_a_player or god_finger_vehicle_state[vehicle].gravity ~= "on") then
-                mod_vehicle(vehicle, function()
-                    ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, false)
-                    VEHICLE.SET_VEHICLE_GRAVITY(vehicle, false)
-                    if is_a_player then god_finger_vehicle_state[vehicle].gravity = "none" end
-                end, is_a_player)
-            elseif god_finger_vehicle_effects.gravity == "normal" and (not is_a_player or god_finger_vehicle_state[vehicle].gravity ~= "off") then
-                mod_vehicle(vehicle, function()
-                    ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, true)
-                    VEHICLE.SET_VEHICLE_GRAVITY(vehicle, true)
-                    if is_a_player then god_finger_vehicle_state[vehicle].gravity = "normal" end
-                end, is_a_player)
-            end
-
-            -- -- Catapult
-            if god_finger_vehicle_effects.catapult then
-                if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.Catapult(vehicle)
-                    end, is_a_player)
-                end
-            end
-
-            -- -- Alarm
-            if god_finger_vehicle_effects.alarm then
-                if not VEHICLE.IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
-                    mod_vehicle(vehicle, function()
-                        VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
-                        VEHICLE.START_VEHICLE_ALARM(vehicle)
-                    end, is_a_player)
-                end
-            end
-
-            -- -- Flee
+            -- Flee
             if god_finger_vehicle_effects.flee and not is_a_player and god_finger_vehicle_state[vehicle].flee ~= true then
                 TASK.TASK_SMART_FLEE_PED(driver, Ryan.Player.GetPed(), 500.0, -1, false, false)
                 god_finger_vehicle_state[vehicle].flee = true
             end
 
-            -- -- Blind
+            -- Blind
             if god_finger_vehicle_effects.blind and not is_a_player and (god_finger_vehicle_state[vehicle].blind ~= true or math.random(1, 10) >= 8) then
                 PED.SET_DRIVER_AGGRESSIVENESS(driver, 1.0)
                 local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(vehicle), {x = math.random(-500, 500), y = math.random(-500, 500), z = 0})
@@ -1128,12 +715,7 @@ util.create_tick_handler(function()
                 god_finger_vehicle_state[vehicle].blind = true
             end
 
-            -- -- Delete
-            if god_finger_vehicle_effects.delete then
-                entities.delete_by_handle(vehicle)
-            end
-
-            -- -- Steal
+            -- Steal
             if god_finger_vehicle_effects.steal and ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
                 Ryan.Vehicle.Steal(raycast.hit_entity)
                 return
@@ -1607,8 +1189,7 @@ all_vehicles_include_npcs = true
 all_vehicles_include_players = false
 all_vehicles_include_own = false
 
-all_vehicles_effects = create_vehicle_effects_table({["flee"] = nil, ["blind"] = nil})
-all_vehicles_state = {}
+all_vehicles_effects = Ryan.Vehicle.CreateEffectTable({["flee"] = nil, ["blind"] = nil})
 
 menu.divider(world_all_vehicles_root, "Include")
 
@@ -1625,7 +1206,7 @@ end)
 
 menu.divider(world_all_vehicles_root, "Effects")
 
-create_vehicle_effects_list(world_all_vehicles_root, "ryanall", "", all_vehicles_effects)
+Ryan.Vehicle.CreateEffectList(world_all_vehicles_root, "ryanall", "", all_vehicles_effects)
 menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Makes NPCs flee you.", function(value)
     all_vehicles_effects["flee"] = value
 end)
@@ -1642,6 +1223,8 @@ function mod_vehicle(vehicle, action, take_control)
 end
 
 -- -- Apply Changes
+all_vehicles_state = {}
+
 util.create_tick_handler(function()
     local player_ped = Ryan.Player.GetPed()
     local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
@@ -1654,138 +1237,7 @@ util.create_tick_handler(function()
 
         if all_vehicles_include_own or vehicle ~= entities.get_user_vehicle_as_handle() then
             if (all_vehicles_include_players and is_a_player) or (all_vehicles_include_npcs and not is_a_player) then
-                if all_vehicles_state[vehicle] == nil then all_vehicles_state[vehicle] = {} end
-                if not is_a_player then Ryan.Entity.RequestControl(vehicle) end
-
-                -- Speed
-                if all_vehicles_effects.speed == "fast" and (not is_a_player or all_vehicles_state[vehicle].speed ~= "fast") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Fast)
-                        if is_a_player then all_vehicles_state[vehicle].speed = "fast" end
-                    end, is_a_player)
-                elseif all_vehicles_effects.speed == "slow" and (not is_a_player or all_vehicles_state[vehicle].speed ~= "slow") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Slow)
-                        if is_a_player then all_vehicles_state[vehicle].speed = "slow" end
-                    end, is_a_player)
-                elseif all_vehicles_effects.speed == "normal" and (not is_a_player or all_vehicles_state[vehicle].speed ~= "normal") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Normal)
-                        if is_a_player then all_vehicles_state[vehicle].speed = "normal" end
-                    end, is_a_player)
-                end
-
-                -- Grip
-                if all_vehicles_effects.grip == "none" and (not is_a_player or all_vehicles_state[vehicle].grip ~= "none") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetNoGrip(vehicle, true)
-                        if is_a_player then all_vehicles_state[vehicle].grip = "none" end
-                    end, is_a_player)
-                elseif all_vehicles_effects.grip == "normal" and (not is_a_player or all_vehicles_state[vehicle].grip ~= "normal") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetNoGrip(vehicle, false)
-                        if is_a_player then all_vehicles_state[vehicle].grip = "normal" end
-                    end, is_a_player)
-                end
-
-                -- Doors
-                if all_vehicles_effects.doors == "lock" and (not is_a_player or all_vehicles_state[vehicle].doors ~= "lock") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetDoorsLocked(vehicle, true)
-                        if is_a_player then all_vehicles_state[vehicle].doors = "lock" end
-                    end, is_a_player)
-                elseif all_vehicles_effects.doors == "unlock" and (not is_a_player or all_vehicles_state[vehicle].doors ~= "unlock") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetDoorsLocked(vehicle, false)
-                        if is_a_player then all_vehicles_state[vehicle].doors = "unlock" end
-                    end, is_a_player)
-                end
-
-                -- Tires
-                if all_vehicles_effects.tires == "burst" and (not is_a_player or all_vehicles_state[vehicle].tires ~= "burst") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetTiresBursted(vehicle, true)
-                        if is_a_player then all_vehicles_state[vehicle].tires = "burst" end
-                    end, is_a_player)
-                elseif all_vehicles_effects.tires == "fix" and (not is_a_player or all_vehicles_state[vehicle].tires ~= "fix") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetTiresBursted(vehicle, false)
-                        if is_a_player then all_vehicles_state[vehicle].tires = "fix" end
-                    end, is_a_player)
-                end
-
-                -- Engine
-                if all_vehicles_effects.engine == "kill" and (not is_a_player or all_vehicles_state[vehicle].engine ~= "kill") then
-                    mod_vehicle(vehicle, function()
-                        VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-                        if is_a_player then all_vehicles_state[vehicle].engine = "kill" end
-                    end, is_a_player)
-                elseif all_vehicles_effects.engine == "fix" and (not is_a_player or all_vehicles_state[vehicle].engine ~= "fix") then
-                    mod_vehicle(vehicle, function()
-                        VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-                        if is_a_player then all_vehicles_state[vehicle].engine = "fix" end
-                    end, is_a_player)
-                end
-
-                -- Upgrades
-                if all_vehicles_effects.upgrades == "all" and (not is_a_player or all_vehicles_state[vehicle].upgrades ~= "all") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
-                        if is_a_player then all_vehicles_state[vehicle].upgrades = "all" end
-                    end, is_a_player)
-                elseif all_vehicles_effects.upgrades == "none" and (not is_a_player or all_vehicles_state[vehicle].upgrades ~= "none") then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.SetFullyUpgraded(vehicle, false)
-                        if is_a_player then all_vehicles_state[vehicle].upgrades = "none" end
-                    end, is_a_player)
-                end
-
-                -- Godmode
-                if all_vehicles_effects.godmode == "on" and (not is_a_player or all_vehicles_state[vehicle].godmode ~= "on") then
-                    mod_vehicle(vehicle, function()
-                        ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
-                        if is_a_player then all_vehicles_state[vehicle].godmode = "on" end
-                    end, is_a_player)
-                elseif all_vehicles_effects.godmode == "off" and (not is_a_player or all_vehicles_state[vehicle].godmode ~= "off") then
-                    mod_vehicle(vehicle, function()
-                        ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
-                        if is_a_player then all_vehicles_state[vehicle].godmode = "off" end
-                    end, is_a_player)
-                end
-
-                -- Gravity
-                if all_vehicles_effects.gravity == "none" and (not is_a_player or all_vehicles_state[vehicle].gravity ~= "on") then
-                    mod_vehicle(vehicle, function()
-                        ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, false)
-                        VEHICLE.SET_VEHICLE_GRAVITY(vehicle, false)
-                        if is_a_player then all_vehicles_state[vehicle].gravity = "none" end
-                    end, is_a_player)
-                elseif all_vehicles_effects.gravity == "normal" and (not is_a_player or all_vehicles_state[vehicle].gravity ~= "off") then
-                    mod_vehicle(vehicle, function()
-                        ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, true)
-                        VEHICLE.SET_VEHICLE_GRAVITY(vehicle, true)
-                        if is_a_player then all_vehicles_state[vehicle].gravity = "normal" end
-                    end, is_a_player)
-                end
-
-                -- Catapult
-                if all_vehicles_effects.catapult then
-                    if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
-                        mod_vehicle(vehicle, function()
-                            Ryan.Vehicle.Catapult(vehicle)
-                        end, is_a_player)
-                    end
-                end
-
-                -- Alarm
-                if all_vehicles_effects.alarm then
-                    if not VEHICLE.IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
-                        mod_vehicle(vehicle, function()
-                            VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
-                            VEHICLE.START_VEHICLE_ALARM(vehicle)
-                        end, is_a_player)
-                    end
-                end
+                Ryan.Vehicle.ApplyEffects(vehicle, all_vehicles_effects, all_vehicles_state, is_a_player)
 
                 -- Flee
                 if all_vehicles_effects.flee and not is_a_player and all_vehicles_state[vehicle].flee ~= true then
@@ -1802,11 +1254,6 @@ util.create_tick_handler(function()
                     TASK.TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE(driver, vehicle, coords.x, coords.y, coords.z, 150.0, 524800, 20.0)
 
                     all_vehicles_state[vehicle].blind = true
-                end
-
-                -- Delete
-                if all_vehicles_effects.delete then
-                    entities.delete_by_handle(vehicle)
                 end
             end
         end
@@ -2582,10 +2029,9 @@ function setup_player(player_id)
     -- Trolling --
     local player_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")    
 
-    vehicle_effects[player_id] = create_vehicle_effects_table({["leash"] = nil})
-    
-    create_vehicle_effects_list(player_vehicle_root, "ryan", players.get_name(player_id), vehicle_effects[player_id])
+    vehicle_effects[player_id] = Ryan.Vehicle.CreateEffectTable({["leash"] = nil})
 
+    Ryan.Vehicle.CreateEffectList(player_vehicle_root, "ryan", players.get_name(player_id), vehicle_effects[player_id])
     menu.toggle(player_vehicle_root, "Leash", {"ryanleash"}, "Brings their vehicle with you like a leash.", function(value)
         vehicle_effects[player_id]["leash"] = value and true or nil
     end)
@@ -2748,137 +2194,7 @@ util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id), true)
         if vehicle ~= 0 and vehicle_effects[player_id] ~= nil then
-            if vehicle_state[vehicle] == nil then vehicle_state[vehicle] = {} end
-            
-            -- Speed
-            if vehicle_effects[player_id]["speed"] == "fast" and vehicle_state[vehicle].speed ~= "fast" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Fast)
-                    vehicle_state[vehicle].speed = "fast"
-                end, true)
-            elseif vehicle_effects[player_id]["speed"] == "slow" and vehicle_state[vehicle].speed ~= "slow" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Slow)
-                    vehicle_state[vehicle].speed = "slow"
-                end, true)
-            elseif vehicle_effects[player_id]["speed"] == "normal" and vehicle_state[vehicle].speed ~= "normal" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Normal)
-                    vehicle_state[vehicle].speed = "normal"
-                end, true)
-            end
-
-            -- Grip
-            if vehicle_effects[player_id]["grip"] == "none" and vehicle_state[vehicle].grip ~= "none" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetNoGrip(vehicle, true)
-                    vehicle_state[vehicle].grip = "none"
-                end, true)
-            elseif vehicle_effects[player_id]["grip"] == "full" and vehicle_state[vehicle].grip ~= "full" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetNoGrip(vehicle, false)
-                    vehicle_state[vehicle].grip = "full"
-                end, true)
-            end
-
-            -- Doors
-            if vehicle_effects[player_id]["doors"] == "lock" and vehicle_state[vehicle].doors ~= "lock" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetDoorsLocked(vehicle, true)
-                    vehicle_state[vehicle].doors = "lock"
-                end, true)
-            elseif vehicle_effects[player_id]["doors"] == "unlock"  and vehicle_state[vehicle].doors ~= "unlock" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetDoorsLocked(vehicle, false)
-                    vehicle_state[vehicle].doors = "unlock"
-                end, true)
-            end
-
-            -- Tires
-            if vehicle_effects[player_id]["tires"] == "burst" and vehicle_state[vehicle].tires ~= "burst" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetTiresBursted(vehicle, true)
-                    vehicle_state[vehicle].tires = "burst"
-                end, true)
-            elseif vehicle_effects[player_id]["tires"] == "fix" and vehicle_state[vehicle].tires ~= "fix" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetTiresBursted(vehicle, false)
-                    vehicle_state[vehicle].tires = "fix"
-                end, true)
-            end
-
-            -- Engine
-            if vehicle_effects[player_id]["engine"] == "kill" and vehicle_state[vehicle].engine ~= "kill" then
-                mod_vehicle(vehicle, function()
-                    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-                    vehicle_state[vehicle].engine = "kill"
-                end, true)
-            elseif vehicle_effects[player_id]["engine"] == "fix" and vehicle_state[vehicle].engine ~= "fix" then
-                mod_vehicle(vehicle, function()
-                    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-                    vehicle_speed[vehicle].engine = "fix"
-                end, true)
-            end
-
-            -- Upgrades
-            if vehicle_effects[player_id]["upgrades"] == "all" and vehicle_state[vehicle].upgrades ~= "all" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
-                    vehicle_state[vehicle].upgrades = "all"
-                end, true)
-            elseif vehicle_effects[player_id]["upgrades"] == "none" and vehicle_state[vehicle].upgrades ~= "none" then
-                mod_vehicle(vehicle, function()
-                    Ryan.Vehicle.SetFullyUpgraded(vehicle, false)
-                    vehicle_state[vehicle].upgrades = "none"
-                end, true)
-            end
-            
-            -- Godmode
-            if vehicle_effects[player_id]["godmode"] == "on" and vehicle_state[vehicle].godmode ~= "on" then
-                mod_vehicle(vehicle, function()
-                    ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
-                    vehicle_state[vehicle].godmode = "on"
-                end, true)
-            elseif vehicle_effects[player_id]["godmode"] == "off" and vehicle_state[vehicle].godmode ~= "off" then
-                mod_vehicle(vehicle, function()
-                    ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
-                    vehicle_state[vehicle].godmode = "off"
-                end, true)
-            end
-
-            -- Gravity
-            if vehicle_effects[player_id]["gravity"] == "none" and (not is_a_player or vehicle_state[vehicle].gravity ~= "on") then
-                mod_vehicle(vehicle, function()
-                    ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, false)
-                    VEHICLE.SET_VEHICLE_GRAVITY(vehicle, false)
-                    if is_a_player then vehicle_state[vehicle].gravity = "none" end
-                end, is_a_player)
-            elseif vehicle_effects[player_id]["gravity"] == "normal" and (not is_a_player or vehicle_state[vehicle].gravity ~= "off") then
-                mod_vehicle(vehicle, function()
-                    ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, true)
-                    VEHICLE.SET_VEHICLE_GRAVITY(vehicle, true)
-                    if is_a_player then vehicle_state[vehicle].gravity = "normal" end
-                end, is_a_player)
-            end
-
-            -- Catapult
-            if vehicle_effects[player_id]["catapult"] == true then
-                if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
-                    mod_vehicle(vehicle, function()
-                        Ryan.Vehicle.Catapult(vehicle)
-                    end, true)
-                end
-            end
-
-            -- Alarm
-            if vehicle_effects[player_id]["alarm"] == true then
-                if not VEHICLE.IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
-                    mod_vehicle(vehicle, function()
-                        VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
-                        VEHICLE.START_VEHICLE_ALARM(vehicle)
-                    end, true)
-                end
-            end
+            Ryan.Vehicle.ApplyEffects(vehicle, vehicle_effects[player_id], vehicle_state, true)
 
             -- Leash
             if vehicle_effects[player_id]["leash"] == true then
@@ -2891,14 +2207,6 @@ util.create_tick_handler(function()
                 else
                     ENTITY.SET_ENTITY_VELOCITY(vehicle, 0, 0, 0)
                 end
-            end
-
-            -- Delete
-            if vehicle_effects[player_id]["delete"] == true then
-                mod_vehicle(vehicle, function()
-                    -- SET_AS_MISSION_VEHICLE
-                    entities.delete_by_handle(vehicle)
-                end, true)
             end
         end
     end
