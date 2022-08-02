@@ -1,4 +1,4 @@
-VERSION = "0.9.0"
+VERSION = "0.9.1"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -754,12 +754,12 @@ god_finger_force = "Off"
 god_finger_target = nil
 
 god_finger_while_pointing = false
-god_finger_while_pressing_e = false
+god_finger_while_pressing_e = true -- TEST
 
 god_finger_player_effects = {["kick"] = false, ["crash"] = false}
 god_finger_vehicle_effects = create_vehicle_effects_table({["gravity"] = false, ["steal"] = false })
 god_finger_npc_effects = {["nude"] = false, ["flee"] = false, ["delete"] = false}
-god_finger_world_effects = {["nude"] = false, ["fire"] = false}
+god_finger_world_effects = {["nude"] = false, ["brutality"] = true, ["fire"] = false} -- TEST
 
 -- -- Player
 menu.toggle(self_god_finger_player_root, "Kick", {"ryangodfingerkick"}, "Kick the player.", function(value)
@@ -780,6 +780,9 @@ end)
 -- -- World
 menu.toggle(self_god_finger_world_root, "Nude Yoga", {"ryangodfingernudeyoga"}, "Spawn a nude NPC doing yoga.", function(value)
     god_finger_world_effects.nude = value
+end)
+menu.toggle(self_god_finger_world_root, "Police Brutality", {"ryangodfingerbrutality"}, "Spawn a nude NPC doing yoga.", function(value)
+    god_finger_world_effects.brutality = value
 end)
 menu.toggle(self_god_finger_world_root, "Fire", {"ryangodfingerfire"}, "Start a fire.", function(value)
     god_finger_world_effects.fire = value
@@ -811,8 +814,10 @@ for _, mode in pairs(Ryan.Globals.GodFingerForces) do
 end
 
 -- God Finger Handler
-last_fire = -1
 last_nude = -1
+last_brutality = -1
+last_fire = -1
+
 util.create_tick_handler(function()
     for entity, start_time in pairs(entities_smashed) do
         local time_elapsed = util.current_time_millis() - start_time
@@ -847,10 +852,70 @@ util.create_tick_handler(function()
             if raycast.did_hit then
                 Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
                 Ryan.Basics.RequestAnimations("amb@world_human_yoga@female@base")
+                Ryan.Basics.RequestModel(util.joaat("a_m_o_acult_01"))
+                Ryan.Basics.RequestAnimations("switch@trevor@jerking_off")
+
                 local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
                 local ped = entities.create_ped(0, util.joaat("a_f_y_topless_01"), raycast.hit_coords, heading)
                 PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
                 TASK.TASK_PLAY_ANIM(ped, "amb@world_human_yoga@female@base", "base_a", 8.0, 0, -1, 9, 0, false, false, false)
+
+                local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
+                local ped = entities.create_ped(0, util.joaat("a_m_o_acult_01"), Ryan.Vector.Add(raycast.hit_coords, {x = -3, y = 0, z = 0}), heading)
+                PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                TASK.TASK_PLAY_ANIM(ped, "switch@trevor@jerking_off", "trev_jerking_off_loop", 8.0, 0, -1, 9, 0, false, false, false)
+            end
+        end
+    end
+
+    if god_finger_world_effects.brutality then
+        if util.current_time_millis() - last_brutality > 1500 then
+            last_brutality = util.current_time_millis()
+
+            local raycast = Ryan.Basics.Raycast(50.0)
+            if raycast.did_hit then
+                Ryan.Basics.RequestModel(util.joaat("g_m_y_famfor_01"))
+                Ryan.Basics.RequestAnimations("missheistdockssetup1ig_13@main_action")
+                Ryan.Basics.RequestModel(util.joaat("s_f_y_cop_01"))
+                Ryan.Basics.RequestAnimations("move_m@intimidation@cop@unarmed")
+
+                local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
+
+                civilians = {}
+                for i = 1, 3 do
+                    local civilian = entities.create_ped(0, util.joaat("g_m_y_famfor_01"), Ryan.Vector.Add(raycast.hit_coords, {x = i, y = math.random(-1, 1), z = 0}), heading)
+                    PED.SET_PED_RELATIONSHIP_GROUP_HASH(civilian, util.joaat("g_m_y_famfor_01"))
+                    PED.SET_PED_COMPONENT_VARIATION(civilian, 8, 1, -1, 0)
+                    animations = {"guard_beatup_mainaction_dockworker", "guard_beatup_mainaction_guard1", "guard_beatup_mainaction_guard2"}
+                    TASK.TASK_PLAY_ANIM(civilian, "missheistdockssetup1ig_13@main_action", animations[i], 8.0, 0, -1, 9, 0, false, false, false)
+                    
+                    table.insert(civilians, civilian)
+                end
+
+                util.yield(750)
+
+                cops = {}
+                for i = 1, 4 do
+                    local cop = entities.create_ped(0, util.joaat("s_f_y_cop_01"), Ryan.Vector.Add(raycast.hit_coords, {x = 3 + i, y = math.random(-1, 1), z = 0}), heading)
+                    PED.SET_PED_RELATIONSHIP_GROUP_HASH(cop, util.joaat("s_f_y_cop_01"))
+                    PED.SET_PED_COMPONENT_VARIATION(cop, 8, 1, -1, 0)
+                    TASK.TASK_PLAY_ANIM(cop, "move_m@intimidation@cop@unarmed", "idle", 8.0, 0, -1, 9, 0, false, false, false)
+
+                    WEAPON.GIVE_WEAPON_TO_PED(cop, util.joaat("weapon_appistol"), 1000, false, true)
+                    PED.SET_PED_COMBAT_ATTRIBUTES(cop, 5, true)
+                    PED.SET_PED_COMBAT_ATTRIBUTES(cop, 46, true)
+
+                    Ryan.Entity.FaceEntity(cop, civilian, false)
+                    Ryan.Entity.FaceEntity(civilian, cop, false)
+
+                    table.insert(cops, cop)
+                end
+
+                util.yield(750)
+
+                PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("g_m_y_famfor_01"), util.joaat("s_f_y_cop_01"))
+                PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("s_f_y_cop_01"), util.joaat("g_m_y_famfor_01"))
+                for i = 1, #cops do TASK.TASK_COMBAT_PED(cops[i], civilians[i], 0, 16) end
             end
         end
     end
@@ -2149,7 +2214,7 @@ menu.toggle_loop(session_vehicle_trolling_root, "Teleport To Me", {"ryantpme"}, 
     util.yield(2500)
 end)
 
-menu.toggle_loop(session_vehicle_trolling_root, "Delete", {"ryandelete"}, "Deletes the vehicle.", function()
+menu.toggle_loop(session_vehicle_trolling_root, "Delete", {"ryandelete"}, "Deletes their vehicle.", function()
     for _, player_id in pairs(players.list()) do
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id), true)
         if vehicle ~= 0 then
@@ -2372,7 +2437,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
         end
     end
 
-    if ((mk2_chaos and message_lower:sub(1, 5) == "!mk2") or enable_commands) and message_lower:sub(1, 1) == "!" then
+    if ((mk2_chaos and message_lower:sub(1, 4) == "!mk2") or enable_commands) and message_lower:sub(1, 1) == "!" then
         local command_found = false
         for _, command in pairs(chat_commands) do
             if message_lower:sub(1, command[1]:len() + 1) == "!" .. command[1] then
