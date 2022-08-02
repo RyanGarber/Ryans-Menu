@@ -569,7 +569,7 @@ util.create_tick_handler(function()
             if raycast.did_hit then
                 Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
                 Ryan.Basics.RequestAnimations("amb@world_human_yoga@female@base")
-                Ryan.Basics.RequestModel(util.joaat("a_m_o_acult_01"))
+                Ryan.Basics.RequestModel(util.joaat("a_m_y_acult_01"))
                 Ryan.Basics.RequestAnimations("switch@trevor@jerking_off")
 
                 local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
@@ -578,7 +578,9 @@ util.create_tick_handler(function()
                 TASK.TASK_PLAY_ANIM(ped, "amb@world_human_yoga@female@base", "base_a", 8.0, 0, -1, 9, 0, false, false, false)
 
                 local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
-                local ped = entities.create_ped(0, util.joaat("a_m_o_acult_01"), Ryan.Vector.Add(raycast.hit_coords, {x = -3, y = 0, z = 0}), heading)
+                local ped = entities.create_ped(0, util.joaat("a_m_y_acult_01"), Ryan.Vector.Add(raycast.hit_coords, {x = -3, y = 0, z = 0}), heading)
+                PED.SET_PED_COMPONENT_VARIATION(ped, 4, 0, 0, 0)
+                PED.SET_PED_COMPONENT_VARIATION(ped, 8, 0, 0, 0)
                 TASK.TASK_PLAY_ANIM(ped, "switch@trevor@jerking_off", "trev_jerking_off_loop", 8.0, 0, -1, 9, 0, false, false, false)
             end
         end
