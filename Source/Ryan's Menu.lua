@@ -754,12 +754,12 @@ god_finger_force = "Off"
 god_finger_target = nil
 
 god_finger_while_pointing = false
-god_finger_while_pressing_e = true -- TEST
+god_finger_while_pressing_e = false
 
 god_finger_player_effects = {["kick"] = false, ["crash"] = false}
 god_finger_vehicle_effects = create_vehicle_effects_table({["gravity"] = false, ["steal"] = false })
 god_finger_npc_effects = {["nude"] = false, ["flee"] = false, ["delete"] = false}
-god_finger_world_effects = {["nude"] = false, ["brutality"] = true, ["fire"] = false} -- TEST
+god_finger_world_effects = {["nude"] = false, ["brutality"] = false, ["fire"] = false}
 
 -- -- Player
 menu.toggle(self_god_finger_player_root, "Kick", {"ryangodfingerkick"}, "Kick the player.", function(value)
