@@ -465,7 +465,7 @@ self_god_finger_npc_root = menu.list(self_god_finger_root, "NPC", {"ryangodfinge
 self_god_finger_world_root = menu.list(self_god_finger_root, "World", {"ryangodfingerworld"}, "What to create in the world.")
 self_god_finger_force_root = menu.list(self_god_finger_root, "Force", {"ryangodfingerforce"}, "The type of force to apply to entities.")
 
-god_finger_force = "Off"
+god_finger_force = nil
 god_finger_target = nil
 
 god_finger_while_pointing = false
@@ -516,12 +516,12 @@ end)
 for _, mode in pairs(Ryan.Globals.GodFingerForces) do
     menu.toggle(self_god_finger_force_root, mode, {"ryangodfingerforce" .. Ryan.Basics.StringToCommandName(mode)}, "", function(value)
         if value then
-            if mode ~= god_finger_force and god_finger_force ~= "Off" then
+            if mode ~= god_finger_force and god_finger_force ~= nil then
                 menu.trigger_commands("ryangodfingerforce" .. Ryan.Basics.StringToCommandName(god_finger_force) .. " off")
             end
             god_finger_force = mode
         else
-            god_finger_force = "Off"
+            god_finger_force = nil
         end
     end, false)
 end
