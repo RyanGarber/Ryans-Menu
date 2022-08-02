@@ -738,8 +738,8 @@ menu.toggle(self_god_finger_root, "While Pointing", {"ryangodfingerpointing"}, "
     god_finger_while_pointing = value
 end)
 
-menu.toggle(self_god_finger_root, "While Pressing E", {"ryangodfingerpressinge"}, "If enabled, God Fingers activates while holding the E / left stick.", function(value)
-    god_finger_while_pressing_e = value
+menu.toggle(self_god_finger_root, "While Holding E", {"ryangodfingerholdinge"}, "If enabled, God Fingers activates while holding the E key / left stick.", function(value)
+    god_finger_while_holding_e = value
 end)
 
 menu.divider(self_god_finger_root, "Effects")
@@ -754,7 +754,7 @@ god_finger_force = "Off"
 god_finger_target = nil
 
 god_finger_while_pointing = false
-god_finger_while_pressing_e = false
+god_finger_while_holding_e = false
 
 god_finger_player_effects = {["kick"] = false, ["crash"] = false}
 god_finger_vehicle_effects = create_vehicle_effects_table({["gravity"] = false, ["steal"] = false })
@@ -836,7 +836,7 @@ util.create_tick_handler(function()
     end
 
     ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, god_finger_force == "Default", false, false, false, 1, false)
-    if not (god_finger_while_pointing and player_is_pointing) and not (god_finger_while_pressing_e and PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.Horn)) then
+    if not (god_finger_while_pointing and player_is_pointing) and not (god_finger_while_holding_e and PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.Horn)) then
         god_finger_target = nil;
         return
     end
