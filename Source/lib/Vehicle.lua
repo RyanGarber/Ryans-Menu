@@ -113,11 +113,11 @@ Ryan.Vehicle = {
         end
     end,
 
-    Modify = function(vehicle, action, take_control)
-        if take_control then Ryan.Entity.RequestControlLoop(vehicle) end
-        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-            action(vehicle)
-        end
+    Modify = function(vehicle, action, take_control_loop)
+        if take_control_loop then Ryan.Entity.RequestControlLoop(vehicle)
+        else Ryan.Entity.RequestControl(vehicle) end
+        
+        if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then action(vehicle) end
     end,
     
     CreateEffectTable = function(more_effects)
@@ -405,23 +405,22 @@ Ryan.Vehicle = {
 
     ApplyEffects = function(vehicle, effects, state, is_a_player)
         if state[vehicle] == nil then state[vehicle] = {} end
-        if not is_a_player then Ryan.Entity.RequestControl(vehicle) end
 
         -- Speed
         if effects.speed == "fast" and (not is_a_player or state[vehicle].speed ~= "fast") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Fast)
-                if is_a_player then state[vehicle].speed = "fast" end
+                state[vehicle].speed = "fast"
             end, is_a_player)
         elseif effects.speed == "slow" and (not is_a_player or state[vehicle].speed ~= "slow") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Slow)
-                if is_a_player then state[vehicle].speed = "slow" end
+                state[vehicle].speed = "slow"
             end, is_a_player)
         elseif effects.speed == "normal" and (not is_a_player or state[vehicle].speed ~= "normal") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Normal)
-                if is_a_player then state[vehicle].speed = "normal" end
+                state[vehicle].speed = "normal"
             end, is_a_player)
         end
 
@@ -429,12 +428,12 @@ Ryan.Vehicle = {
         if effects.grip == "none" and (not is_a_player or state[vehicle].grip ~= "none") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetNoGrip(vehicle, true)
-                if is_a_player then state[vehicle].grip = "none" end
+                state[vehicle].grip = "none"
             end, is_a_player)
         elseif effects.grip == "normal" and (not is_a_player or state[vehicle].grip ~= "normal") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetNoGrip(vehicle, false)
-                if is_a_player then state[vehicle].grip = "normal" end
+                state[vehicle].grip = "normal"
             end, is_a_player)
         end
 
@@ -442,12 +441,12 @@ Ryan.Vehicle = {
         if effects.doors == "lock" and (not is_a_player or state[vehicle].doors ~= "lock") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetDoorsLocked(vehicle, true)
-                if is_a_player then state[vehicle].doors = "lock" end
+                state[vehicle].doors = "lock"
             end, is_a_player)
         elseif effects.doors == "unlock" and (not is_a_player or state[vehicle].doors ~= "unlock") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetDoorsLocked(vehicle, false)
-                if is_a_player then state[vehicle].doors = "unlock" end
+                state[vehicle].doors = "unlock"
             end, is_a_player)
         end
 
@@ -455,12 +454,12 @@ Ryan.Vehicle = {
         if effects.tires == "burst" and (not is_a_player or state[vehicle].tires ~= "burst") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetTiresBursted(vehicle, true)
-                if is_a_player then state[vehicle].tires = "burst" end
+                state[vehicle].tires = "burst"
             end, is_a_player)
         elseif effects.tires == "fix" and (not is_a_player or state[vehicle].tires ~= "fix") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetTiresBursted(vehicle, false)
-                if is_a_player then state[vehicle].tires = "fix" end
+                state[vehicle].tires = "fix"
             end, is_a_player)
         end
 
@@ -468,12 +467,12 @@ Ryan.Vehicle = {
         if effects.engine == "kill" and (not is_a_player or state[vehicle].engine ~= "kill") then
             Ryan.Vehicle.Modify(vehicle, function()
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-                if is_a_player then state[vehicle].engine = "kill" end
+                state[vehicle].engine = "kill"
             end, is_a_player)
         elseif effects.engine == "fix" and (not is_a_player or state[vehicle].engine ~= "fix") then
             Ryan.Vehicle.Modify(vehicle, function()
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-                if is_a_player then state[vehicle].engine = "fix" end
+                state[vehicle].engine = "fix"
             end, is_a_player)
         end
 
@@ -481,12 +480,12 @@ Ryan.Vehicle = {
         if effects.upgrades == "all" and (not is_a_player or state[vehicle].upgrades ~= "all") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
-                if is_a_player then state[vehicle].upgrades = "all" end
+                state[vehicle].upgrades = "all"
             end, is_a_player)
         elseif effects.upgrades == "none" and (not is_a_player or state[vehicle].upgrades ~= "none") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetFullyUpgraded(vehicle, false)
-                if is_a_player then state[vehicle].upgrades = "none" end
+                state[vehicle].upgrades = "none"
             end, is_a_player)
         end
 
@@ -494,12 +493,12 @@ Ryan.Vehicle = {
         if effects.godmode == "on" and (not is_a_player or state[vehicle].godmode ~= "on") then
             Ryan.Vehicle.Modify(vehicle, function()
                 ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
-                if is_a_player then state[vehicle].godmode = "on" end
+                state[vehicle].godmode = "on"
             end, is_a_player)
         elseif effects.godmode == "off" and (not is_a_player or state[vehicle].godmode ~= "off") then
             Ryan.Vehicle.Modify(vehicle, function()
                 ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
-                if is_a_player then state[vehicle].godmode = "off" end
+                state[vehicle].godmode = "off"
             end, is_a_player)
         end
 
@@ -508,17 +507,17 @@ Ryan.Vehicle = {
             Ryan.Vehicle.Modify(vehicle, function()
                 ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, false)
                 VEHICLE.SET_VEHICLE_GRAVITY(vehicle, false)
-                if is_a_player then state[vehicle].gravity = "none" end
+                state[vehicle].gravity = "none"
             end, is_a_player)
         elseif effects.gravity == "normal" and (not is_a_player or state[vehicle].gravity ~= "off") then
             Ryan.Vehicle.Modify(vehicle, function()
                 ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, true)
                 VEHICLE.SET_VEHICLE_GRAVITY(vehicle, true)
-                if is_a_player then state[vehicle].gravity = "normal" end
+                state[vehicle].gravity = "normal"
             end, is_a_player)
         end
 
-        -- Catapult
+        -- Catapult (TODO: cooldown)
         if effects.catapult then
             if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
                 Ryan.Vehicle.Modify(vehicle, function()

@@ -532,7 +532,6 @@ end
 last_nude = -1
 last_brutality = -1
 last_fire = -1
-last_catapult = -1
 
 god_finger_vehicle_state = {}
 
