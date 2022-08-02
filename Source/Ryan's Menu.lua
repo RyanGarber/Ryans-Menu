@@ -299,6 +299,7 @@ for _, mode in pairs(Ryan.Globals.ForcefieldModes) do
     menu.toggle(self_forcefield_root, mode, {"ryanforcefield" .. Ryan.Basics.StringToCommandName(mode)}, "", function(value)
         if value and mode ~= forcefield_mode then
             menu.trigger_commands("ryanforcefield" .. Ryan.Basics.StringToCommandName(forcefield_mode) .. " off")
+            util.yield(500)
             forcefield_mode = mode
         end
 
@@ -397,7 +398,7 @@ util.create_tick_handler(function()
                     Ryan.Entity.RequestControl(entity)
                     ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
-            elseif forcefield_mode == "Smash" then -- Slam entities into ground
+            elseif forcefield_mode == "Smash" then -- Smash entities into ground
                 local direction = util.current_time_millis() % 3000 >= 1250 and -2 or 0.5
                 local force = {x = 0, y = 0, z = direction * forcefield_force}
                 if ENTITY.IS_ENTITY_A_PED(entity) then
@@ -518,8 +519,9 @@ for _, mode in pairs(Ryan.Globals.GodFingerForces) do
         if value then
             if mode ~= god_finger_force and god_finger_force ~= nil then
                 menu.trigger_commands("ryangodfingerforce" .. Ryan.Basics.StringToCommandName(god_finger_force) .. " off")
+                util.yield(500)
+                god_finger_force = mode
             end
-            god_finger_force = mode
         else
             god_finger_force = nil
         end
@@ -753,7 +755,36 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif god_finger_force == "Smash" then -- Smash entities
+        elseif god_finger_force == "Spin" then -- Spin entities around
+            if not ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
+                Ryan.Entity.RequestControl(raycast.hit_entity)
+                ENTITY.SET_ENTITY_HEADING(raycast.hit_entity, ENTITY.GET_ENTITY_HEADING(raycast.hit_entity) + 2.5)
+            end
+        elseif god_finger_force == "Up" then -- Force entities into air
+            local force = {x = 0, y = 0, z = 0.5}
+            if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
+                if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
+                    Ryan.Entity.RequestControl(raycast.hit_entity)
+                    PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                end
+            elseif entity ~= entities.get_user_vehicle_as_handle() then
+                Ryan.Entity.RequestControl(raycast.hit_entity)
+                ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+            end
+        elseif god_finger_force == "Down" then -- Force entities into ground
+            local force = {x = 0, y = 0, z = -2}
+            if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
+                if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
+                    Ryan.Entity.RequestControl(raycast.hit_entity)
+                    PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
+                    ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                end
+            elseif entity ~= entities.get_user_vehicle_as_handle() then
+                Ryan.Entity.RequestControl(raycast.hit_entity)
+                ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+            end
+        elseif god_finger_force == "Smash" then -- Smash entities into ground
             if entities_smashed[raycast.hit_entity] == nil or util.current_time_millis() - entities_smashed[raycast.hit_entity] > 2500 then
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 entities_smashed[raycast.hit_entity] = util.current_time_millis()
@@ -803,8 +834,9 @@ for _, mode in pairs(Ryan.Globals.CrosshairModes) do
         if value then
             if mode ~= crosshair_mode then
                 menu.trigger_commands("ryancrosshair" .. Ryan.Basics.StringToCommandName(crosshair_mode) .. " off")
+                util.yield(500)
+                crosshair_mode = mode
             end
-            crosshair_mode = mode
         end
 
         crosshair_change = util.current_time_millis()
@@ -976,9 +1008,11 @@ for _, mode in pairs(Ryan.Globals.NPCScenarios) do
         if value then
             if mode ~= all_npcs_mode then
                 menu.trigger_commands("ryanallnpcs" .. all_npcs_mode .. " off")
+                util.yield(500)
                 all_npcs_mode = mode
             end
         end
+        
         all_npcs_change = util.current_time_millis()
         all_npcs_values[mode] = value
     end, mode == "Off")
@@ -1448,6 +1482,7 @@ for _, mode in pairs(Ryan.Globals.AntihermitModes) do
         if value then
             if mode ~= antihermit_mode then
                 menu.trigger_commands("ryanantihermit" .. Ryan.Basics.StringToCommandName(antihermit_mode) .. " off")
+                util.yield(500)
                 antihermit_mode = mode
             end
         end

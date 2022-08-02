@@ -204,6 +204,9 @@ Ryan.Globals = {
         "Default",
         "Push",
         "Pull",
+        "Spin",
+        "Up",
+        "Down",
         "Smash",
         "Chaos",
         "Explode"
