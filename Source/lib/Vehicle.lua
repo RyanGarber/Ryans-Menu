@@ -403,7 +403,7 @@ Ryan.Vehicle = {
         end)
     end,
 
-    ApplyEffects = function(vehicle, effects, state, is_a_player)
+    ApplyEffects = function(vehicle, effects, state, is_a_player, enable_risky)
         if state[vehicle] == nil then state[vehicle] = {} end
 
         -- Speed
@@ -476,17 +476,19 @@ Ryan.Vehicle = {
             end, is_a_player)
         end
 
-        -- Upgrades
-        if effects.upgrades == "all" and (not is_a_player or state[vehicle].upgrades ~= "all") then
-            Ryan.Vehicle.Modify(vehicle, function()
-                Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
-                state[vehicle].upgrades = "all"
-            end, is_a_player)
-        elseif effects.upgrades == "none" and (not is_a_player or state[vehicle].upgrades ~= "none") then
-            Ryan.Vehicle.Modify(vehicle, function()
-                Ryan.Vehicle.SetFullyUpgraded(vehicle, false)
-                state[vehicle].upgrades = "none"
-            end, is_a_player)
+        if enable_risky then
+            -- Upgrades
+            if effects.upgrades == "all" and (not is_a_player or state[vehicle].upgrades ~= "all") then
+                Ryan.Vehicle.Modify(vehicle, function()
+                    Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
+                    state[vehicle].upgrades = "all"
+                end, is_a_player)
+            elseif effects.upgrades == "none" and (not is_a_player or state[vehicle].upgrades ~= "none") then
+                Ryan.Vehicle.Modify(vehicle, function()
+                    Ryan.Vehicle.SetFullyUpgraded(vehicle, false)
+                    state[vehicle].upgrades = "none"
+                end, is_a_player)
+            end
         end
 
         -- Godmode

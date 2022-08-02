@@ -486,7 +486,7 @@ menu.toggle(self_god_finger_player_root, "Crash", {"ryangodfingercrash"}, "Crash
 end)
 
 -- -- Vehicle
-Ryan.Vehicle.CreateEffectList(self_god_finger_vehicle_root, "ryangodfinger", "", god_finger_vehicle_effects)
+Ryan.Vehicle.CreateEffectList(self_god_finger_vehicle_root, "ryangodfinger", "", god_finger_vehicle_effects, true)
 menu.toggle(self_god_finger_vehicle_root, "Steal", {"ryangodfingersteal"}, "Steals the vehicle.", function(value)
     god_finger_vehicle_effects.steal = value
 end)
@@ -1241,7 +1241,7 @@ end)
 
 menu.divider(world_all_vehicles_root, "Effects")
 
-Ryan.Vehicle.CreateEffectList(world_all_vehicles_root, "ryanall", "", all_vehicles_effects)
+Ryan.Vehicle.CreateEffectList(world_all_vehicles_root, "ryanall", "", all_vehicles_effects, false)
 menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Makes NPCs flee you.", function(value)
     all_vehicles_effects["flee"] = value
 end)
@@ -2059,9 +2059,9 @@ function setup_player(player_id)
 
     vehicle_effects[player_id] = Ryan.Vehicle.CreateEffectTable({["leash"] = nil})
 
-    Ryan.Vehicle.CreateEffectList(player_vehicle_root, "ryan", players.get_name(player_id), vehicle_effects[player_id])
+    Ryan.Vehicle.CreateEffectList(player_vehicle_root, "ryan", players.get_name(player_id), vehicle_effects[player_id], true)
     menu.toggle(player_vehicle_root, "Leash", {"ryanleash"}, "Brings their vehicle with you like a leash.", function(value)
-        vehicle_effects[player_id]["leash"] = value and true or nil
+        vehicle_effects[player_id].leash = value and true or nil
     end)
 
 
@@ -2225,7 +2225,7 @@ util.create_tick_handler(function()
             Ryan.Vehicle.ApplyEffects(vehicle, vehicle_effects[player_id], vehicle_state, true)
 
             -- Leash
-            if vehicle_effects[player_id]["leash"] == true then
+            if vehicle_effects[player_id].leash == true then
                 local player_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
                 local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
                 if Ryan.Vector.Distance(vehicle_coords, player_coords) > 5 then
