@@ -423,7 +423,6 @@ god_finger_active = false
 god_finger_target = nil
 
 god_finger_while_pointing = false
-god_finger_while_holding_caps = false
 god_finger_while_holding_alt = false
 
 god_finger_player_effects = {}
@@ -439,12 +438,8 @@ menu.divider(self_god_finger_root, "Activate By")
 menu.toggle(self_god_finger_root, "Pointing", {"ryangodfingerpointing"}, "If enabled, God Finger activates while pointing.", function(value)
     god_finger_while_pointing = value
 end)
-menu.toggle(self_god_finger_root, "Caps Lock", {"ryangodfingercapslock"}, "If enabled, God Fingers activates while holding Caps Lock / A.", function(value)
-    god_finger_while_holding_caps = value
-end)
-menu.toggle(self_god_finger_root, "Left Alt", {"ryangodfingerleftalt"}, "If enabled, God Fingers activates while holding Left Alt / D-Pad Down.", function(value)
+menu.toggle(self_god_finger_root, "Left Alt", {"ryangodfingerleftalt"}, "If enabled, God Fingers activates while holding Left Alt.", function(value)
     god_finger_while_holding_alt = value
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.CharacterWheel, value)
 end)
 
 
@@ -524,11 +519,17 @@ util.create_tick_handler(function()
     end
 
     god_finger_active = (god_finger_while_pointing     and player_is_pointing)
-                     or (god_finger_while_holding_caps and PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.PushbikeSprint))
-                     or (god_finger_while_holding_alt  and PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.CharacterWheel))
+                     or (god_finger_while_holding_alt  and util.is_key_down(0xA4))
+    
     if not god_finger_active then
         god_finger_target = nil;
         return
+    else
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.CharacterWheel, value)
+
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, true)
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.ThrowGrenade, true)
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, true)
     end
 
     ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.default), false, false, false, 1, false)
@@ -809,7 +810,7 @@ util.create_tick_handler(function()
     if god_finger_help:len() > 0 then
         util.show_corner_help(god_finger_help:sub(0, god_finger_help:len() - 2))
         god_finger_last_help = util.current_time_millis()
-    elseif util.current_time_millis() - god_finger_last_help > 1000 then
+    elseif util.current_time_millis() - god_finger_last_help > 500 then
         util.show_corner_help("No God Finger effects available.")
     end
 end)
