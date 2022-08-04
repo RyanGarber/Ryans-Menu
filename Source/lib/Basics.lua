@@ -210,6 +210,35 @@ Ryan.Basics = {
 		return choices_root
 	end,
 
+	IsGodFingerEffectActivated = function(key)
+		if key == "Look" then return true
+		elseif key == "Hold E" then return PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleHorn)
+		elseif key == "Hold G" then return PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.ThrowGrenade)
+		elseif key == "Hold X" then return PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleDuck)
+		else return false end
+	end,
+
+	GetGodFingerEffectHelp = function(effects)
+		function icon(mode)
+			if mode == "Hold E" then return "~INPUT_VEH_HORN~"
+			elseif mode == "Hold G" then return "~INPUT_THROW_GRENADE~"
+			elseif mode == "Hold X" then return "~INPUT_VEH_DUCK~" end
+    	end
+
+		help = ""
+		for effect, value in pairs(effects) do
+			if type(value) == "table" then
+				for choice, mode in pairs(value) do
+					if mode:find("Hold") then help = help .. icon(mode) .. " " .. choice .. " " .. effect .. "   " end
+				end
+			else
+				if value:find("Hold") then help = help .. icon(value) .. " " .. effect .. "   " end
+			end
+		end
+
+    	return help:sub(1, help:len() - 3)
+	end,
+
 	TableName = function(string)
 		return string:lower():gsub(" ", "_")
 	end,

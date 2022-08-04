@@ -197,10 +197,10 @@ Ryan.Vehicle = {
                 if type(value) == "table" then
                     if parsed[effect] == nil then parsed[effect] = {} end
                     for choice, mode in pairs(value) do
-                        parsed[effect][choice] = is_activated(mode)
+                        parsed[effect][choice] = Ryan.Basics.IsGodFingerEffectActivated(mode)
                     end
                 else
-                    parsed[effect] = is_activated(value)
+                    parsed[effect] = Ryan.Basics.IsGodFingerEffectActivated(value)
                 end
             else
                 if type(value) == "boolean" then
@@ -333,10 +333,11 @@ Ryan.Vehicle = {
 
         -- Catapult (TODO: cooldown)
         if parsed.catapult then
-            if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
+            if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) and util.current_time_millis() - state[vehicle].catapult > 250 then
                 Ryan.Vehicle.Modify(vehicle, function()
                     Ryan.Vehicle.Catapult(vehicle)
                 end, is_a_player)
+                state[vehicle].catapult = util.current_time_millis()
             end
         end
 
