@@ -1,4 +1,4 @@
-VERSION = "0.9.2"
+VERSION = "0.9.3"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -29,17 +29,20 @@ for required_directory, required_files in pairs(MANIFEST) do
 end
 
 
--- Check for Updates --
-if not DEV_ENVIRONMENT then
+-- Update --
+function do_update(force)
     updating = 1
+
     async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
         latest_version = manifest:sub(1, manifest:find("\n") - 1)
         manifest = Ryan.JSON.Decode(manifest:sub(manifest:find("\n"), manifest:len()))
-        if latest_version ~= VERSION then
+        
+        if latest_version ~= VERSION or force then
+            updating = 2
+
             util.show_corner_help("<b>Updating Ryan's Menu</b><br>Now downloading v" .. latest_version .. ". Please wait...")
             
             -- -- Download Update
-            updating = 2
             local files_total, files_done = 0, 0
             for directory, files in pairs(manifest) do
                 files_total = files_total + (directory == "main" and 1 or #files)
@@ -76,14 +79,16 @@ if not DEV_ENVIRONMENT then
                     end
                 end
             end
-        else
+        elseif not force then
+            updating = 0
+
             Ryan.Basics.ShowTextMessage(49, "Auto-Update", "You're up to date. Enjoy!")
             Ryan.Audio.PlayFromEntity(Ryan.Player.GetPed(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
-            updating = 0
         end
     end, function()
         Ryan.Basics.ShowTextMessage(6, "Auto-Update", "Failed to get the latest version. Use the installer instead.")
     end)
+
     async_http.dispatch()
 
     while updating ~= 0 do
@@ -92,6 +97,9 @@ if not DEV_ENVIRONMENT then
     end
 end
 
+
+-- Initialize --
+if not DEV_ENVIRONMENT then do_update(false) end
 Ryan.Basics.RequestModel(2628187989)
 Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Crosshair.png")
 
@@ -431,9 +439,6 @@ god_finger_npc_effects = {}
 god_finger_world_effects = {}
 god_finger_force_effects = {}
 
-test_effects = {["speed"] = {["fast"] = "Hold E", ["slow"] = "Look"}, ["delete"] = "Hold G"}
-
-
 menu.divider(self_god_finger_root, "Activate By")
 menu.toggle(self_god_finger_root, "Pointing", {"ryangodfingerpointing"}, "If enabled, God Finger activates while pointing.", function(value)
     god_finger_while_pointing = value
@@ -527,9 +532,13 @@ util.create_tick_handler(function()
     else
         PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.CharacterWheel, value)
 
-        --[[PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, true)
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.ThrowGrenade, true)
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, true)]]
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, true)
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Reload, true)
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleCinematicCamera, true)
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MeleeAttackLight, true)
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Enter, true)
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.LookBehind, true)
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, true)
     end
 
     ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.default), false, false, false, 1, false)
@@ -599,8 +608,10 @@ util.create_tick_handler(function()
 
             -- Steal
             if Ryan.Basics.IsGodFingerEffectActivated(god_finger_vehicle_effects.steal) and ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
-                Ryan.Vehicle.Steal(raycast.hit_entity)
-                return
+                if not god_finger_vehicle_state.steal or util.current_time_millis() - god_finger_vehicle_state.steal > 1000 then
+                    Ryan.Vehicle.Steal(raycast.hit_entity)
+                    god_finger_vehicle_state.steal = util.current_time_millis()
+                end
             end
         end
 
@@ -1900,6 +1911,7 @@ esp_color = {r = 0.29, g = 0.69, b = 1.0}
 
 menu.divider(settings_root, "Updates")
 menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
+menu.action(settings_root, "Reinstall", {"ryanreinstall"}, "Force update the script for patches and troubleshooting.", function() do_update(true) end)
 menu.hyperlink(settings_root, "Website", "https://gta.ryanmade.site/", "Opens the official website, for downloading the installer and viewing the changelog.")
 
 menu.divider(settings_root, "Options")

@@ -5,12 +5,15 @@ Ryan.Globals = {
     },
 
     Controls = {
-        CharacterWheel = 19, -- Left Alt
-        Sprint = 21, -- Shift
-        ThrowGrenade = 58, -- G
-        VehicleDuck = 73, -- X
-        VehicleHorn = 86, -- E
-        PushbikeSprint = 137 -- Caps Lock
+        CharacterWheel = 19,         -- Left Alt
+        Sprint = 21,                 -- Shift
+        Enter = 23,                  -- F
+        LookBehind = 26,             -- C
+        Reload = 45,                 -- R
+        VehicleDuck = 73,            -- X,
+        VehicleCinematicCamera = 80, -- R
+        VehicleHorn = 86,            -- E
+        MeleeAttackLight = 140       -- R
     },
 
     CyrillicAlphabet = {
@@ -238,7 +241,9 @@ Ryan.Globals = {
         "Off",
         "Look",
         "Hold E",
-        "Hold G",
+        "Hold R",
+        "Hold F",
+        "Hold C",
         "Hold X"
     },
 

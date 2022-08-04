@@ -333,7 +333,7 @@ Ryan.Vehicle = {
 
         -- Catapult (TODO: cooldown)
         if parsed.catapult then
-            if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) and util.current_time_millis() - state[vehicle].catapult > 250 then
+            if not state[vehicle].catapult or VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) and util.current_time_millis() - state[vehicle].catapult > 250 then
                 Ryan.Vehicle.Modify(vehicle, function()
                     Ryan.Vehicle.Catapult(vehicle)
                 end, is_a_player)

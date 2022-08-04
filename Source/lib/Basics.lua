@@ -212,16 +212,20 @@ Ryan.Basics = {
 
 	IsGodFingerEffectActivated = function(key)
 		if key == "Look" then return true
-		elseif key == "Hold E" then return PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleHorn)
-		elseif key == "Hold G" then return PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.ThrowGrenade)
-		elseif key == "Hold X" then return PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleDuck)
+		elseif key == "Hold E" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleHorn)
+		elseif key == "Hold R" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.Reload)
+		elseif key == "Hold F" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.Enter)
+		elseif key == "Hold C" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.LookBehind)
+		elseif key == "Hold X" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleDuck)
 		else return false end
 	end,
 
 	GetGodFingerEffectHelp = function(effects)
 		function icon(mode)
 			if mode == "Hold E" then return "~INPUT_VEH_HORN~"
-			elseif mode == "Hold G" then return "~INPUT_THROW_GRENADE~"
+			elseif mode == "Hold R" then return "~INPUT_RELOAD~"
+			elseif mode == "Hold F" then return "~INPUT_ENTER~"
+			elseif mode == "Hold C" then return "~INPUT_LOOK_BEHIND~"
 			elseif mode == "Hold X" then return "~INPUT_VEH_DUCK~" end
     	end
 
