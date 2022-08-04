@@ -527,9 +527,9 @@ util.create_tick_handler(function()
     else
         PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.CharacterWheel, value)
 
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, true)
+        --[[PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, true)
         PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.ThrowGrenade, true)
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, true)
+        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, true)]]
     end
 
     ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.default), false, false, false, 1, false)
