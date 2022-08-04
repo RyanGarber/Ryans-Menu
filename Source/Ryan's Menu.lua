@@ -424,6 +424,7 @@ god_finger_target = nil
 
 god_finger_while_pointing = false
 god_finger_while_holding_caps = false
+god_finger_while_holding_alt = false
 
 god_finger_player_effects = {}
 god_finger_vehicle_effects = {}
@@ -440,6 +441,10 @@ menu.toggle(self_god_finger_root, "Pointing", {"ryangodfingerpointing"}, "If ena
 end)
 menu.toggle(self_god_finger_root, "Caps Lock", {"ryangodfingercapslock"}, "If enabled, God Fingers activates while holding Caps Lock / A.", function(value)
     god_finger_while_holding_caps = value
+end)
+menu.toggle(self_god_finger_root, "Left Alt", {"ryangodfingerleftalt"}, "If enabled, God Fingers activates while holding Left Alt / D-Pad Down.", function(value)
+    god_finger_while_holding_alt = value
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.CharacterWheel, value)
 end)
 
 
@@ -518,12 +523,15 @@ util.create_tick_handler(function()
         end
     end
 
-    ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, god_finger_force_effect == "Default", false, false, false, 1, false)
-    god_finger_active = (god_finger_while_pointing and player_is_pointing) or (god_finger_while_holding_caps and PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.PushbikeSprint))
+    god_finger_active = (god_finger_while_pointing     and player_is_pointing)
+                     or (god_finger_while_holding_caps and PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.PushbikeSprint))
+                     or (god_finger_while_holding_alt  and PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.CharacterWheel))
     if not god_finger_active then
         god_finger_target = nil;
         return
     end
+
+    ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.default), false, false, false, 1, false)
 
     local raycast = nil
     local help = {}

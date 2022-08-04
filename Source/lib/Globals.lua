@@ -5,6 +5,7 @@ Ryan.Globals = {
     },
 
     Controls = {
+        CharacterWheel = 19, -- Left Alt
         Sprint = 21, -- Shift
         ThrowGrenade = 58, -- G
         VehicleDuck = 73, -- X
