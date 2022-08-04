@@ -434,7 +434,7 @@ god_finger_force_effects = {}
 test_effects = {["speed"] = {["fast"] = "Hold E", ["slow"] = "Look"}, ["delete"] = "Hold G"}
 
 
-menu.divider(self_god_finger_root, "Activate")
+menu.divider(self_god_finger_root, "Activate By")
 menu.toggle(self_god_finger_root, "Pointing", {"ryangodfingerpointing"}, "If enabled, God Finger activates while pointing.", function(value)
     god_finger_while_pointing = value
 end)
