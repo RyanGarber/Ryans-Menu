@@ -5,9 +5,11 @@ Ryan.Globals = {
     },
 
     Controls = {
-        Horn = 86,
-        Duck = 73,
-        Sprint = 21
+        Sprint = 21, -- Shift
+        ThrowGrenade = 58, -- G
+        VehicleDuck = 73, -- X
+        VehicleHorn = 86, -- E
+        PushbikeSprint = 137 -- Caps Lock
     },
 
     CyrillicAlphabet = {

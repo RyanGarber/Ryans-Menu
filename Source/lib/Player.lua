@@ -41,7 +41,7 @@ Ryan.Player = {
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), true)
         if vehicle ~= 0 then
             Ryan.Entity.RequestControlLoop(vehicle)
-            for i=1, 3 do
+            for i = 1, 3 do
                 ENTITY.SET_ENTITY_COORDS_NO_OFFSET(vehicle, coords.x, coords.y, coords.z, false, false, false)
             end
         end

@@ -3,6 +3,8 @@ MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
 }
+DEV_ENVIRONMENT = debug.getinfo(1, "S").source:lower():find("dev")
+SUBFOLDER_NAME = "Ryan's Menu" .. (DEV_ENVIRONMENT and " (Dev)" or "")
 
 Ryan = {}
 
@@ -11,9 +13,9 @@ Ryan = {}
 function exists(name) return filesystem.exists(filesystem.scripts_dir() .. name) end
 for required_directory, required_files in pairs(MANIFEST) do
     for _, required_file in pairs(required_files) do
-        if not exists(required_directory .. "\\Ryan's Menu\\" .. required_file) then
+        if not exists(required_directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. required_file) then
             if required_file == "Basics.lua" or required_file == "JSON.lua" or required_file == "Natives.lua" then
-                while not exists(required_directory .. "\\Ryan's Menu\\" .. required_file) do
+                while not exists(required_directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. required_file) do
                     util.toast("Ryan's Menu is missing a required file and must be reinstalled.")
                     util.yield(2000)
                 end
@@ -21,14 +23,14 @@ for required_directory, required_files in pairs(MANIFEST) do
                 VERSION = "-1"
             end
         elseif required_directory == 'lib' then
-            require(required_directory .. "\\Ryan's Menu\\" .. required_file:sub(0, -5))
+            require(required_directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. required_file:sub(0, -5))
         end
     end
 end
 
 
 -- Check for Updates --
-if not debug.getinfo(1, "S").source:lower():find("dev") then
+if not DEV_ENVIRONMENT then
     updating = 1
     async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
         latest_version = manifest:sub(1, manifest:find("\n") - 1)
@@ -61,10 +63,10 @@ if not debug.getinfo(1, "S").source:lower():find("dev") then
                     end)
                     async_http.dispatch()
                 else
-                    filesystem.mkdirs(filesystem.scripts_dir() .. directory .. "\\" .. "Ryan's Menu")
+                    filesystem.mkdirs(filesystem.scripts_dir() .. directory .. "\\" .. SUBFOLDER_NAME)
                     for _, file in pairs(files) do
                         async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. directory .. "/" .. file, function(contents)
-                            local destination = assert(io.open(filesystem.scripts_dir() .. directory .. "\\Ryan's Menu\\" .. file, file:find(".png") and "wb" or "w"))
+                            local destination = assert(io.open(filesystem.scripts_dir() .. directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. file, file:find(".png") and "wb" or "w"))
                             destination:write(contents)
                             assert(destination:close())
                             files_done = files_done + 1
@@ -91,7 +93,7 @@ if not debug.getinfo(1, "S").source:lower():find("dev") then
 end
 
 Ryan.Basics.RequestModel(2628187989)
-Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. "Ryan's Menu\\Crosshair.png")
+Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Crosshair.png")
 
 
 -- Switching Sessions --
@@ -137,9 +139,9 @@ entities_exploded = {}
 
 menu.divider(self_root, "General")
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
-self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An enhanced WiriScript forcefield.")
+self_forcefield_root = Ryan.Basics.CreateSavableChoiceWithDefault(self_root, "Forcefield...", "ryanforcefield", "An expanded and enhanced forcefield.", Ryan.Globals.ForcefieldModes, function(value) forcefield_mode = value end)
 self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
-self_crosshair_root = menu.list(self_root, "Crosshair...", {"ryancrosshair"}, "Add an on-screen crosshair.")
+self_crosshair_root = Ryan.Basics.CreateSavableChoiceWithDefault(self_root, "Crosshair...", "ryancrosshair", "Add an on-screen crosshair.", Ryan.Globals.CrosshairModes, function(value) crosshair_mode = value end)
 self_spotlight_root = menu.list(self_root, "Spotlight...", {"ryanspotlight"}, "Attach lights to you or your vehicle.")
 
 -- -- PTFX
@@ -269,7 +271,7 @@ self_ptfx_god_finger_entities_root = menu.list(self_ptfx_god_finger_root, "Entit
 
 Ryan.PTFX.CreateList(self_ptfx_god_finger_crosshair_root, function(ptfx)
     if ptfx_disable then return end
-    if player_is_pointing then
+    if god_finger_active then
         local raycast = Ryan.Basics.Raycast(1000.0)
         if raycast.did_hit then
             Ryan.PTFX.PlayAtCoords(raycast.hit_coords, ptfx[2], ptfx[3], ptfx_color)
@@ -287,42 +289,11 @@ Ryan.PTFX.CreateList(self_ptfx_god_finger_entities_root, function(ptfx)
 end)
 
 -- -- Forcefield
-forcefield_mode = "Off"
-forcefield_change = 2147483647
-forcefield_values = {["Off"] = true}
-
 forcefield_size = 10
-forcefield_force = 1
-forcefield_draw_sphere = false
-
-for _, mode in pairs(Ryan.Globals.ForcefieldModes) do
-    menu.toggle(self_forcefield_root, mode, {"ryanforcefield" .. Ryan.Basics.StringToCommandName(mode)}, "", function(value)
-        if value and mode ~= forcefield_mode then
-            menu.trigger_commands("ryanforcefield" .. Ryan.Basics.StringToCommandName(forcefield_mode) .. " off")
-            util.yield(500)
-            forcefield_mode = mode
-        end
-
-        forcefield_change = util.current_time_millis()
-        forcefield_values[mode] = value
-    end, mode == "Off")
-end
-
-util.create_tick_handler(function()
-    if util.current_time_millis() - forcefield_change > 500 then
-        local has_choice = false
-        for _, mode in pairs(Ryan.Globals.ForcefieldModes) do
-            if forcefield_values[mode] then has_choice = true end
-        end
-        if not has_choice then menu.trigger_commands("ryanforcefieldoff on") end
-        forcefield_change = 2147483647
-    end
-end)
-
-menu.divider(self_forcefield_root, "Options")
 forcefield_size_input = menu.slider(self_forcefield_root, "Size", {"ryanforcefieldsize"}, "Diameter of the forcefield sphere.", 10, 250, 10, 10, function(value)
     forcefield_size = value
 end)
+forcefield_force = 1
 menu.slider(self_forcefield_root, "Force", {"ryanforcefieldforce"}, "Force applied by the forcefield.", 1, 100, 1, 1, function(value)
     forcefield_force = value
 end)
@@ -448,68 +419,71 @@ util.create_tick_handler(function()
 end)
 
 -- -- God Finger
-menu.divider(self_god_finger_root, "Activate")
+god_finger_active = false
+god_finger_target = nil
 
-menu.toggle(self_god_finger_root, "While Pointing", {"ryangodfingerpointing"}, "If enabled, God Finger activates while pointing.", function(value)
+god_finger_while_pointing = false
+god_finger_while_holding_caps = false
+god_finger_keybind_choices = {"Always", "Holding E", "Holding G", "Holding X"}
+
+god_finger_player_effects = {["kick"] = false, ["crash"] = false}
+god_finger_vehicle_effects = Ryan.Vehicle.CreateEffectTable({["flee"] = false, ["blind"] = false, ["steal"] = false })
+god_finger_npc_effects = {["nude"] = false, ["flee"] = false, ["delete"] = false}
+god_finger_world_effects = {["nude"] = false, ["brutality"] = false, ["fire"] = false}
+god_finger_force_effect = nil
+
+
+menu.divider(self_god_finger_root, "Activate")
+menu.toggle(self_god_finger_root, "Pointing", {"ryangodfingerpointing"}, "If enabled, God Finger activates while pointing.", function(value)
     god_finger_while_pointing = value
 end)
-
-menu.toggle(self_god_finger_root, "While Holding E", {"ryangodfingerholdinge"}, "If enabled, God Fingers activates while holding the E key / left stick.", function(value)
-    god_finger_while_holding_e = value
+menu.toggle(self_god_finger_root, "Caps Lock", {"ryangodfingercapslock"}, "If enabled, God Fingers activates while holding Caps Lock / A.", function(value)
+    god_finger_while_holding_caps = value
 end)
 
-menu.divider(self_god_finger_root, "Effects")
 
+menu.divider(self_god_finger_root, "Effects")
 self_god_finger_player_root = menu.list(self_god_finger_root, "Player", {"ryangodfingerplayer"}, "What to do to players.")
 self_god_finger_vehicle_root = menu.list(self_god_finger_root, "Vehicle", {"ryangodfingervehicle"}, "What to do to vehicles.")
 self_god_finger_npc_root = menu.list(self_god_finger_root, "NPC", {"ryangodfingernpc"}, "What to do to NPCs.")
 self_god_finger_world_root = menu.list(self_god_finger_root, "World", {"ryangodfingerworld"}, "What to create in the world.")
 self_god_finger_force_root = menu.list(self_god_finger_root, "Force", {"ryangodfingerforce"}, "The type of force to apply to entities.")
 
-god_finger_force = nil
-god_finger_target = nil
-
-god_finger_while_pointing = false
-god_finger_while_holding_e = false
-
-god_finger_player_effects = {["kick"] = false, ["crash"] = false}
-god_finger_vehicle_effects = Ryan.Vehicle.CreateEffectTable({["flee"] = false, ["blind"] = false, ["steal"] = false })
-god_finger_npc_effects = {["nude"] = false, ["flee"] = false, ["delete"] = false}
-god_finger_world_effects = {["nude"] = false, ["brutality"] = false, ["fire"] = false}
 
 -- -- Player
-menu.toggle(self_god_finger_player_root, "Kick", {"ryangodfingerkick"}, "Kick the player.", function(value)
+menu.divider(self_god_finger_player_root, "Effects")
+menu.toggle(self_god_finger_player_root, "Kick", {"ryangodfingerplayerkick"}, "Kick the player.", function(value)
     god_finger_player_effects.kick = value
 end)
-menu.toggle(self_god_finger_player_root, "Crash", {"ryangodfingercrash"}, "Crash the player.", function(value)
+menu.toggle(self_god_finger_player_root, "Crash", {"ryangodfingerplayercrash"}, "Crash the player.", function(value)
     god_finger_player_effects.crash = value
 end)
 
 -- -- Vehicle
-Ryan.Vehicle.CreateEffectList(self_god_finger_vehicle_root, "ryangodfinger", "", god_finger_vehicle_effects, true)
-menu.toggle(self_god_finger_vehicle_root, "Steal", {"ryangodfingersteal"}, "Steals the vehicle.", function(value)
+Ryan.Vehicle.CreateEffectList(self_god_finger_vehicle_root, "ryangodfingervehicle", "", god_finger_vehicle_effects, true)
+menu.toggle(self_god_finger_vehicle_root, "Steal", {"ryangodfingervehiclesteal"}, "Steals the vehicle.", function(value)
     god_finger_vehicle_effects.steal = value
 end)
 
 -- -- World
-menu.toggle(self_god_finger_world_root, "Nude Yoga", {"ryangodfingernudeyoga"}, "Spawn a nude NPC doing yoga.", function(value)
+menu.toggle(self_god_finger_world_root, "Nude Yoga", {"ryangodfingerworldyoga"}, "Spawn a nude NPC doing yoga.", function(value)
     god_finger_world_effects.nude = value
 end)
-menu.toggle(self_god_finger_world_root, "Police Brutality", {"ryangodfingerbrutality"}, "Spawn a nude NPC doing yoga.", function(value)
+menu.toggle(self_god_finger_world_root, "Police Brutality", {"ryangodfingerworldbrutality"}, "Spawn a nude NPC doing yoga.", function(value)
     god_finger_world_effects.brutality = value
 end)
-menu.toggle(self_god_finger_world_root, "Fire", {"ryangodfingerfire"}, "Start a fire.", function(value)
+menu.toggle(self_god_finger_world_root, "Fire", {"ryangodfingerworldfire"}, "Start a fire.", function(value)
     god_finger_world_effects.fire = value
 end)
 
 -- -- NPC
-menu.toggle(self_god_finger_npc_root, "Be Nude", {"ryangodfingerbenude"}, "Make the NPC nude.", function(value)
+menu.toggle(self_god_finger_npc_root, "Be Nude", {"ryangodfingernpcnude"}, "Make the NPC nude.", function(value)
     god_finger_npc_effects.nude = value
 end)
-menu.toggle(self_god_finger_npc_root, "Flee", {"ryangodfingerflee"}, "Make the NPC flee the area.", function(value)
+menu.toggle(self_god_finger_npc_root, "Flee", {"ryangodfingernpcflee"}, "Make the NPC flee the area.", function(value)
     god_finger_npc_effects.flee = value
 end)
-menu.toggle(self_god_finger_npc_root, "Delete", {"ryangodfingerdeletenpc"}, "Delete the NPC.", function(value)
+menu.toggle(self_god_finger_npc_root, "Delete", {"ryangodfingernpcdelete"}, "Delete the NPC.", function(value)
     god_finger_npc_effects.delete = value
 end)
 
@@ -517,13 +491,13 @@ end)
 for _, mode in pairs(Ryan.Globals.GodFingerForces) do
     menu.toggle(self_god_finger_force_root, mode, {"ryangodfingerforce" .. Ryan.Basics.StringToCommandName(mode)}, "", function(value)
         if value then
-            if mode ~= god_finger_force and god_finger_force ~= nil then
-                menu.trigger_commands("ryangodfingerforce" .. Ryan.Basics.StringToCommandName(god_finger_force) .. " off")
+            if mode ~= god_finger_force_effect and god_finger_force_effect ~= nil then
+                menu.trigger_commands("ryangodfingerforce" .. Ryan.Basics.StringToCommandName(god_finger_force_effect) .. " off")
                 util.yield(500)
-                god_finger_force = mode
+                god_finger_force_effect = mode
             end
         else
-            god_finger_force = nil
+            god_finger_force_effect = nil
         end
     end, false)
 end
@@ -552,8 +526,9 @@ util.create_tick_handler(function()
         end
     end
 
-    ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, god_finger_force == "Default", false, false, false, 1, false)
-    if not (god_finger_while_pointing and player_is_pointing) and not (god_finger_while_holding_e and PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.Horn)) then
+    ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, god_finger_force_effect == "Default", false, false, false, 1, false)
+    god_finger_active = (god_finger_while_pointing and player_is_pointing) or (god_finger_while_holding_caps and PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.PushbikeSprint))
+    if not god_finger_active then
         god_finger_target = nil;
         return
     end
@@ -726,9 +701,9 @@ util.create_tick_handler(function()
         end
 
         -- Force
-        if god_finger_force == "Default" then
+        if god_finger_force_effect == "Default" then
             FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 29, 25.0, false, true, 0.0, true)
-        elseif god_finger_force == "Push" then -- Push entities away
+        elseif god_finger_force_effect == "Push" then -- Push entities away
             local entity_coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
             local force = Ryan.Vector.Normalize(Ryan.Vector.Subtract(entity_coords, ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())))
             force = Ryan.Vector.Multiply(force, 0.4)
@@ -742,7 +717,7 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif god_finger_force == "Pull" then -- Pull entities in
+        elseif god_finger_force_effect == "Pull" then -- Pull entities in
             local entity_coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
             local force = Ryan.Vector.Normalize(Ryan.Vector.Subtract(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed()), entity_coords))
             force = Ryan.Vector.Multiply(force, 0.4)
@@ -756,12 +731,12 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif god_finger_force == "Spin" then -- Spin entities around
+        elseif god_finger_force_effect == "Spin" then -- Spin entities around
             if not ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.SET_ENTITY_HEADING(raycast.hit_entity, ENTITY.GET_ENTITY_HEADING(raycast.hit_entity) + 2.5)
             end
-        elseif god_finger_force == "Up" then -- Force entities into air
+        elseif god_finger_force_effect == "Up" then -- Force entities into air
             local force = {x = 0, y = 0, z = 0.5}
             if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
@@ -773,7 +748,7 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif god_finger_force == "Down" then -- Force entities into ground
+        elseif god_finger_force_effect == "Down" then -- Force entities into ground
             local force = {x = 0, y = 0, z = -2}
             if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
@@ -785,12 +760,12 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif god_finger_force == "Smash" then -- Smash entities into ground
+        elseif god_finger_force_effect == "Smash" then -- Smash entities into ground
             if entities_smashed[raycast.hit_entity] == nil or util.current_time_millis() - entities_smashed[raycast.hit_entity] > 2500 then
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 entities_smashed[raycast.hit_entity] = util.current_time_millis()
             end
-        elseif god_finger_force == "Chaos" then -- Chaotic entities
+        elseif god_finger_force_effect == "Chaos" then -- Chaotic entities
             if entities_chaosed[raycast.hit_entity] == nil or util.current_time_millis() - entities_chaosed[raycast.hit_entity] > 1000 then
                 local amount = 20
                 local force = {
@@ -810,7 +785,7 @@ util.create_tick_handler(function()
                 end
                 entities_chaosed[raycast.hit_entity] = util.current_time_millis()
             end
-        elseif god_finger_force == "Explode" then -- Explode entities
+        elseif god_finger_force_effect == "Explode" then -- Explode entities
             if entities_exploded[raycast.hit_entity] == nil then
                 local coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
                 FIRE.ADD_EXPLOSION(
@@ -822,37 +797,6 @@ util.create_tick_handler(function()
         end
     else
         god_finger_target = nil
-    end
-end)
-
--- -- Crosshair
-crosshair_mode = "Off"
-crosshair_change = 2147483647
-crosshair_values = {["Off"] = true}
-
-for _, mode in pairs(Ryan.Globals.CrosshairModes) do
-    menu.toggle(self_crosshair_root, mode, {"ryancrosshair" .. Ryan.Basics.StringToCommandName(mode)}, "", function(value)
-        if value then
-            if mode ~= crosshair_mode then
-                menu.trigger_commands("ryancrosshair" .. Ryan.Basics.StringToCommandName(crosshair_mode) .. " off")
-                util.yield(500)
-                crosshair_mode = mode
-            end
-        end
-
-        crosshair_change = util.current_time_millis()
-        crosshair_values[mode] = value
-    end, mode == "Off")
-end
-
-util.create_tick_handler(function()
-    if util.current_time_millis() - crosshair_change > 500 then
-        local has_choice = false
-        for _, mode in pairs(Ryan.Globals.CrosshairModes) do
-            if crosshair_values[mode] then has_choice = true end
-        end
-        if not has_choice then menu.trigger_commands("ryancrosshairoff on") end
-        crosshair_change = 2147483647
     end
 end)
 
@@ -969,7 +913,7 @@ end)
 -- World Menu --
 menu.divider(world_root, "General")
 world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
-world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Changes the action NPCs are currently performing.")
+world_all_npcs_root = Ryan.Basics.CreateSavableChoiceWithDefault(world_root, "All NPCs...", "ryanallnpcs", "Changes the action NPCs are currently performing.", Ryan.Globals.NPCScenarios, function(value) all_npcs_mode = value end)
 
 -- -- Collectibles
 world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
@@ -998,37 +942,7 @@ for i = 1, #Ryan.Globals.PlayingCards do
 end
 
 -- -- All NPCs
-all_npcs_mode = "Off"
-all_npcs_change = 2147483647
-all_npcs_values = {["Off"] = true}
-
 all_npcs_include_vehicles = false
-
-for _, mode in pairs(Ryan.Globals.NPCScenarios) do
-    menu.toggle(world_all_npcs_root, mode, {"ryanallnpcs" .. mode}, "", function(value)
-        if value then
-            if mode ~= all_npcs_mode then
-                menu.trigger_commands("ryanallnpcs" .. all_npcs_mode .. " off")
-                util.yield(500)
-                all_npcs_mode = mode
-            end
-        end
-
-        all_npcs_change = util.current_time_millis()
-        all_npcs_values[mode] = value
-    end, mode == "Off")
-end
-
-util.create_tick_handler(function()
-    if util.current_time_millis() - all_npcs_change > 500 then
-        local has_choice = false
-        for _, mode in pairs(Ryan.Globals.NPCScenarios) do
-            if all_npcs_values[mode] then has_choice = true end
-        end
-        if not has_choice then menu.trigger_commands("ryanallnpcsoff on") end
-        all_npcs_change = 2147483647
-    end
-end)
 
 menu.divider(world_all_npcs_root, "Options")
 menu.toggle(world_all_npcs_root, "Include Vehicles", {"ryanallnpcsvehicles"}, "If enabled, NPCs will get out of their vehicles.", function(value)
@@ -1194,7 +1108,7 @@ enter_closest_vehicle = menu.action(world_root, "Enter Closest Vehicle", {"ryand
             PED.SET_PED_INTO_VEHICLE(Ryan.Player.GetPed(), closest_vehicle, -1)
             util.toast("Teleported into the closest vehicle.")
         elseif VEHICLE.ARE_ANY_VEHICLE_SEATS_FREE(closest_vehicle) then
-            for i=0, 10 do
+            for i = 0, 10 do
                 if VEHICLE.IS_VEHICLE_SEAT_FREE(closest_vehicle, i) then
                     PED.SET_PED_INTO_VEHICLE(Ryan.Player.GetPed(), closest_vehicle, i)
                     break
@@ -1296,7 +1210,7 @@ session_trolling_root = menu.list(session_root, "Trolling...", {"ryantrolling"},
 session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
 session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
 session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
-session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Kicks or trolls any player who stays inside for more than 5 minutes.")
+session_antihermit_root = Ryan.Basics.CreateSavableChoiceWithDefault(session_root, "Anti-Hermit...", "ryanantihermit", "Kicks or trolls any player who stays inside for more than 5 minutes.", Ryan.Globals.AntihermitModes, function(value) antihermit_mode = value end)
 
 -- -- Mass Trolling
 trolling_watch_time = 5000
@@ -1466,36 +1380,6 @@ menu.toggle(session_crash_all_root, "Include Friends", {"ryanomnicrashfriends"},
 end)
 
 -- -- Anti-Hermit
-antihermit_mode = "Off"
-antihermit_change = 2147483647
-antihermit_values = {["Off"] = true}
-
-for _, mode in pairs(Ryan.Globals.AntihermitModes) do
-    menu.toggle(session_antihermit_root, mode, {"ryanantihermit" .. Ryan.Basics.StringToCommandName(mode)}, "", function(value)
-        if value then
-            if mode ~= antihermit_mode then
-                menu.trigger_commands("ryanantihermit" .. Ryan.Basics.StringToCommandName(antihermit_mode) .. " off")
-                util.yield(500)
-                antihermit_mode = mode
-            end
-        end
-
-        antihermit_change = util.current_time_millis()
-        antihermit_values[mode] = value
-    end, mode == "Off")
-end
-
-util.create_tick_handler(function()
-    if util.current_time_millis() - antihermit_change > 500 then
-        local has_choice = false
-        for _, mode in pairs(Ryan.Globals.AntihermitModes) do
-            if antihermit_values[mode] then has_choice = true end
-        end
-        if not has_choice then menu.trigger_commands("ryanantihermitoff on") end
-        antihermit_change = 2147483647
-    end
-end)
-
 hermits = {}
 hermit_list = {}
 util.create_tick_handler(function()

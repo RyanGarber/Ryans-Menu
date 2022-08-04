@@ -27,7 +27,7 @@ Ryan.Vehicle = {
 
     SetFullyUpgraded = function(vehicle, fully_upgraded)
         VEHICLE.SET_VEHICLE_MOD_KIT(vehicle, 0)
-        for i=0, 50 do
+        for i = 0, 50 do
             local mod = -1
             if fully_upgraded then
                 mod = VEHICLE.GET_NUM_VEHICLE_MODS(vehicle, i) - 1
@@ -138,7 +138,7 @@ Ryan.Vehicle = {
         return effects
     end,
 
-    CreateEffectList = function(root, command_prefix, player_name, effects)
+    CreateEffectList = function(root, command_prefix, player_name, effects, enable_risky)
         -- Speed
         local speed_root = menu.list(root, "Speed: -", {command_prefix .. "speed"}, "Changes the speed of the vehicle.")
         menu.toggle(speed_root, "Fast", {command_prefix .. "speedfast"}, "Makes the speed extremely fast.", function(value)
@@ -301,62 +301,64 @@ Ryan.Vehicle = {
         end)
 
         -- Upgrades
-        local upgrades_root = menu.list(root, "Upgrades: -", {command_prefix .. "upgrades"}, "Changes the vehicle's upgrades.")
-        menu.toggle(upgrades_root, "All", {command_prefix .. "upgradesall"}, "Fully upgrades the vehicle.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "upgradesnone" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.upgrades = "all"
-                menu.set_menu_name(upgrades_root, "Upgrades: All")
-            else
-                effects.upgrades = nil
-                menu.set_menu_name(upgrades_root, "Upgrades: -")
-            end
-        end)
-        menu.toggle(upgrades_root, "None", {command_prefix .. "upgradesnone"}, "Fully downgrades the vehicle.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "upgradesall" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.upgrades = "none"
-                menu.set_menu_name(upgrades_root, "Upgrades: None")
-            else
-                effects.upgrades = nil
-                menu.set_menu_name(upgrades_root, "Upgrades: -")
-            end
-        end)
+        if enable_risky then
+            local upgrades_root = menu.list(root, "Upgrades: -", {command_prefix .. "upgrades"}, "Changes the vehicle's upgrades.")
+            menu.toggle(upgrades_root, "All", {command_prefix .. "upgradesall"}, "Fully upgrades the vehicle.", function(value)
+                if value then
+                    Ryan.Basics.RunCommands({
+                        command_prefix .. "upgradesnone" .. player_name .. " off"
+                    })
+                    util.yield(250)
+                    effects.upgrades = "all"
+                    menu.set_menu_name(upgrades_root, "Upgrades: All")
+                else
+                    effects.upgrades = nil
+                    menu.set_menu_name(upgrades_root, "Upgrades: -")
+                end
+            end)
+            menu.toggle(upgrades_root, "None", {command_prefix .. "upgradesnone"}, "Fully downgrades the vehicle.", function(value)
+                if value then
+                    Ryan.Basics.RunCommands({
+                        command_prefix .. "upgradesall" .. player_name .. " off"
+                    })
+                    util.yield(250)
+                    effects.upgrades = "none"
+                    menu.set_menu_name(upgrades_root, "Upgrades: None")
+                else
+                    effects.upgrades = nil
+                    menu.set_menu_name(upgrades_root, "Upgrades: -")
+                end
+            end)
 
-        -- Godmode
-        local godmode_root = menu.list(root, "Godmode: -", {command_prefix .. "godmode"}, "Changes the vehicle's godmode state.")
-        menu.toggle(godmode_root, "On", {command_prefix .. "godmodeon"}, "Makes the vehicle indestructible.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "godmodeoff" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.godmode = "on"
-                menu.set_menu_name(godmode_root, "Godmode: On")
-            else
-                effects.godmode = nil
-                menu.set_menu_name(godmode_root, "Godmode: -")
-            end
-        end)
-        menu.toggle(godmode_root, "Off", {command_prefix .. "godmodeoff"}, "Makes the vehicle destructible.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "godmodeon" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.godmode = "off"
-                menu.set_menu_name(godmode_root, "Godmode: Off")
-            else
-                effects.godmode = nil
-                menu.set_menu_name(godmode_root, "Godmode: -")
-            end
-        end)
+            -- Godmode
+            local godmode_root = menu.list(root, "Godmode: -", {command_prefix .. "godmode"}, "Changes the vehicle's godmode state.")
+            menu.toggle(godmode_root, "On", {command_prefix .. "godmodeon"}, "Makes the vehicle indestructible.", function(value)
+                if value then
+                    Ryan.Basics.RunCommands({
+                        command_prefix .. "godmodeoff" .. player_name .. " off"
+                    })
+                    util.yield(250)
+                    effects.godmode = "on"
+                    menu.set_menu_name(godmode_root, "Godmode: On")
+                else
+                    effects.godmode = nil
+                    menu.set_menu_name(godmode_root, "Godmode: -")
+                end
+            end)
+            menu.toggle(godmode_root, "Off", {command_prefix .. "godmodeoff"}, "Makes the vehicle destructible.", function(value)
+                if value then
+                    Ryan.Basics.RunCommands({
+                        command_prefix .. "godmodeon" .. player_name .. " off"
+                    })
+                    util.yield(250)
+                    effects.godmode = "off"
+                    menu.set_menu_name(godmode_root, "Godmode: Off")
+                else
+                    effects.godmode = nil
+                    menu.set_menu_name(godmode_root, "Godmode: -")
+                end
+            end)
+        end
 
         -- Gravity
         local gravity_root = menu.list(root, "Gravity: -", {command_prefix .. "gravity"}, "Changes the vehicle's gravity.")
@@ -403,7 +405,7 @@ Ryan.Vehicle = {
         end)
     end,
 
-    ApplyEffects = function(vehicle, effects, state, is_a_player, enable_risky)
+    ApplyEffects = function(vehicle, effects, state, is_a_player)
         if state[vehicle] == nil then state[vehicle] = {} end
 
         -- Speed

@@ -170,5 +170,43 @@ Ryan.Basics = {
 			util.toast("Failed to translate message.")
 		end)
 		async_http.dispatch()
+	end,
+
+	CreateSavableChoiceWithDefault = function(root, menu_name, command_name, description, choices, on_update)
+		local state = choices[1]
+		local state_change = 2147483647
+		local state_values = {[state] = true}
+
+		local choices_root = menu.list(root, menu_name:gsub("%%", state), {command_name}, description)
+		for _, choice in pairs(choices) do
+			menu.toggle(choices_root, choice, {command_name .. Ryan.Basics.StringToCommandName(choice)}, "", function(value)
+				if value then
+					if choice ~= state then
+						menu.trigger_commands(command_name .. Ryan.Basics.StringToCommandName(state) .. " off")
+						util.yield(500)
+						state = choice
+						on_update(state)
+						menu.set_menu_name(choices_root, menu_name:gsub("%%", state))
+					end
+				end
+
+				state_change = util.current_time_millis()
+				state_values[choice] = value
+			end, choice == choices[1])
+		end
+
+		util.create_tick_handler(function()
+			if util.current_time_millis() - state_change > 500 then
+				local has_choice = false
+				for _, choice in pairs(choices) do
+					if state_values[choice] then has_choice = true end
+				end
+				if not has_choice then menu.trigger_commands(command_name .. Ryan.Basics.StringToCommandName(choices[1]) .. " on") end
+				state_change = 2147483647
+			end
+		end)
+
+		on_update(state)
+		return choices_root
 	end
 }

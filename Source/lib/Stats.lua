@@ -37,7 +37,7 @@ Ryan.Stats = {
 
     SetMCClutter = function(command, click_type, amount)
         menu.show_warning(command, click_type, "Make sure you have at least 1 unit of stock to sell, in every business, before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell all of those, one by one.", function()
-            for i=0, 5 do
+            for i = 0, 5 do
                 Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BKR_SELL_EARNINGS" .. i), amount)
     
                 if i == 0 then i = "" end
