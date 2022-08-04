@@ -113,313 +113,123 @@ Ryan.Vehicle = {
         end
     end,
 
+    MakeBlind = function(vehicle)
+        local driver = PED.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+
+        PED.SET_DRIVER_AGGRESSIVENESS(driver, 1.0)
+        local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(vehicle), {x = math.random(-500, 500), y = math.random(-500, 500), z = 0})
+        TASK.TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE(driver, vehicle, coords.x, coords.y, coords.z, 150.0, 524800, 20.0)
+
+        --TASK.TASK_VEHICLE_DRIVE_WANDER(driver, vehicle, 10.0, 4719104)
+        --MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false)
+    end,
+
     Modify = function(vehicle, action, take_control_loop)
         if take_control_loop then Ryan.Entity.RequestControlLoop(vehicle)
         else Ryan.Entity.RequestControl(vehicle) end
         
         if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then action(vehicle) end
     end,
-    
-    CreateEffectTable = function(more_effects)
-        effects = {
-            ["speed"] = nil,
-            ["grip"] = nil,
-            ["doors"] = nil,
-            ["tires"] = nil,
-            ["engine"] = nil,
-            ["upgrades"] = nil,
-            ["godmode"] = nil,
-            ["gravity"] = nil,
-            ["catapult"] = nil,
-            ["alarm"] = nil,
-            ["delete"] = nil
-        }
-        for key, value in pairs(more_effects) do effects[key] = value end
-        return effects
+
+    CreateEffectChoice = function(root, command_prefix, player_name, effects, effect_name, effect_description, options, multi)
+        if multi then
+            command_prefix = command_prefix .. Ryan.Basics.CommandName(effect_name)
+            local effect_root = menu.list(root, effect_name .. "...", {command_prefix}, effect_description)
+            for _, choice in pairs(options) do
+                if effects[Ryan.Basics.TableName(effect_name)] == nil then effects[Ryan.Basics.TableName(effect_name)] = {} end
+
+                Ryan.Basics.CreateSavableChoiceWithDefault(effect_root, choice .. ": %", command_prefix .. Ryan.Basics.TableName(choice), "", Ryan.Globals.ActivationModes, function(value)
+                    effects[Ryan.Basics.TableName(effect_name)][Ryan.Basics.TableName(choice)] = value
+                end)
+            end
+        else
+            local effect_root = menu.list(root, effect_name .. ": -", {command_prefix}, effect_description)
+            for _, choice in pairs(options) do
+                menu.toggle(effect_root, choice, {command_prefix .. Ryan.Basics.CommandName(choice)}, "", function(value)
+                    if value then
+                        for _, other_choice in pairs(options) do
+                            if other_choice ~= choice then
+                                Ryan.Basics.RunCommands({command_prefix .. Ryan.Basics.CommandName(other_choice .. player_name) .. " off"})
+                            end
+                        end
+                        util.yield(500)
+                        effects[Ryan.Basics.TableName(effect_name)] = Ryan.Basics.TableName(choice)
+                        menu.set_menu_name(effect_root, effect_name .. ": " .. choice)
+                    else
+                        effects[Ryan.Basics.TableName(effect_name)] = nil
+                        menu.set_menu_name(effect_root, effect_name .. ": -")
+                    end
+                end)
+            end
+        end
     end,
 
-    CreateEffectList = function(root, command_prefix, player_name, effects, enable_risky)
-        -- Speed
-        local speed_root = menu.list(root, "Speed: -", {command_prefix .. "speed"}, "Changes the speed of the vehicle.")
-        menu.toggle(speed_root, "Fast", {command_prefix .. "speedfast"}, "Makes the speed extremely fast.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "speednormal" .. player_name .. " off",
-                    command_prefix .. "speedslow" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.speed = "fast"
-                menu.set_menu_name(speed_root, "Speed: Fast")
-            else
-                effects.speed = nil
-                menu.set_menu_name(speed_root, "Speed: -")
-            end
-        end)
-        menu.toggle(speed_root, "Slow", {command_prefix .. "speedslow"}, "Makes the speed extremely slow.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .."speedfast" .. player_name .. " off",
-                    command_prefix .."speednormal" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.speed = "slow"
-                menu.set_menu_name(speed_root, "Speed: Slow")
-            else
-                effects.speed = nil
-                menu.set_menu_name(speed_root, "Speed: -")
-            end
-        end)
-        menu.toggle(speed_root, "Normal", {command_prefix .. "speednormal"}, "Makes the speed normal again.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "speedfast" .. player_name .. " off",
-                    command_prefix .. "speedslow" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.speed = "normal"
-                menu.set_menu_name(speed_root, "Speed: Normal")
-            else
-                effects.speed = nil
-                menu.set_menu_name(speed_root, "Speed: -")
-            end
-        end)
-
-        -- Grip
-        local grip_root = menu.list(root, "Grip: -", {command_prefix .. "grip"}, "Changes the grip of the vehicle's tires.")
-        menu.toggle(grip_root, "None", {command_prefix .. "gripnone"}, "Makes the tires have no grip.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "gripnormal" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.grip = "none"
-                menu.set_menu_name(grip_root, "Grip: None")
-            else
-                effects.grip = nil
-                menu.set_menu_name(grip_root, "Grip: -")
-            end
-        end)
-        menu.toggle(grip_root, "Normal", {command_prefix .. "gripnormal"}, "Makes the grip normal again.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "gripnone" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.grip = "normal"
-                menu.set_menu_name(grip_root, "Grip: Normal")
-            else
-                effects.grip = nil
-                menu.set_menu_name(grip_root, "Grip: -")
-            end
-        end)
-
-        -- Doors
-        local doors_root = menu.list(root, "Doors: -", {command_prefix .. "doors"}, "Changes the vehicle's door lock state.")
-        menu.toggle(doors_root, "Lock", {command_prefix .. "doorslock"}, "Locks the vehicle's doors.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "doorsunlock" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.doors = "lock"
-                menu.set_menu_name(doors_root, "Doors: Lock")
-            else
-                effects.doors = nil
-                menu.set_menu_name(doors_root, "Doors: -")
-            end
-        end)
-        menu.toggle(doors_root, "Unlock", {command_prefix .. "doorsunlock"}, "Unlocks the vehicle's doors.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "doorslock" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.doors = "unlock"
-                menu.set_menu_name(doors_root, "Doors: Unlock")
-            else
-                effects.doors = nil
-                menu.set_menu_name(doors_root, "Doors: -")
-            end
-        end)
-
-        -- Tires
-        local tires_root = menu.list(root, "Tires: -", {command_prefix .. "tires"}, "Changes the vehicle's tire health.")
-        menu.toggle(tires_root, "Burst", {command_prefix .. "tiresburst"}, "Makes the vehicle's tires burst.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "tiresfix" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.tires = "burst"
-                menu.set_menu_name(tires_root, "Tires: Burst")
-            else
-                effects.tires = nil
-                menu.set_menu_name(tires_root, "Tires: -")
-            end
-        end)
-        menu.toggle(tires_root, "Fix", {command_prefix .. "tiresfix"}, "Fixes the vehicle's tires.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "tiresburst" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.tires = "fix"
-                menu.set_menu_name(tires_root, "Tires: Fix")
-            else
-                effects.tires = nil
-                menu.set_menu_name(tires_root, "Tires: -")
-            end
-        end)
-
-        -- Engine
-        local engine_root = menu.list(root, "Engine: -", {command_prefix .. "engine"}, "Changes the vehicle's engine health.")
-        menu.toggle(engine_root, "Kill", {command_prefix .. "enginekill"}, "Makes the vehicle's engine die.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "enginefix" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.engine = "kill"
-                menu.set_menu_name(engine_root, "Engine: Kill")
-            else
-                effects.engine = nil
-                menu.set_menu_name(engine_root, "Engine: -")
-            end
-        end)
-        menu.toggle(engine_root, "Fix", {command_prefix .. "enginefix"}, "Fixes the vehicle's engine.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "enginekill" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.engine = "fix"
-                menu.set_menu_name(engine_root, "Engine: Fix")
-            else
-                effects.engine = nil
-                menu.set_menu_name(engine_root, "Engine: -")
-            end
-        end)
-
-        -- Upgrades
-        if enable_risky then
-            local upgrades_root = menu.list(root, "Upgrades: -", {command_prefix .. "upgrades"}, "Changes the vehicle's upgrades.")
-            menu.toggle(upgrades_root, "All", {command_prefix .. "upgradesall"}, "Fully upgrades the vehicle.", function(value)
-                if value then
-                    Ryan.Basics.RunCommands({
-                        command_prefix .. "upgradesnone" .. player_name .. " off"
-                    })
-                    util.yield(250)
-                    effects.upgrades = "all"
-                    menu.set_menu_name(upgrades_root, "Upgrades: All")
-                else
-                    effects.upgrades = nil
-                    menu.set_menu_name(upgrades_root, "Upgrades: -")
-                end
+    CreateEffectToggle = function(root, command_prefix, effects, effect_name, effect_description, multi)
+        if multi then
+            Ryan.Basics.CreateSavableChoiceWithDefault(root, effect_name .. ": %", command_prefix .. Ryan.Basics.TableName(effect_name), "", Ryan.Globals.ActivationModes, function(value)
+                effects[Ryan.Basics.TableName(effect_name)] = value
             end)
-            menu.toggle(upgrades_root, "None", {command_prefix .. "upgradesnone"}, "Fully downgrades the vehicle.", function(value)
-                if value then
-                    Ryan.Basics.RunCommands({
-                        command_prefix .. "upgradesall" .. player_name .. " off"
-                    })
-                    util.yield(250)
-                    effects.upgrades = "none"
-                    menu.set_menu_name(upgrades_root, "Upgrades: None")
-                else
-                    effects.upgrades = nil
-                    menu.set_menu_name(upgrades_root, "Upgrades: -")
-                end
-            end)
-
-            -- Godmode
-            local godmode_root = menu.list(root, "Godmode: -", {command_prefix .. "godmode"}, "Changes the vehicle's godmode state.")
-            menu.toggle(godmode_root, "On", {command_prefix .. "godmodeon"}, "Makes the vehicle indestructible.", function(value)
-                if value then
-                    Ryan.Basics.RunCommands({
-                        command_prefix .. "godmodeoff" .. player_name .. " off"
-                    })
-                    util.yield(250)
-                    effects.godmode = "on"
-                    menu.set_menu_name(godmode_root, "Godmode: On")
-                else
-                    effects.godmode = nil
-                    menu.set_menu_name(godmode_root, "Godmode: -")
-                end
-            end)
-            menu.toggle(godmode_root, "Off", {command_prefix .. "godmodeoff"}, "Makes the vehicle destructible.", function(value)
-                if value then
-                    Ryan.Basics.RunCommands({
-                        command_prefix .. "godmodeon" .. player_name .. " off"
-                    })
-                    util.yield(250)
-                    effects.godmode = "off"
-                    menu.set_menu_name(godmode_root, "Godmode: Off")
-                else
-                    effects.godmode = nil
-                    menu.set_menu_name(godmode_root, "Godmode: -")
-                end
+        else
+            menu.toggle(root, effect_name, {command_prefix .. Ryan.Basics.CommandName(effect_name)}, effect_description, function(value)
+                effects[Ryan.Basics.TableName(effect_name)] = value
             end)
         end
-
-        -- Gravity
-        local gravity_root = menu.list(root, "Gravity: -", {command_prefix .. "gravity"}, "Changes the vehicle's gravity.")
-        menu.toggle(gravity_root, "None", {command_prefix .. "gravitynone"}, "Disables gravity on the vehicle.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "gravitynormal" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.gravity = "none"
-                menu.set_menu_name(gravity_root, "Gravity: None")
-            else
-                effects.gravity = nil
-                menu.set_menu_name(gravity_root, "Gravity: -")
-            end
-        end)
-        menu.toggle(gravity_root, "Normal", {command_prefix .. "gravitynormal"}, "Enables gravity on the vehicle.", function(value)
-            if value then
-                Ryan.Basics.RunCommands({
-                    command_prefix .. "gravitynone" .. player_name .. " off"
-                })
-                util.yield(250)
-                effects.gravity = "normal"
-                menu.set_menu_name(gravity_root, "Gravity: Normal")
-            else
-                effects.gravity = nil
-                menu.set_menu_name(gravity_root, "Gravity: -")
-            end
-        end)
-
-        -- Alarm
-        menu.toggle(root, "Theft Alarm", {command_prefix .. "alarm"}, "Triggers the vehicle's theft alarm.", function(value)
-            effects.alarm = value
-        end)
-
-        -- Catapult
-        menu.toggle(root, "Catapult", {command_prefix .. "catapult"}, "Catapults the vehicle non-stop.", function(value)
-            effects.catapult = value
-        end)
-
-        -- Delete
-        menu.toggle(root, "Delete", {command_prefix .. "delete"}, "Deletes their vehicle.", function(value)
-            effects.delete = value
-        end)
     end,
 
-    ApplyEffects = function(vehicle, effects, state, is_a_player)
+    CreateEffectList = function(root, command_prefix, player_name, effects, enable_risky, multi)
+        Ryan.Vehicle.CreateEffectChoice(root, command_prefix, player_name, effects, "Speed", "Change the speed of the vehicle.", {"Fast", "Slow", "Normal"}, multi)
+        Ryan.Vehicle.CreateEffectChoice(root, command_prefix, player_name, effects, "Grip", "Change the grip of the vehicle's tires.", {"None", "Normal"}, multi)
+        Ryan.Vehicle.CreateEffectChoice(root, command_prefix, player_name, effects, "Doors", "Change the vehicle's door lock state.", {"Lock", "Unlock"}, multi)
+        Ryan.Vehicle.CreateEffectChoice(root, command_prefix, player_name, effects, "Tires", "Change the vehicle's tire health.", {"Burst", "Fix"}, multi)
+        Ryan.Vehicle.CreateEffectChoice(root, command_prefix, player_name, effects, "Engine", "Change the vehicle's engine health.", {"Kill", "Fix"}, multi)
+        Ryan.Vehicle.CreateEffectChoice(root, command_prefix, player_name, effects, "Upgrades", "Change the vehicle's upgrades.", {"All", "None"}, multi)
+        Ryan.Vehicle.CreateEffectChoice(root, command_prefix, player_name, effects, "Godmode", "Change the vehicle's upgrades.", {"On", "Off"}, multi)
+        Ryan.Vehicle.CreateEffectChoice(root, command_prefix, player_name, effects, "Gravity", "Change the vehicle's gravity.", {"None", "Normal"}, multi)
+        Ryan.Vehicle.CreateEffectToggle(root, command_prefix, effects, "Theft Alarm", "Triggers the vehicle's theft alarm.", multi)
+        Ryan.Vehicle.CreateEffectToggle(root, command_prefix, effects, "Catapult", "Catapults the vehicle non-stop.", multi)
+        Ryan.Vehicle.CreateEffectToggle(root, command_prefix, effects, "Delete", "Deletes their vehicle.", multi)
+    end,
+
+    ParseEffects = function(effects, multi)
+        local parsed = {}
+        for effect, value in pairs(effects) do
+            if multi then
+                if type(value) == "table" then
+                    if parsed[effect] == nil then parsed[effect] = {} end
+                    for choice, mode in pairs(value) do
+                        parsed[effect][choice] = is_activated(mode)
+                    end
+                else
+                    parsed[effect] = is_activated(value)
+                end
+            else
+                if type(value) == "boolean" then
+                    parsed[effect] = value
+                else
+                    if parsed[effect] == nil then parsed[effect] = {} end
+                    parsed[effect][value] = true
+                end
+            end
+        end
+        return parsed
+    end,
+
+    ApplyEffects = function(vehicle, effects, state, is_a_player, multi)
         if state[vehicle] == nil then state[vehicle] = {} end
+        local parsed = Ryan.Vehicle.ParseEffects(effects, multi)
 
         -- Speed
-        if effects.speed == "fast" and (not is_a_player or state[vehicle].speed ~= "fast") then
+        if parsed.speed and parsed.speed.fast and (not is_a_player or state[vehicle].speed ~= "fast") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Fast)
                 state[vehicle].speed = "fast"
             end, is_a_player)
-        elseif effects.speed == "slow" and (not is_a_player or state[vehicle].speed ~= "slow") then
+        elseif parsed.speed and parsed.speed.slow and (not is_a_player or state[vehicle].speed ~= "slow") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Slow)
                 state[vehicle].speed = "slow"
             end, is_a_player)
-        elseif effects.speed == "normal" and (not is_a_player or state[vehicle].speed ~= "normal") then
+        elseif parsed.speed and parsed.speed.normal and (not is_a_player or state[vehicle].speed ~= "normal") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Normal)
                 state[vehicle].speed = "normal"
@@ -427,12 +237,12 @@ Ryan.Vehicle = {
         end
 
         -- Grip
-        if effects.grip == "none" and (not is_a_player or state[vehicle].grip ~= "none") then
+        if parsed.grip and parsed.grip.none and (not is_a_player or state[vehicle].grip ~= "none") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetNoGrip(vehicle, true)
                 state[vehicle].grip = "none"
             end, is_a_player)
-        elseif effects.grip == "normal" and (not is_a_player or state[vehicle].grip ~= "normal") then
+        elseif parsed.grip and parsed.grip.normal and (not is_a_player or state[vehicle].grip ~= "normal") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetNoGrip(vehicle, false)
                 state[vehicle].grip = "normal"
@@ -440,12 +250,12 @@ Ryan.Vehicle = {
         end
 
         -- Doors
-        if effects.doors == "lock" and (not is_a_player or state[vehicle].doors ~= "lock") then
+        if parsed.doors and parsed.doors.lock and (not is_a_player or state[vehicle].doors ~= "lock") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetDoorsLocked(vehicle, true)
                 state[vehicle].doors = "lock"
             end, is_a_player)
-        elseif effects.doors == "unlock" and (not is_a_player or state[vehicle].doors ~= "unlock") then
+        elseif parsed.doors and parsed.doors.unlock and (not is_a_player or state[vehicle].doors ~= "unlock") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetDoorsLocked(vehicle, false)
                 state[vehicle].doors = "unlock"
@@ -453,12 +263,12 @@ Ryan.Vehicle = {
         end
 
         -- Tires
-        if effects.tires == "burst" and (not is_a_player or state[vehicle].tires ~= "burst") then
+        if parsed.tires and parsed.tires.burst and (not is_a_player or state[vehicle].tires ~= "burst") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetTiresBursted(vehicle, true)
                 state[vehicle].tires = "burst"
             end, is_a_player)
-        elseif effects.tires == "fix" and (not is_a_player or state[vehicle].tires ~= "fix") then
+        elseif parsed.tires and parsed.tires.fix and (not is_a_player or state[vehicle].tires ~= "fix") then
             Ryan.Vehicle.Modify(vehicle, function()
                 Ryan.Vehicle.SetTiresBursted(vehicle, false)
                 state[vehicle].tires = "fix"
@@ -466,12 +276,12 @@ Ryan.Vehicle = {
         end
 
         -- Engine
-        if effects.engine == "kill" and (not is_a_player or state[vehicle].engine ~= "kill") then
+        if parsed.engine and parsed.engine.kill and (not is_a_player or state[vehicle].engine ~= "kill") then
             Ryan.Vehicle.Modify(vehicle, function()
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
                 state[vehicle].engine = "kill"
             end, is_a_player)
-        elseif effects.engine == "fix" and (not is_a_player or state[vehicle].engine ~= "fix") then
+        elseif parsed.engine and parsed.engine.fix and (not is_a_player or state[vehicle].engine ~= "fix") then
             Ryan.Vehicle.Modify(vehicle, function()
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
                 state[vehicle].engine = "fix"
@@ -480,12 +290,12 @@ Ryan.Vehicle = {
 
         if enable_risky then
             -- Upgrades
-            if effects.upgrades == "all" and (not is_a_player or state[vehicle].upgrades ~= "all") then
+            if parsed.upgrades and parsed.upgrades.all and (not is_a_player or state[vehicle].upgrades ~= "all") then
                 Ryan.Vehicle.Modify(vehicle, function()
                     Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
                     state[vehicle].upgrades = "all"
                 end, is_a_player)
-            elseif effects.upgrades == "none" and (not is_a_player or state[vehicle].upgrades ~= "none") then
+            elseif parsed.upgrades and parsed.upgrades.none and (not is_a_player or state[vehicle].upgrades ~= "none") then
                 Ryan.Vehicle.Modify(vehicle, function()
                     Ryan.Vehicle.SetFullyUpgraded(vehicle, false)
                     state[vehicle].upgrades = "none"
@@ -494,12 +304,12 @@ Ryan.Vehicle = {
         end
 
         -- Godmode
-        if effects.godmode == "on" and (not is_a_player or state[vehicle].godmode ~= "on") then
+        if parsed.godmode and parsed.godmode.on and (not is_a_player or state[vehicle].godmode ~= "on") then
             Ryan.Vehicle.Modify(vehicle, function()
                 ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
                 state[vehicle].godmode = "on"
             end, is_a_player)
-        elseif effects.godmode == "off" and (not is_a_player or state[vehicle].godmode ~= "off") then
+        elseif parsed.godmode and parsed.godmode.off and (not is_a_player or state[vehicle].godmode ~= "off") then
             Ryan.Vehicle.Modify(vehicle, function()
                 ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
                 state[vehicle].godmode = "off"
@@ -507,13 +317,13 @@ Ryan.Vehicle = {
         end
 
         -- Gravity
-        if effects.gravity == "none" and (not is_a_player or state[vehicle].gravity ~= "on") then
+        if parsed.gravity and parsed.gravity.none and (not is_a_player or state[vehicle].gravity ~= "on") then
             Ryan.Vehicle.Modify(vehicle, function()
                 ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, false)
                 VEHICLE.SET_VEHICLE_GRAVITY(vehicle, false)
                 state[vehicle].gravity = "none"
             end, is_a_player)
-        elseif effects.gravity == "normal" and (not is_a_player or state[vehicle].gravity ~= "off") then
+        elseif parsed.gravity and parsed.gravity.normal and (not is_a_player or state[vehicle].gravity ~= "off") then
             Ryan.Vehicle.Modify(vehicle, function()
                 ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, true)
                 VEHICLE.SET_VEHICLE_GRAVITY(vehicle, true)
@@ -522,7 +332,7 @@ Ryan.Vehicle = {
         end
 
         -- Catapult (TODO: cooldown)
-        if effects.catapult then
+        if parsed.catapult then
             if VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
                 Ryan.Vehicle.Modify(vehicle, function()
                     Ryan.Vehicle.Catapult(vehicle)
@@ -531,7 +341,7 @@ Ryan.Vehicle = {
         end
 
         -- Alarm
-        if effects.alarm then
+        if parsed.alarm then
             if not VEHICLE.IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
                 Ryan.Vehicle.Modify(vehicle, function()
                     VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
@@ -541,7 +351,7 @@ Ryan.Vehicle = {
         end
 
         -- Delete
-        if effects.delete then
+        if parsed.delete then
             entities.delete_by_handle(vehicle)
         end
     end

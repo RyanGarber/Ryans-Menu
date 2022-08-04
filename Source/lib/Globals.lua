@@ -233,6 +233,14 @@ Ryan.Globals = {
         "Crash"
     },
 
+    ActivationModes = {
+        "Off",
+        "Look",
+        "Hold E",
+        "Hold G",
+        "Hold X"
+    },
+
     NPCScenarios = {
         "Off",
         "Musician",

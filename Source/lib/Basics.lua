@@ -57,7 +57,7 @@ Ryan.Basics = {
 		return shuffled
 	end,
 
-	StringToCommandName = function(string)
+	CommandName = function(string)
 		return string:lower():gsub(" ", "")
 	end,
 
@@ -179,10 +179,10 @@ Ryan.Basics = {
 
 		local choices_root = menu.list(root, menu_name:gsub("%%", state), {command_name}, description)
 		for _, choice in pairs(choices) do
-			menu.toggle(choices_root, choice, {command_name .. Ryan.Basics.StringToCommandName(choice)}, "", function(value)
+			menu.toggle(choices_root, choice, {command_name .. Ryan.Basics.CommandName(choice)}, "", function(value)
 				if value then
 					if choice ~= state then
-						menu.trigger_commands(command_name .. Ryan.Basics.StringToCommandName(state) .. " off")
+						menu.trigger_commands(command_name .. Ryan.Basics.CommandName(state) .. " off")
 						util.yield(500)
 						state = choice
 						on_update(state)
@@ -201,12 +201,20 @@ Ryan.Basics = {
 				for _, choice in pairs(choices) do
 					if state_values[choice] then has_choice = true end
 				end
-				if not has_choice then menu.trigger_commands(command_name .. Ryan.Basics.StringToCommandName(choices[1]) .. " on") end
+				if not has_choice then menu.trigger_commands(command_name .. Ryan.Basics.CommandName(choices[1]) .. " on") end
 				state_change = 2147483647
 			end
 		end)
 
 		on_update(state)
 		return choices_root
+	end,
+
+	TableName = function(string)
+		return string:lower():gsub(" ", "_")
+	end,
+
+	Capitalize = function(string)
+		return string:gsub("(%l)(%w*)", function(a, b) return string.upper(a) .. b end)
 	end
 }

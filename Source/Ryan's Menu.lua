@@ -424,13 +424,14 @@ god_finger_target = nil
 
 god_finger_while_pointing = false
 god_finger_while_holding_caps = false
-god_finger_keybind_choices = {"Always", "Holding E", "Holding G", "Holding X"}
 
-god_finger_player_effects = {["kick"] = false, ["crash"] = false}
-god_finger_vehicle_effects = Ryan.Vehicle.CreateEffectTable({["flee"] = false, ["blind"] = false, ["steal"] = false })
-god_finger_npc_effects = {["nude"] = false, ["flee"] = false, ["delete"] = false}
-god_finger_world_effects = {["nude"] = false, ["brutality"] = false, ["fire"] = false}
-god_finger_force_effect = nil
+god_finger_player_effects = {}
+god_finger_vehicle_effects = {}
+god_finger_npc_effects = {}
+god_finger_world_effects = {}
+god_finger_force_effects = {}
+
+test_effects = {["speed"] = {["fast"] = "Hold E", ["slow"] = "Look"}, ["delete"] = "Hold G"}
 
 
 menu.divider(self_god_finger_root, "Activate")
@@ -451,55 +452,44 @@ self_god_finger_force_root = menu.list(self_god_finger_root, "Force", {"ryangodf
 
 
 -- -- Player
-menu.divider(self_god_finger_player_root, "Effects")
-menu.toggle(self_god_finger_player_root, "Kick", {"ryangodfingerplayerkick"}, "Kick the player.", function(value)
+Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_player_root, "Kick: %", "ryangodfingerplayerkick", "Kick the player.", Ryan.Globals.ActivationModes, function(value)
     god_finger_player_effects.kick = value
 end)
-menu.toggle(self_god_finger_player_root, "Crash", {"ryangodfingerplayercrash"}, "Crash the player.", function(value)
+Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_player_root, "Crash: %", "ryangodfingerplayercrash", "Crash the player to desktop.", Ryan.Globals.ActivationModes, function(value)
     god_finger_player_effects.crash = value
 end)
 
 -- -- Vehicle
-Ryan.Vehicle.CreateEffectList(self_god_finger_vehicle_root, "ryangodfingervehicle", "", god_finger_vehicle_effects, true)
-menu.toggle(self_god_finger_vehicle_root, "Steal", {"ryangodfingervehiclesteal"}, "Steals the vehicle.", function(value)
-    god_finger_vehicle_effects.steal = value
-end)
+Ryan.Vehicle.CreateEffectList(self_god_finger_vehicle_root, "ryangodfingervehicle", "", god_finger_vehicle_effects, true, true)
+Ryan.Vehicle.CreateEffectToggle(self_god_finger_vehicle_root, "ryangodfingervehicle", god_finger_vehicle_effects, "Steal", "Steal the vehicle.", true)
 
 -- -- World
-menu.toggle(self_god_finger_world_root, "Nude Yoga", {"ryangodfingerworldyoga"}, "Spawn a nude NPC doing yoga.", function(value)
+Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_world_root, "Nude Yoga: %", "ryangodfingerworldyoga", "Spawn a nude NPC doing yoga.", Ryan.Globals.ActivationModes, function(value)
     god_finger_world_effects.nude = value
 end)
-menu.toggle(self_god_finger_world_root, "Police Brutality", {"ryangodfingerworldbrutality"}, "Spawn a nude NPC doing yoga.", function(value)
+Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_world_root, "Police Brutality: %", "ryangodfingerworldbrutality", "Spawn a scene of police brutality.", Ryan.Globals.ActivationModes, function(value)
     god_finger_world_effects.brutality = value
 end)
-menu.toggle(self_god_finger_world_root, "Fire", {"ryangodfingerworldfire"}, "Start a fire.", function(value)
+Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_world_root, "Fire: %", "ryangodfingerworldfire", "Start a fire.", Ryan.Globals.ActivationModes, function(value)
     god_finger_world_effects.fire = value
 end)
 
 -- -- NPC
-menu.toggle(self_god_finger_npc_root, "Be Nude", {"ryangodfingernpcnude"}, "Make the NPC nude.", function(value)
+Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_npc_root, "Be Nude: %", "ryangodfingernpcnude", "Make the NPC nude.", Ryan.Globals.ActivationModes, function(value)
     god_finger_npc_effects.nude = value
 end)
-menu.toggle(self_god_finger_npc_root, "Flee", {"ryangodfingernpcflee"}, "Make the NPC flee the area.", function(value)
+Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_npc_root, "Flee: %", "ryangodfingernpcflee", "Make the NPC flee the area.", Ryan.Globals.ActivationModes, function(value)
     god_finger_npc_effects.flee = value
 end)
-menu.toggle(self_god_finger_npc_root, "Delete", {"ryangodfingernpcdelete"}, "Delete the NPC.", function(value)
+Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_npc_root, "Delete: %", "ryangodfingernpcdelete", "Delete the NPC.", Ryan.Globals.ActivationModes, function(value)
     god_finger_npc_effects.delete = value
 end)
 
 -- -- Force
 for _, mode in pairs(Ryan.Globals.GodFingerForces) do
-    menu.toggle(self_god_finger_force_root, mode, {"ryangodfingerforce" .. Ryan.Basics.StringToCommandName(mode)}, "", function(value)
-        if value then
-            if mode ~= god_finger_force_effect and god_finger_force_effect ~= nil then
-                menu.trigger_commands("ryangodfingerforce" .. Ryan.Basics.StringToCommandName(god_finger_force_effect) .. " off")
-                util.yield(500)
-                god_finger_force_effect = mode
-            end
-        else
-            god_finger_force_effect = nil
-        end
-    end, false)
+    Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_force_root, mode .. ": %", "ryangodfingerforce" .. Ryan.Basics.CommandName(mode), "", Ryan.Globals.ActivationModes, function(value)
+        god_finger_force_effects[mode:lower()] = value
+    end)
 end
 
 -- God Finger Handler
@@ -508,6 +498,37 @@ last_brutality = -1
 last_fire = -1
 
 god_finger_vehicle_state = {}
+god_finger_help = ""
+god_finger_last_help = 0
+
+function is_activated(mode)
+    if not god_finger_active then return false
+    elseif mode == "Look" then return true
+    elseif mode == "Hold E" then return PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleHorn)
+    elseif mode == "Hold G" then return PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.ThrowGrenade)
+    elseif mode == "Hold X" then return PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleDuck)
+    else return false end
+end
+
+function get_activatable(effects)
+    function get_control(mode)
+        if mode == "Hold E" then return "~INPUT_VEH_HORN~"
+        elseif mode == "Hold G" then return "~INPUT_THROW_GRENADE~"
+        elseif mode == "Hold X" then return "~INPUT_VEH_DUCK~" end
+    end
+
+    activatable = ""
+    for effect, value in pairs(effects) do
+        if type(value) == "table" then
+            for choice, mode in pairs(value) do
+                if mode:find("Hold") then activatable = activatable .. get_control(mode) .. " " .. choice .. " " .. effect .. "   " end
+            end
+        else
+            if value:find("Hold") then activatable = activatable .. get_control(value) .. " " .. effect .. "   " end
+        end
+    end
+    return activatable:sub(1, activatable:len() - 3)
+end
 
 util.create_tick_handler(function()
     for entity, start_time in pairs(entities_smashed) do
@@ -533,120 +554,135 @@ util.create_tick_handler(function()
         return
     end
 
+    local raycast = nil
+    local activatable = {}
     memory.write_int(memory.script_global(4521801 + 935), NETWORK.GET_NETWORK_TIME())
 
-    -- World
-    if god_finger_world_effects.nude then
-        if util.current_time_millis() - last_nude > 1500 then
-            last_nude = util.current_time_millis()
+    raycast = Ryan.Basics.Raycast(500.0, Ryan.Basics.RaycastFlags.World + Ryan.Basics.RaycastFlags.Objects)
 
-            local raycast = Ryan.Basics.Raycast(50.0)
-            if raycast.did_hit then
-                Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
-                Ryan.Basics.RequestAnimations("amb@world_human_yoga@female@base")
-                Ryan.Basics.RequestModel(util.joaat("a_m_y_acult_01"))
-                Ryan.Basics.RequestAnimations("switch@trevor@jerking_off")
+    if raycast.did_hit then
+        -- World
+        local activatable_world = get_activatable(god_finger_world_effects)
+        if activatable_world:len() > 0 then activatable["World"] = activatable_world end
 
-                local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
-                local ped = entities.create_ped(0, util.joaat("a_f_y_topless_01"), raycast.hit_coords, heading)
-                PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
-                TASK.TASK_PLAY_ANIM(ped, "amb@world_human_yoga@female@base", "base_a", 8.0, 0, -1, 9, 0, false, false, false)
+        if is_activated(god_finger_world_effects.nude) then
+            if util.current_time_millis() - last_nude > 1500 then
+                last_nude = util.current_time_millis()
 
-                local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
-                local ped = entities.create_ped(0, util.joaat("a_m_y_acult_01"), Ryan.Vector.Add(raycast.hit_coords, {x = -3, y = 0, z = 0}), heading)
-                PED.SET_PED_COMPONENT_VARIATION(ped, 4, 0, 0, 0)
-                PED.SET_PED_COMPONENT_VARIATION(ped, 8, 0, 0, 0)
-                TASK.TASK_PLAY_ANIM(ped, "switch@trevor@jerking_off", "trev_jerking_off_loop", 8.0, 0, -1, 9, 0, false, false, false)
-            end
-        end
-    end
+                local raycast = Ryan.Basics.Raycast(50.0)
+                if raycast.did_hit then
+                    Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
+                    Ryan.Basics.RequestAnimations("amb@world_human_yoga@female@base")
+                    Ryan.Basics.RequestModel(util.joaat("a_m_y_acult_01"))
+                    Ryan.Basics.RequestAnimations("switch@trevor@jerking_off")
 
-    if god_finger_world_effects.brutality then
-        if util.current_time_millis() - last_brutality > 1500 then
-            last_brutality = util.current_time_millis()
+                    local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
+                    local ped = entities.create_ped(0, util.joaat("a_f_y_topless_01"), raycast.hit_coords, heading)
+                    PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                    TASK.TASK_PLAY_ANIM(ped, "amb@world_human_yoga@female@base", "base_a", 8.0, 0, -1, 9, 0, false, false, false)
 
-            local raycast = Ryan.Basics.Raycast(50.0)
-            if raycast.did_hit then
-                Ryan.Basics.RequestModel(util.joaat("g_m_y_famfor_01"))
-                Ryan.Basics.RequestAnimations("missheistdockssetup1ig_13@main_action")
-                Ryan.Basics.RequestModel(util.joaat("s_f_y_cop_01"))
-                Ryan.Basics.RequestAnimations("move_m@intimidation@cop@unarmed")
-
-                local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
-
-                civilians = {}
-                for i = 1, 3 do
-                    local civilian = entities.create_ped(0, util.joaat("g_m_y_famfor_01"), Ryan.Vector.Add(raycast.hit_coords, {x = i, y = math.random(-1, 1), z = 0}), heading)
-                    PED.SET_PED_RELATIONSHIP_GROUP_HASH(civilian, util.joaat("g_m_y_famfor_01"))
-                    PED.SET_PED_COMPONENT_VARIATION(civilian, 8, 1, -1, 0)
-                    animations = {"guard_beatup_mainaction_dockworker", "guard_beatup_mainaction_guard1", "guard_beatup_mainaction_guard2"}
-                    TASK.TASK_PLAY_ANIM(civilian, "missheistdockssetup1ig_13@main_action", animations[i], 8.0, 0, -1, 9, 0, false, false, false)
-                    
-                    table.insert(civilians, civilian)
+                    local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
+                    local ped = entities.create_ped(0, util.joaat("a_m_y_acult_01"), Ryan.Vector.Add(raycast.hit_coords, {x = -3, y = 0, z = 0}), heading)
+                    PED.SET_PED_COMPONENT_VARIATION(ped, 4, 0, 0, 0)
+                    PED.SET_PED_COMPONENT_VARIATION(ped, 8, 0, 0, 0)
+                    TASK.TASK_PLAY_ANIM(ped, "switch@trevor@jerking_off", "trev_jerking_off_loop", 8.0, 0, -1, 9, 0, false, false, false)
                 end
+            end
+        end
 
-                util.yield(750)
+        if is_activated(god_finger_world_effects.brutality) then
+            if util.current_time_millis() - last_brutality > 1500 then
+                last_brutality = util.current_time_millis()
 
-                cops = {}
-                for i = 1, 4 do
-                    local cop = entities.create_ped(0, util.joaat("s_f_y_cop_01"), Ryan.Vector.Add(raycast.hit_coords, {x = 3 + i, y = math.random(-1, 1), z = 0}), heading)
-                    PED.SET_PED_RELATIONSHIP_GROUP_HASH(cop, util.joaat("s_f_y_cop_01"))
-                    PED.SET_PED_COMPONENT_VARIATION(cop, 8, 1, -1, 0)
-                    TASK.TASK_PLAY_ANIM(cop, "move_m@intimidation@cop@unarmed", "idle", 8.0, 0, -1, 9, 0, false, false, false)
+                local raycast = Ryan.Basics.Raycast(50.0)
+                if raycast.did_hit then
+                    Ryan.Basics.RequestModel(util.joaat("g_m_y_famfor_01"))
+                    Ryan.Basics.RequestAnimations("missheistdockssetup1ig_13@main_action")
+                    Ryan.Basics.RequestModel(util.joaat("s_f_y_cop_01"))
+                    Ryan.Basics.RequestAnimations("move_m@intimidation@cop@unarmed")
 
-                    WEAPON.GIVE_WEAPON_TO_PED(cop, util.joaat("weapon_appistol"), 1000, false, true)
-                    PED.SET_PED_COMBAT_ATTRIBUTES(cop, 5, true)
-                    PED.SET_PED_COMBAT_ATTRIBUTES(cop, 46, true)
+                    local heading = ENTITY.GET_ENTITY_HEADING(Ryan.Player.GetPed())
 
-                    Ryan.Entity.FaceEntity(cop, civilian, false)
-                    Ryan.Entity.FaceEntity(civilian, cop, false)
+                    civilians = {}
+                    for i = 1, 3 do
+                        local civilian = entities.create_ped(0, util.joaat("g_m_y_famfor_01"), Ryan.Vector.Add(raycast.hit_coords, {x = i, y = math.random(-1, 1), z = 0}), heading)
+                        PED.SET_PED_RELATIONSHIP_GROUP_HASH(civilian, util.joaat("g_m_y_famfor_01"))
+                        PED.SET_PED_COMPONENT_VARIATION(civilian, 8, 1, -1, 0)
+                        animations = {"guard_beatup_mainaction_dockworker", "guard_beatup_mainaction_guard1", "guard_beatup_mainaction_guard2"}
+                        TASK.TASK_PLAY_ANIM(civilian, "missheistdockssetup1ig_13@main_action", animations[i], 8.0, 0, -1, 9, 0, false, false, false)
+                        
+                        table.insert(civilians, civilian)
+                    end
 
-                    table.insert(cops, cop)
+                    util.yield(750)
+
+                    cops = {}
+                    for i = 1, 4 do
+                        local cop = entities.create_ped(0, util.joaat("s_f_y_cop_01"), Ryan.Vector.Add(raycast.hit_coords, {x = 3 + i, y = math.random(-1, 1), z = 0}), heading)
+                        PED.SET_PED_RELATIONSHIP_GROUP_HASH(cop, util.joaat("s_f_y_cop_01"))
+                        PED.SET_PED_COMPONENT_VARIATION(cop, 8, 1, -1, 0)
+                        TASK.TASK_PLAY_ANIM(cop, "move_m@intimidation@cop@unarmed", "idle", 8.0, 0, -1, 9, 0, false, false, false)
+
+                        WEAPON.GIVE_WEAPON_TO_PED(cop, util.joaat("weapon_appistol"), 1000, false, true)
+                        PED.SET_PED_COMBAT_ATTRIBUTES(cop, 5, true)
+                        PED.SET_PED_COMBAT_ATTRIBUTES(cop, 46, true)
+
+                        Ryan.Entity.FaceEntity(cop, civilian, false)
+                        Ryan.Entity.FaceEntity(civilian, cop, false)
+
+                        table.insert(cops, cop)
+                    end
+
+                    util.yield(750)
+
+                    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("g_m_y_famfor_01"), util.joaat("s_f_y_cop_01"))
+                    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("s_f_y_cop_01"), util.joaat("g_m_y_famfor_01"))
+                    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, util.joaat("s_f_y_cop_01"), util.joaat("s_f_y_cop_01"))
+                    for i = 1, #cops do TASK.TASK_COMBAT_PED(cops[i], civilians[i], 0, 16) end
                 end
+            end
+        end
 
-                util.yield(750)
+        if is_activated(god_finger_world_effects.fire) then
+            if util.current_time_millis() - last_fire > 750 then
+                last_fire = util.current_time_millis()
 
-                PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("g_m_y_famfor_01"), util.joaat("s_f_y_cop_01"))
-                PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("s_f_y_cop_01"), util.joaat("g_m_y_famfor_01"))
-                PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, util.joaat("s_f_y_cop_01"), util.joaat("s_f_y_cop_01"))
-                for i = 1, #cops do TASK.TASK_COMBAT_PED(cops[i], civilians[i], 0, 16) end
+                local raycast = Ryan.Basics.Raycast(250.0)
+                if raycast.did_hit then
+                    if raycast.hit_entity then FIRE.START_ENTITY_FIRE(raycast.hit_entity) end
+                    FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
+                end
             end
         end
     end
 
-    if god_finger_world_effects.fire then
-        if util.current_time_millis() - last_fire > 750 then
-            last_fire = util.current_time_millis()
-
-            local raycast = Ryan.Basics.Raycast(250.0)
-            if raycast.did_hit then
-                if raycast.hit_entity then FIRE.START_ENTITY_FIRE(raycast.hit_entity) end
-                FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
-            end
-        end
-    end
-
-    local raycast = Ryan.Basics.Raycast(500.0, Ryan.Basics.RaycastFlags.Vehicles + Ryan.Basics.RaycastFlags.Peds + Ryan.Basics.RaycastFlags.Objects)
-    if raycast.did_hit and raycast.hit_entity then
+    raycast = Ryan.Basics.Raycast(500.0, Ryan.Basics.RaycastFlags.Vehicles + Ryan.Basics.RaycastFlags.Peds + Ryan.Basics.RaycastFlags.Objects)
+    if raycast.did_hit then
         god_finger_target = raycast.hit_coords
         Ryan.Entity.DrawESP(raycast.hit_entity, esp_color)
 
         if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
             local ped = raycast.hit_entity
 
-            -- Player
             if PED.IS_PED_A_PLAYER(ped) then
+                -- Player
+                local activatable_player = get_activatable(god_finger_player_effects)
+                if activatable_player:len() > 0 then activatable["Player"] = activatable_player end
+
                 local player_id = NETWORK.NETWORK_GET_PLAYER_INDEX_FROM_PED(ped)
                 local player_name = players.get_name(player_id)
-                if god_finger_player_effects.kick then
+                if is_activated(god_finger_player_effects.kick) then
                     Ryan.Basics.RunCommands({"kick" .. player_name})
                 end
-                if god_finger_player_effects.crash then
+                if is_activated(god_finger_player_effects.crash) then
                     Ryan.Basics.RunCommands({"ngcrash" .. player_name, "footlettuce" .. player_name})
                 end
-            -- Ped
             else
-                if god_finger_npc_effects.nude then
+                -- NPC
+                local activatable_npc = get_activatable(god_finger_npc_effects)
+                if activatable_npc:len() > 0 then activatable["NPC"] = activatable_npc end
+
+                if is_activated(god_finger_npc_effects.nude) then
                     local heading = ENTITY.GET_ENTITY_HEADING(ped)
                     local coords = ENTITY.GET_ENTITY_COORDS(ped)
                     
@@ -659,51 +695,40 @@ util.create_tick_handler(function()
                     TASK.TASK_WANDER_STANDARD(ped, 10.0, 10)
                 end
                 
-                if god_finger_npc_effects.flee then
+                if is_activated(god_finger_npc_effects.flee) then
                     TASK.TASK_SMART_FLEE_PED(ped, Ryan.Player.GetPed(), 500.0, -1, false, false)
                 end
                 
-                if god_finger_npc_effects.delete then
+                if is_activated(god_finger_npc_effects.delete) then
                     entities.delete_by_handle(ped)
                 end
             end
         end
 
-        -- Vehicle
         if ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
+            -- Vehicle
+            local activatable_vehicle = get_activatable(god_finger_vehicle_effects)
+            if activatable_vehicle:len() > 0 then activatable["Vehicle"] = activatable_vehicle end
+
             local vehicle = raycast.hit_entity
             local is_a_player = PED.IS_PED_A_PLAYER(VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1))
     
-            Ryan.Vehicle.ApplyEffects(vehicle, god_finger_vehicle_effects, god_finger_vehicle_state, is_a_player)
-
-            -- Flee
-            if god_finger_vehicle_effects.flee and not is_a_player and god_finger_vehicle_state[vehicle].flee ~= true then
-                TASK.TASK_SMART_FLEE_PED(driver, Ryan.Player.GetPed(), 500.0, -1, false, false)
-                god_finger_vehicle_state[vehicle].flee = true
-            end
-
-            -- Blind
-            if god_finger_vehicle_effects.blind and not is_a_player and (god_finger_vehicle_state[vehicle].blind ~= true or math.random(1, 10) >= 8) then
-                PED.SET_DRIVER_AGGRESSIVENESS(driver, 1.0)
-                local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(vehicle), {x = math.random(-500, 500), y = math.random(-500, 500), z = 0})
-                --TASK.TASK_VEHICLE_DRIVE_WANDER(driver, vehicle, 10.0, 4719104)
-                --MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false)
-                TASK.TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE(driver, vehicle, coords.x, coords.y, coords.z, 150.0, 524800, 20.0)
-
-                god_finger_vehicle_state[vehicle].blind = true
-            end
+            Ryan.Vehicle.ApplyEffects(vehicle, god_finger_vehicle_effects, god_finger_vehicle_state, is_a_player, true)
 
             -- Steal
-            if god_finger_vehicle_effects.steal and ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
+            if is_activated(god_finger_vehicle_effects.steal) and ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
                 Ryan.Vehicle.Steal(raycast.hit_entity)
                 return
             end
         end
 
         -- Force
-        if god_finger_force_effect == "Default" then
+        local activatable_force = get_activatable(god_finger_force_effects)
+        if activatable_force:len() > 0 then activatable["Force"] = activatable_force end
+
+        if is_activated(god_finger_force_effects.default) then
             FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 29, 25.0, false, true, 0.0, true)
-        elseif god_finger_force_effect == "Push" then -- Push entities away
+        elseif is_activated(god_finger_force_effects.push) then -- Push entities away
             local entity_coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
             local force = Ryan.Vector.Normalize(Ryan.Vector.Subtract(entity_coords, ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())))
             force = Ryan.Vector.Multiply(force, 0.4)
@@ -717,7 +742,7 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif god_finger_force_effect == "Pull" then -- Pull entities in
+        elseif is_activated(god_finger_force_effects.pull) then -- Pull entities in
             local entity_coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
             local force = Ryan.Vector.Normalize(Ryan.Vector.Subtract(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed()), entity_coords))
             force = Ryan.Vector.Multiply(force, 0.4)
@@ -731,12 +756,12 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif god_finger_force_effect == "Spin" then -- Spin entities around
+        elseif is_activated(god_finger_force_effects.spin) then -- Spin entities around
             if not ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.SET_ENTITY_HEADING(raycast.hit_entity, ENTITY.GET_ENTITY_HEADING(raycast.hit_entity) + 2.5)
             end
-        elseif god_finger_force_effect == "Up" then -- Force entities into air
+        elseif is_activated(god_finger_force_effects.up) then -- Force entities into air
             local force = {x = 0, y = 0, z = 0.5}
             if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
@@ -748,7 +773,7 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif god_finger_force_effect == "Down" then -- Force entities into ground
+        elseif is_activated(god_finger_force_effects.down) then -- Force entities into ground
             local force = {x = 0, y = 0, z = -2}
             if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
@@ -760,12 +785,12 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif god_finger_force_effect == "Smash" then -- Smash entities into ground
+        elseif is_activated(god_finger_force_effects.smash) then -- Smash entities into ground
             if entities_smashed[raycast.hit_entity] == nil or util.current_time_millis() - entities_smashed[raycast.hit_entity] > 2500 then
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 entities_smashed[raycast.hit_entity] = util.current_time_millis()
             end
-        elseif god_finger_force_effect == "Chaos" then -- Chaotic entities
+        elseif is_activated(god_finger_force_effects.chaos) then -- Chaotic entities
             if entities_chaosed[raycast.hit_entity] == nil or util.current_time_millis() - entities_chaosed[raycast.hit_entity] > 1000 then
                 local amount = 20
                 local force = {
@@ -785,7 +810,7 @@ util.create_tick_handler(function()
                 end
                 entities_chaosed[raycast.hit_entity] = util.current_time_millis()
             end
-        elseif god_finger_force_effect == "Explode" then -- Explode entities
+        elseif is_activated(god_finger_force_effects.explode) then -- Explode entities
             if entities_exploded[raycast.hit_entity] == nil then
                 local coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
                 FIRE.ADD_EXPLOSION(
@@ -797,6 +822,17 @@ util.create_tick_handler(function()
         end
     else
         god_finger_target = nil
+    end
+
+    local god_finger_help = ""
+    for category, effects in pairs(activatable) do
+        god_finger_help = god_finger_help .. "<b>" .. category .. ":</b>\n" .. Ryan.Basics.Capitalize(effects) .. "\n\n"
+    end
+    if god_finger_help:len() > 0 then
+        util.show_corner_help(god_finger_help:sub(0, god_finger_help:len() - 2))
+        god_finger_last_help = util.current_time_millis()
+    elseif util.current_time_millis() - god_finger_last_help > 1000 then
+        util.show_corner_help("No God Finger effects available.")
     end
 end)
 
@@ -837,10 +873,10 @@ end)
 -- -- Become Nude
 menu.action(self_root, "Become Nude", {"ryannude"}, "Make yourself a stripper with her tits out.", function()
     Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
-    local Vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(), false)
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(), false)
     local seat = -1 -- TODO
     PLAYER.SET_PLAYER_MODEL(players.user(), util.joaat("a_f_y_topless_01"))
-    util.yield(500)
+    util.yield(333)
     PED.SET_PED_COMPONENT_VARIATION(Ryan.Player.GetPed(), 8, 1, -1, 0)
     if vehicle ~= 0 then PED.SET_PED_INTO_VEHICLE(Ryan.Player.GetPed(), vehicle, seat) end
 end)
@@ -1138,7 +1174,7 @@ all_vehicles_include_npcs = true
 all_vehicles_include_players = false
 all_vehicles_include_own = false
 
-all_vehicles_effects = Ryan.Vehicle.CreateEffectTable({["flee"] = nil, ["blind"] = nil})
+all_vehicles_effects = {}
 
 menu.divider(world_all_vehicles_root, "Include")
 
@@ -1157,10 +1193,10 @@ menu.divider(world_all_vehicles_root, "Effects")
 
 Ryan.Vehicle.CreateEffectList(world_all_vehicles_root, "ryanall", "", all_vehicles_effects, false)
 menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Makes NPCs flee you.", function(value)
-    all_vehicles_effects["flee"] = value
+    all_vehicles_effects.flee = value
 end)
 menu.toggle(world_all_vehicles_root, "Blind", {"ryanallblind"}, "Makes NPCs blind and aggressive.", function(value)
-    all_vehicles_effects["blind"] = value
+    all_vehicles_effects.blind = value
 end)
 
 -- -- Apply Changes
@@ -1178,7 +1214,7 @@ util.create_tick_handler(function()
 
         if all_vehicles_include_own or vehicle ~= entities.get_user_vehicle_as_handle() then
             if (all_vehicles_include_players and is_a_player) or (all_vehicles_include_npcs and not is_a_player) then
-                Ryan.Vehicle.ApplyEffects(vehicle, all_vehicles_effects, all_vehicles_state, is_a_player)
+                Ryan.Vehicle.ApplyEffects(vehicle, all_vehicles_effects, all_vehicles_state, is_a_player, false)
 
                 -- Flee
                 if all_vehicles_effects.flee and not is_a_player and all_vehicles_state[vehicle].flee ~= true then
@@ -1188,12 +1224,7 @@ util.create_tick_handler(function()
 
                 -- Blind
                 if all_vehicles_effects.blind and not is_a_player and (all_vehicles_state[vehicle].blind ~= true or math.random(1, 10) >= 8) then
-                    PED.SET_DRIVER_AGGRESSIVENESS(driver, 1.0)
-                    local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(vehicle), {x = math.random(-500, 500), y = math.random(-500, 500), z = 0})
-                    --TASK.TASK_VEHICLE_DRIVE_WANDER(driver, vehicle, 10.0, 4719104)
-                    --MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false)
-                    TASK.TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE(driver, vehicle, coords.x, coords.y, coords.z, 150.0, 524800, 20.0)
-
+                    Ryan.Vehicle.MakeBlind(vehicle)
                     all_vehicles_state[vehicle].blind = true
                 end
             end
@@ -1941,9 +1972,9 @@ function setup_player(player_id)
     -- Trolling --
     local player_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")    
 
-    vehicle_effects[player_id] = Ryan.Vehicle.CreateEffectTable({["leash"] = nil})
-
+    vehicle_effects[player_id] = {}
     Ryan.Vehicle.CreateEffectList(player_vehicle_root, "ryan", players.get_name(player_id), vehicle_effects[player_id], true)
+
     menu.toggle(player_vehicle_root, "Leash", {"ryanleash"}, "Brings their vehicle with you like a leash.", function(value)
         vehicle_effects[player_id].leash = value and true or nil
     end)
@@ -2106,7 +2137,7 @@ util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id), true)
         if vehicle ~= 0 and vehicle_effects[player_id] ~= nil then
-            Ryan.Vehicle.ApplyEffects(vehicle, vehicle_effects[player_id], vehicle_state, true)
+            Ryan.Vehicle.ApplyEffects(vehicle, vehicle_effects[player_id], vehicle_state, true, false)
 
             -- Leash
             if vehicle_effects[player_id].leash == true then

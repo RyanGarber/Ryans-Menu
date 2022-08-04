@@ -11,6 +11,10 @@ Ryan.Vector = {
 		return {x = vector.x * amount, y = vector.y * amount, z = vector.z * amount}
 	end,
 
+	Divide = function(vector, amount)
+		return {x = vector.x / amount, y = vector.y / amount, z = vector.z / amount}
+	end,
+
 	Distance = function(vector_1, vector_2)
 		return Ryan.Vector.Magnitude(Ryan.Vector.Subtract(vector_1, vector_2))
 	end,
