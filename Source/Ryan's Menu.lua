@@ -529,17 +529,19 @@ util.create_tick_handler(function()
     if not god_finger_active then
         god_finger_target = nil;
         return
-    else
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.CharacterWheel, value)
-
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, true)
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Reload, true)
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleCinematicCamera, true)
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MeleeAttackLight, true)
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Enter, true)
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.LookBehind, true)
-        PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, true)
     end
+
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.CharacterWheel, god_finger_active)         -- Alt
+    
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, god_finger_active)            -- E
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Reload, god_finger_active)                 -- R
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MeleeAttackLight, god_finger_active)       -- R
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleCinematicCamera, god_finger_active) -- R
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Enter, god_finger_active)                  -- F
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleExit, god_finger_active)            -- F
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.LookBehind, god_finger_active)             -- C
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleLookBehind, god_finger_active)      -- C
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, god_finger_active)            -- X
 
     ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.default), false, false, false, 1, false)
 
@@ -823,6 +825,14 @@ util.create_tick_handler(function()
         god_finger_last_help = util.current_time_millis()
     elseif util.current_time_millis() - god_finger_last_help > 500 then
         util.show_corner_help("No God Finger effects available.")
+    end
+end)
+
+util.create_thread(function()
+    while true do
+        
+
+        util.yield()
     end
 end)
 
