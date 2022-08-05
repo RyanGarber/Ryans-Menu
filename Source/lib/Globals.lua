@@ -5,17 +5,32 @@ Ryan.Globals = {
     },
 
     Controls = {
-        CharacterWheel = 19,         -- Left Alt
+        CharacterWheel = 19,         -- Alt
+        MultiplayerInfo = 20,        -- Z
         Sprint = 21,                 -- Shift
         Enter = 23,                  -- F
         LookBehind = 26,             -- C
+        Cover = 44,                  -- Q
         Reload = 45,                 -- R
         VehicleDuck = 73,            -- X
         VehicleExit = 75,            -- F
         VehicleLookBehind = 79,      -- C
         VehicleCinematicCamera = 80, -- R
+        VehicleRadioWheel = 85,      -- Q
         VehicleHorn = 86,            -- E
         MeleeAttackLight = 140       -- R
+    },
+
+    ActivationModes = {
+        "Off",
+        "Look",
+        "Hold Q",
+        "Hold E",
+        "Hold R",
+        "Hold F",
+        "Hold C",
+        "Hold X",
+        "Hold Z"
     },
 
     CyrillicAlphabet = {
@@ -237,16 +252,6 @@ Ryan.Globals = {
         "Teleport Outside",
         "Kick",
         "Crash"
-    },
-
-    ActivationModes = {
-        "Off",
-        "Look",
-        "Hold E",
-        "Hold R",
-        "Hold F",
-        "Hold C",
-        "Hold X"
     },
 
     NPCScenarios = {

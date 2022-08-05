@@ -136,10 +136,10 @@ Ryan.Vehicle = {
             command_prefix = command_prefix .. Ryan.Basics.CommandName(effect_name)
             local effect_root = menu.list(root, effect_name .. "...", {command_prefix}, effect_description)
             for _, choice in pairs(options) do
-                if effects[Ryan.Basics.TableName(effect_name)] == nil then effects[Ryan.Basics.TableName(effect_name)] = {} end
+                if effects[Ryan.Basics.ToTableName(effect_name)] == nil then effects[Ryan.Basics.ToTableName(effect_name)] = {} end
 
-                Ryan.Basics.CreateSavableChoiceWithDefault(effect_root, choice .. ": %", command_prefix .. Ryan.Basics.TableName(choice), "", Ryan.Globals.ActivationModes, function(value)
-                    effects[Ryan.Basics.TableName(effect_name)][Ryan.Basics.TableName(choice)] = value
+                Ryan.Basics.CreateSavableChoiceWithDefault(effect_root, choice .. ": %", command_prefix .. Ryan.Basics.ToTableName(choice), "", Ryan.Globals.ActivationModes, function(value)
+                    effects[Ryan.Basics.ToTableName(effect_name)][Ryan.Basics.ToTableName(choice)] = value
                 end)
             end
         else
@@ -153,10 +153,10 @@ Ryan.Vehicle = {
                             end
                         end
                         util.yield(500)
-                        effects[Ryan.Basics.TableName(effect_name)] = Ryan.Basics.TableName(choice)
+                        effects[Ryan.Basics.ToTableName(effect_name)] = Ryan.Basics.ToTableName(choice)
                         menu.set_menu_name(effect_root, effect_name .. ": " .. choice)
                     else
-                        effects[Ryan.Basics.TableName(effect_name)] = nil
+                        effects[Ryan.Basics.ToTableName(effect_name)] = nil
                         menu.set_menu_name(effect_root, effect_name .. ": -")
                     end
                 end)
@@ -166,12 +166,12 @@ Ryan.Vehicle = {
 
     CreateEffectToggle = function(root, command_prefix, effects, effect_name, effect_description, multi)
         if multi then
-            Ryan.Basics.CreateSavableChoiceWithDefault(root, effect_name .. ": %", command_prefix .. Ryan.Basics.TableName(effect_name), "", Ryan.Globals.ActivationModes, function(value)
-                effects[Ryan.Basics.TableName(effect_name)] = value
+            Ryan.Basics.CreateSavableChoiceWithDefault(root, effect_name .. ": %", command_prefix .. Ryan.Basics.ToTableName(effect_name), "", Ryan.Globals.ActivationModes, function(value)
+                effects[Ryan.Basics.ToTableName(effect_name)] = value
             end)
         else
             menu.toggle(root, effect_name, {command_prefix .. Ryan.Basics.CommandName(effect_name)}, effect_description, function(value)
-                effects[Ryan.Basics.TableName(effect_name)] = value
+                effects[Ryan.Basics.ToTableName(effect_name)] = value
             end)
         end
     end,

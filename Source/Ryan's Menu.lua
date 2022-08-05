@@ -1,4 +1,4 @@
-VERSION = "0.9.3"
+VERSION = "0.9.4"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
@@ -505,6 +505,7 @@ last_fire = -1
 god_finger_vehicle_state = {}
 god_finger_help = ""
 god_finger_last_help = 0
+--god_finger_last_activation = 0
 
 util.create_tick_handler(function()
     for entity, start_time in pairs(entities_smashed) do
@@ -524,24 +525,15 @@ util.create_tick_handler(function()
     end
 
     god_finger_active = (god_finger_while_pointing     and player_is_pointing)
-                     or (god_finger_while_holding_alt  and util.is_key_down(0xA4))
+                     or (god_finger_while_holding_alt  and PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.CharacterWheel))
     
     if not god_finger_active then
         god_finger_target = nil;
         return
     end
 
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.CharacterWheel, god_finger_active)         -- Alt
-    
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, god_finger_active)            -- E
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Reload, god_finger_active)                 -- R
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MeleeAttackLight, god_finger_active)       -- R
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleCinematicCamera, god_finger_active) -- R
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Enter, god_finger_active)                  -- F
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleExit, god_finger_active)            -- F
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.LookBehind, god_finger_active)             -- C
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleLookBehind, god_finger_active)      -- C
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, god_finger_active)            -- X
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.CharacterWheel, true)
+    Ryan.Basics.DisableGodFingerKeys()
 
     ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.default), false, false, false, 1, false)
 
@@ -818,21 +810,13 @@ util.create_tick_handler(function()
 
     local god_finger_help = ""
     for category, effects in pairs(help) do
-        god_finger_help = god_finger_help .. "<b>" .. category .. ":</b>\n" .. Ryan.Basics.Capitalize(effects) .. "\n\n"
+        god_finger_help = god_finger_help .. "<b>" .. category .. ":</b>\n" .. effects .. "\n\n"
     end
     if god_finger_help:len() > 0 then
         util.show_corner_help(god_finger_help:sub(0, god_finger_help:len() - 2))
         god_finger_last_help = util.current_time_millis()
     elseif util.current_time_millis() - god_finger_last_help > 500 then
         util.show_corner_help("No God Finger effects available.")
-    end
-end)
-
-util.create_thread(function()
-    while true do
-        
-
-        util.yield()
     end
 end)
 

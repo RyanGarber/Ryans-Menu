@@ -210,44 +210,83 @@ Ryan.Basics = {
 		return choices_root
 	end,
 
+	GetGodFingerEffectActivation = function(key)
+		if key == "Look"       then return 1
+		elseif key == "Hold Q" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.Cover) and 2 or 0
+		elseif key == "Hold E" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleHorn) and 2 or 0
+		elseif key == "Hold R" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.Reload) and 2 or 0
+		elseif key == "Hold F" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.Enter) and 2 or 0
+		elseif key == "Hold C" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.LookBehind) and 2 or 0
+		elseif key == "Hold X" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleDuck) and 2 or 0
+		elseif key == "Hold Z" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.MultiplayerInfo) and 2 or 0
+		else                   return 0 end
+	end,
+
 	IsGodFingerEffectActivated = function(key)
-		if key == "Look" then return true
-		elseif key == "Hold E" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleHorn)
-		elseif key == "Hold R" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.Reload)
-		elseif key == "Hold F" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.Enter)
-		elseif key == "Hold C" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.LookBehind)
-		elseif key == "Hold X" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleDuck)
-		else return false end
+		activation = Ryan.Basics.GetGodFingerEffectActivation(key)
+		--if activation == 2 and player_is_pointing then god_finger_last_activation = util.current_time_millis() end
+		return activation > 0
 	end,
 
 	GetGodFingerEffectHelp = function(effects)
 		function icon(mode)
-			if mode == "Hold E" then return "~INPUT_VEH_HORN~"
+			if mode == "Hold Q"     then return "~INPUT_COVER~"
+			elseif mode == "Hold E" then return "~INPUT_VEH_HORN~"
 			elseif mode == "Hold R" then return "~INPUT_RELOAD~"
 			elseif mode == "Hold F" then return "~INPUT_ENTER~"
 			elseif mode == "Hold C" then return "~INPUT_LOOK_BEHIND~"
-			elseif mode == "Hold X" then return "~INPUT_VEH_DUCK~" end
+			elseif mode == "Hold X" then return "~INPUT_VEH_DUCK~"
+			elseif mode == "Hold Z" then return "~INPUT_VEH_RADIO_WHEEL~" end
     	end
 
+		function split(help, new_help)
+			local help_line = help:sub(1 - (help:reverse():find("\n") or 0))
+			local help_line_length = help_line:gsub("~[A-Z_]+~", ""):gsub("   ", ""):len()
+			local new_help_length = new_help:gsub("~[A-Z_]+~", ""):gsub("   ", ""):len()
+			if help_line_length + new_help_length >= 30 then return "\n" .. new_help
+			else return (help_line_length > 0 and "   " or "") .. new_help end
+		end
+
 		help = ""
+
 		for effect, value in pairs(effects) do
 			if type(value) == "table" then
 				for choice, mode in pairs(value) do
-					if mode:find("Hold") then help = help .. icon(mode) .. " " .. choice .. " " .. effect .. "   " end
+					if mode:find("Hold") then
+						help = help .. split(help, icon(mode) .. " " .. Ryan.Basics.FromTableName(effect) .. ": " .. Ryan.Basics.FromTableName(choice))
+					end
 				end
 			else
-				if value:find("Hold") then help = help .. icon(value) .. " " .. effect .. "   " end
+				if value:find("Hold") then
+					help = help .. split(help, icon(value) .. " " .. Ryan.Basics.FromTableName(effect))
+				end
 			end
 		end
 
-    	return help:sub(1, help:len() - 3)
+    	return help
 	end,
 
-	TableName = function(string)
+	DisableGodFingerKeys = function()
+		util.toast("Disabling controls")
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Cover, god_finger_active)                  -- Q
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleRadioWheel, god_finger_active)      -- Q
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, god_finger_active)            -- E
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Reload, god_finger_active)                 -- R
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MeleeAttackLight, god_finger_active)       -- R
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleCinematicCamera, god_finger_active) -- R
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Enter, god_finger_active)                  -- F
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleExit, god_finger_active)            -- F
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.LookBehind, god_finger_active)             -- C
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleLookBehind, god_finger_active)      -- C
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, god_finger_active)            -- X
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MultiplayerInfo, god_finger_active)        -- Z
+	end,
+
+	ToTableName = function(string)
 		return string:lower():gsub(" ", "_")
 	end,
 
-	Capitalize = function(string)
-		return string:gsub("(%l)(%w*)", function(a, b) return string.upper(a) .. b end)
+	FromTableName = function(string)
+		return string:gsub("(%l)(%w*)", function(a, b) return string.upper(a) .. b end):gsub("_", " ")
 	end
 }
