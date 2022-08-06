@@ -267,19 +267,18 @@ Ryan.Basics = {
 	end,
 
 	DisableGodFingerKeys = function()
-		util.toast("Disabling controls")
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Cover, god_finger_active)                  -- Q
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleRadioWheel, god_finger_active)      -- Q
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, god_finger_active)            -- E
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Reload, god_finger_active)                 -- R
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MeleeAttackLight, god_finger_active)       -- R
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleCinematicCamera, god_finger_active) -- R
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Enter, god_finger_active)                  -- F
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleExit, god_finger_active)            -- F
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.LookBehind, god_finger_active)             -- C
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleLookBehind, god_finger_active)      -- C
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, god_finger_active)            -- X
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MultiplayerInfo, god_finger_active)        -- Z
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Cover, true)                  -- Q
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleRadioWheel, true)      -- Q
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, true)            -- E
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Reload, true)                 -- R
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MeleeAttackLight, true)       -- R
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleCinematicCamera, true) -- R
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Enter, true)                  -- F
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleExit, true)            -- F
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.LookBehind, true)             -- C
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleLookBehind, true)      -- C
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, true)            -- X
+		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MultiplayerInfo, true)        -- Z
 	end,
 
 	ToTableName = function(string)

@@ -486,6 +486,9 @@ end)
 Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_npc_root, "Flee: %", "ryangodfingernpcflee", "Make the NPC flee the area.", Ryan.Globals.ActivationModes, function(value)
     god_finger_npc_effects.flee = value
 end)
+Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_npc_root, "Ragdoll: %", "ryangodfingernpcragdoll", "Make the NPC ragdoll.", Ryan.Globals.ActivationModes, function(value)
+    god_finger_npc_effects.ragdoll = value
+end)
 Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_npc_root, "Delete: %", "ryangodfingernpcdelete", "Delete the NPC.", Ryan.Globals.ActivationModes, function(value)
     god_finger_npc_effects.delete = value
 end)
@@ -497,7 +500,7 @@ for _, mode in pairs(Ryan.Globals.GodFingerForces) do
     end)
 end
 
--- God Finger Handler
+-- Apply God Finger effects
 last_nude = -1
 last_brutality = -1
 last_fire = -1
@@ -582,6 +585,10 @@ util.create_tick_handler(function()
                 
                 if Ryan.Basics.IsGodFingerEffectActivated(god_finger_npc_effects.flee) then
                     TASK.TASK_SMART_FLEE_PED(ped, Ryan.Player.GetPed(), 500.0, -1, false, false)
+                end
+
+                if Ryan.Basics.IsGodFingerEffectActivated(god_finger_npc_effects.ragdoll) then
+                    PED.SET_PED_TO_RAGDOLL(ped, 1000, 1000, 0, 0, 0, 0)
                 end
                 
                 if Ryan.Basics.IsGodFingerEffectActivated(god_finger_npc_effects.delete) then
