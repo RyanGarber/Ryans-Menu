@@ -1,6 +1,6 @@
-VERSION = "0.9.4"
+VERSION = "0.9.5"
 MANIFEST = {
-    lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "Vector.lua", "Vehicle.lua"},
+    lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "UI.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
 }
 DEV_ENVIRONMENT = debug.getinfo(1, "S").source:lower():find("dev")
@@ -147,9 +147,9 @@ entities_exploded = {}
 
 menu.divider(self_root, "General")
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
-self_forcefield_root = Ryan.Basics.CreateSavableChoiceWithDefault(self_root, "Forcefield...", "ryanforcefield", "An expanded and enhanced forcefield.", Ryan.Globals.ForcefieldModes, function(value) forcefield_mode = value end)
+self_forcefield_root = Ryan.UI.CreateSavableChoiceWithDefault(self_root, "Forcefield...", "ryanforcefield", "An expanded and enhanced forcefield.", Ryan.Globals.ForcefieldModes, function(value) forcefield_mode = value end)
 self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
-self_crosshair_root = Ryan.Basics.CreateSavableChoiceWithDefault(self_root, "Crosshair...", "ryancrosshair", "Add an on-screen crosshair.", Ryan.Globals.CrosshairModes, function(value) crosshair_mode = value end)
+self_crosshair_root = Ryan.UI.CreateSavableChoiceWithDefault(self_root, "Crosshair...", "ryancrosshair", "Add an on-screen crosshair.", Ryan.Globals.CrosshairModes, function(value) crosshair_mode = value end)
 self_spotlight_root = menu.list(self_root, "Spotlight...", {"ryanspotlight"}, "Attach lights to you or your vehicle.")
 
 -- -- PTFX
@@ -457,59 +457,33 @@ self_god_finger_force_root = menu.list(self_god_finger_root, "Force", {"ryangodf
 
 
 -- -- Player
-Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_player_root, "Kick: %", "ryangodfingerplayerkick", "Kick the player.", Ryan.Globals.ActivationModes, function(value)
-    god_finger_player_effects.kick = value
-end)
-Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_player_root, "Crash: %", "ryangodfingerplayercrash", "Crash the player to desktop.", Ryan.Globals.ActivationModes, function(value)
-    god_finger_player_effects.crash = value
-end)
+Ryan.UI.CreateEffectToggle(self_god_finger_player_root, "ryangodfingerplayer", god_finger_player_effects, "Kick", "Kick the player.", true)
+Ryan.UI.CreateEffectToggle(self_god_finger_player_root, "ryangodfingerplayer", god_finger_player_effects, "Crash", "Crash the player to desktop.", true)
 
 -- -- Vehicle
-Ryan.Vehicle.CreateEffectList(self_god_finger_vehicle_root, "ryangodfingervehicle", "", god_finger_vehicle_effects, true, true)
-Ryan.Vehicle.CreateEffectToggle(self_god_finger_vehicle_root, "ryangodfingervehicle", god_finger_vehicle_effects, "Steal", "Steal the vehicle.", true)
+Ryan.UI.CreateVehicleEffectList(self_god_finger_vehicle_root, "ryangodfingervehicle", "", god_finger_vehicle_effects, true, true)
+Ryan.UI.CreateEffectToggle(self_god_finger_vehicle_root, "ryangodfingervehicle", god_finger_vehicle_effects, "Steal", "Steal the vehicle.", true)
 
 -- -- World
-Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_world_root, "Nude Yoga: %", "ryangodfingerworldyoga", "Spawn a nude NPC doing yoga.", Ryan.Globals.ActivationModes, function(value)
-    god_finger_world_effects.nude = value
-end)
-Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_world_root, "Police Brutality: %", "ryangodfingerworldbrutality", "Spawn a scene of police brutality.", Ryan.Globals.ActivationModes, function(value)
-    god_finger_world_effects.brutality = value
-end)
-Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_world_root, "Fire: %", "ryangodfingerworldfire", "Start a fire.", Ryan.Globals.ActivationModes, function(value)
-    god_finger_world_effects.fire = value
-end)
+Ryan.UI.CreateEffectToggle(self_god_finger_world_root, "ryangodfingerworld", god_finger_world_effects, "Nude Yoga", "Spawn a nude NPC doing yoga.", true)
+Ryan.UI.CreateEffectToggle(self_god_finger_world_root, "ryangodfingerworld", god_finger_world_effects, "Police Brutality", "Spawn a scene of police brutality.", true)
+Ryan.UI.CreateEffectToggle(self_god_finger_world_root, "ryangodfingerworld", god_finger_world_effects, "Fire", "Start a fire.", true)
 
 -- -- NPC
-Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_npc_root, "Be Nude: %", "ryangodfingernpcnude", "Make the NPC nude.", Ryan.Globals.ActivationModes, function(value)
-    god_finger_npc_effects.nude = value
-end)
-Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_npc_root, "Flee: %", "ryangodfingernpcflee", "Make the NPC flee the area.", Ryan.Globals.ActivationModes, function(value)
-    god_finger_npc_effects.flee = value
-end)
-Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_npc_root, "Ragdoll: %", "ryangodfingernpcragdoll", "Make the NPC ragdoll.", Ryan.Globals.ActivationModes, function(value)
-    god_finger_npc_effects.ragdoll = value
-end)
-Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_npc_root, "Delete: %", "ryangodfingernpcdelete", "Delete the NPC.", Ryan.Globals.ActivationModes, function(value)
-    god_finger_npc_effects.delete = value
-end)
+Ryan.UI.CreateNPCEffectList(self_god_finger_npc_root, "ryangodfingernpc", god_finger_npc_effects, true)
 
 -- -- Force
 for _, mode in pairs(Ryan.Globals.GodFingerForces) do
-    Ryan.Basics.CreateSavableChoiceWithDefault(self_god_finger_force_root, mode .. ": %", "ryangodfingerforce" .. Ryan.Basics.CommandName(mode), "", Ryan.Globals.ActivationModes, function(value)
-        god_finger_force_effects[mode:lower()] = value
-    end)
+    Ryan.UI.CreateEffectToggle(self_god_finger_force_root, "ryangodfingerforce", god_finger_force_effects, mode, "", true)
 end
 
--- Apply God Finger effects
-last_nude = -1
-last_brutality = -1
-last_fire = -1
-
+god_finger_npc_state = {}
+god_finger_world_state = {}
 god_finger_vehicle_state = {}
-god_finger_help = ""
-god_finger_last_help = 0
---god_finger_last_activation = 0
 
+god_finger_keybinds_shown = 0
+
+-- Apply God Finger effects
 util.create_tick_handler(function()
     for entity, start_time in pairs(entities_smashed) do
         local time_elapsed = util.current_time_millis() - start_time
@@ -536,12 +510,12 @@ util.create_tick_handler(function()
     end
 
     PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.CharacterWheel, true)
-    Ryan.Basics.DisableGodFingerKeys()
+    Ryan.UI.DisableGodFingerKeybinds()
 
-    ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.default), false, false, false, 1, false)
+    ENTITY.SET_ENTITY_PROOFS(Ryan.Player.GetPed(), false, false, Ryan.UI.GetGodFingerActivation(god_finger_force_effects.default) > 0, false, false, false, 1, false)
 
     local raycast = nil
-    local help = {}
+    local keybinds = {}
     memory.write_int(memory.script_global(4521801 + 935), NETWORK.GET_NETWORK_TIME())
 
     raycast = Ryan.Basics.Raycast(500.0, Ryan.Basics.RaycastFlags.Vehicles + Ryan.Basics.RaycastFlags.Peds + Ryan.Basics.RaycastFlags.Objects)
@@ -554,61 +528,38 @@ util.create_tick_handler(function()
 
             if PED.IS_PED_A_PLAYER(ped) then
                 -- Player
-                local help_player = Ryan.Basics.GetGodFingerEffectHelp(god_finger_player_effects)
-                if help_player:len() > 0 then help["Player"] = help_player end
+                local keybinds_player = Ryan.UI.GetGodFingerKeybinds(god_finger_player_effects)
+                if keybinds_player:len() > 0 then keybinds["Player"] = keybinds_player end
 
                 local player_id = NETWORK.NETWORK_GET_PLAYER_INDEX_FROM_PED(ped)
                 local player_name = players.get_name(player_id)
-                if Ryan.Basics.IsGodFingerEffectActivated(god_finger_player_effects.kick) then
+                if Ryan.UI.GetGodFingerActivation(god_finger_player_effects.kick) > 0 then
                     Ryan.Basics.RunCommands({"kick" .. player_name})
                 end
-                if Ryan.Basics.IsGodFingerEffectActivated(god_finger_player_effects.crash) then
+                if Ryan.UI.GetGodFingerActivation(god_finger_player_effects.crash) > 0 then
                     Ryan.Basics.RunCommands({"ngcrash" .. player_name, "footlettuce" .. player_name})
                 end
             else
                 -- NPC
-                local help_npc = Ryan.Basics.GetGodFingerEffectHelp(god_finger_npc_effects)
-                if help_npc:len() > 0 then help["NPC"] = help_npc end
+                local keybinds_npc = Ryan.UI.GetGodFingerKeybinds(god_finger_npc_effects)
+                if keybinds_npc:len() > 0 then keybinds["NPC"] = keybinds_npc end
 
-                if Ryan.Basics.IsGodFingerEffectActivated(god_finger_npc_effects.nude) then
-                    local heading = ENTITY.GET_ENTITY_HEADING(ped)
-                    local coords = ENTITY.GET_ENTITY_COORDS(ped)
-                    
-                    Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
-                    entities.delete_by_handle(ped)
-                    
-                    ped = entities.create_ped(0, util.joaat("a_f_y_topless_01"), coords, heading)
-                    PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
-                    TASK.CLEAR_PED_TASKS_IMMEDIATELY(ped)
-                    TASK.TASK_WANDER_STANDARD(ped, 10.0, 10)
-                end
-                
-                if Ryan.Basics.IsGodFingerEffectActivated(god_finger_npc_effects.flee) then
-                    TASK.TASK_SMART_FLEE_PED(ped, Ryan.Player.GetPed(), 500.0, -1, false, false)
-                end
-
-                if Ryan.Basics.IsGodFingerEffectActivated(god_finger_npc_effects.ragdoll) then
-                    PED.SET_PED_TO_RAGDOLL(ped, 1000, 1000, 0, 0, 0, 0)
-                end
-                
-                if Ryan.Basics.IsGodFingerEffectActivated(god_finger_npc_effects.delete) then
-                    entities.delete_by_handle(ped)
-                end
+                Ryan.UI.ApplyNPCEffectList(ped, god_finger_npc_effects, god_finger_npc_state, true)
             end
         end
 
         if ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
             -- Vehicle
-            local help_vehicle = Ryan.Basics.GetGodFingerEffectHelp(god_finger_vehicle_effects)
-            if help_vehicle:len() > 0 then help["Vehicle"] = help_vehicle end
+            local keybinds_vehicle = Ryan.UI.GetGodFingerKeybinds(god_finger_vehicle_effects)
+            if keybinds_vehicle:len() > 0 then keybinds["Vehicle"] = keybinds_vehicle end
 
             local vehicle = raycast.hit_entity
             local is_a_player = PED.IS_PED_A_PLAYER(VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1))
     
-            Ryan.Vehicle.ApplyEffects(vehicle, god_finger_vehicle_effects, god_finger_vehicle_state, is_a_player, true)
+            Ryan.UI.ApplyVehicleEffectList(vehicle, god_finger_vehicle_effects, god_finger_vehicle_state, is_a_player, true)
 
             -- Steal
-            if Ryan.Basics.IsGodFingerEffectActivated(god_finger_vehicle_effects.steal) and ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
+            if Ryan.UI.GetGodFingerActivation(god_finger_vehicle_effects.steal) > 0 and ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
                 if not god_finger_vehicle_state.steal or util.current_time_millis() - god_finger_vehicle_state.steal > 1000 then
                     Ryan.Vehicle.Steal(raycast.hit_entity)
                     god_finger_vehicle_state.steal = util.current_time_millis()
@@ -617,12 +568,12 @@ util.create_tick_handler(function()
         end
 
         -- Force
-        local help_force = Ryan.Basics.GetGodFingerEffectHelp(god_finger_force_effects)
-        if help_force:len() > 0 then help["Force"] = help_force end
+        local keybinds_force = Ryan.UI.GetGodFingerKeybinds(god_finger_force_effects)
+        if keybinds_force:len() > 0 then keybinds["Force"] = keybinds_force end
 
-        if Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.default) then
+        if Ryan.UI.GetGodFingerActivation(god_finger_force_effects.default) > 0 then
             FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 29, 25.0, false, true, 0.0, true)
-        elseif Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.push) then -- Push entities away
+        elseif Ryan.UI.GetGodFingerActivation(god_finger_force_effects.push) > 0 then -- Push entities away
             local entity_coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
             local force = Ryan.Vector.Normalize(Ryan.Vector.Subtract(entity_coords, ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())))
             force = Ryan.Vector.Multiply(force, 0.4)
@@ -636,7 +587,7 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.pull) then -- Pull entities in
+        elseif Ryan.UI.GetGodFingerActivation(god_finger_force_effects.pull) > 0 then -- Pull entities in
             local entity_coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
             local force = Ryan.Vector.Normalize(Ryan.Vector.Subtract(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed()), entity_coords))
             force = Ryan.Vector.Multiply(force, 0.4)
@@ -650,12 +601,12 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.spin) then -- Spin entities around
+        elseif Ryan.UI.GetGodFingerActivation(god_finger_force_effects.spin) > 0 then -- Spin entities around
             if not ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.SET_ENTITY_HEADING(raycast.hit_entity, ENTITY.GET_ENTITY_HEADING(raycast.hit_entity) + 2.5)
             end
-        elseif Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.up) then -- Force entities into air
+        elseif Ryan.UI.GetGodFingerActivation(god_finger_force_effects.up) > 0 then -- Force entities into air
             local force = {x = 0, y = 0, z = 0.5}
             if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
@@ -667,7 +618,7 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.down) then -- Force entities into ground
+        elseif Ryan.UI.GetGodFingerActivation(god_finger_force_effects.down) > 0 then -- Force entities into ground
             local force = {x = 0, y = 0, z = -2}
             if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
                 if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
@@ -679,12 +630,12 @@ util.create_tick_handler(function()
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
-        elseif Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.smash) then -- Smash entities into ground
+        elseif Ryan.UI.GetGodFingerActivation(god_finger_force_effects.smash) > 0 then -- Smash entities into ground
             if entities_smashed[raycast.hit_entity] == nil or util.current_time_millis() - entities_smashed[raycast.hit_entity] > 2500 then
                 Ryan.Entity.RequestControl(raycast.hit_entity)
                 entities_smashed[raycast.hit_entity] = util.current_time_millis()
             end
-        elseif Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.chaos) then -- Chaotic entities
+        elseif Ryan.UI.GetGodFingerActivation(god_finger_force_effects.chaos) > 0 then -- Chaotic entities
             if entities_chaosed[raycast.hit_entity] == nil or util.current_time_millis() - entities_chaosed[raycast.hit_entity] > 1000 then
                 local amount = 20
                 local force = {
@@ -704,7 +655,7 @@ util.create_tick_handler(function()
                 end
                 entities_chaosed[raycast.hit_entity] = util.current_time_millis()
             end
-        elseif Ryan.Basics.IsGodFingerEffectActivated(god_finger_force_effects.explode) then -- Explode entities
+        elseif Ryan.UI.GetGodFingerActivation(god_finger_force_effects.explode) > 0 then -- Explode entities
             if entities_exploded[raycast.hit_entity] == nil then
                 local coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
                 FIRE.ADD_EXPLOSION(
@@ -720,12 +671,12 @@ util.create_tick_handler(function()
         raycast = Ryan.Basics.Raycast(500.0, Ryan.Basics.RaycastFlags.World)
         if raycast.did_hit then
             -- World
-            local help_world = Ryan.Basics.GetGodFingerEffectHelp(god_finger_world_effects)
-            if help_world:len() > 0 then help["World"] = help_world end
+            local keybinds_world = Ryan.UI.GetGodFingerKeybinds(god_finger_world_effects)
+            if keybinds_world:len() > 0 then keybinds["World"] = keybinds_world end
 
-            if Ryan.Basics.IsGodFingerEffectActivated(god_finger_world_effects.nude) then
-                if util.current_time_millis() - last_nude > 1500 then
-                    last_nude = util.current_time_millis()
+            if Ryan.UI.GetGodFingerActivation(god_finger_world_effects.nude_yoga) > 0 then
+                if util.current_time_millis() - (god_finger_world_state.nude_yoga or 0) > 1500 then
+                    god_finger_world_state.nude_yoga = util.current_time_millis()
 
                     local raycast = Ryan.Basics.Raycast(50.0)
                     if raycast.did_hit then
@@ -748,9 +699,9 @@ util.create_tick_handler(function()
                 end
             end
 
-            if Ryan.Basics.IsGodFingerEffectActivated(god_finger_world_effects.brutality) then
-                if util.current_time_millis() - last_brutality > 1500 then
-                    last_brutality = util.current_time_millis()
+            if Ryan.UI.GetGodFingerActivation(god_finger_world_effects.police_brutality) > 0 then
+                if util.current_time_millis() - (god_finger_world_state.police_brutality or 0) > 1500 then
+                    god_finger_world_state.police_brutality = util.current_time_millis()
 
                     local raycast = Ryan.Basics.Raycast(50.0)
                     if raycast.did_hit then
@@ -801,9 +752,9 @@ util.create_tick_handler(function()
                 end
             end
 
-            if Ryan.Basics.IsGodFingerEffectActivated(god_finger_world_effects.fire) then
-                if util.current_time_millis() - last_fire > 750 then
-                    last_fire = util.current_time_millis()
+            if Ryan.UI.GetGodFingerActivation(god_finger_world_effects.fire) > 0 then
+                if util.current_time_millis() - (god_finger_world_state.fire or 0) > 750 then
+                    god_finger_world_state.fire = util.current_time_millis()
 
                     local raycast = Ryan.Basics.Raycast(250.0)
                     if raycast.did_hit then
@@ -815,14 +766,14 @@ util.create_tick_handler(function()
         end
     end
 
-    local god_finger_help = ""
-    for category, effects in pairs(help) do
-        god_finger_help = god_finger_help .. "<b>" .. category .. ":</b>\n" .. effects .. "\n\n"
+    local keybinds_list = ""
+    for category, effects in pairs(keybinds) do
+        keybinds_list = keybinds_list .. "<b>" .. category .. ":</b>\n" .. effects .. "\n\n"
     end
-    if god_finger_help:len() > 0 then
-        util.show_corner_help(god_finger_help:sub(0, god_finger_help:len() - 2))
-        god_finger_last_help = util.current_time_millis()
-    elseif util.current_time_millis() - god_finger_last_help > 500 then
+    if keybinds_list:len() > 0 then
+        util.show_corner_help(keybinds_list:sub(0, keybinds_list:len() - 2))
+        god_finger_keybinds_shown = util.current_time_millis()
+    elseif util.current_time_millis() - god_finger_keybinds_shown > 500 then
         util.show_corner_help("No God Finger effects available.")
     end
 end)
@@ -940,7 +891,7 @@ end)
 -- World Menu --
 menu.divider(world_root, "General")
 world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
-world_all_npcs_root = Ryan.Basics.CreateSavableChoiceWithDefault(world_root, "All NPCs...", "ryanallnpcs", "Changes the action NPCs are currently performing.", Ryan.Globals.NPCScenarios, function(value) all_npcs_mode = value end)
+world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Affects all NPCs in the world.")
 
 -- -- Collectibles
 world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
@@ -969,14 +920,18 @@ for i = 1, #Ryan.Globals.PlayingCards do
 end
 
 -- -- All NPCs
-all_npcs_include_vehicles = false
+all_npcs_include_drivers = false
+all_npcs_effects = {}
+all_npcs_state = {}
 
-menu.divider(world_all_npcs_root, "Options")
-menu.toggle(world_all_npcs_root, "Include Vehicles", {"ryanallnpcsvehicles"}, "If enabled, NPCs will get out of their vehicles.", function(value)
-    all_npcs_include_vehicles = value
+menu.divider(world_all_npcs_root, "Include")
+menu.toggle(world_all_npcs_root, "Drivers", {"ryanallnpcsdrivers"}, "If enabled, NPCs will get out of their vehicles.", function(value)
+    all_npcs_include_drivers = value
 end, false)
 
-npcs_affected = {}
+menu.divider(world_all_npcs_root, "Effects")
+Ryan.UI.CreateNPCEffectList(world_all_npcs_root, "ryanallnpcs", all_npcs_effects, false)
+
 util.create_tick_handler(function()
     if all_npcs_mode ~= "Off" then
         local scenario = ""
@@ -988,32 +943,13 @@ util.create_tick_handler(function()
         local player_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
         for _, ped in pairs(Ryan.Entity.GetAllNearby(player_coords, 250, Ryan.Entity.Type.Peds)) do
             local vehicle = PED.GET_VEHICLE_PED_IS_IN(ped, false)
-            if not PED.IS_PED_A_PLAYER(ped) and (all_npcs_include_vehicles or vehicle == 0) then
-                if npcs_affected[ped] ~= all_npcs_mode then
-                    if all_npcs_mode == "Nude" then
-                        if vehicle ~= 0 then ENTITY.SET_ENTITY_VELOCITY(vehicle, 0.0, 0.0, 0.0) end
-                        if math.random(1, 20) == 1 then
-                            local heading = ENTITY.GET_ENTITY_HEADING(ped)
-                            local coords = ENTITY.GET_ENTITY_COORDS(ped)
-                            
-                            Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
-                            entities.delete_by_handle(ped)
-                            
-                            ped = entities.create_ped(0, util.joaat("a_f_y_topless_01"), coords, heading)
-                            PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
-                            TASK.CLEAR_PED_TASKS_IMMEDIATELY(ped)
-                            TASK.TASK_WANDER_STANDARD(ped, 10.0, 10)
-                        end
-                    elseif all_npcs_mode == "Delete" then
-                        if vehicle ~= 0 then entities.delete_by_handle(vehicle) end
-                        entities.delete_by_handle(ped)
-                    else
-                        if vehicle ~= 0 then ENTITY.SET_ENTITY_VELOCITY(vehicle, 0.0, 0.0, 0.0) end
-                        TASK.CLEAR_PED_TASKS_IMMEDIATELY(ped)
-                        TASK.TASK_START_SCENARIO_IN_PLACE(ped, scenario, 0, false)
-                    end
-                    npcs_affected[ped] = all_npcs_mode
+            if not PED.IS_PED_A_PLAYER(ped) and (all_npcs_include_drivers or vehicle == 0) then
+                if vehicle ~= 0 then
+                    ENTITY.SET_ENTITY_VELOCITY(vehicle, 0.0, 0.0, 0.0)
+                    TASK.TASK_EVERYONE_LEAVE_VEHICLE(vehicle)
                 end
+
+                Ryan.UI.ApplyNPCEffectList(ped, all_npcs_effects, all_npcs_state, false)
             end
         end
     end
@@ -1168,7 +1104,6 @@ all_vehicles_include_own = false
 all_vehicles_effects = {}
 
 menu.divider(world_all_vehicles_root, "Include")
-
 menu.toggle(world_all_vehicles_root, "NPCs", {"ryanallvehiclesnpcs"}, "If enabled, player-driven vehicles are affected too.", function(value)
     all_vehicles_include_npcs = value
 end, true)
@@ -1181,8 +1116,7 @@ end)
 
 
 menu.divider(world_all_vehicles_root, "Effects")
-
-Ryan.Vehicle.CreateEffectList(world_all_vehicles_root, "ryanall", "", all_vehicles_effects, false)
+Ryan.UI.CreateVehicleEffectList(world_all_vehicles_root, "ryanall", "", all_vehicles_effects, false)
 menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Makes NPCs flee you.", function(value)
     all_vehicles_effects.flee = value
 end)
@@ -1205,7 +1139,7 @@ util.create_tick_handler(function()
 
         if all_vehicles_include_own or vehicle ~= entities.get_user_vehicle_as_handle() then
             if (all_vehicles_include_players and is_a_player) or (all_vehicles_include_npcs and not is_a_player) then
-                Ryan.Vehicle.ApplyEffects(vehicle, all_vehicles_effects, all_vehicles_state, is_a_player, false)
+                Ryan.UI.ApplyVehicleEffectList(vehicle, all_vehicles_effects, all_vehicles_state, is_a_player, false)
 
                 -- Flee
                 if all_vehicles_effects.flee and not is_a_player and all_vehicles_state[vehicle].flee ~= true then
@@ -1232,7 +1166,7 @@ session_trolling_root = menu.list(session_root, "Trolling...", {"ryantrolling"},
 session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
 session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
 session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
-session_antihermit_root = Ryan.Basics.CreateSavableChoiceWithDefault(session_root, "Anti-Hermit...", "ryanantihermit", "Kicks or trolls any player who stays inside for more than 5 minutes.", Ryan.Globals.AntihermitModes, function(value) antihermit_mode = value end)
+session_antihermit_root = Ryan.UI.CreateSavableChoiceWithDefault(session_root, "Anti-Hermit...", "ryanantihermit", "Kicks or trolls any player who stays inside for more than 5 minutes.", Ryan.Globals.AntihermitModes, function(value) antihermit_mode = value end)
 
 -- -- Mass Trolling
 trolling_watch_time = 5000
@@ -1965,7 +1899,7 @@ function setup_player(player_id)
     local player_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")    
 
     vehicle_effects[player_id] = {}
-    Ryan.Vehicle.CreateEffectList(player_vehicle_root, "ryan", players.get_name(player_id), vehicle_effects[player_id], true)
+    Ryan.UI.CreateVehicleEffectList(player_vehicle_root, "ryan", players.get_name(player_id), vehicle_effects[player_id], true)
 
     menu.toggle(player_vehicle_root, "Leash", {"ryanleash"}, "Brings their vehicle with you like a leash.", function(value)
         vehicle_effects[player_id].leash = value and true or nil
@@ -2129,7 +2063,7 @@ util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id), true)
         if vehicle ~= 0 and vehicle_effects[player_id] ~= nil then
-            Ryan.Vehicle.ApplyEffects(vehicle, vehicle_effects[player_id], vehicle_state, true, false)
+            Ryan.UI.ApplyVehicleEffectList(vehicle, vehicle_effects[player_id], vehicle_state, true, false)
 
             -- Leash
             if vehicle_effects[player_id].leash == true then

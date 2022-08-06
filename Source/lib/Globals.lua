@@ -12,6 +12,7 @@ Ryan.Globals = {
         LookBehind = 26,             -- C
         Cover = 44,                  -- Q
         Reload = 45,                 -- R
+        HudSpecial = 48,             -- Z
         VehicleDuck = 73,            -- X
         VehicleExit = 75,            -- F
         VehicleLookBehind = 79,      -- C
@@ -19,18 +20,6 @@ Ryan.Globals = {
         VehicleRadioWheel = 85,      -- Q
         VehicleHorn = 86,            -- E
         MeleeAttackLight = 140       -- R
-    },
-
-    ActivationModes = {
-        "Off",
-        "Look",
-        "Hold Q",
-        "Hold E",
-        "Hold R",
-        "Hold F",
-        "Hold C",
-        "Hold X",
-        "Hold Z"
     },
 
     CyrillicAlphabet = {

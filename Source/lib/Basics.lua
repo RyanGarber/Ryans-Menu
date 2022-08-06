@@ -58,7 +58,15 @@ Ryan.Basics = {
 	end,
 
 	CommandName = function(string)
-		return string:lower():gsub(" ", "")
+		return string:lower():gsub("[ _]", "")
+	end,
+
+	ToTableName = function(string)
+		return string:lower():gsub(" ", "_")
+	end,
+
+	FromTableName = function(string)
+		return string:gsub("(%l)(%w*)", function(a, b) return string.upper(a) .. b end):gsub("_", " ")
 	end,
 
 	FormatNumber = function(number)
@@ -170,122 +178,5 @@ Ryan.Basics = {
 			util.toast("Failed to translate message.")
 		end)
 		async_http.dispatch()
-	end,
-
-	CreateSavableChoiceWithDefault = function(root, menu_name, command_name, description, choices, on_update)
-		local state = choices[1]
-		local state_change = 2147483647
-		local state_values = {[state] = true}
-
-		local choices_root = menu.list(root, menu_name:gsub("%%", state), {command_name}, description)
-		for _, choice in pairs(choices) do
-			menu.toggle(choices_root, choice, {command_name .. Ryan.Basics.CommandName(choice)}, "", function(value)
-				if value then
-					if choice ~= state then
-						menu.trigger_commands(command_name .. Ryan.Basics.CommandName(state) .. " off")
-						util.yield(500)
-						state = choice
-						on_update(state)
-						menu.set_menu_name(choices_root, menu_name:gsub("%%", state))
-					end
-				end
-
-				state_change = util.current_time_millis()
-				state_values[choice] = value
-			end, choice == choices[1])
-		end
-
-		util.create_tick_handler(function()
-			if util.current_time_millis() - state_change > 500 then
-				local has_choice = false
-				for _, choice in pairs(choices) do
-					if state_values[choice] then has_choice = true end
-				end
-				if not has_choice then menu.trigger_commands(command_name .. Ryan.Basics.CommandName(choices[1]) .. " on") end
-				state_change = 2147483647
-			end
-		end)
-
-		on_update(state)
-		return choices_root
-	end,
-
-	GetGodFingerEffectActivation = function(key)
-		if key == "Look"       then return 1
-		elseif key == "Hold Q" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.Cover) and 2 or 0
-		elseif key == "Hold E" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleHorn) and 2 or 0
-		elseif key == "Hold R" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.Reload) and 2 or 0
-		elseif key == "Hold F" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.Enter) and 2 or 0
-		elseif key == "Hold C" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.LookBehind) and 2 or 0
-		elseif key == "Hold X" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.VehicleDuck) and 2 or 0
-		elseif key == "Hold Z" then return PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.MultiplayerInfo) and 2 or 0
-		else                   return 0 end
-	end,
-
-	IsGodFingerEffectActivated = function(key)
-		activation = Ryan.Basics.GetGodFingerEffectActivation(key)
-		--if activation == 2 and player_is_pointing then god_finger_last_activation = util.current_time_millis() end
-		return activation > 0
-	end,
-
-	GetGodFingerEffectHelp = function(effects)
-		function icon(mode)
-			if mode == "Hold Q"     then return "~INPUT_COVER~"
-			elseif mode == "Hold E" then return "~INPUT_VEH_HORN~"
-			elseif mode == "Hold R" then return "~INPUT_RELOAD~"
-			elseif mode == "Hold F" then return "~INPUT_ENTER~"
-			elseif mode == "Hold C" then return "~INPUT_LOOK_BEHIND~"
-			elseif mode == "Hold X" then return "~INPUT_VEH_DUCK~"
-			elseif mode == "Hold Z" then return "~INPUT_VEH_RADIO_WHEEL~" end
-    	end
-
-		function split(help, new_help)
-			local help_line = help:sub(1 - (help:reverse():find("\n") or 0))
-			local help_line_length = help_line:gsub("~[A-Z_]+~", ""):gsub("   ", ""):len()
-			local new_help_length = new_help:gsub("~[A-Z_]+~", ""):gsub("   ", ""):len()
-			if help_line_length + new_help_length >= 30 then return "\n" .. new_help
-			else return (help_line_length > 0 and "   " or "") .. new_help end
-		end
-
-		help = ""
-
-		for effect, value in pairs(effects) do
-			if type(value) == "table" then
-				for choice, mode in pairs(value) do
-					if mode:find("Hold") then
-						help = help .. split(help, icon(mode) .. " " .. Ryan.Basics.FromTableName(effect) .. ": " .. Ryan.Basics.FromTableName(choice))
-					end
-				end
-			else
-				if value:find("Hold") then
-					help = help .. split(help, icon(value) .. " " .. Ryan.Basics.FromTableName(effect))
-				end
-			end
-		end
-
-    	return help
-	end,
-
-	DisableGodFingerKeys = function()
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Cover, true)                  -- Q
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleRadioWheel, true)      -- Q
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleHorn, true)            -- E
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Reload, true)                 -- R
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MeleeAttackLight, true)       -- R
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleCinematicCamera, true) -- R
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.Enter, true)                  -- F
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleExit, true)            -- F
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.LookBehind, true)             -- C
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleLookBehind, true)      -- C
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.VehicleDuck, true)            -- X
-		PAD.DISABLE_CONTROL_ACTION(0, Ryan.Globals.Controls.MultiplayerInfo, true)        -- Z
-	end,
-
-	ToTableName = function(string)
-		return string:lower():gsub(" ", "_")
-	end,
-
-	FromTableName = function(string)
-		return string:gsub("(%l)(%w*)", function(a, b) return string.upper(a) .. b end):gsub("_", " ")
 	end
 }
