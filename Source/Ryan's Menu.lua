@@ -102,6 +102,7 @@ end
 if not DEV_ENVIRONMENT then do_update(false) end
 Ryan.Basics.RequestModel(2628187989)
 Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Crosshair.png")
+menu.trigger_command(menu.ref_by_path("Online>Session>Block Joins>From Kicked Players"), "off")
 
 
 -- Switching Sessions --
@@ -295,6 +296,7 @@ Ryan.PTFX.CreateList(self_ptfx_god_finger_entities_root, function(ptfx)
         util.yield(ptfx[4])
     end
 end)
+
 
 -- -- Forcefield
 forcefield_size = 10
@@ -1858,6 +1860,9 @@ end)
 menu.action(settings_root, "Allow Fireworks", {"ryanallowfireworks"}, "Disable Crash Event - Timeout to allow for fireworks.", function()
     menu.focus(menu.ref_by_path("Online>Protections>Events>Crash Event>Timeout"))
 end)
+menu.action(settings_root, "Disable Auto Block", {"ryanallowautoblock"}, "Disable Kicked Players - use Divorce instead.", function()
+    menu.focus(menu.ref_by_path("Online>Session>Block Joins>From Kicked Players"))
+end)
 
 -- Player Options --
 ptfx_attack = {}
@@ -2051,12 +2056,12 @@ function setup_player(player_id)
 
 
     -- Divorce Kick --
-    --menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
-    --    local player_name = players.get_name(player_id)
-    --    Ryan.Player.BlockJoins(player_name)
-    --    menu.trigger_commands("kick" .. player_name)
-    --    menu.trigger_commands("players")
-    --end)
+    menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
+        local player_name = players.get_name(player_id)
+        Ryan.Player.BlockJoins(player_name)
+        menu.trigger_commands("kick" .. player_name)
+        menu.trigger_commands("players")
+    end)
 end
 
 util.create_tick_handler(function()
