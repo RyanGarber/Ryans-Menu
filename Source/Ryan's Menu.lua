@@ -102,7 +102,6 @@ end
 if not DEV_ENVIRONMENT then do_update(false) end
 Ryan.Basics.RequestModel(2628187989)
 Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Crosshair.png")
-menu.trigger_command(menu.ref_by_path("Online>Session>Block Joins>From Kicked Players"), "off")
 
 
 -- Switching Sessions --
