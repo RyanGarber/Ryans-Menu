@@ -1860,9 +1860,6 @@ end)
 menu.action(settings_root, "Allow Fireworks", {"ryanallowfireworks"}, "Disable Crash Event - Timeout to allow for fireworks.", function()
     menu.focus(menu.ref_by_path("Online>Protections>Events>Crash Event>Timeout"))
 end)
-menu.action(settings_root, "Disable Auto Block", {"ryanallowautoblock"}, "Disable Kicked Players - use Divorce instead.", function()
-    menu.focus(menu.ref_by_path("Online>Session>Block Joins>From Kicked Players"))
-end)
 
 -- Player Options --
 ptfx_attack = {}
