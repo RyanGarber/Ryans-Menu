@@ -116,7 +116,7 @@ Ryan.Session = {
     end,
 
     ListByOffRadar = function()
-        local player_names = Ryan.Session.ListByBoolean(Ryan.Player.IsOffRadar)
+        local player_names = Ryan.Session.ListByBoolean(players.is_otr)
         if player_names ~= "" then
             chat.send_message("Players off-the-radar: " .. player_names .. ".", false, true, true)
             return
@@ -146,123 +146,5 @@ Ryan.Session = {
                 util.yield(wait_for)
             end
         end
-    end,
-
-    -- Mass Trolling --
-    MassTrollingInProgress = false,
-
-    CancelMassTrolling = function()
-        if Ryan.Session.MassTrollingInProgress then
-            Ryan.Session.MassTrollingInProgress = false
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Session Trolling", "The mass troll has been cancelled, and will end after this player.")
-        else
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Session Trolling", "There is no mass troll to cancel.")
-        end
-    end,
-
-    WatchMassVehicleTakeover = function(action, include_modders, wait_for)
-        if Ryan.Session.MassTrollingInProgress then
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Session Trolling", "Mass trolling is already in progress. Wait for it to end or stop it.")
-            return
-        end
-    
-        Ryan.Session.MassTrollingInProgress = true
-        Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Session Trolling", "Mass trolling has begun. Sit tight and enjoy the show!")
-    
-        menu.trigger_commands("otr on")
-        menu.trigger_commands("invisibility on")
-        
-        local starting_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(), true)
-        for _, player_id in pairs(players.list()) do
-            if not Ryan.Session.MassTrollingInProgress then break end
-            if player_id ~= players.user() and not players.is_in_interior(player_id) then
-                if include_modders or not players.is_marked_as_modder(player_id) then
-                    Ryan.Session.WatchVehicleTakeover(player_id, action, wait_for)
-                end
-            end
-        end
-        Ryan.Player.Teleport(starting_coords)
-    
-        menu.trigger_commands("otr off")
-        menu.trigger_commands("invisibility off")
-    
-        Ryan.Session.MassTrollingInProgress = false
-        Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Session Trolling", "Mass trolling has finished trying all players.")
-    end,
-
-    WatchMassCommands = function(commands, include_modders, wait_for)
-        if Ryan.Session.MassTrollingInProgress then
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Session Trolling", "Mass trolling is already in progress. Wait for it to end or stop it.")
-            return
-        end
-    
-        Ryan.Session.MassTrollingInProgress = true
-        Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Session Trolling", "Session trolling has begun. Sit tight and enjoy the show!")
-        
-        menu.trigger_commands("otr on")
-        menu.trigger_commands("invisibility on")
-        menu.trigger_commands("levitation on")
-    
-        local starting_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(), true)
-        for _, player_id in pairs(players.list()) do
-            if not Ryan.Session.MassTrollingInProgress then break end
-            if player_id ~= players.user() and not players.is_in_interior(player_id) then
-                if include_modders or not players.is_marked_as_modder(player_id) then
-                    local player_name = players.get_name(player_id)
-                    menu.trigger_commands("tp" .. player_name)
-                    util.yield(1250)
-                    if player_name ~= "**invalid**" then
-                        for i = 1, #commands do
-                            menu.trigger_commands(commands[i]:gsub("{name}", player_name))
-                        end
-                    end
-                    util.yield(wait_for)
-                end
-            end
-        end
-        Ryan.Player.Teleport(starting_coords)
-    
-        menu.trigger_commands("otr off")
-        menu.trigger_commands("invisibility off")
-        menu.trigger_commands("levitation off")
-    
-        Ryan.Session.MassTrollingInProgress = false
-    end,
-
-    WatchMassAction = function(action, include_modders, wait_for)
-        if Ryan.Session.MassTrollingInProgress then
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Session Trolling", "Mass trolling is already in progress. Wait for it to end or stop it.")
-            return
-        end
-    
-        Ryan.Session.MassTrollingInProgress = true
-        Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Session Trolling", "Session trolling has begun. Sit tight and enjoy the show!")
-        
-        menu.trigger_commands("otr on")
-        menu.trigger_commands("invisibility on")
-        menu.trigger_commands("levitation on")
-    
-        local starting_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(), true)
-        for _, player_id in pairs(players.list()) do
-            if not Ryan.Session.MassTrollingInProgress then break end
-            if player_id ~= players.user() and not players.is_in_interior(player_id) then
-                if include_modders or not players.is_marked_as_modder(player_id) then
-                    local player_name = players.get_name(player_id)
-                    menu.trigger_commands("tp" .. player_name)
-                    util.yield(1250)
-                    if player_name ~= "**invalid**" then
-                        action(player_id)
-                    end
-                    util.yield(wait_for)
-                end
-            end
-        end
-        Ryan.Player.Teleport(starting_coords)
-    
-        menu.trigger_commands("otr off")
-        menu.trigger_commands("invisibility off")
-        menu.trigger_commands("levitation off")
-    
-        Ryan.Session.MassTrollingInProgress = false
     end
 }

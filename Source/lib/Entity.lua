@@ -39,8 +39,7 @@ Ryan.Entity = {
 
     RequestControl = function(entity)
         if not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) then
-            local network_id = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity)
-            NETWORK.SET_NETWORK_ID_CAN_MIGRATE(network_id, true)
+            NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity), true)
             NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
         end
         return NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity)

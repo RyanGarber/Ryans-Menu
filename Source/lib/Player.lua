@@ -1,34 +1,109 @@
 Ryan.Player = {
+    -- Search for a player by the start of their name, or a substring.
+    GetId = function(search_name)
+        local fallback_player_id = nil
+
+        for _, player_id in pairs(players.list()) do
+            local player_name = players.get_name(player_id)
+            if player_name:lower() == search_name:lower() then return player_id end
+            local substring_index = player_name:lower():find(search_name:lower())
+            if substring_index == 1 then return player_id
+            elseif substring_index ~= nil then fallback_player_id = player_id end
+        end
+
+        return fallback_player_id
+    end,
+
+    -- Kick a player using Stand's Smart kick, using Breakup if that fails.
+    Kick = function(player_id, root)
+        local player_name = players.get_name(player_id)
+        menu.trigger_commands("kick" .. player_name)
+
+        if menu.get_edition() >= 2 then
+            util.yield(500)
+            if Ryan.Player.GetId(player_name) ~= nil then menu.trigger_commands("breakup" .. player_name) end
+        end
+    end,
+    
+    -- Crash a player using both of Stand's crashes.
+    Crash = function(player_id)
+        local player_name = players.get_name(player_id)
+        menu.trigger_commands("footlettuce" .. player_name)
+
+        util.yield(250)
+        menu.trigger_commands("ngcrash" .. player_name)
+    end,
+
+    SuperCrash = function(player_id)
+        local our_id = players.user()
+        local our_ped = Ryan.Player.GetPed()
+        local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id))
+        local starting_coords = ENTITY.GET_ENTITY_COORDS(our_ped)
+        local bush = util.joaat("h4_prop_bush_mang_ad")
+        
+        Ryan.Player.BlockSyncs(player_id, function()
+            util.yield(100)
+            ENTITY.SET_ENTITY_VISIBLE(our_ped, false)
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(our_ped, coords.x, coords.y, coords.z, false, false, false)
+            PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(our_id, bush)
+            PED.SET_PED_COMPONENT_VARIATION(our_ped, 5, 8, 0, 0)
+            util.yield(500)
+            
+            PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(our_id)
+            util.yield(2500)
+            
+            TASK.CLEAR_PED_TASKS_IMMEDIATELY(our_ped)
+            for i = 1, 5 do util.spoof_script("freemode", SYSTEM.WAIT) end
+            
+            ENTITY.SET_ENTITY_HEALTH(our_ped, 0)
+            NETWORK.NETWORK_RESURRECT_LOCAL_PLAYER(starting_coords.x, starting_coords.y, starting_coords.z, 0, false, false, 0)
+            ENTITY.SET_ENTITY_VISIBLE(our_ped, true)
+        end)
+    end,
+
+    BlockSyncs = function(player_id, action)
+        for _, id in pairs(players.list(false, true, true)) do
+            if id ~= player_id then
+                local outgoing_syncs = menu.ref_by_rel_path(menu.player_root(id), "Outgoing Syncs>Block")
+                menu.trigger_command(outgoing_syncs, "on")
+            end
+        end
+        util.yield(10)
+        action()
+        for _, id in pairs(players.list(false, true, true)) do
+            if id ~= player_id then
+                local outgoing_syncs = menu.ref_by_rel_path(menu.player_root(id), "Outgoing Syncs>Block")
+                menu.trigger_command(outgoing_syncs, "off")
+            end
+        end
+    end,
+
+    -- Get a player's ped ID, or our own.
     GetPed = function(player_id)
         if not player_id then return players.user_ped() end
         return PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
     end,
 
+    -- Get the total amount of money a player has.
     GetMoney = function(player_id)
         return players.get_wallet(player_id) + players.get_bank(player_id)
     end,
 
-    IsOffRadar = function(player_id)
-        return players.is_otr(player_id)
-    end,
-
+    -- Get whether a player is likely in godmode.
     IsInGodmode = function(player_id)
         return not players.is_in_interior(player_id) and players.is_godmode(player_id)
     end,
 
+    -- Get whether a player is on an Oppressor Mk II.
     IsOnOppressor2 = function(player_id)
         return players.get_vehicle_model(player_id) == util.joaat("oppressor2")
     end,
 
-    Teleport = function(coords)
-        util.toast("Teleporting...")
-        ENTITY.SET_ENTITY_COORDS(Ryan.Player.GetPed(), coords.x, coords.y, coords.z)
-    end,
-
-    TeleportWithVehicle = function(coords)
+    -- Teleport ourself.
+    Teleport = function(coords, with_vehicle)
         util.toast("Teleporting...")
         local player_ped = Ryan.Player.GetPed()
-        if PED.IS_PED_IN_ANY_VEHICLE(player_ped, true) then
+        if with_vehicle and PED.IS_PED_IN_ANY_VEHICLE(player_ped, true) then
             local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
             ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
         else
@@ -36,6 +111,7 @@ Ryan.Player = {
         end
     end,
 
+    -- Teleport a player's vehicle.
     TeleportVehicle = function(player_id, coords)
         local name = PLAYER.GET_PLAYER_NAME(player_id)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), true)
@@ -47,6 +123,7 @@ Ryan.Player = {
         end
     end,
 
+    -- Explode a player with or without Bed Sound.
     Explode = function(player_id, with_earrape)
         local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id))
         FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z, 0, 100, true, false, 150, false)
@@ -59,34 +136,57 @@ Ryan.Player = {
         end
     end,
 
-    RemoveGodmode = function(player_id, vehicle_too)
-        if NETWORK.NETWORK_IS_PLAYER_CONNECTED(player_id) then
-            if vehicle_too then
-                local player_ped = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
-                if PED.IS_PED_IN_ANY_VEHICLE(player_ped, false) then
-                    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
-                    ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
-                    ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
-                end
-            end
-            util.trigger_script_event(1 << player_id, {801199324, player_id, 869796886})
-        end
+    -- Kill a player in godmode using dark magic.
+    KillInGodmode = function(player_id)
+        local player_ped = Ryan.Player.GetPed(player_id)
+
+        local vehicles = {
+            {["name"] = "Khanjali", ["height"] = 2.8, ["offset"] = 0}
+            -- {["name"] = "APC", ["height"] = 3.4, ["offset"] = -1.5}
+        }
+        local vehicle = vehicles[math.random(1, #vehicles)]
+        local vehicle_hash = util.joaat(vehicle.name)
+
+        util.toast("Attempting to kill " .. players.get_name(player_id) .. "...")
+        local distance = TASK.IS_PED_STILL(player_ped) and 0 or 3
+        local coords = ENTITY.GET_ENTITY_COORDS(player_id)
+    
+        Ryan.Basics.RequestModel(vehicle_hash)    
+        local vehicle_1 = entities.create_vehicle(vehicle_hash, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, vehicle.offset, distance, vehicle.height), ENTITY.GET_ENTITY_HEADING(player_ped))
+        local vehicle_2 = entities.create_vehicle(vehicle_hash, coords, 0)
+        local vehicle_3 = entities.create_vehicle(vehicle_hash, coords, 0)
+        local vehicle_4 = entities.create_vehicle(vehicle_hash, coords, 0)
+
+        Ryan.Entity.RequestControl(vehicle_1)
+        Ryan.Entity.RequestControl(vehicle_2)
+        Ryan.Entity.RequestControl(vehicle_3)
+        Ryan.Entity.RequestControl(vehicle_4)
+    
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle_2, vehicle_1, 0, 0, 3, 0, 0, 0, -180, 0, false, true, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle_3, vehicle_1, 0, 3, 3, 0, 0, 0, -180, 0, false, true, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle_4, vehicle_1, 0, 3, 0, 0, 0, 0, 0, 0, false, true, false, 0, true)
+        ENTITY.SET_ENTITY_VISIBLE(vehicle_1, false)
+        util.yield(7500)
+
+        entities.delete_by_handle(vehicle_1)
     end,
 
-    SpamTextsAndBlockJoins = function(player_id, removal_block_joins, removal_message, action)
+    -- Spam SMS and block joins from a player, then perform a method. 
+    SpamSMSAndBlockJoins = function(player_id, block_joins, sms_message, action)
         local player_name = players.get_name(player_id)
-        if removal_block_joins then
+        if block_joins then
             Ryan.Player.BlockJoins(player_name)
         end
-        if removal_message ~= "" and removal_message ~= " " then
+        if sms_message ~= "" and sms_message ~= " " then
             util.toast("Spamming " .. player_name .. " with texts...")
-            Ryan.Player.SpamTexts(player_id, removal_message, 6000)
+            Ryan.Player.SpamSMS(player_id, sms_message, 6000)
         end
         action()
         menu.trigger_commands("players")
     end,
 
-    SpamTexts = function(player_id, message, duration)
+    -- Spam SMS on a player.
+    SpamSMS = function(player_id, message, duration)
         local player_name = players.get_name(player_id)
         menu.trigger_commands("smsrandomsender" .. player_name .. " on")
         menu.trigger_commands("smstext" .. player_name .. " " .. message)
@@ -95,8 +195,9 @@ Ryan.Player = {
         menu.trigger_commands("smsspam" .. player_name .. " off")
     end,
 
+    -- Block joins from a player.
     BlockJoins = function(player_name)
-        local ref
+        --[[local ref
         local possible_tags = {" [Offline/Story Mode]", " [Public]", " [Solo/Invite-Only]", ""}
         local success = false
         for i = 1, #possible_tags do
@@ -113,129 +214,14 @@ Ryan.Player = {
             util.toast("Blocked all future joins by that player.")
         else
             util.toast("Failed to block joins.")
-        end
+        end]]
+        menu.trigger_commands("historyblock" .. player_name)
     end,
 
+    -- Send a script event to a player.
     SendScriptEvent = function(player_id, args, name)
-        util.toast("Sending script event: " .. name .. "...")
+        if name ~= nil then util.toast("Sending script event: " .. name .. "...") end
         util.trigger_script_event(1 << player_id, args)
         util.yield(10)
-    end,
-
-    CrashToSingleplayer = function(player_id)
-        if player_id == players.user() then
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Crash To Singleplayer", "I don't need to explain why what you just tried to do was not very smart, do I?")
-            return
-        end
-    
-        Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Crash To Singleplayer", "Now sending script events. This may take a while...")
-        local events = Ryan.Basics.ShuffleItemsInTable(Ryan.Globals.CrashToSingleplayerEvents)
-        for _, event in pairs(events) do
-            Ryan.Player.SendScriptEvent(player_id, event, "Crash To Singleplayer")
-        end
-    end,
-
-    CrashToDesktop = function(player_id, mode, safely)
-        if player_id == players.user() then
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Crash To Desktop", "I don't need to explain why what you just tried to do was not very smart, do I?")
-            return
-        end
-
-        local starting_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
-        local in_danger_zone = Ryan.Vector.Distance(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id)), starting_coords) < Ryan.Globals.SafeCrashDistance
-
-        if safely and in_danger_zone then
-            Ryan.Player.Teleport(Ryan.Globals.SafeCrashCoords)
-            util.yield(1000)
-        end
-    
-        if not mode then
-            for _, crash_mode in pairs(Ryan.Globals.CrashToDesktopMethods) do
-                util.create_thread(function()
-                    Ryan.Player.CrashToDesktop(player_id, crash_mode, false)
-                end)
-            end
-            if safely and in_danger_zone then
-                util.yield(Ryan.Globals.SafeCrashDuration)
-                Ryan.Player.Teleport(starting_coords)
-            end
-            return
-        end
-    
-        local player_ped = Ryan.Player.GetPed(player_id)
-        local player_ped_heading = ENTITY.GET_ENTITY_HEADING(player_ped)
-        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-    
-        Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Crash To Desktop", "Now spawning entities. This may take a while...")
-        for _, crash_mode in pairs(Ryan.Globals.CrashToDesktopMethods) do
-            if mode == crash_mode then util.toast("Beginning crash: " .. crash_mode .. " on " .. players.get_name(player_id) .. ".") end
-        end
-    
-        if mode == "Yo Momma" then
-            local fatcult = util.joaat("a_f_m_fatcult_01"); Ryan.Basics.RequestModel(fatcult)
-            for i = 1, 8 do
-                util.create_thread(function()
-                    local ped = entities.create_ped(
-                        0, fatcult,
-                        Ryan.Vector.Add(player_coords, {x = math.random(-1, 1), y = math.random(-1, 1), z = 0}),
-                        player_ped_heading
-                    )
-                    util.yield(400)
-                    entities.delete_by_handle(ped)
-                end)
-                util.yield(100)
-                local ped_1 = entities.create_ped(0, util.joaat("slod_human"), player_coords, player_ped_heading)
-                local ped_2 = entities.create_ped(0, util.joaat("slod_large_quadped"), player_coords, player_ped_heading)
-                local ped_3 = entities.create_ped(0, util.joaat("slod_small_quadped"), player_coords, player_ped_heading)
-                util.yield(750)
-                entities.delete_by_handle(ped_1)
-                entities.delete_by_handle(ped_2)
-                entities.delete_by_handle(ped_3)
-                Ryan.Player.SendScriptEvent(player_id, {962740265, player_id, 23243, 5332, 3324, player_id}, "final payload")
-            end
-        end
-    
-        if mode == "Vegetation" then
-            Ryan.Basics.RequestModel(-930879665)
-            Ryan.Basics.RequestModel(3613262246)
-            Ryan.Basics.RequestModel(452618762)
-            local object_1 = entities.create_object(-930879665, player_coords)
-            util.yield(10)
-            local object_2 = entities.create_object(3613262246, player_coords)
-            util.yield(10)
-            local object_3 = entities.create_object(452618762, player_coords)
-            util.yield(10)
-            local object_4 = entities.create_object(3613262246, player_coords)
-            util.yield(300)
-            entities.delete_by_handle(object_1)
-            entities.delete_by_handle(object_2)
-            entities.delete_by_handle(object_3)
-            entities.delete_by_handle(object_4)
-        end
-    
-        if mode == "Invalid Objects" then
-            local hashes = Ryan.Basics.ShuffleItemsInTable(Ryan.Globals.InvalidObjects)
-            local objects = {}
-            for _, hash in pairs(hashes) do table.insert(objects, entities.create_object(hash, player_coords)) end
-            util.yield(5000)
-            for _, object in pairs(objects) do entities.delete_by_handle(object) end
-        end
-    
-        if mode == "Invalid Peds" then
-            local ped = entities.create_ped(0, 1057201338, player_coords, 0)
-            util.yield(100)
-            entities.delete_by_handle(ped)
-            local ped = entities.create_ped(0, -2056455422, player_coords, 0)
-            util.yield(100)
-            entities.delete_by_handle(ped)
-            local ped = entities.create_ped(0, 762327283, player_coords, 0)
-            util.yield(100)
-            entities.delete_by_handle(ped)
-        end
-
-        if safely and in_danger_zone then
-            util.yield(Ryan.Globals.SafeCrashDuration)
-            Ryan.Player.Teleport(starting_coords)
-        end
     end
 }

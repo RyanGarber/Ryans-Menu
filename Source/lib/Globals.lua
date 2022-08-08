@@ -1,4 +1,36 @@
+waiting_for_session = false
+waiting_for_coords = nil
+
 Ryan.Globals = {
+    PlayerIsPointing = false,
+    PlayerIsSwitchingSessions = false,
+
+    Initialize = function()
+        Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Crosshair.png")
+    end,
+
+    Update = function()
+        if not NETWORK.NETWORK_IS_SESSION_ACTIVE() then
+			waiting_for_session = true
+			waiting_for_coords = nil
+		end
+		if waiting_for_session then
+			if NETWORK.NETWORK_IS_SESSION_ACTIVE() then
+				waiting_for_session = false
+				waiting_for_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+			end
+		end
+		if waiting_for_coords ~= nil then
+			local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+			if Ryan.Vector.Distance(coords, waiting_for_coords) > 0.1 then
+				waiting_for_coords = nil
+			end
+		end
+
+        Ryan.Globals.PlayerIsPointing = memory.read_int(memory.script_global(4521801 + 930)) == 3
+        Ryan.Basics.PlayerIsSwitchingSessions = not (waiting_for_session or waiting_for_coords)
+    end,
+    
     Color = {
         Purple = 49,
         Red = 6
@@ -92,89 +124,7 @@ Ryan.Globals = {
         {1325, -1652, 52}, {989, -1801, 31}, {827, -2159, 29}, {810, -2979, 6}
     },
 
-    CrashToSingleplayerEvents = {
-        {-1386010354, player_id, player_id, player_id, -788905164},
-        {962740265, player_id, player_id, player_id, -788905164},
-        {-1386010354, player_id, 0, 23243, 5332, 3324, 845546543, 3437435, player_id},
-        {962740265, player_id, 23243, 5332, 3324, player_id},
-        {962740265, -72614, 63007, 59027, -12012, -26996, 33398, player_id},
-        {-1386010354, -72614, 63007, 59027, -12012, -26996, 33398, player_id},
-        {-1386010354, -72614, 63007, 59027, -12012, -26996, 33398, player_id},
-        {-1386010354, -72614, 63007, 59027, -12012, -26996, 33398, player_id},
-        {962740265, player_id, player_id, 30583, player_id, player_id, player_id, player_id, -328966, 10128444},
-        {-1386010354, pid, pid, 30583, pid, pid, pid, pid, -328966, 10128444},
-        {-1386010354, player_id, player_id, player_id, -788905164},
-        {962740265, player_id, player_id, player_id, -788905164},
-        {962740265, player_id, 95398, 98426, -24591, 47901, -64814},
-        {962740265, player_id, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647},
-        {-1386010354, player_id, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647, 2147483647},
-        {677240627, player_id, -1774405356},{962740265, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
-        {962740265, player_id, player_id, 1001, player_id},
-        {-1386010354, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
-        {-1386010354, player_id, player_id, 1001, player_id},
-        {-2113023004, player_id, math.random(115831, 9999449)},
-        {-2113023004, player_id, math.random(115831, 9999449), math.random(-1, 1)},
-        {-2113023004, player_id, math.random(115831, 9999449), math.random(-1, 1), math.random(-1, 3)},
-        {-2113023004, player_id, math.random(115831, 9999449), math.random(-1, 1), math.random(-1, 3), math.random(-1, 101)},
-        {-2113023004, player_id, math.random(115831, 9999449), math.random(-1, 1), math.random(-1, 3), math.random(-1, 101), math.random(-1, 3)},
-        {-2113023004, player_id, math.random(115831, 9999449), math.random(-1, 1), math.random(-1, 3), math.random(-1, 101), math.random(-1, 3), math.random(-1, 1)},
-        {677240627, player_id, math.random(-1996063584, 1999997397)},
-        {677240627, player_id, 22963134},
-        {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999)},
-        {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000)},
-        {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000), math.random(-1, 1351433445)},
-        {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000), math.random(-1, 1351433445), math.random(-1, 1951345490)},
-        {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000), math.random(-1, 1351433445), math.random(-1, 1951345490), math.random(-1, 116)},
-        {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000), math.random(-1, 1351433445), math.random(-1, 1951345490), math.random(-1, 116), math.random(-1, 1)},
-        {677240627, player_id, math.random(-1996063584, 1999997397), math.random(-1, 385999), math.random(-1, 166000), math.random(-1, 1351433445), math.random(-1, 1951345490), math.random(-1, 116), math.random(-1, 1), math.random(-1, 1)},
-        {603406648, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
-        {603406648, player_id, player_id, 1001, player_id},
-        {704979198, player_id, math.random(-1, 1)},
-        {704979198, player_id, math.random(-1, 1), math.random(-2, 0)},
-        {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5)},
-        {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174)},
-        {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174), math.random(20, 510)},
-        {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174), math.random(20, 510), math.random(62, 64)},
-        {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174), math.random(20, 510), math.random(62, 64), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1)},
-        {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174), math.random(20, 510), math.random(62, 64), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1)},
-        {704979198, player_id, math.random(-1, 1), math.random(-2, 0), math.random(3, 5), math.random(172, 174), math.random(20, 510), math.random(62, 64), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1), math.random(-1, 1)},
-        {-1715193475, player_id, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
-        {1258808115, player_id, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
-        {2112408256, player_id, math.random(-1986324736, 1747413822)},
-        {2112408256, player_id, 77777776},
-        {2112408256, player_id, math.random(-1986324736, 1747413822), math.random(-1986324736, 1777712108)},
-        {2112408256, player_id, 77777776, 77777776},
-        {2112408256, player_id, math.random(-1986324736, 1747413822), math.random(-1986324736, 1777712108), math.random(-1673857408, 1780088064)},
-        {2112408256, player_id, 77777776, 77777776, 77777776},
-        {2112408256, player_id, math.random(-1986324736, 1747413822), math.random(-1986324736, 1777712108), math.random(-1673857408, 1780088064), math.random(-2588888790, 2100146067)},
-        {998716537, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
-        {998716537, player_id, player_id, 1001, player_id},
-        {163598572, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
-        {163598572, player_id, player_id, 1001, player_id},
-        {-1970125962, player_id, math.random(-1, 50)},
-        {-1970125962, player_id, math.random(-1, 50), math.random(-1, 50)},
-        {-1056683619, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
-        {-1056683619, player_id, player_id, 1001, player_id},
-        {436475575, player_id, 20},
-        {1757755807, player_id, 62, 2},
-        {-1767058336, player_id, 3},
-        {-1013679841, player_id, player_id, 111},
-        {-1501164935, player_id, 0},
-        {998716537, player_id, 0},
-        {163598572, player_id, 0},
-        {924535804, player_id, 0},
-        {69874647, player_id, 0},
-        {-1782442696, player_id, 420, 69},
-        {1445703181, player_id, 28, 4294967295, 4294967295},
-        {-1386010354, player_id, 4294894682, -4294904289, -4294908269, 4294955284, 4294940300, -4294933898},
-        {962740265, player_id, 4294894682, -4294904289, -4294908269, 4294955284, 4294940300, -4294933898},
-        {-1501164935, player_id, player_id, math.random(-2147483647, 2147483647), player_id},
-        {-1501164935, player_id, player_id, 1001, player_id}
-    },
-
     CrashToDesktopMethods = {
-        "Yo Momma",
-        "Vegetation",
         "Invalid Objects",
         "Invalid Peds"
     },
@@ -286,5 +236,10 @@ Ryan.Globals = {
 
     Haulers = {
         1518533038, 387748548, 371926404, -1649536104, 177270108
+    },
+
+    Tasks = {
+        ["ExitVehicle"] = 2,
+        ["EnterVehicle"] = 160
     }
 }

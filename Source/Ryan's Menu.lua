@@ -1,15 +1,16 @@
-VERSION = "0.9.5"
+VERSION = "0.9.6"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "UI.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
 }
+
 DEV_ENVIRONMENT = debug.getinfo(1, "S").source:lower():find("dev")
 SUBFOLDER_NAME = "Ryan's Menu" .. (DEV_ENVIRONMENT and " (Dev)" or "")
 
 Ryan = {}
 
 
--- Requirements --
+-- Initialize --
 function exists(name) return filesystem.exists(filesystem.scripts_dir() .. name) end
 for required_directory, required_files in pairs(MANIFEST) do
     for _, required_file in pairs(required_files) do
@@ -28,106 +29,11 @@ for required_directory, required_files in pairs(MANIFEST) do
     end
 end
 
+Ryan.Globals.Initialize()
+util.create_tick_handler(Ryan.Globals.Update)
 
--- Update --
-function do_update(force)
-    updating = 1
-
-    async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/MANIFEST", function(manifest)
-        latest_version = manifest:sub(1, manifest:find("\n") - 1)
-        manifest = Ryan.JSON.Decode(manifest:sub(manifest:find("\n"), manifest:len()))
-        
-        if latest_version ~= VERSION or force then
-            updating = 2
-
-            util.show_corner_help("<b>Updating Ryan's Menu</b><br>Now downloading v" .. latest_version .. ". Please wait...")
-            
-            -- -- Download Update
-            local files_total, files_done = 0, 0
-            for directory, files in pairs(manifest) do
-                files_total = files_total + (directory == "main" and 1 or #files)
-            end
-
-            function on_update()
-                util.show_corner_help("<b>Update Complete</b><br>Please restart Ryan's Menu to start using version " .. latest_version .. ".")
-                Ryan.Basics.ShowTextMessage(49, "Auto-Update", "Updated! Please restart Ryan's Menu to continue.")
-                menu.focus(menu.ref_by_command_name("stopluaryansmenu"))
-                util.stop_script()
-            end
-
-            for directory, files in pairs(manifest) do
-                if directory == "main" then
-                    async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. files, function(contents)
-                        local destination = assert(io.open(filesystem.scripts_dir() .. files, "w"))
-                        destination:write(contents)
-                        assert(destination:close())
-                        files_done = files_done + 1
-                        if files_done == files_total then on_update() end
-                    end)
-                    async_http.dispatch()
-                else
-                    filesystem.mkdirs(filesystem.scripts_dir() .. directory .. "\\" .. SUBFOLDER_NAME)
-                    for _, file in pairs(files) do
-                        async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. directory .. "/" .. file, function(contents)
-                            local destination = assert(io.open(filesystem.scripts_dir() .. directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. file, file:find(".png") and "wb" or "w"))
-                            destination:write(contents)
-                            assert(destination:close())
-                            files_done = files_done + 1
-                            if files_done == files_total then on_update() end
-                        end)
-                        async_http.dispatch()
-                    end
-                end
-            end
-        elseif not force then
-            updating = 0
-
-            Ryan.Basics.ShowTextMessage(49, "Auto-Update", "You're up to date. Enjoy!")
-            Ryan.Audio.PlayFromEntity(Ryan.Player.GetPed(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
-        end
-    end, function()
-        Ryan.Basics.ShowTextMessage(6, "Auto-Update", "Failed to get the latest version. Use the installer instead.")
-    end)
-
-    async_http.dispatch()
-
-    while updating ~= 0 do
-        if updating == 2 then util.toast("Downloading files for Ryan's Menu...") end
-        util.yield(333)
-    end
-end
-
-
--- Initialize --
-if not DEV_ENVIRONMENT then do_update(false) end
-Ryan.Basics.RequestModel(2628187989)
-Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Crosshair.png")
-
-
--- Switching Sessions --
-local waiting_for_session = false
-local waiting_for_coords = nil
-util.create_tick_handler(function()
-    if not NETWORK.NETWORK_IS_SESSION_ACTIVE() then
-        waiting_for_session = true
-        waiting_for_coords = nil
-    end
-    if waiting_for_session then
-        if NETWORK.NETWORK_IS_SESSION_ACTIVE() then
-            waiting_for_session = false
-            waiting_for_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
-        end
-    end
-    if waiting_for_coords ~= nil then
-        local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
-        if Ryan.Vector.Distance(coords, waiting_for_coords) > 0.1 then
-            waiting_for_coords = nil
-        end
-    end
-end)
-function is_switching_sessions()
-    return waiting_for_session or waiting_for_coords ~= nil
-end
+Ryan.Basics.DoUpdate(false)
+Ryan.Basics.RequestModel(util.joaat("p_poly_bag_01_s"))
 
 
 -- Main Menu --
@@ -140,7 +46,6 @@ settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Setting
 
 
 -- Self Menu --
-player_is_pointing = false
 entities_smashed = {}
 entities_chaosed = {}
 entities_exploded = {}
@@ -199,7 +104,7 @@ end)
 
 Ryan.PTFX.CreateList(self_ptfx_body_pointer_root, function(ptfx)
     if ptfx_disable then return end
-    if player_is_pointing then
+    if Ryan.Globals.PlayerIsPointing then
         Ryan.PTFX.PlayOnEntityBones(Ryan.Player.GetPed(), Ryan.PTFX.PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
@@ -459,7 +364,7 @@ self_god_finger_force_root = menu.list(self_god_finger_root, "Force", {"ryangodf
 
 -- -- Player
 Ryan.UI.CreateEffectToggle(self_god_finger_player_root, "ryangodfingerplayer", god_finger_player_effects, "Kick", "Kick the player.", true)
-Ryan.UI.CreateEffectToggle(self_god_finger_player_root, "ryangodfingerplayer", god_finger_player_effects, "Crash", "Crash the player to desktop.", true)
+Ryan.UI.CreateEffectToggle(self_god_finger_player_root, "ryangodfingerplayer", god_finger_player_effects, "Crash", "Crash the player.", true)
 
 -- -- Vehicle
 Ryan.UI.CreateVehicleEffectList(self_god_finger_vehicle_root, "ryangodfingervehicle", "", god_finger_vehicle_effects, true, true)
@@ -502,7 +407,7 @@ util.create_tick_handler(function()
         end
     end
 
-    god_finger_active = (god_finger_while_pointing     and player_is_pointing)
+    god_finger_active = (god_finger_while_pointing     and Ryan.Globals.PlayerIsPointing)
                      or (god_finger_while_holding_alt  and PAD.IS_DISABLED_CONTROL_PRESSED(21, Ryan.Globals.Controls.CharacterWheel))
     
     if not god_finger_active then
@@ -533,13 +438,8 @@ util.create_tick_handler(function()
                 if keybinds_player:len() > 0 then keybinds["Player"] = keybinds_player end
 
                 local player_id = NETWORK.NETWORK_GET_PLAYER_INDEX_FROM_PED(ped)
-                local player_name = players.get_name(player_id)
-                if Ryan.UI.GetGodFingerActivation(god_finger_player_effects.kick) > 0 then
-                    Ryan.Basics.RunCommands({"kick" .. player_name})
-                end
-                if Ryan.UI.GetGodFingerActivation(god_finger_player_effects.crash) > 0 then
-                    Ryan.Basics.RunCommands({"ngcrash" .. player_name, "footlettuce" .. player_name})
-                end
+                if Ryan.UI.GetGodFingerActivation(god_finger_player_effects.kick) > 0 then Ryan.Player.Kick(player_id) end
+                if Ryan.UI.GetGodFingerActivation(god_finger_player_effects.crash) > 0 then Ryan.Player.Crash(player_id) end
             else
                 -- NPC
                 local keybinds_npc = Ryan.UI.GetGodFingerKeybinds(god_finger_npc_effects)
@@ -871,6 +771,18 @@ util.create_tick_handler(function()
     util.yield(200)
 end)
 
+-- -- Auto-Repair
+menu.toggle_loop(self_root, "Auto-Repair", {"ryanautorepair"}, "Keeps your vehicle in mint condition for all players.", function()
+    local vehicle = entities.get_user_vehicle_as_handle()
+
+    if TASK.GET_IS_TASK_ACTIVE(Ryan.Player.GetPed(), Ryan.Globals.Tasks.EnterVehicle)
+        or TASK.GET_IS_TASK_ACTIVE(Ryan.Player.GetPed(), Ryan.Globals.Tasks.ExitVehicle)
+        or not VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then return end
+
+    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+    VEHICLE.SET_VEHICLE_FIXED(vehicle)
+end)
+
 -- -- E-Brake
 ebrake = false
 menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your vehicle drift while holding Shift.", function(value)
@@ -902,21 +814,21 @@ world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards..."
 -- -- Action Figures
 for i = 1, #Ryan.Globals.ActionFigures do
     menu.action(world_action_figures_root, "Action Figure " .. i, {"ryanactionfigure" .. i}, "Teleports to action figure #" .. i, function()
-        Ryan.Player.Teleport({x = Ryan.Globals.ActionFigures[i][1], y = Ryan.Globals.ActionFigures[i][2], z = Ryan.Globals.ActionFigures[i][3]})
+        Ryan.Player.Teleport({x = Ryan.Globals.ActionFigures[i][1], y = Ryan.Globals.ActionFigures[i][2], z = Ryan.Globals.ActionFigures[i][3]}, false)
     end)
 end
 
 -- -- Signal Jammers
 for i = 1, #Ryan.Globals.SignalJammers do
     menu.action(world_signal_jammers_root, "Signal Jammer " .. i, {"ryansignaljammer" .. i}, "Teleports to signal jammer #" .. i, function()
-        Ryan.Player.TeleportWithVehicle({x = Ryan.Globals.SignalJammers[i][1], y = Ryan.Globals.SignalJammers[i][2], z = Ryan.Globals.SignalJammers[i][3]})
+        Ryan.Player.Teleport({x = Ryan.Globals.SignalJammers[i][1], y = Ryan.Globals.SignalJammers[i][2], z = Ryan.Globals.SignalJammers[i][3]}, true)
     end)
 end
 
 -- -- Playing Cards
 for i = 1, #Ryan.Globals.PlayingCards do
     menu.action(world_playing_cards_root, "Playing Card " .. i, {"ryanplayingcard" .. i}, "Teleports to playing card #" .. i, function()
-        Ryan.Player.TeleportWithVehicle({x = Ryan.Globals.PlayingCards[i][1], y = Ryan.Globals.PlayingCards[i][2], z = Ryan.Globals.PlayingCards[i][3]})
+        Ryan.Player.Teleport({x = Ryan.Globals.PlayingCards[i][1], y = Ryan.Globals.PlayingCards[i][2], z = Ryan.Globals.PlayingCards[i][3]}, false)
     end)
 end
 
@@ -1163,71 +1075,10 @@ end)
 
 -- Session Menu --
 menu.divider(session_root, "General")
-session_trolling_root = menu.list(session_root, "Trolling...", {"ryantrolling"}, "Trolling options on all players.")
 session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
 session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
 session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
-session_antihermit_root = Ryan.UI.CreateSavableChoiceWithDefault(session_root, "Anti-Hermit...", "ryanantihermit", "Kicks or trolls any player who stays inside for more than 5 minutes.", Ryan.Globals.AntihermitModes, function(value) antihermit_mode = value end)
-
--- -- Mass Trolling
-trolling_watch_time = 5000
-trolling_include_modders = false
-menu.slider(session_trolling_root, "Watch Time", {"ryanwatchtime"}, "Seconds to watch the chaos unfold per player.", 1, 15, 5, 1, function(value)
-    trolling_watch_time = value * 1000
-end)
-menu.toggle(session_trolling_root, "Include Modders", {"ryanincludemodders"}, "Whether to include modders in the mass trolling.", function(value)
-    trolling_include_modders = value
-end)
-
-menu.divider(session_trolling_root, "Attacker")
-menu.action(session_trolling_root, "Clone", {"ryanattackallclone"}, "Sends an angry clone to attack all players.", function()
-    util.toast("Sending a clone after all players...")
-    Ryan.Session.WatchMassCommands({"enemyclone{name}"}, trolling_include_modders, trolling_watch_time)
-end)
-menu.action(session_trolling_root, "Chop", {"ryanattackallchop"}, "Sends Chop to attack all players.", function()
-    util.toast("Sending Chop after all players...")
-    Ryan.Session.WatchMassCommands({"sendchop{name}"}, trolling_include_modders, trolling_watch_time)
-end)
-menu.action(session_trolling_root, "Police", {"ryanattackallpolice"}, "Sends the law to attack all players.", function()
-    util.toast("Sending a police car after all players...")
-    Ryan.Session.WatchMassCommands({"sendpolicecar{name}"}, trolling_include_modders, trolling_watch_time)
-end)
-menu.action(session_trolling_root, "Military Squad", {"ryanattackallmilitary"}, "Sends a military squad to attack all players..", function()
-    util.toast("Sending a military squad after all players...")
-    Ryan.Session.WatchMassAction(function(player_id)
-        Ryan.Trolling.MilitarySquad(player_id, false)
-    end, trolling_include_modders, trolling_watch_time)
-end)
-
-menu.divider(session_trolling_root, "Vehicle")
-menu.action(session_trolling_root, "Tow", {"ryantowall"}, "Sends a tow truck to all players.", function()
-    util.toast("Towing all players...")
-    Ryan.Session.WatchMassCommands({"towtruck{name}"}, trolling_include_modders, trolling_watch_time)
-end)
-menu.action(session_trolling_root, "Burst Tires", {"ryanbursttiresall"}, "Bursts everyone's tires.", function()
-    util.toast("Bursting all tires...")
-    Ryan.Session.WatchMassVehicleTakeover(function(vehicle)
-        Ryan.Vehicle.SetTiresBursted(vehicle, true)
-    end, trolling_include_modders, trolling_watch_time)
-end)
-menu.action(session_trolling_root, "Kill Engine", {"ryankillengineall"}, "Kills everyone's engine.", function()
-    util.toast("Killing all engines...")
-    Ryan.Session.WatchMassVehicleTakeover(function(vehicle)
-        VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
-    end, trolling_include_modders, trolling_watch_time)
-end)
-menu.action(session_trolling_root, "Catapult", {"ryancatapultall"}, "Catapults everyone's vehicles.", function()
-    util.toast("Catapulting all players...")
-    Ryan.Session.WatchMassVehicleTakeover(function(vehicle)
-        Ryan.Vehicle.Catapult(vehicle)
-    end, trolling_include_modders, trolling_watch_time)
-end)
-
-menu.divider(session_trolling_root, "Cancel")
-menu.action(session_trolling_root, "Stop Trolling", {"ryanstoptrolling"}, "Stops the session trolling, if one is in progress.", function()
-    Ryan.Session.CancelMassTrolling()
-end)
-
+sassion_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Handle players that never seem to go outside.")
 
 -- -- Nuke
 nuke_spam_enabled = false
@@ -1285,62 +1136,47 @@ end)
 crash_all_friends = false
 crash_all_modders = false
 
-menu.action(session_crash_all_root, "Crash To Singleplayer", {"ryancrashallsingleplayer"}, "Attempts to crash using all to singleplayer.", function()
+menu.action(session_crash_all_root, "Stand Crash", {"ryancrashallstand"}, "Let the crashing commence.", function()
     for _, player_id in pairs(players.list(false, crash_all_friends)) do
         if crash_all_modders or not players.is_marked_as_modder(player_id) then
-            util.create_thread(function()
-                Ryan.Player.CrashToSingleplayer(player_id)
-            end)
+            util.toast("Crashing players...")
+            Ryan.Player.Crash(player_id)
+            util.yield(500)
         end
     end
 end)
-menu.action(session_crash_all_root, "Crash To Desktop", {"ryancrashallmultiplayer"}, "Attempts to crash using all known entities.", function()
-    local starting_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
-    local in_danger_zone = false
-    for _, player_id in pairs(players.list(false, crash_all_friends)) do
-        if Ryan.Vector.Distance(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id)), starting_coords) < Ryan.Globals.SafeCrashDistance then
-            in_danger_zone = true
-        end
-    end
 
-    if in_danger_zone then
-        Ryan.Player.Teleport(Ryan.Globals.SafeCrashCoords)
-        util.yield(1000)
-    end
+menu.action(session_crash_all_root, "Super Crash", {"ryancrashallsuper"}, "Let the crashing commence, epicly.", function()
     for _, player_id in pairs(players.list(false, crash_all_friends)) do
         if crash_all_modders or not players.is_marked_as_modder(player_id) then
-            util.create_thread(function()
-                Ryan.Player.CrashToDesktop(player_id, "Yo Momma", false)
-            end)
-        end
-    end
-    if in_danger_zone then
-        util.yield(Ryan.Globals.SafeCrashDuration)
-        Ryan.Player.Teleport(starting_coords)
-    end
-end)
-menu.action(session_crash_all_root, "Crash Using Stand", {"ryannextgen"}, "Attempts to crash using Stand's Next-Gen crashmocf.", function()
-    for _, player_id in pairs(players.list(false, crash_all_friends)) do
-        if crash_all_modders or not players.is_marked_as_modder(player_id) then
-            local player_name = players.get_name(player_id)
-            Ryan.Basics.RunCommands({"ngcrash" .. player_name, "footlettuce" .. player_name})
+            util.toast("Crashing players...")
+            Ryan.Player.SuperCrash(player_id)
         end
     end
 end)
 
 menu.divider(session_crash_all_root, "Options")
-menu.toggle(session_crash_all_root, "Include Modders", {"ryanomnicrashmodders"}, "If enabled, modders are included in the Omnicrash.", function(value)
+menu.toggle(session_crash_all_root, "Include Modders", {"ryancrashallmodders"}, "If enabled, modders are included in the Omnicrash.", function(value)
     crash_all_modders = value
 end)
-menu.toggle(session_crash_all_root, "Include Friends", {"ryanomnicrashfriends"}, "If enabled, friends are included in the Omnicrash.", function(value)
+menu.toggle(session_crash_all_root, "Include Friends", {"ryancrashallfriends"}, "If enabled, friends are included in the Omnicrash.", function(value)
     crash_all_friends = value
 end)
 
 -- -- Anti-Hermit
+antihermit_time = 300000
+
+Ryan.UI.CreateSavableChoiceWithDefault(sassion_antihermit_root, "Mode: %", "ryanantihermit", "What to do with the hermits.", Ryan.Globals.AntihermitModes, function(value)
+    antihermit_mode = value
+end)
+menu.slider(sassion_antihermit_root, "Time (Minutes)", {"ryanantihermittime"}, "How long, in minutes, to let players stay inside.", 1, 15, 5, 1, function(value)
+    antihermit_time = value * 60000
+end)
+
 hermits = {}
 hermit_list = {}
 util.create_tick_handler(function()
-    if not is_switching_sessions() then
+    if not Ryan.Globals.PlayerIsSwitchingSessions then
         for _, player_id in pairs(players.list(false)) do
             if not players.is_marked_as_modder(player_id) then
                 local tracked = false
@@ -1352,20 +1188,20 @@ util.create_tick_handler(function()
                             util.toast(player_name .. " is now inside a building.")
                         end
                     elseif hermit_list[player_id] ~= nil then
-                        hermits[player_id] = util.current_time_millis() - 210000
+                        hermits[player_id] = util.current_time_millis() - (antihermit_time * 0.7)
                         hermit_list[player_id] = nil
-                    elseif util.current_time_millis() - hermits[player_id] >= 300000 then
-                        hermits[player_id] = util.current_time_millis() - 210000
+                    elseif util.current_time_millis() - hermits[player_id] >= antihermit_time then
+                        hermits[player_id] = util.current_time_millis() - (antihermit_time * 0.7)
                         hermit_list[player_id] = true
                         if antihermit_mode ~= "Off" then
                             Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Anti-Hermit", player_name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
-                            Ryan.Player.SpamTexts(player_id, "You've been inside too long. Stop being weird and play the game!", 1500)
+                            Ryan.Player.SpamSMS(player_id, "You've been inside too long. Stop being weird and play the game!", 1500)
                             if antihermit_mode == "Teleport Outside" then
-                                Ryan.Basics.RunCommands({"apt1" .. player_name})
+                                menu.trigger_commands("apt1" .. player_name)
                             elseif antihermit_mode == "Kick" then
-                                Ryan.Basics.RunCommands({"kick" .. player_name})
+                                Ryan.Player.Kick(player_id)
                             elseif antihermit_mode == "Crash" then
-                                Ryan.Basics.RunCommands({"ngcrash" .. player_name, "footlettuce" .. player_name})
+                                Ryan.Player.Crash(player_id)
                             end
                         end
                     end
@@ -1450,7 +1286,7 @@ util.create_tick_handler(function()
                 if player_list[i] ~= players.user() and can_kick and kicked < kick_count then
                     local reason = max_players_prefer_kd and ("having a " .. string.format("%.1f", players.get_kd(player_list[i])) .. " K/D") or ("being a modder")
                     Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Max Players", "Kicking " .. players.get_name(player_list[i]) .. " for " .. reason .. ".")
-                    menu.trigger_commands("kick" .. players.get_name(player_list[i]))
+                    Ryan.Player.Kick(player_list[i])
                     kicked = kicked + 1
                 end
             end
@@ -1463,6 +1299,26 @@ end)
 mk2_chaos = false
 menu.toggle(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and tells them to duel.", function(value)
     mk2_chaos = value    
+end)
+
+util.create_tick_handler(function()
+    if mk2_chaos then
+        chat.send_message("This session is in Mk II Chaos mode! Type \"!mk2\" in chat at any time to get one. Good luck.", false, true, true)
+        local oppressor2 = util.joaat("oppressor2")
+        Ryan.Basics.RequestModel(oppressor2)
+        for _, player_id in pairs(players.list()) do
+            local player_ped = Ryan.Player.GetPed(player_id)
+            local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(player_ped), {x = 0.0, y = 5.0, z = 0.0})
+            local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
+            Ryan.Entity.RequestControlLoop(vehicle)
+            Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
+            ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
+            VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
+            VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
+        end
+        Ryan.Basics.FreeModel(oppressor2)
+        util.yield(180000)
+    end
 end)
 
 util.create_tick_handler(function()
@@ -1739,17 +1595,15 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
     if crash_money_beggars then
         if (message_lower:find("can") or message_lower:find("?") or message_lower:find("please") or message_lower:find("plz") or message_lower:find("pls") or message_lower:find("drop"))
         and message_lower:find("money") then
-
             Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Crash Money Beggars", players.get_name(sender) .. " is being crashed for begging for money drops.")
-            Ryan.Basics.RunCommands({"ngcrash" .. sender_name, "footlettuce" .. sender_name})
+            Ryan.Player.Crash(sender)
         end
     end
     if crash_car_meeters then
         if (message_lower:find("want to") or message_lower:find("wanna") or message_lower:find("at") or message_lower:find("is") or message_lower:find("?"))
         and message_lower:find("car") and message_lower:find("meet") then
-
             Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Crash Car Meeters", players.get_name(sender) .. " is being crashed for suggesting a car meet.")
-            Ryan.Basics.RunCommands({"ngcrash" .. sender_name, "footlettuce" .. sender_name})
+            Ryan.Player.Crash(sender)
         end
     end
 
@@ -1771,16 +1625,12 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
                     local has_error = false
                     for i, arg_type in pairs(command[2]) do
                         if arg_type == "player" then
-                            local player_found = false
-                            for _, player_id in pairs(players.list()) do
-                                if players.get_name(player_id):lower():find(args[i]:lower()) == 1 then
-                                    args[i] = player_id
-                                    player_found = true
-                                end
-                            end
-                            if not player_found then
+                            local player_id = Ryan.Player.GetId(args[i])
+                            if player_id == nil then
                                 reply("Player '" .. args[i] .. "' could not be found.")
                                 has_error = true
+                            else
+                                args[i] = player_id
                             end
                         end
                     end
@@ -1847,7 +1697,7 @@ esp_color = {r = 0.29, g = 0.69, b = 1.0}
 
 menu.divider(settings_root, "Updates")
 menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
-menu.action(settings_root, "Reinstall", {"ryanreinstall"}, "Force update the script for patches and troubleshooting.", function() do_update(true) end)
+menu.action(settings_root, "Reinstall", {"ryanreinstall"}, "Force update the script for patches and troubleshooting.", function() Ryan.Basics.DoUpdate(true) end)
 menu.hyperlink(settings_root, "Website", "https://gta.ryanmade.site/", "Opens the official website, for downloading the installer and viewing the changelog.")
 
 menu.divider(settings_root, "Options")
@@ -1864,7 +1714,6 @@ end)
 ptfx_attack = {}
 money_drop = {}
 remove_godmode = {}
-remove_godmode_notice = {}
 entities_message = {}
 
 vehicle_effects = {}
@@ -1880,7 +1729,7 @@ function spam_then(player_id, action)
     local do_spam = entities_message[player_id] ~= nil and entities_message[player_id] ~= "" and entities_message[player_id] ~= " "
     if do_spam then
         Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Entity Trolling", "Spamming " .. players.get_name(player_id) .. " and then spawning entities on them...")
-        Ryan.Player.SpamTexts(player_id, entities_message[player_id], 1250)
+        Ryan.Player.SpamSMS(player_id, entities_message[player_id], 1250)
     else
         Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Entity Trolling", "Spawning entities on " .. players.get_name(player_id) .. "!")
     end
@@ -1976,22 +1825,19 @@ function setup_player(player_id)
         util.toast("Attached to " .. players.get_name(player_id) .. ".")
     end)
 
-
-    -- -- PTFX Attack
-    menu.toggle(player_trolling_root, "PTFX Attack", {"ryanptfxattack"}, "Tries to lag the player with PTFX.", function(value)
-        ptfx_attack[player_id] = value and true or nil
-    end)
-
     -- -- Fake Money Drop
     menu.toggle(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function(value)
         money_drop[player_id] = value and true or nil
     end)
 
-
     -- -- Remove Godmode
     menu.toggle(player_trolling_root, "Remove Godmode", {"ryanremovegodmode"}, "Removes godmode from Kiddions users and their vehicles.", function(value)
         remove_godmode[player_id] = value and true or nil
-        remove_godmode_notice[player_id] = util.current_time_millis()
+    end)
+
+    -- -- Kill in Godmode
+    menu.action(player_trolling_root, "Kill in Godmode", {"ryankillingodmode"}, "Attemps to kill players with real godmode.", function()
+        Ryan.Player.KillInGodmode(player_id)
     end)
 
     -- -- Steal Vehicle
@@ -2017,45 +1863,37 @@ function setup_player(player_id)
 
     menu.divider(player_removal_root, "Go")
 
-    -- -- Stand Kick
-    menu.action(player_removal_root, "Stand Kick", {"ryankick"}, "Attempts to kick using Stand's Smart kick.", function()
-        Ryan.Player.SpamTextsAndBlockJoins(player_id, removal_block_joins, removal_message, function()
-            local player_name = players.get_name(player_id)
-            menu.trigger_commands("kick" .. player_name)
+    -- -- Kick
+    menu.action(player_removal_root, "Kick", {"ryankick"}, "Use the best possible kick method.", function()
+        Ryan.Player.SpamSMSAndBlockJoins(player_id, removal_block_joins, removal_message, function()
+            Ryan.Player.SendScriptEvent(player_id, {111242367, player_id, -210634234})
+            --Ryan.Player.Kick(player_id)
         end)
     end)
 
-    -- -- Crash To Singleplayer
-    menu.action(player_removal_root, "Crash To Singleplayer", {"ryancrash"}, "Attempts to crash using all known script events.", function()
-        Ryan.Player.SpamTextsAndBlockJoins(player_id, removal_block_joins, removal_message, function()
-            Ryan.Player.CrashToSingleplayer(player_id)
+    -- -- Crash
+    menu.action(player_removal_root, "Crash", {"ryancrash"}, "Use the best possible crash methods.", function()
+        if player_id == players.user() then
+            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Attach", "You just almost crashed yourself. Good job!")
+            return
+        end
+
+        Ryan.Player.SpamSMSAndBlockJoins(player_id, removal_block_joins, removal_message, function()
+            Ryan.Player.Crash(player_id)
         end)
     end)
 
-    -- -- Crash To Desktop
-    player_crash_to_desktop_root = menu.list(player_removal_root, "Crash To Desktop...", {"ryancrashes"}, "Various methods of crashing to desktop.")
-    
-    menu.action(player_crash_to_desktop_root, "Do All", {"ryandesktop"}, "Attempts to crash using all known entities.", function(click_type)
-        Ryan.Player.SpamTextsAndBlockJoins(player_id, removal_block_joins, removal_message, function()
-            Ryan.Player.CrashToDesktop(player_id, nil, true)
+    menu.action(player_removal_root, "Super Crash", {"ryansuper"}, "A crash that should work on 2take1 and Cherax.", function()
+        Ryan.Player.SpamSMSAndBlockJoins(player_id, removal_block_joins, removal_message, function()
+            Ryan.Player.SuperCrash(player_id)
         end)
     end)
-
-    menu.divider(player_crash_to_desktop_root, "Methods")
-    for _, mode in pairs(Ryan.Globals.CrashToDesktopMethods) do
-        menu.action(player_crash_to_desktop_root, mode, {"ryan" .. mode}, "Attempts to crash using the " .. mode .. " method.", function(click_type)
-            Ryan.Player.SpamTextsAndBlockJoins(player_id, removal_block_joins, removal_message, function()
-                Ryan.Player.CrashToDesktop(player_id, mode, true)
-            end)
-        end)
-    end
 
 
     -- Divorce Kick --
     menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
-        local player_name = players.get_name(player_id)
-        Ryan.Player.BlockJoins(player_name)
-        menu.trigger_commands("kick" .. player_name)
+        Ryan.Player.BlockJoins(players.get_name(player_id))
+        Ryan.Player.Kick(player_id)
         menu.trigger_commands("players")
     end)
 end
@@ -2094,14 +1932,6 @@ end)
 
 util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
-        if remove_godmode[player_id] == true then
-            Ryan.Player.RemoveGodmode(player_id, true)
-            if util.current_time_millis() - remove_godmode_notice[player_id] >= 10000 then
-                util.toast("Still removing godmode from " .. players.get_name(player_id) .. ".")
-                remove_godmode_notice[player_id] = util.current_time_millis()
-            end
-        end
-
         if attach_root[player_id] ~= nil then
             local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id), true)
             if vehicle ~= attach_vehicle_id[player_id] then
@@ -2134,9 +1964,11 @@ util.create_tick_handler(function()
 end)
 
 util.create_tick_handler(function()
-    for _, player_id in pairs(ptfx_attack) do
-        Ryan.PTFX.PlayAtCoords(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id)), "core", "exp_grd_petrol_pump_post", {r = 0, g = 0, b = 0})
-        Ryan.PTFX.PlayAtCoords(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id)), "core", "exp_grd_petrol_pump", {r = 0, g = 0, b = 0})
+    for _, player_id in pairs(players.list()) do
+        if remove_godmode[player_id] == true then
+            Ryan.Player.SendScriptEvent(player_id, {-1388926377, player_id, -1762807505, math.random(0, 9999)}, "remove godmode")
+            
+        end
     end
 end)
 
@@ -2144,7 +1976,6 @@ function cleanup_player(player_id)
     money_drop[player_id] = nil
     ptfx_attack[player_id] = nil
     remove_godmode[player_id] = nil
-    remove_godmode_notice[player_id] = nil
     entities_message[player_id] = nil
     
     vehicle_effects[player_id] = nil
@@ -2172,8 +2003,7 @@ util.keep_running()
 
 -- DirectX --
 while true do
-    player_is_pointing = memory.read_int(memory.script_global(4521801 + 930)) == 3
-    if crosshair_mode == "Always" or (crosshair_mode == "When Pointing" and player_is_pointing) then
+    if crosshair_mode == "Always" or (crosshair_mode == "When Pointing" and Ryan.Globals.PlayerIsPointing) then
         local weapon = WEAPON.GET_SELECTED_PED_WEAPON(Ryan.Player.GetPed())
         if WEAPON.GET_WEAPONTYPE_GROUP(weapon) ~= -1212426201 then
             HUD.HIDE_HUD_COMPONENT_THIS_FRAME(14)

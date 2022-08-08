@@ -192,7 +192,7 @@ Ryan.Trolling = {
         STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_truck)
         STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_man)
 
-        Ryan.Player.SpamTexts(player_id, "It's trash day! Time to take it out.", 5000)
+        Ryan.Player.SpamSMS(player_id, "It's trash day! Time to take it out.", 5000)
     end,
 
     FlyingYacht = function(player_id)

@@ -107,7 +107,6 @@ Ryan.Vehicle = {
                 util.yield()
             end
             if not failed_to_kick then
-                Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Steal Vehicle", "Teleporting into the vehicle.")
                 PED.SET_PED_INTO_VEHICLE(Ryan.Player.GetPed(), vehicle, -1)
             end
         end
