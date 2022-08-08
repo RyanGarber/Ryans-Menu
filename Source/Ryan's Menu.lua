@@ -1864,15 +1864,14 @@ function setup_player(player_id)
     menu.divider(player_removal_root, "Go")
 
     -- -- Kick
-    menu.action(player_removal_root, "Kick", {"ryankick"}, "Use the best possible kick method.", function()
+    menu.action(player_removal_root, "Stand Kick", {"ryankick"}, "Use the best possible kick method.", function()
         Ryan.Player.SpamSMSAndBlockJoins(player_id, removal_block_joins, removal_message, function()
-            Ryan.Player.SendScriptEvent(player_id, {111242367, player_id, -210634234})
-            --Ryan.Player.Kick(player_id)
+            Ryan.Player.Kick(player_id)
         end)
     end)
 
     -- -- Crash
-    menu.action(player_removal_root, "Crash", {"ryancrash"}, "Use the best possible crash methods.", function()
+    menu.action(player_removal_root, "Stand Crash", {"ryancrash"}, "Use the best possible crash methods.", function()
         if player_id == players.user() then
             Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Attach", "You just almost crashed yourself. Good job!")
             return
