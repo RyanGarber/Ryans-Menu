@@ -1868,12 +1868,12 @@ function setup_player(player_id)
     end)
 
     -- -- Remove Godmode
-    menu.toggle(player_trolling_root, "Remove Godmode", {"ryanremovegodmode"}, "Removes godmode from Kiddions users and their vehicles.", function(value)
+    menu.toggle(player_trolling_root, "Kill Kiddions / Inside", {"ryankillkiddionsgodmode"}, "Kills players that are in .", function(value)
         remove_godmode[player_id] = value and true or nil
     end)
 
     -- -- Kill in Godmode
-    menu.action(player_trolling_root, "Kill in Godmode", {"ryankillingodmode"}, "Attemps to kill players with real godmode.", function()
+    menu.action(player_trolling_root, "Kill Real Godmode", {"ryankillrealgodmode"}, "Attemps to kill players with real godmode.", function()
         Ryan.Player.KillInGodmode(player_id)
     end)
 
@@ -2002,7 +2002,9 @@ end)
 util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
         if remove_godmode[player_id] == true then
+            local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id))
             Ryan.Player.SendScriptEvent(player_id, {-1388926377, player_id, -1762807505, math.random(0, 9999)}, "remove godmode")
+            MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z + 1, coords.x, coords.y, coords.z, 1000, true, util.joaat("weapon_stungun"), Ryan.Player.GetPed(), false, true, 1.0)
         end
         if glitch_state[player_id] ~= glitch[player_id] then
             util.create_thread(function()
