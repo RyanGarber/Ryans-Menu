@@ -60,12 +60,13 @@ Ryan.Basics = {
 				Ryan.Basics.ShowTextMessage(6, "Auto-Update", "Failed to get the latest version. Use the installer instead.")
 			end)
 			
+			async_http.dispatch()
+			
 			while updating ~= 0 do
 				if updating == 2 then util.toast("Downloading files for Ryan's Menu...") end
+
 				util.yield(333)
-			end
-			
-			async_http.dispatch()
+			end		
 		end
 	end,
 	

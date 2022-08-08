@@ -7,6 +7,7 @@ Ryan.Globals = {
 
     Initialize = function()
         Ryan.Globals.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Crosshair.png")
+        Ryan.Basics.RequestModel(util.joaat("p_poly_bag_01_s"))
     end,
 
     Update = function()
