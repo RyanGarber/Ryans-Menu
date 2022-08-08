@@ -15,7 +15,7 @@ Ryan.Player = {
     end,
 
     -- Kick a player using Stand's Smart kick, using Breakup if that fails.
-    Kick = function(player_id, root)
+    Kick = function(player_id)
         local player_name = players.get_name(player_id)
         menu.trigger_commands("kick" .. player_name)
 
