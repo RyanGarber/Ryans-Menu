@@ -140,7 +140,7 @@ Ryan.Session = {
 
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id), false)
         if vehicle ~= 0 then
-            Ryan.Entity.RequestControlLoop(vehicle)
+            Ryan.Entity.RequestControl(vehicle, true)
             if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
                 action(vehicle)
                 util.yield(wait_for)

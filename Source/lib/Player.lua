@@ -84,6 +84,16 @@ Ryan.Player = {
         return PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id)
     end,
 
+    -- Get a player's index by their ped ID.
+    GetByPed = function(ped_id)
+        for _, player_id in pairs(players.list()) do
+            if Ryan.Player.GetPed(player_id) == ped_id then
+                return player_id
+            end
+        end
+        return nil
+    end,
+
     -- Get the total amount of money a player has.
     GetMoney = function(player_id)
         return players.get_wallet(player_id) + players.get_bank(player_id)
@@ -116,7 +126,7 @@ Ryan.Player = {
         local name = PLAYER.GET_PLAYER_NAME(player_id)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), true)
         if vehicle ~= 0 then
-            Ryan.Entity.RequestControlLoop(vehicle)
+            Ryan.Entity.RequestControl(vehicle, true)
             for i = 1, 3 do
                 ENTITY.SET_ENTITY_COORDS_NO_OFFSET(vehicle, coords.x, coords.y, coords.z, false, false, false)
             end

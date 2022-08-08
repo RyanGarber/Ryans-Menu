@@ -3,19 +3,19 @@
         "commands": [
             {
                 "match": "Ryan's Menu.lua",
-                "cmd": "copy /b/v/y \"${file}\" \"%APPDATA%\\Stand\\Lua Scripts\\Ryan's Menu.lua\""
+                "cmd": "copy /b/v/y \"${file}\" \"%APPDATA%\\Stand\\Lua Scripts\\Ryan's Menu (Dev).lua\""
             },
             {
                 "match": "lib\\\\.*",
-                "cmd": "mkdir \"%APPDATA%\\Stand\\Lua Scripts\\lib\\Ryan's Menu (Dev)\" & copy /b/v/y \"${file}\" \"%APPDATA%\\Stand\\Lua Scripts\\lib\\Ryan's Menu\\${fileBasename}\""
+                "cmd": "mkdir \"%APPDATA%\\Stand\\Lua Scripts\\lib\\Ryan's Menu (Dev)\" & copy /b/v/y \"${file}\" \"%APPDATA%\\Stand\\Lua Scripts\\lib\\Ryan's Menu (Dev)\\${fileBasename}\""
             },
             {
                 "match": "resources\\\\.*",
-                "cmd": "mkdir \"%APPDATA%\\Stand\\Lua Scripts\\resources\\Ryan's Menu (Dev)\" & copy /b/v/y \"${file}\" \"%APPDATA%\\Stand\\Lua Scripts\\resources\\Ryan's Menu\\${fileBasename}\""
+                "cmd": "mkdir \"%APPDATA%\\Stand\\Lua Scripts\\resources\\Ryan's Menu (Dev)\" & copy /b/v/y \"${file}\" \"%APPDATA%\\Stand\\Lua Scripts\\resources\\Ryan's Menu (Dev)\\${fileBasename}\""
             },
             {
                 "match": "store\\\\.*",
-                "cmd": "mkdir \"%APPDATA%\\Stand\\Lua Scripts\\store\\Ryan's Menu (Dev)\" & copy /b/v/y \"${file}\" \"%APPDATA%\\Stand\\Lua Scripts\\store\\Ryan's Menu\\${fileBasename}\""
+                "cmd": "mkdir \"%APPDATA%\\Stand\\Lua Scripts\\store\\Ryan's Menu (Dev)\" & copy /b/v/y \"${file}\" \"%APPDATA%\\Stand\\Lua Scripts\\store\\Ryan's Menu (Dev)\\${fileBasename}\""
             }
         ]
     }

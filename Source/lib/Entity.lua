@@ -37,26 +37,26 @@ Ryan.Entity = {
         return nearby_entities
     end,
 
-    RequestControl = function(entity)
-        if not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) then
-            NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity), true)
-            NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
+    RequestControl = function(entity, loop)
+        local network_id = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity)
+        if loop then
+            local tick = 0
+            while not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) and tick < 25 do
+                util.yield()
+                NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
+                tick = tick + 1
+            end
+            if NETWORK.NETWORK_IS_SESSION_STARTED() then
+                NETWORK.SET_NETWORK_ID_CAN_MIGRATE(network_id, true)
+                NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
+            end
+        else
+            if not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) then
+                NETWORK.SET_NETWORK_ID_CAN_MIGRATE(network_id, true)
+                NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
+            end
         end
         return NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity)
-    end,
-
-    RequestControlLoop = function(entity)
-        local tick = 0
-        while not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) and tick < 25 do
-            util.yield()
-            NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
-            tick = tick + 1
-        end
-        if NETWORK.NETWORK_IS_SESSION_STARTED() then
-            local network_id = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity)
-            NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
-            NETWORK.SET_NETWORK_ID_CAN_MIGRATE(network_id, true)
-        end
     end,
 
     FaceEntity = function(entity_1, entity_2, use_pitch)
@@ -171,7 +171,7 @@ Ryan.Entity = {
         local objects = entities.get_all_objects_as_handles()
         for _, object in pairs(objects) do
             if ENTITY.IS_ENTITY_ATTACHED_TO_ENTITY(object, entity) then
-                Ryan.Entity.RequestControlLoop(object)
+                Ryan.Entity.RequestControl(object, true)
                 ENTITY.DETACH_ENTITY(object, false, false)
                 util.yield()
                 entities.delete_by_handle(object)

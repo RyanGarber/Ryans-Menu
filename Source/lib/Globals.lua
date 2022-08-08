@@ -10,7 +10,7 @@ Ryan.Globals = {
         Ryan.Basics.RequestModel(util.joaat("p_poly_bag_01_s"))
     end,
 
-    Update = function()
+    OnTick = function()
         if not NETWORK.NETWORK_IS_SESSION_ACTIVE() then
 			waiting_for_session = true
 			waiting_for_coords = nil

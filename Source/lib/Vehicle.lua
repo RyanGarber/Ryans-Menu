@@ -125,10 +125,7 @@ Ryan.Vehicle = {
 
     Modify = function(vehicle, action, take_control_loop)
         if not ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then return end
-        
-        if take_control_loop then Ryan.Entity.RequestControlLoop(vehicle)
-        else Ryan.Entity.RequestControl(vehicle) end
-
+        Ryan.Entity.RequestControl(vehicle, take_control_loop)
         action(vehicle)
     end
 }
