@@ -138,37 +138,32 @@ Ryan.Player = {
 
     -- Kill a player in godmode using dark magic.
     KillInGodmode = function(player_id)
-        local player_ped = Ryan.Player.GetPed(player_id)
+        util.toast("Attempting to kill " .. players.get_name(player_id) .. "...")
 
-        local vehicles = {
-            {["name"] = "Khanjali", ["height"] = 2.8, ["offset"] = 0}
-            -- {["name"] = "APC", ["height"] = 3.4, ["offset"] = -1.5}
-        }
-        local vehicle = vehicles[math.random(1, #vehicles)]
+        local player_ped = Ryan.Player.GetPed(player_id)
+        local coords = ENTITY.GET_ENTITY_COORDS(player_id)
+        local distance = TASK.IS_PED_STILL(player_ped) and 0 or 3
+        
+        local vehicle = {["name"] = "Khanjali", ["height"] = 2.8, ["offset"] = 0}
+                     -- {["name"] = "APC", ["height"] = 3.4, ["offset"] = -1.5}
         local vehicle_hash = util.joaat(vehicle.name)
 
-        util.toast("Attempting to kill " .. players.get_name(player_id) .. "...")
-        local distance = TASK.IS_PED_STILL(player_ped) and 0 or 3
-        local coords = ENTITY.GET_ENTITY_COORDS(player_id)
-    
         Ryan.Basics.RequestModel(vehicle_hash)    
-        local vehicle_1 = entities.create_vehicle(vehicle_hash, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, vehicle.offset, distance, vehicle.height), ENTITY.GET_ENTITY_HEADING(player_ped))
-        local vehicle_2 = entities.create_vehicle(vehicle_hash, coords, 0)
-        local vehicle_3 = entities.create_vehicle(vehicle_hash, coords, 0)
-        local vehicle_4 = entities.create_vehicle(vehicle_hash, coords, 0)
+        local vehicles = {
+            entities.create_vehicle(vehicle_hash, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, vehicle.offset, distance, vehicle.height), ENTITY.GET_ENTITY_HEADING(player_ped)),
+            entities.create_vehicle(vehicle_hash, coords, 0),
+            entities.create_vehicle(vehicle_hash, coords, 0),
+            entities.create_vehicle(vehicle_hash, coords, 0)
+        }
+        for i = 1, #vehicles do Ryan.Entity.RequestControl(vehicles[i]) end  
+          
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicles[2], vehicles[1], 0, 0, 3, 0, 0, 0, -180, 0, false, true, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicles[3], vehicles[1], 0, 3, 3, 0, 0, 0, -180, 0, false, true, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicles[4], vehicles[1], 0, 3, 0, 0, 0, 0, 0, 0, false, true, false, 0, true)
+        ENTITY.SET_ENTITY_VISIBLE(vehicles[1], false)
 
-        Ryan.Entity.RequestControl(vehicle_1)
-        Ryan.Entity.RequestControl(vehicle_2)
-        Ryan.Entity.RequestControl(vehicle_3)
-        Ryan.Entity.RequestControl(vehicle_4)
-    
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle_2, vehicle_1, 0, 0, 3, 0, 0, 0, -180, 0, false, true, false, 0, true)
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle_3, vehicle_1, 0, 3, 3, 0, 0, 0, -180, 0, false, true, false, 0, true)
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle_4, vehicle_1, 0, 3, 0, 0, 0, 0, 0, 0, false, true, false, 0, true)
-        ENTITY.SET_ENTITY_VISIBLE(vehicle_1, false)
         util.yield(7500)
-
-        entities.delete_by_handle(vehicle_1)
+        for i = 1, #vehicles do entities.delete_by_handle(vehicles[i]) end
     end,
 
     -- Spam SMS and block joins from a player, then perform a method. 
