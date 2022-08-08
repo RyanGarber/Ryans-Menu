@@ -52,9 +52,9 @@ entities_exploded = {}
 
 menu.divider(self_root, "General")
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
-self_forcefield_root = Ryan.UI.CreateSavableChoiceWithDefault(self_root, "Forcefield...", "ryanforcefield", "An expanded and enhanced forcefield.", Ryan.Globals.ForcefieldModes, function(value) forcefield_mode = value end)
+self_forcefield_root = Ryan.UI.CreateSavableChoiceWithDefault(self_root, "Forcefield...", "ryanforcefield", "", "An expanded and enhanced forcefield.", Ryan.Globals.ForcefieldModes, function(value) forcefield_mode = value end)
 self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
-self_crosshair_root = Ryan.UI.CreateSavableChoiceWithDefault(self_root, "Crosshair...", "ryancrosshair", "Add an on-screen crosshair.", Ryan.Globals.CrosshairModes, function(value) crosshair_mode = value end)
+self_crosshair_root = Ryan.UI.CreateSavableChoiceWithDefault(self_root, "Crosshair...", "ryancrosshair", "", "Add an on-screen crosshair.", Ryan.Globals.CrosshairModes, function(value) crosshair_mode = value end)
 self_spotlight_root = menu.list(self_root, "Spotlight...", {"ryanspotlight"}, "Attach lights to you or your vehicle.")
 
 -- -- PTFX
@@ -1079,6 +1079,8 @@ session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a si
 session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
 session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
 sassion_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Handle players that never seem to go outside.")
+session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
+session_halloween_root = menu.list(session_root, "Halloween...", {"ryanhalloweenall"}, "Gives all players a random Halloween effect periodically. May turn them into animals.")
 
 -- -- Nuke
 nuke_spam_enabled = false
@@ -1151,6 +1153,7 @@ menu.action(session_crash_all_root, "Super Crash", {"ryancrashallsuper"}, "Let t
         if crash_all_modders or not players.is_marked_as_modder(player_id) then
             util.toast("Crashing players...")
             Ryan.Player.SuperCrash(player_id)
+            util.yield(500)
         end
     end
 end)
@@ -1166,7 +1169,7 @@ end)
 -- -- Anti-Hermit
 antihermit_time = 300000
 
-Ryan.UI.CreateSavableChoiceWithDefault(sassion_antihermit_root, "Mode: %", "ryanantihermit", "What to do with the hermits.", Ryan.Globals.AntihermitModes, function(value)
+Ryan.UI.CreateSavableChoiceWithDefault(sassion_antihermit_root, "Mode: %", "ryanantihermit", "", "What to do with the hermits.", Ryan.Globals.AntihermitModes, function(value)
     antihermit_mode = value
 end)
 menu.slider(sassion_antihermit_root, "Time (Minutes)", {"ryanantihermittime"}, "How long, in minutes, to let players stay inside.", 1, 15, 5, 1, function(value)
@@ -1226,8 +1229,6 @@ util.create_tick_handler(function()
 end)
 
 -- -- Max Players
-session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
-
 max_players_amount = 0
 
 max_players_prefer_kd = true
@@ -1293,6 +1294,27 @@ util.create_tick_handler(function()
         end
     end
     util.yield(1000)
+end)
+
+-- -- Halloween
+halloween_enabled = false
+halloween_delay = 60
+halloween_last = 0
+
+menu.toggle(session_halloween_root, "Enable", {"ryanhalloweenallenable"}, "Enable Halloween mode.", function(value)
+    halloween_enabled = value
+end)
+menu.slider(session_halloween_root, "Delay (Seconds)", {"ryanhalloweenalldelay"}, "Time to wait between giving players new effects.", 5, 300, 60, 1, function(value)
+    halloween_delay = value
+end)
+
+util.create_tick_handler(function()
+    if halloween_enabled and util.current_time_millis() - halloween_last > halloween_delay * 1000 then
+        for _, player_id in pairs(players.list(false, true, true)) do
+            Ryan.Player.SendScriptEvent(player_id, {-1178972880, player_id, 8, -5, 1, 1, 1}, "halloween effect")
+        end
+        halloween_last = util.current_time_millis()
+    end
 end)
 
 -- -- Mk II Chaos
@@ -1725,6 +1747,11 @@ attach_notice = {}
 attach_vehicle_offset = {}
 attach_root = {}
 
+glitch = {}
+glitch_state = {}
+glitch_type_names = {"Off", "Default", "Ferris Wheel", "UFO", "Cement Mixer", "Scaffolding", "Garage Door", "Big Orange Ball", "Stunt Ramp"}
+glitch_type_hashes = {"Off", "Default", "prop_ld_ferris_wheel", "p_spinning_anus_s", "prop_staticmixer_01", "des_scaffolding_root", "prop_sm1_11_garaged", "prop_juicestand", "stt_prop_stunt_jump_l"}
+
 function spam_then(player_id, action)
     local do_spam = entities_message[player_id] ~= nil and entities_message[player_id] ~= "" and entities_message[player_id] ~= " "
     if do_spam then
@@ -1825,6 +1852,16 @@ function setup_player(player_id)
         util.toast("Attached to " .. players.get_name(player_id) .. ".")
     end)
 
+
+    -- -- Glitch
+    local player_trolling_glitch_root = Ryan.UI.CreateSavableChoiceWithDefault(player_trolling_root, "Glitch: %", "ryanglitch", players.get_name(player_id), "Glitch the player and their vehicle.", glitch_type_names, function(value)
+        for i = 1, #glitch_type_names do
+            if glitch_type_names[i] == value then
+                glitch[player_id] = glitch_type_hashes[i]
+            end
+        end
+    end)
+    
     -- -- Fake Money Drop
     menu.toggle(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function(value)
         money_drop[player_id] = value and true or nil
@@ -1966,7 +2003,48 @@ util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
         if remove_godmode[player_id] == true then
             Ryan.Player.SendScriptEvent(player_id, {-1388926377, player_id, -1762807505, math.random(0, 9999)}, "remove godmode")
-            
+        end
+        if glitch_state[player_id] ~= glitch[player_id] then
+            util.create_thread(function()
+                local glitch_type = glitch[player_id]
+                while glitch[player_id] == glitch_type do
+                    if glitch_type == "Default" then
+                        Ryan.Basics.RequestModel(util.joaat("prop_shuttering03"))
+                        local player_ped = Ryan.Player.GetPed(player_id)
+                        local coords = ENTITY.GET_ENTITY_COORDS(player_ped, false)
+                        local objects = {
+                            entities.create_object(util.joaat("prop_shuttering03"), ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 1, 0)),
+                            entities.create_object(util.joaat("prop_shuttering03"), ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 0, 0))
+                        }
+                        ENTITY.SET_ENTITY_VISIBLE(objects[1], false)
+                        ENTITY.SET_ENTITY_VISIBLE(objects[2], false)
+                        util.yield()
+                        entities.delete_by_handle(objects[1])
+                        entities.delete_by_handle(objects[2])
+                    elseif glitch[player_id] ~= "Off" then
+                        Ryan.Basics.RequestModel(util.joaat(glitch[player_id]))
+                        Ryan.Basics.RequestModel(util.joaat("rallytruck"))
+                        local player_ped = Ryan.Player.GetPed(player_id)
+                        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped, false)
+                        local objects = {
+                            entities.create_object(util.joaat(glitch[player_id]), player_coords),
+                            entities.create_vehicle(util.joaat("rallytruck"), player_coords, 0)
+                        }
+                        ENTITY.SET_ENTITY_VISIBLE(objects[1], false)
+                        ENTITY.SET_ENTITY_VISIBLE(objects[2], false)
+                        ENTITY.SET_ENTITY_INVINCIBLE(objects[1], true)
+                        ENTITY.SET_ENTITY_COLLISION(objects[1], true, true)
+                        ENTITY.APPLY_FORCE_TO_ENTITY(objects[2], 1, 0.0, 10, 10, 0.0, 0.0, 0.0, 0, 1, 1, 1, 0, 1)
+                        util.yield(50)
+                        entities.delete_by_handle(objects[1])
+                        entities.delete_by_handle(objects[2])
+                        util.yield(49)
+                    end
+                    util.yield()
+                end
+                return false
+            end)
+            glitch_state[player_id] = glitch[player_id]
         end
     end
 end)
@@ -1984,6 +2062,9 @@ function cleanup_player(player_id)
     attach_notice[player_id] = nil
     attach_vehicle_offset[player_id] = nil
     attach_root[player_id] = nil
+
+    glitch[player_id] = nil
+    glitch_state[player_id] = nil
 
     hermits[player_id] = nil
     hermit_list[player_id] = nil

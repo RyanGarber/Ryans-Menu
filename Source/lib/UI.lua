@@ -1,6 +1,6 @@
 Ryan.UI = {
     -- General UI --
-    CreateSavableChoiceWithDefault = function(root, menu_name, command_name, description, choices, on_update)
+    CreateSavableChoiceWithDefault = function(root, menu_name, command_name, player_name, description, choices, on_update)
 		local state = choices[1]
 		local state_change = 2147483647
 		local state_values = {[state] = true}
@@ -10,7 +10,7 @@ Ryan.UI = {
 			menu.toggle(choices_root, choice, {command_name .. Ryan.Basics.CommandName(choice)}, "", function(value)
 				if value then
 					if choice ~= state then
-						menu.trigger_commands(command_name .. Ryan.Basics.CommandName(state) .. " off")
+						menu.trigger_commands(command_name .. Ryan.Basics.CommandName(state) .. player_name .. " off")
 						util.yield(500)
 						state = choice
 						on_update(state)
@@ -29,7 +29,7 @@ Ryan.UI = {
 				for _, choice in pairs(choices) do
 					if state_values[choice] then has_choice = true end
 				end
-				if not has_choice then menu.trigger_commands(command_name .. Ryan.Basics.CommandName(choices[1]) .. " on") end
+				if not has_choice then menu.trigger_commands(command_name .. Ryan.Basics.CommandName(choices[1]) .. player_name .. " on") end
 				state_change = 2147483647
 			end
 		end)
@@ -46,7 +46,7 @@ Ryan.UI = {
             for _, choice in pairs(options) do
                 if effects[Ryan.Basics.ToTableName(effect_name)] == nil then effects[Ryan.Basics.ToTableName(effect_name)] = {} end
 
-                Ryan.UI.CreateSavableChoiceWithDefault(effect_root, choice .. ": %", command .. Ryan.Basics.CommandName(choice), "", Ryan.UI.GodFingerActivationModes, function(value)
+                Ryan.UI.CreateSavableChoiceWithDefault(effect_root, choice .. ": %", command .. Ryan.Basics.CommandName(choice), "", "", Ryan.UI.GodFingerActivationModes, function(value)
                     effects[Ryan.Basics.ToTableName(effect_name)][Ryan.Basics.ToTableName(choice)] = value
                 end)
             end
@@ -74,7 +74,7 @@ Ryan.UI = {
 
     CreateEffectToggle = function(root, command_prefix, effects, effect_name, effect_description, god_finger)
         if god_finger then
-            Ryan.UI.CreateSavableChoiceWithDefault(root, effect_name .. ": %", command_prefix .. Ryan.Basics.CommandName(effect_name), effect_description, Ryan.UI.GodFingerActivationModes, function(value)
+            Ryan.UI.CreateSavableChoiceWithDefault(root, effect_name .. ": %", command_prefix .. Ryan.Basics.CommandName(effect_name), "", effect_description, Ryan.UI.GodFingerActivationModes, function(value)
                 effects[Ryan.Basics.ToTableName(effect_name)] = value
             end)
         else
@@ -337,7 +337,6 @@ Ryan.UI = {
         elseif parsed.health and parsed.health.fix and (not is_a_player or state[vehicle].health ~= "fix") then
             Ryan.Vehicle.Modify(vehicle, function()
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-                VEHICLE.SET_VEHICLE_FIXED(vehicle)
                 state[vehicle].engine = "fix"
             end, is_a_player)
         end
@@ -358,11 +357,14 @@ Ryan.UI = {
 
         if parsed.godmode and parsed.godmode.on and (not is_a_player or state[vehicle].godmode ~= "on") then
             Ryan.Vehicle.Modify(vehicle, function()
+                ENTITY.SET_ENTITY_PROOFS(vehicle, true, true, true, true, true, 0, 0, true)
                 ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
+                VEHICLE.SET_VEHICLE_FIXED(vehicle)
                 state[vehicle].godmode = "on"
             end, is_a_player)
         elseif parsed.godmode and parsed.godmode.off and (not is_a_player or state[vehicle].godmode ~= "off") then
             Ryan.Vehicle.Modify(vehicle, function()
+                ENTITY.SET_ENTITY_PROOFS(vehicle, false, false, false, false, false, 0, 0, false)
                 ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
                 state[vehicle].godmode = "off"
             end, is_a_player)
