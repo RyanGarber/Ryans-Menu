@@ -34,38 +34,40 @@ Ryan.Player = {
         menu.trigger_commands("ngcrash" .. player_name)
     end,
 
-    SuperCrash = function(player_id)
-        local our_id = players.user()
-        local our_ped = Ryan.Player.GetPed()
+    SuperCrash = function(player_id, block_syncs)
+        local player_ped = Ryan.Player.GetPed()
         local bush = util.joaat("h4_prop_bush_mang_ad")
         local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id))
-        local starting_coords = ENTITY.GET_ENTITY_COORDS(our_ped)
-        
-        Ryan.Player.BlockSyncs(player_id, function()
+        local starting_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+
+        local crash = function()
             util.yield(100)
-            ENTITY.SET_ENTITY_VISIBLE(our_ped, false)
-            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(our_ped, coords.x, coords.y, coords.z, false, false, false)
-            PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(our_id, bush)
-            PED.SET_PED_COMPONENT_VARIATION(our_ped, 5, 8, 0, 0)
+
+            ENTITY.SET_ENTITY_VISIBLE(player_ped, false)
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(player_ped, coords.x, coords.y, coords.z, false, false, false)
+            PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user(), bush)
+            PED.SET_PED_COMPONENT_VARIATION(player_ped, 5, 8, 0, 0)
             util.yield(500)
             
-            PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(our_id)
+            PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user())
             util.yield(2000)
 
-            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(our_ped, coords.x, coords.y, coords.z, false, false, false)
-            PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(our_id, bush)
-            PED.SET_PED_COMPONENT_VARIATION(our_ped, 5, 31, 0, 0)
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(player_ped, coords.x, coords.y, coords.z, false, false, false)
+            PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user(), bush)
+            PED.SET_PED_COMPONENT_VARIATION(player_ped, 5, 31, 0, 0)
             util.yield(500)
 
-            PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(our_id)
+            PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user())
             util.yield(2000)
 
             for i = 1, 5 do util.spoof_script("freemode", SYSTEM.WAIT) end
-            
-            ENTITY.SET_ENTITY_HEALTH(our_ped, 0)
+            ENTITY.SET_ENTITY_HEALTH(player_ped, 0)
             NETWORK.NETWORK_RESURRECT_LOCAL_PLAYER(starting_coords.x, starting_coords.y, starting_coords.z, 0, false, false, 0)
-            ENTITY.SET_ENTITY_VISIBLE(our_ped, true)
-        end)
+            ENTITY.SET_ENTITY_VISIBLE(player_ped, true)
+        end
+
+        if block_syncs then Ryan.Player.BlockSyncs(player_id, crash)
+        else crash() end
     end,
 
     BlockSyncs = function(player_id, action)

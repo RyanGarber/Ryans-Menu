@@ -1198,11 +1198,17 @@ menu.action(session_crash_all_root, "Stand Crash", {"ryancrashallstand"}, "Let t
 end)
 
 menu.action(session_crash_all_root, "Super Crash", {"ryancrashallsuper"}, "Let the crashing commence, epicly.", function()
+    local player_names = {}
     for _, player_id in pairs(players.list(false, crash_all_friends)) do
-        if crash_all_modders or not players.is_marked_as_modder(player_id) then
-            util.toast("Crashing players...")
-            Ryan.Player.SuperCrash(player_id)
-            util.yield(500)
+        table.insert(player_names, players.get_name(player_id))
+    end
+    for _, player_name in pairs(player_names) do
+        local player_id = Ryan.Player.GetId(player_name)
+        if player_id ~= nil then
+            if crash_all_modders or not players.is_marked_as_modder(player_id) then
+                util.toast("Crashing players...")
+                Ryan.Player.SuperCrash(player_id, false)
+            end
         end
     end
 end)
@@ -1994,7 +2000,7 @@ function setup_player(player_id)
 
     menu.action(player_removal_root, "Super Crash", {"ryansuper"}, "A crash that should work on 2take1 and Cherax.", function()
         Ryan.Player.SpamSMSAndBlockJoins(player_id, removal_block_joins, removal_message, function()
-            Ryan.Player.SuperCrash(player_id)
+            Ryan.Player.SuperCrash(player_id, true)
         end)
     end)
 
