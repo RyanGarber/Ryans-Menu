@@ -808,6 +808,10 @@ world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Aff
 world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
 world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
 world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
+world_movie_props_root = menu.list(world_collectibles_root, "Movie Props...", {"ryanmovieprops"}, "Every movie prop in the Solomon Richards quest.")
+world_slasher_root = menu.list(world_collectibles_root, "The Slasher...", {"ryanslasher"}, "Everything needed to activate the Slasher event.")
+world_treasure_hunt_root = menu.list(world_collectibles_root, "Treasure Hunt...", {"ryantreasures"}, "Every treasure in the Treasture Hunt.")
+world_usb_sticks_root = menu.list(world_collectibles_root, "USB Sticks...", {"ryanusbsticks"}, "Every USB Stick containing bonus music.")
 
 -- -- Action Figures
 for i = 1, #Ryan.Globals.ActionFigures do
@@ -827,6 +831,49 @@ end
 for i = 1, #Ryan.Globals.PlayingCards do
     menu.action(world_playing_cards_root, "Playing Card " .. i, {"ryanplayingcard" .. i}, "Teleports to playing card #" .. i, function()
         Ryan.Player.Teleport({x = Ryan.Globals.PlayingCards[i][1], y = Ryan.Globals.PlayingCards[i][2], z = Ryan.Globals.PlayingCards[i][3]}, false)
+    end)
+end
+
+-- -- Movie Props
+for i = 1, #Ryan.Globals.MovieProps do
+    menu.action(world_movie_props_root, "Movie Prop " .. i, {"ryanmovieprop" .. i}, "Teleports to movie prop #" .. i, function()
+        Ryan.Player.Teleport({x = Ryan.Globals.MovieProps[i][1], y = Ryan.Globals.MovieProps[i][2], z = Ryan.Globals.MovieProps[i][3]}, false)
+    end)
+end
+
+-- -- Slasher
+menu.divider(world_slasher_root, "Step 1")
+for i = 1, #Ryan.Globals.SlasherClues do
+    menu.action(world_slasher_root, "Slasher Clue " .. i, {"ryanslasherclue" .. i}, "Teleports to Slasher clue #" .. i, function()
+        Ryan.Player.Teleport({x = Ryan.Globals.SlasherClues[i][1], y = Ryan.Globals.SlasherClues[i][2], z = Ryan.Globals.SlasherClues[i][3]}, false)
+    end)
+end
+
+menu.divider(world_slasher_root, "Step 2")
+for i = 1, #Ryan.Globals.SlasherVans do
+    menu.action(world_slasher_root, "Slasher Van " .. i, {"ryanslashervan" .. i}, "Teleports to possible location #" .. i, function()
+        Ryan.Player.Teleport({x = Ryan.Globals.SlasherVans[i][1], y = Ryan.Globals.SlasherVans[i][2], z = Ryan.Globals.SlasherVans[i][3]}, false)
+    end)
+end
+
+menu.divider(world_slasher_root, "Step 3")
+slasher_spawn = menu.action(world_slasher_root, "Slasher Spawn", {"ryanslasherspawn"}, "Teleports to the Slasher's spawn location", function(click_type)
+    menu.show_warning(slasher_spawn, click_type, "You must be in Blaine County, on foot, between 7pm and 5am for the Slasher to spawn.", function()
+        Ryan.Player.Teleport({x = Ryan.Globals.SlasherFinale[1], y = Ryan.Globals.SlasherFinale[2], z = Ryan.Globals.SlasherFinale[3]}, false)
+    end)
+end)
+
+-- -- Treasure Hunt
+for i = 1, #Ryan.Globals.Treasures do
+    menu.action(world_treasure_hunt_root, "Treasure " .. i, {"ryantreasure" .. i}, "Teleports to treasure #" .. i, function()
+        Ryan.Player.Teleport({x = Ryan.Globals.Treasures[i][1], y = Ryan.Globals.Treasures[i][2], z = Ryan.Globals.Treasures[i][3]}, false)
+    end)
+end
+
+-- -- USB Sticks
+for i = 1, #Ryan.Globals.USBSticks do
+    menu.action(world_usb_sticks_root, "USB Stick " .. i, {"ryanusbstick" .. i}, "Teleports to USB stick #" .. i, function()
+        Ryan.Player.Teleport({x = Ryan.Globals.USBSticks[i][1], y = Ryan.Globals.USBSticks[i][2], z = Ryan.Globals.USBSticks[i][3]}, false)
     end)
 end
 
