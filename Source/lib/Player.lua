@@ -37,9 +37,9 @@ Ryan.Player = {
     SuperCrash = function(player_id)
         local our_id = players.user()
         local our_ped = Ryan.Player.GetPed()
+        local bush = util.joaat("h4_prop_bush_mang_ad")
         local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id))
         local starting_coords = ENTITY.GET_ENTITY_COORDS(our_ped)
-        local bush = util.joaat("h4_prop_bush_mang_ad")
         
         Ryan.Player.BlockSyncs(player_id, function()
             util.yield(100)
@@ -50,9 +50,16 @@ Ryan.Player = {
             util.yield(500)
             
             PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(our_id)
-            util.yield(2500)
-            
-            TASK.CLEAR_PED_TASKS_IMMEDIATELY(our_ped)
+            util.yield(2000)
+
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(our_ped, coords.x, coords.y, coords.z, false, false, false)
+            PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(our_id, bush)
+            PED.SET_PED_COMPONENT_VARIATION(our_ped, 5, 31, 0, 0)
+            util.yield(500)
+
+            PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(our_id)
+            util.yield(2000)
+
             for i = 1, 5 do util.spoof_script("freemode", SYSTEM.WAIT) end
             
             ENTITY.SET_ENTITY_HEALTH(our_ped, 0)

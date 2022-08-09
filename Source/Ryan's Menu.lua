@@ -1130,7 +1130,6 @@ session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares inform
 session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
 sassion_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Handle players that never seem to go outside.")
 session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
-session_halloween_root = menu.list(session_root, "Halloween...", {"ryanhalloweenall"}, "Gives all players a random Halloween effect periodically. May turn them into animals.")
 
 -- -- Nuke
 nuke_spam_enabled = false
@@ -1346,24 +1345,19 @@ util.create_tick_handler(function()
     util.yield(1000)
 end)
 
--- -- Halloween
-halloween_enabled = false
-halloween_delay = 60
-halloween_last = 0
-
-menu.toggle(session_halloween_root, "Enable", {"ryanhalloweenallenable"}, "Enable Halloween mode.", function(value)
-    halloween_enabled = value
-end)
-menu.slider(session_halloween_root, "Delay (Seconds)", {"ryanhalloweenalldelay"}, "Time to wait between giving players new effects.", 5, 300, 60, 1, function(value)
-    halloween_delay = value
-end)
+-- -- Turn Into Animals
+turn_all_into_animals = false
+menu.toggle(session_root, "Turn Into Animals", {"ryananimalall"}, "Turns all players into a random animal.", function(value) turn_all_into_animals = value end)
 
 util.create_tick_handler(function()
-    if halloween_enabled and util.current_time_millis() - halloween_last > halloween_delay * 1000 then
+    if turn_all_into_animals then
         for _, player_id in pairs(players.list(false, true, true)) do
-            Ryan.Player.SendScriptEvent(player_id, {-1178972880, player_id, 8, -5, 1, 1, 1}, "halloween effect")
+            local player_ped = Ryan.Player.GetPed(player_id)
+            if PED.IS_PED_MODEL(player_ped, 0x9C9EFFD8) or PED.IS_PED_MODEL(player_ped, 0x705E61F2) then
+                Ryan.Player.SendScriptEvent(player_id, {-1178972880, player_id, 8, -1, 1, 1, 1}, "become an animal")
+            end
         end
-        halloween_last = util.current_time_millis()
+        util.yield(5000)
     end
 end)
 
@@ -1951,6 +1945,16 @@ function setup_player(player_id)
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id))
         if vehicle ~= 0 then Ryan.Vehicle.Steal(vehicle)
         else Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Steal Vehicle", players.get_name(player_id) .. " is not in a vehicle.") end
+    end)
+
+    -- -- Turn Into Animal
+    menu.action(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
+        local player_ped = Ryan.Player.GetPed(player_id)
+        if PED.IS_PED_MODEL(player_ped, 0x9C9EFFD8) or PED.IS_PED_MODEL(player_ped, 0x705E61F2) then
+            Ryan.Player.SendScriptEvent(player_id, {-1178972880, player_id, 8, -1, 1, 1, 1}, "become an animal")
+        else
+            util.toast("Player is already not a human.")
+        end
     end)
 
 
