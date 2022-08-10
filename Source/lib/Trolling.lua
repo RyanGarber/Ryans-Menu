@@ -14,39 +14,6 @@ Ryan.Trolling = {
         Ryan.Trolling.Entities[player_id] = {}
     end,
 
-    GoKarts = function(player_id, ped_type)
-        local player_ped = Ryan.Player.GetPed(player_id)
-        local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
-
-        local veto = util.joaat("veto2"); Ryan.Basics.RequestModel(veto)
-        local driver = util.joaat(ped_type); Ryan.Basics.RequestModel(driver)
-        local army = util.joaat("army")
-
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, driver, army)
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, army, driver)
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, driver, driver)
-        
-        for i = 1, 4 do
-            local coords = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 5 - i, -10.0, 0.0)
-            local vehicle = entities.create_vehicle(veto, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
-            Ryan.Trolling.AddEntity(player_id, vehicle, i == 1)
-            for i = -1, VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(veto) - 2 do
-                local ped = entities.create_ped(1, driver, coords, 0.0)
-                Ryan.Trolling.AddEntity(player_id, ped, false)
-                if i == -1 then
-                    TASK.TASK_VEHICLE_CHASE(ped, player_ped)
-                end
-                Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
-                PED.SET_PED_INTO_VEHICLE(ped, vehicle, i)
-                WEAPON.GIVE_WEAPON_TO_PED(ped, util.joaat("weapon_appistol"), 1000, false, true)
-                PED.SET_PED_COMBAT_ATTRIBUTES(ped, 5, true)
-                PED.SET_PED_COMBAT_ATTRIBUTES(ped, 46, true)
-                PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, driver)
-                TASK.TASK_COMBAT_PED(ped, player_ped, 0, 16)
-            end
-        end
-    end,
-
     MilitarySquad = function(player_id, with_crusaders)
         local player_ped = Ryan.Player.GetPed(player_id)
         local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
@@ -133,68 +100,6 @@ Ryan.Trolling = {
         STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(swat)
     end,
 
-    TrashPickup = function(player_id)
-        util.toast("Sending the trash man to " .. players.get_name(player_id) .. "...")
-
-        local trash_truck = util.joaat("trash"); Ryan.Basics.RequestModel(trash_truck)
-        local trash_man = util.joaat("s_m_y_garbage"); Ryan.Basics.RequestModel(trash_man)
-        local player_ped = Ryan.Player.GetPed(player_id)
-        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-        local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
-
-        local weapons = {"weapon_pistol", "weapon_pumpshotgun"}
-        local coords_ptr = memory.alloc()
-        local node_ptr = memory.alloc()
-
-        local army = util.joaat("army")
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, army, player_group)
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player_group, army)
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, army, army)
-
-        if not PATHFIND.GET_RANDOM_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, 80, 0, 0, 0, coords_ptr, node_ptr) then
-            player_coords.x = player_coords.x + math.random(-7, 7)
-            player_coords.y = player_coords.y + math.random(-7, 7)
-            PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords_ptr, 1, 100, 2.5)
-        end
-
-        local coords = memory.read_vector3(coords_ptr)
-        local vehicle = entities.create_vehicle(trash_truck, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-        Ryan.Trolling.AddEntity(player_id, vehicle, true)
-        Ryan.Entity.FaceEntity(vehicle, player_ped, true)
-        VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
-
-        for seat = -1, 2 do
-            local npc = entities.create_ped(5, trash_man, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-            Ryan.Trolling.AddEntity(player_id, npc, false)
-            local weapon = Ryan.Basics.GetRandomItemInTable(weapons)
-
-            PED.SET_PED_RANDOM_COMPONENT_VARIATION(npc, 0)
-            WEAPON.GIVE_WEAPON_TO_PED(npc, util.joaat(weapon) , -1, false, true)
-            PED.SET_PED_NEVER_LEAVES_GROUP(npc, true)
-            PED.SET_PED_COMBAT_ATTRIBUTES(npc, 1, true)
-            PED.SET_PED_INTO_VEHICLE(npc, vehicle, seat)
-            TASK.TASK_COMBAT_PED(npc, player_ped, 0, 16)
-            PED.SET_PED_KEEP_TASK(npc, true)
-            PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, army)
-            HUD.ADD_BLIP_FOR_ENTITY(vehicle)
-
-            util.create_tick_handler(function()
-                if TASK.GET_SCRIPT_TASK_STATUS(npc, 0x2E85A751) == 7 then
-                    TASK.CLEAR_PED_TASKS(npc)
-                    TASK.TASK_SMART_FLEE_PED(npc, Ryan.Player.GetPed(player_id), 1000.0, -1, false, false)
-                    PED.SET_PED_KEEP_TASK(npc, true)
-                    return false
-                end
-                return true
-            end)
-        end
-        
-        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_truck)
-        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(trash_man)
-
-        Ryan.Player.SpamSMS(player_id, "It's trash day! Time to take it out.", 5000)
-    end,
-
     FlyingYacht = function(player_id)
         local yacht = util.joaat("prop_cj_big_boat"); Ryan.Basics.RequestModel(yacht)
         local buzzard = util.joaat("buzzard2"); Ryan.Basics.RequestModel(buzzard)
@@ -279,5 +184,35 @@ Ryan.Trolling = {
         util.yield(333)
         AUDIO.PLAY_SOUND_FROM_COORD(-1, "LOCAL_PLYR_CASH_COUNTER_COMPLETE", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true, 2, false)
         entities.delete_by_handle(bag)
+    end,
+
+    CreateNASAMenu = function(root, player_id)
+        local command = "ryannasa" .. (not player_id and "all" or "")
+        local message = "who asked"
+        local nasa_root = menu.list(root, "NASA Satellite...", {command}, "Use NASA satellites to discover something.")
+    
+        menu.text_input(nasa_root, "To Find", {command .. "message"}, "What we're trying to find.", function(value)
+            message = value
+        end, "who asked")
+    
+        function go(player_id)
+            local hash = util.joaat("prop_air_bigradar")
+            Ryan.Basics.RequestModel(hash)
+    
+            local player_ped = Ryan.Player.GetPed(player_id)
+            local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+            local radar = entities.create_object(hash, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 20, -3), ENTITY.GET_ENTITY_HEADING(player_ped))
+            Ryan.Entity.RequestControl(radar, false)
+            Ryan.Trolling.AddEntity(player_id, radar, true)
+            
+            util.yield(10000)
+            entities.delete_by_handle(radar)
+        end
+        
+        menu.action(nasa_root, "Go", {command .. "go"}, "Spawn a NASA satellite to discover something.", function()
+            if player_id then go(player_id)
+            else for _, player_id in pairs(players.list()) do util.create_thread(function() go(player_id) end) end end
+            chat.send_message("Using NASA satellites to find " .. message .. ".", false, true, true)
+        end)
     end
 }

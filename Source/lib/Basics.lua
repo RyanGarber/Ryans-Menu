@@ -59,7 +59,7 @@ Ryan.Basics = {
 			end, function()
 				Ryan.Basics.ShowTextMessage(6, "Auto-Update", "Failed to get the latest version. Use the installer instead.")
 			end)
-			
+
 			async_http.dispatch()
 			
 			while updating ~= 0 do
@@ -126,6 +126,10 @@ Ryan.Basics = {
 		end
 		return shuffled
 	end,
+
+	SeatName = function(index)
+        return (index == -1 and "Driver" or "Seat " .. (index + 2))
+    end,
 
 	CommandName = function(string)
 		return string:lower():gsub("[ _]", "")
@@ -248,5 +252,16 @@ Ryan.Basics = {
 			util.toast("Failed to translate message.")
 		end)
 		async_http.dispatch()
+	end,
+
+	DoFireworks = function(coords, offset)
+		if coords == nil then return end
+		coords = Ryan.Vector.Add(coords, offset)
+
+		local firework = util.joaat("weapon_firework")
+		local player_ped = Ryan.Player.GetPed()
+		WEAPON.REQUEST_WEAPON_ASSET(firework)
+		WEAPON.GIVE_WEAPON_TO_PED(player_ped, firework, 20, false, true)
+		MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z + 1, 0, false, firework, player_ped, true, false, 500.0)
 	end
 }

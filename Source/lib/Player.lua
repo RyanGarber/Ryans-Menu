@@ -156,7 +156,7 @@ Ryan.Player = {
     end,
 
     -- Kill a player in godmode using dark magic.
-    KillInGodmode = function(player_id)
+    Squish = function(player_id)
         util.toast("Attempting to kill " .. players.get_name(player_id) .. "...")
 
         local player_ped = Ryan.Player.GetPed(player_id)
@@ -185,18 +185,12 @@ Ryan.Player = {
         for i = 1, #vehicles do entities.delete_by_handle(vehicles[i]) end
     end,
 
-    -- Spam SMS and block joins from a player, then perform a method. 
-    SpamSMSAndBlockJoins = function(player_id, block_joins, sms_message, action)
+    -- Send an SMS to a player.
+    SMS = function(player_id, message)
         local player_name = players.get_name(player_id)
-        if block_joins then
-            Ryan.Player.BlockJoins(player_name)
-        end
-        if sms_message ~= "" and sms_message ~= " " then
-            util.toast("Spamming " .. player_name .. " with texts...")
-            Ryan.Player.SpamSMS(player_id, sms_message, 6000)
-        end
-        action()
-        menu.trigger_commands("players")
+        menu.trigger_commands("smsrandomsender" .. player_name .. " on")
+        menu.trigger_commands("smstext" .. player_name .. " " .. message)
+        menu.trigger_commands("smssend")
     end,
 
     -- Spam SMS on a player.
@@ -209,27 +203,18 @@ Ryan.Player = {
         menu.trigger_commands("smsspam" .. player_name .. " off")
     end,
 
-    -- Block joins from a player.
-    BlockJoins = function(player_name)
-        --[[local ref
-        local possible_tags = {" [Offline/Story Mode]", " [Public]", " [Solo/Invite-Only]", ""}
-        local success = false
-        for i = 1, #possible_tags do
-            if pcall(function()
-                ref = menu.ref_by_path("Online>Player History>" .. player_name .. possible_tags[i] .. ">Player Join Reactions>Block Join")
-            end) then
-                menu.focus(menu.my_root())
-                menu.trigger_command(ref, "true")
-                success = true
-                break
-            end
+    -- Spam SMS and block joins from a player, then perform a method. 
+    SpamSMSAndBlockJoins = function(player_id, block_joins, sms_message, action)
+        local player_name = players.get_name(player_id)
+        if block_joins then
+            menu.trigger_commands("historyblock" .. player_name)
         end
-        if success then
-            util.toast("Blocked all future joins by that player.")
-        else
-            util.toast("Failed to block joins.")
-        end]]
-        menu.trigger_commands("historyblock" .. player_name)
+        if sms_message ~= "" and sms_message ~= " " then
+            util.toast("Spamming " .. player_name .. " with texts...")
+            Ryan.Player.SpamSMS(player_id, sms_message, 6000)
+        end
+        action()
+        menu.trigger_commands("players")
     end,
 
     -- Send a script event to a player.
@@ -237,5 +222,15 @@ Ryan.Player = {
         if name ~= nil then util.toast("Sending script event: " .. name .. "...") end
         util.trigger_script_event(1 << player_id, args)
         util.yield(10)
+    end,
+
+    -- Force player to become an animal via Halloween events.
+    BecomeAnimal = function(player_id)
+        Ryan.Player.SendScriptEvent(player_id, {-1178972880, player_id, 8, -1, 1, 1, 1}, "become an animal")
+    end,
+
+    -- Remove godmode via Force Camera Forward.
+    RemoveGodmode = function(player_id)
+        Ryan.Player.SendScriptEvent(player_id, {-1388926377, player_id, -1762807505, math.random(0, 9999)}, "remove godmode")
     end
 }

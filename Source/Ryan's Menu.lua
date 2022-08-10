@@ -158,9 +158,9 @@ end)
 
 Ryan.PTFX.CreateList(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
     if ptfx_disable then return end
-    local player_ped = Ryan.Player.GetPed()
-    if PED.IS_PED_SHOOTING(player_ped) then
-        local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(player_ped)
+    local our_ped = Ryan.Player.GetPed()
+    if PED.IS_PED_SHOOTING(our_ped) then
+        local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(our_ped)
         if weapon ~= NULL then
             Ryan.PTFX.PlayAtEntityBoneCoords(weapon, Ryan.PTFX.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
             util.yield(ptfx[4])
@@ -220,8 +220,8 @@ util.create_tick_handler(function()
     end
 
     if forcefield_mode ~= "Off" then
-        local player_ped = Ryan.Player.GetPed()
-        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+        local our_ped = Ryan.Player.GetPed()
+        local player_coords = ENTITY.GET_ENTITY_COORDS(our_ped)
         local nearby = Ryan.Entity.GetAllNearby(player_coords, forcefield_size, Ryan.Entity.Type.All)
         for _, entity in pairs(nearby) do
             if forcefield_mode == "Push" then -- Push entities away
@@ -316,7 +316,7 @@ util.create_tick_handler(function()
                 end
             elseif forcefield_mode == "Explode" then -- Explode entities
                 if entities_exploded[entity] == nil then
-                    if entity ~= player_ped and entity ~= player_vehicle then
+                    if entity ~= our_ped and entity ~= player_vehicle then
                         local coords = ENTITY.GET_ENTITY_COORDS(entity)
                         FIRE.ADD_EXPLOSION(
                             coords.x, coords.y, coords.z,
@@ -682,14 +682,14 @@ spotlight_offset = 3.0
 spotlight_intensity = 1
 
 menu.action(self_spotlight_root, "Add To Body", {"ryanspotlightbody"}, "Adds spotlights to your body.", function()
-    local player_ped = Ryan.Player.GetPed()
-    if player_ped ~= 0 then
-        Ryan.Entity.AddSpotlight(player_ped, spotlight_offset, spotlight_intensity)
+    local our_ped = Ryan.Player.GetPed()
+    if our_ped ~= 0 then
+        Ryan.Entity.AddSpotlight(our_ped, spotlight_offset, spotlight_intensity)
     end
 end)
 
 menu.action(self_spotlight_root, "Add To Vehicle", {"ryanspotlightvehicle"}, "Adds spotlights to your vehicle.", function()
-    local player_id, player_ped = players.user(), Ryan.Player.GetPed()
+    local player_id, our_ped = players.user(), Ryan.Player.GetPed()
     local vehicle = entities.get_user_vehicle_as_handle()
     if vehicle ~= 0 then
         Ryan.Entity.AddSpotlight(vehicle, spotlight_offset, spotlight_intensity)
@@ -728,8 +728,6 @@ menu.divider(self_root, "Vehicle")
 -- -- Seats
 self_seats_root = menu.list(self_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
 
-function seat_name(i) return (i == -1 and "Driver" or "Seat " .. (i + 2)) end
-
 switch_seats_actions = {}
 switch_seats_notice = nil
 util.create_tick_handler(function()
@@ -740,16 +738,16 @@ util.create_tick_handler(function()
             for _, action in pairs(switch_seats_actions) do menu.delete(action) end
             switch_seats_actions = {}
             for seat = -1, seats - 2 do
-                table.insert(switch_seats_actions, menu.action(self_seats_root, seat_name(seat), {"ryanseat" .. (seat + 2)}, "Switches to the seat.", function()
+                table.insert(switch_seats_actions, menu.action(self_seats_root, Ryan.Basics.SeatName(seat), {"ryanseat" .. (seat + 2)}, "Switches to the seat.", function()
                     PED.SET_PED_INTO_VEHICLE(Ryan.Player.GetPed(), vehicle, seat)
                 end))
             end
         else
             for seat = -1, seats - 2 do
                 if VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, seat) ~= 0 then
-                    menu.set_menu_name(switch_seats_actions[seat + 2], seat_name(seat) .. " [Taken]")
+                    menu.set_menu_name(switch_seats_actions[seat + 2], Ryan.Basics.SeatName(seat) .. " [Taken]")
                 else
-                    menu.set_menu_name(switch_seats_actions[seat + 2], seat_name(seat))
+                    menu.set_menu_name(switch_seats_actions[seat + 2], Ryan.Basics.SeatName(seat))
                 end
             end
         end
@@ -769,6 +767,23 @@ util.create_tick_handler(function()
     util.yield(200)
 end)
 
+-- -- E-Brake
+ebrake = false
+menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your vehicle drift while holding Shift.", function(value)
+    if not value then Ryan.Vehicle.SetNoGrip(vehicle, false) end
+    ebrake = value
+end)
+
+util.create_tick_handler(function()
+    if ebrake then
+        local our_ped = Ryan.Player.GetPed(players.user())
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(our_ped, false)
+        if vehicle ~= 0 and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == our_ped then
+            Ryan.Vehicle.SetNoGrip(vehicle, PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.Sprint))
+        end
+    end
+end)
+
 -- -- Auto-Repair
 menu.toggle_loop(self_root, "Auto-Repair", {"ryanautorepair"}, "Keeps your vehicle in mint condition for all players.", function()
     local vehicle = entities.get_user_vehicle_as_handle()
@@ -781,101 +796,12 @@ menu.toggle_loop(self_root, "Auto-Repair", {"ryanautorepair"}, "Keeps your vehic
     VEHICLE.SET_VEHICLE_FIXED(vehicle)
 end)
 
--- -- E-Brake
-ebrake = false
-menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your vehicle drift while holding Shift.", function(value)
-    if not value then Ryan.Vehicle.SetNoGrip(vehicle, false) end
-    ebrake = value
-end)
-
-util.create_tick_handler(function()
-    if ebrake then
-        local player_ped = Ryan.Player.GetPed(players.user())
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
-        if vehicle ~= 0 and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == player_ped then
-            Ryan.Vehicle.SetNoGrip(vehicle, PAD.IS_CONTROL_PRESSED(21, Ryan.Globals.Controls.Sprint))
-        end
-    end
-end)
-
 
 -- World Menu --
 menu.divider(world_root, "General")
-world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
 world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Affects all NPCs in the world.")
-
--- -- Collectibles
-world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
-world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
-world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
-world_movie_props_root = menu.list(world_collectibles_root, "Movie Props...", {"ryanmovieprops"}, "Every movie prop in the Solomon Richards quest.")
-world_slasher_root = menu.list(world_collectibles_root, "The Slasher...", {"ryanslasher"}, "Everything needed to activate the Slasher event.")
-world_treasure_hunt_root = menu.list(world_collectibles_root, "Treasure Hunt...", {"ryantreasures"}, "Every treasure in the Treasture Hunt.")
-world_usb_sticks_root = menu.list(world_collectibles_root, "USB Sticks...", {"ryanusbsticks"}, "Every USB Stick containing bonus music.")
-
--- -- Action Figures
-for i = 1, #Ryan.Globals.ActionFigures do
-    menu.action(world_action_figures_root, "Action Figure " .. i, {"ryanactionfigure" .. i}, "Teleports to action figure #" .. i, function()
-        Ryan.Player.Teleport({x = Ryan.Globals.ActionFigures[i][1], y = Ryan.Globals.ActionFigures[i][2], z = Ryan.Globals.ActionFigures[i][3]}, false)
-    end)
-end
-
--- -- Signal Jammers
-for i = 1, #Ryan.Globals.SignalJammers do
-    menu.action(world_signal_jammers_root, "Signal Jammer " .. i, {"ryansignaljammer" .. i}, "Teleports to signal jammer #" .. i, function()
-        Ryan.Player.Teleport({x = Ryan.Globals.SignalJammers[i][1], y = Ryan.Globals.SignalJammers[i][2], z = Ryan.Globals.SignalJammers[i][3]}, true)
-    end)
-end
-
--- -- Playing Cards
-for i = 1, #Ryan.Globals.PlayingCards do
-    menu.action(world_playing_cards_root, "Playing Card " .. i, {"ryanplayingcard" .. i}, "Teleports to playing card #" .. i, function()
-        Ryan.Player.Teleport({x = Ryan.Globals.PlayingCards[i][1], y = Ryan.Globals.PlayingCards[i][2], z = Ryan.Globals.PlayingCards[i][3]}, false)
-    end)
-end
-
--- -- Movie Props
-for i = 1, #Ryan.Globals.MovieProps do
-    menu.action(world_movie_props_root, "Movie Prop " .. i, {"ryanmovieprop" .. i}, "Teleports to movie prop #" .. i, function()
-        Ryan.Player.Teleport({x = Ryan.Globals.MovieProps[i][1], y = Ryan.Globals.MovieProps[i][2], z = Ryan.Globals.MovieProps[i][3]}, false)
-    end)
-end
-
--- -- Slasher
-menu.divider(world_slasher_root, "Step 1")
-for i = 1, #Ryan.Globals.SlasherClues do
-    menu.action(world_slasher_root, "Slasher Clue " .. i, {"ryanslasherclue" .. i}, "Teleports to Slasher clue #" .. i, function()
-        Ryan.Player.Teleport({x = Ryan.Globals.SlasherClues[i][1], y = Ryan.Globals.SlasherClues[i][2], z = Ryan.Globals.SlasherClues[i][3]}, false)
-    end)
-end
-
-menu.divider(world_slasher_root, "Step 2")
-for i = 1, #Ryan.Globals.SlasherVans do
-    menu.action(world_slasher_root, "Slasher Van " .. i, {"ryanslashervan" .. i}, "Teleports to possible location #" .. i, function()
-        Ryan.Player.Teleport({x = Ryan.Globals.SlasherVans[i][1], y = Ryan.Globals.SlasherVans[i][2], z = Ryan.Globals.SlasherVans[i][3]}, false)
-    end)
-end
-
-menu.divider(world_slasher_root, "Step 3")
-slasher_spawn = menu.action(world_slasher_root, "Slasher Spawn", {"ryanslasherspawn"}, "Teleports to the Slasher's spawn location", function(click_type)
-    menu.show_warning(slasher_spawn, click_type, "You must be in Blaine County, on foot, between 7pm and 5am for the Slasher to spawn.", function()
-        Ryan.Player.Teleport({x = Ryan.Globals.SlasherFinale[1], y = Ryan.Globals.SlasherFinale[2], z = Ryan.Globals.SlasherFinale[3]}, false)
-    end)
-end)
-
--- -- Treasure Hunt
-for i = 1, #Ryan.Globals.Treasures do
-    menu.action(world_treasure_hunt_root, "Treasure " .. i, {"ryantreasure" .. i}, "Teleports to treasure #" .. i, function()
-        Ryan.Player.Teleport({x = Ryan.Globals.Treasures[i][1], y = Ryan.Globals.Treasures[i][2], z = Ryan.Globals.Treasures[i][3]}, false)
-    end)
-end
-
--- -- USB Sticks
-for i = 1, #Ryan.Globals.USBSticks do
-    menu.action(world_usb_sticks_root, "USB Stick " .. i, {"ryanusbstick" .. i}, "Teleports to USB stick #" .. i, function()
-        Ryan.Player.Teleport({x = Ryan.Globals.USBSticks[i][1], y = Ryan.Globals.USBSticks[i][2], z = Ryan.Globals.USBSticks[i][3]}, false)
-    end)
-end
+world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
+Ryan.Trolling.CreateNASAMenu(world_root, nil)
 
 -- -- All NPCs
 all_npcs_include_drivers = false
@@ -914,8 +840,39 @@ util.create_tick_handler(function()
     util.yield(250)
 end)
 
+-- -- Collectibles
+world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
+Ryan.UI.CreateTeleportList(world_action_figures_root, "Action Figure", Ryan.Globals.ActionFigures)
+
+world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
+Ryan.UI.CreateTeleportList(world_signal_jammers_root, "Signal Jammer", Ryan.Globals.SignalJammers)
+
+world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
+Ryan.UI.CreateTeleportList(world_playing_cards_root, "Playing Card", Ryan.Globals.PlayingCards)
+
+world_movie_props_root = menu.list(world_collectibles_root, "Movie Props...", {"ryanmovieprops"}, "Every movie prop in the Solomon Richards quest.")
+Ryan.UI.CreateTeleportList(world_movie_props_root, "Movie Prop", Ryan.Globals.MovieProps)
+
+world_slasher_root = menu.list(world_collectibles_root, "The Slasher...", {"ryanslasher"}, "Everything needed to activate the Slasher event.")
+menu.divider(world_slasher_root, "Step 1")
+Ryan.UI.CreateTeleportList(world_slasher_root, "Slasher Clue", Ryan.Globals.SlasherClues)
+menu.divider(world_slasher_root, "Step 2")
+Ryan.UI.CreateTeleportList(world_slasher_root, "Slasher Van", Ryan.Globals.SlasherVans)
+menu.divider(world_slasher_root, "Step 3")
+slasher_spawn = menu.action(world_slasher_root, "Slasher Spawn", {"ryanslasherspawn"}, "Teleports to the Slasher's spawn location", function(click_type)
+    menu.show_warning(slasher_spawn, click_type, "You must be on foot between 7pm and 5am for the Slasher to spawn here.", function()
+        Ryan.Player.Teleport({x = Ryan.Globals.SlasherFinale[1], y = Ryan.Globals.SlasherFinale[2], z = Ryan.Globals.SlasherFinale[3]}, false)
+    end)
+end)
+
+world_treasure_hunt_root = menu.list(world_collectibles_root, "Treasure Hunt...", {"ryantreasures"}, "Every treasure in the Treasture Hunt.")
+Ryan.UI.CreateTeleportList(world_treasure_hunt_root, "Treasure", Ryan.Globals.Treasures)
+
+world_usb_sticks_root = menu.list(world_collectibles_root, "USB Sticks...", {"ryanusbsticks"}, "Every USB Stick containing bonus music.")
+Ryan.UI.CreateTeleportList(world_usb_sticks_root, "USB Stick", Ryan.Globals.USBSticks)
+
 -- -- No Cops
-menu.toggle_loop(world_root, "No Cops", {"ryannocops"}, "Clears the world of cops and their vehicles.", function()
+menu.toggle_loop(world_root, "No Cops / Guards", {"ryannocops"}, "Clears the world of cops and guards during heists. Also deletes their vehicles.", function()
     local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
     MISC.CLEAR_AREA_OF_COPS(coords.x, coords.y, coords.z, 500, 0) -- might as well
     for _, entity in pairs(Ryan.Entity.GetAllNearby(coords, 500, Ryan.Entity.Type.All)) do
@@ -938,6 +895,49 @@ menu.toggle_loop(world_root, "No Cops", {"ryannocops"}, "Clears the world of cop
     util.yield(250)
 end)
 
+-- -- Fireworks
+firework_coords = nil
+menu.toggle(world_root, "Fireworks Show", {"ryanfireworkshow"}, "A nice display of liberty where you're standing. May trigger crash protections.", function(value)
+    firework_coords = value and ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed()) or nil
+end)
+util.create_tick_handler(function()
+    if firework_coords ~= nil then
+        Ryan.Basics.DoFireworks(firework_coords, {x = math.random(-150, 150), y = math.random(-200, 50), z = math.random(-25, 25)})
+
+        if math.random(1, 10) == 1 then
+            local offset = {x = math.random(-75, 75), y = math.random(-75, 75), z = math.random(-25, 25)}
+            Ryan.Basics.DoFireworks(firework_coords, Ryan.Vector.Add(offset, {x = 8, y = 8, z = 0}))
+            Ryan.Basics.DoFireworks(firework_coords, Ryan.Vector.Add(offset, {x = -8, y = 8, z = 0}))
+            Ryan.Basics.DoFireworks(firework_coords, Ryan.Vector.Add(offset, {x = 8, y = -8, z = 0}))
+            Ryan.Basics.DoFireworks(firework_coords, Ryan.Vector.Add(offset, {x = -8, y = -8, z = 0}))
+        end
+        if math.random(1, 10) == 2 then
+            local offset = {x = math.random(-75, 75), y = math.random(-75, 75), z = math.random(-25, 25)}
+            for i = 1, math.random(3, 6) do
+                util.yield(math.random(75, 500))
+                Ryan.Basics.DoFireworks(firework_coords, Ryan.Vector.Add(offset, {x = 8, y = i + 8, z = 0}))
+                Ryan.Basics.DoFireworks(firework_coords, Ryan.Vector.Add(offset, {x = 8, y = -i - 8, z = 0}))
+            end
+        end
+
+        util.yield(math.random(150, 650))
+    end
+end)
+
+-- -- All Entities Visible
+menu.toggle_loop(world_root, "All Entities Visible", {"ryannoinvisible"}, "Makes all invisible entities visible again.", function()
+    for _, player_id in pairs(players.list()) do
+        local our_ped = Ryan.Player.GetPed(player_id)
+        ENTITY.SET_ENTITY_ALPHA(our_ped, 255)
+        ENTITY.SET_ENTITY_VISIBLE(our_ped, true, 0)
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(our_ped, true)
+        if vehicle ~= 0 then
+            ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
+            ENTITY.SET_ENTITY_VISIBLE(vehicle, true, 0)
+        end
+    end
+end)
+
 -- -- Tiny People
 world_tiny_people = false
 menu.toggle(world_root, "Tiny People", {"ryantinypeople"}, "Makes everyone tiny (only for you.)", function(value)
@@ -950,70 +950,75 @@ util.create_tick_handler(function()
     util.yield(100)
 end)
 
--- -- Fireworks
-function do_fireworks(burst_type, coords, color)
-    if firework_coords == nil then return end
-
-    coords = Ryan.Vector.Add(firework_coords, coords)
-    local ptfx = nil
-    for _, ptfx_data in pairs(Ryan.PTFX.Types) do
-        if ptfx_data[1] == burst_type then ptfx = ptfx_data end
-    end
-    Ryan.PTFX.PlayAtCoords(coords, "scr_indep_fireworks", "scr_indep_firework_trailburst_spawn", color)
-    Ryan.Audio.PlayAtCoords(coords, "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 100)
-    Ryan.Audio.PlayAtCoords(Ryan.Vector.Add(coords, {x = 50, y = 50, z = 0}), "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 500)
-    Ryan.Audio.PlayAtCoords(Ryan.Vector.Add(coords, {x = -50, y = -50, z = 0}), "WEB_NAVIGATION_SOUNDS_PHONE", "CLICK_BACK", 500)
-    Ryan.Audio.PlayAtCoords(Ryan.Vector.Add(coords, {x = 75, y = 75, z = 0}), "PLAYER_SWITCH_CUSTOM_SOUNDSET", "Hit_Out", 100)
-end
-
-firework_coords = nil
-menu.toggle(world_root, "Fireworks Show", {"ryanfireworkshow"}, "A nice display of liberty where you're standing. May trigger crash protections.", function(value)
-    firework_coords = value and ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed()) or nil
-end)
-util.create_tick_handler(function()
-    if firework_coords ~= nil then
-        local color = {r = math.random(0, 255) / 255.0, g = math.random(0, 255) / 255.0, b = math.random(0, 255) / 255.0}
-        do_fireworks("Firework Burst", {x = math.random(-150, 150), y = math.random(-200, 50), z = math.random(-25, 25)}, color)
-
-        if math.random(1, 10) == 1 then
-            local offset = {x = math.random(-75, 75), y = math.random(-75, 75), z = math.random(-25, 25)}
-            local color = {r = math.random(0, 255) / 255.0, g = math.random(0, 255) / 255.0, b = math.random(0, 255) / 255.0}
-            do_fireworks("Firework Burst", Ryan.Vector.Add(offset, {x = 8, y = 8, z = 0}), color)
-            do_fireworks("Firework Burst", Ryan.Vector.Add(offset, {x = -8, y = 8, z = 0}), color)
-            do_fireworks("Firework Burst", Ryan.Vector.Add(offset, {x = 8, y = -8, z = 0}), color)
-            do_fireworks("Firework Burst", Ryan.Vector.Add(offset, {x = -8, y = -8, z = 0}), color)
-        end
-        if math.random(1, 10) == 2 then
-            local offset = {x = math.random(-75, 75), y = math.random(-75, 75), z = math.random(-25, 25)}
-            local color = {r = math.random(0, 255) / 255.0, g = math.random(0, 255) / 255.0, b = math.random(0, 255) / 255.0}
-            for i = 1, math.random(3, 6) do
-                util.yield(math.random(75, 500))
-                do_fireworks("Firework Burst", Ryan.Vector.Add(offset, {x = 8, y = i + 8, z = 0}), color)
-                do_fireworks("Firework Burst", Ryan.Vector.Add(offset, {x = 8, y = -i - 8, z = 0}), color)
-            end
-        end
-
-        util.yield(math.random(150, 650))
-    end
-end)
-
--- -- All Entities Visible
-menu.toggle_loop(world_root, "All Entities Visible", {"ryannoinvisible"}, "Makes all invisible entities visible again.", function()
-    for _, player_id in pairs(players.list()) do
-        local player_ped = Ryan.Player.GetPed(player_id)
-        ENTITY.SET_ENTITY_ALPHA(player_ped, 255)
-        ENTITY.SET_ENTITY_VISIBLE(player_ped, true, 0)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, true)
-        if vehicle ~= 0 then
-            ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
-            ENTITY.SET_ENTITY_VISIBLE(vehicle, true, 0)
-        end
-    end
-end)
-
 menu.divider(world_root, "Vehicle")
 
+-- -- All Vehicles
 world_all_vehicles_root = menu.list(world_root, "All Vehicles...", {"ryanallvehicles"}, "Control the vehicles around you.")
+
+all_vehicles_include_npcs = true
+all_vehicles_include_players = false
+all_vehicles_include_friends = false
+all_vehicles_include_own = false
+all_vehicles_effects = {}
+
+menu.divider(world_all_vehicles_root, "Include")
+menu.toggle(world_all_vehicles_root, "NPCs", {"ryanallvehiclesnpcs"}, "If enabled, player-driven vehicles are affected too.", function(value)
+    all_vehicles_include_npcs = value
+end, true)
+menu.toggle(world_all_vehicles_root, "Players", {"ryanallvehiclesplayers"}, "If enabled, player-driven vehicles are affected too.", function(value)
+    all_vehicles_include_friends = value
+end)
+menu.toggle(world_all_vehicles_root, "Friends", {"ryanallvehiclesfriends"}, "If enabled, friends' vehicles are affected too.", function(value)
+    all_vehicles_include_players = value
+end)
+menu.toggle(world_all_vehicles_root, "Personal Vehicle", {"ryanallvehiclesown"}, "If enabled, your current vehicle is affected too.", function(value)
+    all_vehicles_include_own = value
+end)
+
+
+menu.divider(world_all_vehicles_root, "Effects")
+Ryan.UI.CreateVehicleEffectList(world_all_vehicles_root, "ryanall", "", all_vehicles_effects, false)
+menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Makes NPCs flee you.", function(value)
+    all_vehicles_effects.flee = value
+end)
+menu.toggle(world_all_vehicles_root, "Blind", {"ryanallblind"}, "Makes NPCs blind and aggressive.", function(value)
+    all_vehicles_effects.blind = value
+end)
+
+all_vehicles_state = {}
+
+util.create_tick_handler(function()
+    local our_ped = Ryan.Player.GetPed()
+    local player_coords = ENTITY.GET_ENTITY_COORDS(our_ped)
+    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(our_ped)
+
+    local vehicles = Ryan.Entity.GetAllNearby(player_coords, 250, Ryan.Entity.Type.Vehicles)
+    for _, vehicle in pairs(vehicles) do
+        local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+        local player_id = PED.IS_PED_A_PLAYER(driver) and Ryan.Player.GetByPed(driver)
+
+        if all_vehicles_include_own or vehicle ~= entities.get_user_vehicle_as_handle() then
+            if (all_vehicles_include_players and player_id ~= nil and (all_vehicles_include_friends or not players.get_tags_string(player_id):find("F")))
+            or (all_vehicles_include_npcs and not is_a_player) then
+                Ryan.UI.ApplyVehicleEffectList(vehicle, all_vehicles_effects, all_vehicles_state, is_a_player, false)
+
+                -- Flee
+                if all_vehicles_effects.flee and not is_a_player and all_vehicles_state[vehicle].flee ~= true then
+                    TASK.TASK_SMART_FLEE_PED(driver, Ryan.Player.GetPed(), 500.0, -1, false, false)
+                    all_vehicles_state[vehicle].flee = true
+                end
+
+                -- Blind
+                if all_vehicles_effects.blind and not is_a_player and (all_vehicles_state[vehicle].blind ~= true or math.random(1, 10) >= 8) then
+                    Ryan.Vehicle.MakeBlind(vehicle)
+                    all_vehicles_state[vehicle].blind = true
+                end
+            end
+        end
+    end
+
+    util.yield(500)
+end)
 
 -- -- Enter Closest Vehicle
 enter_closest_vehicle = menu.action(world_root, "Enter Closest Vehicle", {"ryandrivevehicle"}, "Teleports into the closest vehicle.", function()
@@ -1052,74 +1057,6 @@ util.create_tick_handler(function()
         local closest_vehicle = Ryan.Vehicle.GetClosest(ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(), true))
         if closest_vehicle ~= 0 then Ryan.Entity.DrawESP(closest_vehicle, esp_color) end
     end
-end)
-
--- -- All Vehicles
-all_vehicles_include_npcs = true
-all_vehicles_include_players = false
-all_vehicles_include_friends = false
-all_vehicles_include_own = false
-
-all_vehicles_effects = {}
-
-menu.divider(world_all_vehicles_root, "Include")
-menu.toggle(world_all_vehicles_root, "NPCs", {"ryanallvehiclesnpcs"}, "If enabled, player-driven vehicles are affected too.", function(value)
-    all_vehicles_include_npcs = value
-end, true)
-menu.toggle(world_all_vehicles_root, "Players", {"ryanallvehiclesplayers"}, "If enabled, player-driven vehicles are affected too.", function(value)
-    all_vehicles_include_friends = value
-end)
-menu.toggle(world_all_vehicles_root, "Friends", {"ryanallvehiclesfriends"}, "If enabled, friends' vehicles are affected too.", function(value)
-    all_vehicles_include_players = value
-end)
-menu.toggle(world_all_vehicles_root, "Personal Vehicle", {"ryanallvehiclesown"}, "If enabled, your current vehicle is affected too.", function(value)
-    all_vehicles_include_own = value
-end)
-
-
-menu.divider(world_all_vehicles_root, "Effects")
-Ryan.UI.CreateVehicleEffectList(world_all_vehicles_root, "ryanall", "", all_vehicles_effects, false)
-menu.toggle(world_all_vehicles_root, "Flee", {"ryanallflee"}, "Makes NPCs flee you.", function(value)
-    all_vehicles_effects.flee = value
-end)
-menu.toggle(world_all_vehicles_root, "Blind", {"ryanallblind"}, "Makes NPCs blind and aggressive.", function(value)
-    all_vehicles_effects.blind = value
-end)
-
--- -- Apply Changes
-all_vehicles_state = {}
-
-util.create_tick_handler(function()
-    local player_ped = Ryan.Player.GetPed()
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
-
-    local vehicles = Ryan.Entity.GetAllNearby(player_coords, 250, Ryan.Entity.Type.Vehicles)
-    for _, vehicle in pairs(vehicles) do
-        local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
-        local player_id = PED.IS_PED_A_PLAYER(driver) and Ryan.Player.GetByPed(driver)
-
-        if all_vehicles_include_own or vehicle ~= entities.get_user_vehicle_as_handle() then
-            if (all_vehicles_include_players and player_id ~= nil and (all_vehicles_include_friends or not players.get_tags_string(player_id):find("F")))
-            or (all_vehicles_include_npcs and not is_a_player) then
-                Ryan.UI.ApplyVehicleEffectList(vehicle, all_vehicles_effects, all_vehicles_state, is_a_player, false)
-
-                -- Flee
-                if all_vehicles_effects.flee and not is_a_player and all_vehicles_state[vehicle].flee ~= true then
-                    TASK.TASK_SMART_FLEE_PED(driver, Ryan.Player.GetPed(), 500.0, -1, false, false)
-                    all_vehicles_state[vehicle].flee = true
-                end
-
-                -- Blind
-                if all_vehicles_effects.blind and not is_a_player and (all_vehicles_state[vehicle].blind ~= true or math.random(1, 10) >= 8) then
-                    Ryan.Vehicle.MakeBlind(vehicle)
-                    all_vehicles_state[vehicle].blind = true
-                end
-            end
-        end
-    end
-
-    util.yield(500)
 end)
 
 
@@ -1358,66 +1295,22 @@ menu.toggle(session_root, "Turn Into Animals", {"ryananimalall"}, "Turns all pla
 util.create_tick_handler(function()
     if turn_all_into_animals then
         for _, player_id in pairs(players.list(false, true, true)) do
-            local player_ped = Ryan.Player.GetPed(player_id)
-            if PED.IS_PED_MODEL(player_ped, 0x9C9EFFD8) or PED.IS_PED_MODEL(player_ped, 0x705E61F2) then
-                Ryan.Player.SendScriptEvent(player_id, {-1178972880, player_id, 8, -1, 1, 1, 1}, "become an animal")
+            local our_ped = Ryan.Player.GetPed(player_id)
+            if PED.IS_PED_MODEL(our_ped, 0x9C9EFFD8) or PED.IS_PED_MODEL(our_ped, 0x705E61F2) then
+                Ryan.Player.BecomeAnimal(player_id)
+                util.yield(100)
             end
         end
         util.yield(5000)
     end
 end)
 
--- -- Mk II Chaos
-mk2_chaos = false
-menu.toggle(session_root, "Mk II Chaos", {"ryanmk2chaos"}, "Gives everyone a Mk 2 and tells them to duel.", function(value)
-    mk2_chaos = value    
-end)
-
-util.create_tick_handler(function()
-    if mk2_chaos then
-        chat.send_message("This session is in Mk II Chaos mode! Type \"!mk2\" in chat at any time to get one. Good luck.", false, true, true)
-        local oppressor2 = util.joaat("oppressor2")
-        Ryan.Basics.RequestModel(oppressor2)
-        for _, player_id in pairs(players.list()) do
-            local player_ped = Ryan.Player.GetPed(player_id)
-            local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(player_ped), {x = 0.0, y = 5.0, z = 0.0})
-            local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
-            Ryan.Entity.RequestControl(vehicle, true)
-            Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
-            ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
-            VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
-            VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
-        end
-        Ryan.Basics.FreeModel(oppressor2)
-        util.yield(180000)
-    end
-end)
-
-util.create_tick_handler(function()
-    if mk2_chaos then
-        chat.send_message("This session is in Mk II Chaos mode! Type \"!mk2\" in chat at any time to get one. Good luck.", false, true, true)
-        local oppressor2 = util.joaat("oppressor2")
-        Ryan.Basics.RequestModel(oppressor2)
-        for _, player_id in pairs(players.list()) do
-            local player_ped = Ryan.Player.GetPed(player_id)
-            local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(player_ped), {x = 0.0, y = 5.0, z = 0.0})
-            local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
-            Ryan.Entity.RequestControl(vehicle, true)
-            Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
-            ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
-            VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
-            VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
-        end
-        Ryan.Basics.FreeModel(oppressor2)
-        util.yield(180000)
-    end
-end)
 
 -- Vehicle
 menu.divider(session_root, "Vehicle")
 session_drivers_root = menu.list(session_root, "Driver List...", {"ryandrivers"}, "Lists the players driving vehicles.")
 
--- -- Drivers
+-- -- Driver List
 drivers = {}
 drivers_refresh = 0
 drivers_refresh_text = nil
@@ -1445,7 +1338,7 @@ util.create_thread(function()
     end
 end)
 
--- Teleport All
+-- -- Trolling
 session_vehicle_trolling_root = menu.list(session_root, "Trolling...", {"ryantpvehicles"}, "Forces every vehicle into an area.")
     
 menu.toggle_loop(session_vehicle_trolling_root, "Teleport To Me", {"ryantpme"}, "Teleports them to your location.", function()
@@ -1466,6 +1359,68 @@ menu.toggle_loop(session_vehicle_trolling_root, "Delete", {"ryandelete"}, "Delet
         end
     end
     util.yield(500)
+end)
+
+-- -- Mk II
+mk2_modes = {"Normal", "Banned", "Chaos"}
+Ryan.UI.CreateSavableChoiceWithDefault(session_root, "Mk II: %", "ryanmk2", "", "How Oppressor Mk IIs are handled in the session.", mk2_modes, function(value)
+    mk2_mode = value
+end)
+
+mk2_ban_notice = 0
+mk2_ban_warns = {}
+
+util.create_tick_handler(function()
+    if mk2_mode == "Banned" then
+        if util.current_time_millis() - mk2_ban_notice >= 300000 then
+            chat.send_message("This session is in Mk II Ban mode! Go ahead, try and use one.", false, true, true)
+            mk2_ban_notice = util.current_time_millis()
+        end
+
+        local oppressor2 = util.joaat("oppressor2")
+        local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+        for _, vehicle in pairs(Ryan.Entity.GetAllNearby(coords, 9999, Ryan.Entity.Type.Vehicle)) do
+            if VEHICLE.IS_VEHICLE_MODEL(vehicle, oppressor2) then
+                Ryan.Entity.RequestControl(vehicle, false)
+                entities.delete_by_handle(vehicle)
+            end
+        end
+        util.yield(2000)
+        for _, player_id in pairs(players.list()) do
+            if players.get_vehicle_model(player_id) == oppressor2 then
+                if mk2_ban_warns[player_id] == nil then
+                    util.toast(players.get_name(player_id) .. " is still on a Mk II. Sending them a warning.")
+                    chat.send_targeted_message(player_id, players.user(), "WARNING: Get off of your Mk II or you will be kicked!", false)
+                    mk2_ban_warns[player_id] = util.current_time_millis()
+                elseif util.current_time_millis() - mk2_ban_warns[player_id] >= 5000 then
+                    util.toast("Kicking " .. players.get_name(player_id) .. " for not getting off their Mk II.")
+                    Ryan.Player.Kick(player_id)
+                end
+            else
+                mk2_ban_warns[player_id] = nil
+            end
+        end
+    end
+end)
+
+util.create_tick_handler(function()
+    if mk2_mode == "Chaos" then
+        chat.send_message("This session is in Mk II Chaos mode! Type \"!mk2\" in chat at any time to get one. Good luck.", false, true, true)
+        local oppressor2 = util.joaat("oppressor2")
+        Ryan.Basics.RequestModel(oppressor2)
+        for _, player_id in pairs(players.list()) do
+            local our_ped = Ryan.Player.GetPed(player_id)
+            local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(our_ped), {x = 0.0, y = 5.0, z = 0.0})
+            local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(our_ped))
+            Ryan.Entity.RequestControl(vehicle, true)
+            Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
+            ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
+            VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
+            VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
+        end
+        Ryan.Basics.FreeModel(oppressor2)
+        util.yield(300000)
+    end
 end)
 
 
@@ -1733,9 +1688,9 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
                         elseif command[1] == "mk2" then
                             local oppressor2 = util.joaat("oppressor2")
                             Ryan.Basics.RequestModel(oppressor2)
-                            local player_ped = Ryan.Player.GetPed(sender)
-                            local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(player_ped), {x = 0.0, y = 5.0, z = 0.0})
-                            local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player_ped))
+                            local our_ped = Ryan.Player.GetPed(sender)
+                            local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(our_ped), {x = 0.0, y = 5.0, z = 0.0})
+                            local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(our_ped))
                             Ryan.Entity.RequestControl(vehicle, true)
                             Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
                             ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
@@ -1802,16 +1757,6 @@ glitch_state = {}
 glitch_type_names = {"Off", "Default", "Ferris Wheel", "UFO", "Cement Mixer", "Scaffolding", "Garage Door", "Big Orange Ball", "Stunt Ramp"}
 glitch_type_hashes = {"Off", "Default", "prop_ld_ferris_wheel", "p_spinning_anus_s", "prop_staticmixer_01", "des_scaffolding_root", "prop_sm1_11_garaged", "prop_juicestand", "stt_prop_stunt_jump_l"}
 
-function spam_then(player_id, action)
-    local do_spam = entities_message[player_id] ~= nil and entities_message[player_id] ~= "" and entities_message[player_id] ~= " "
-    if do_spam then
-        Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Entity Trolling", "Spamming " .. players.get_name(player_id) .. " and then spawning entities on them...")
-        Ryan.Player.SpamSMS(player_id, entities_message[player_id], 1250)
-    else
-        Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Entity Trolling", "Spawning entities on " .. players.get_name(player_id) .. "!")
-    end
-    action()
-end
 
 function setup_player(player_id)
     local player_root = menu.player_root(player_id)
@@ -1821,74 +1766,74 @@ function setup_player(player_id)
     local player_trolling_root = menu.list(player_root, "Trolling...", {"ryantrolling"}, "Options that players may not like.")
     local player_removal_root = menu.list(player_root, "Removal...", {"ryanremoval"}, "Options to remove the player forcibly.")
 
-
-    -- Trolling --
-    local player_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")    
-
-    vehicle_effects[player_id] = {}
-    Ryan.UI.CreateVehicleEffectList(player_vehicle_root, "ryan", players.get_name(player_id), vehicle_effects[player_id], true)
-
-    menu.toggle(player_vehicle_root, "Leash", {"ryanleash"}, "Brings their vehicle with you like a leash.", function(value)
-        vehicle_effects[player_id].leash = value and true or nil
-    end)
-
-
-    -- Entities --
-    local player_trolling_entities_root = menu.list(player_trolling_root, "Spawn...", {"ryanspawn"}, "Entity trolling options.")
     
-    -- -- Transgender Go-Karts
-    menu.action(player_trolling_entities_root, "Transgender Go-Karts", {"ryanmilitarykarts"}, "Spawns a military squad in go-karts.", function()
-        spam_then(player_id, function() Ryan.Trolling.GoKarts(player_id, "a_m_m_tranvest_01") end)
+    -- Trolling --
+    -- Kill
+    local player_trolling_kill_root = menu.list(player_trolling_root, "Kill...", {"ryankill"}, "Options to kill players while they're in godmode.")
+    
+    menu.toggle(player_trolling_kill_root, "Remove Godmode", {"ryankillgodmode"}, "Remove godmode from players using Kiddions or inside a building.", function(value)
+        remove_godmode[player_id] = value and true or nil
     end)
+
+    menu.toggle_loop(player_trolling_kill_root, "Kill (Kiddions)", {"ryankillstungun"}, "Use this to kill players using Kiddions godmode. May also work in some buildings.", function()
+        local stun_gun = util.joaat("weapon_stungun")
+        local our_ped = Ryan.Player.GetPed()
+        local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id))
+		WEAPON.REQUEST_WEAPON_ASSET(stun_gun)
+		WEAPON.GIVE_WEAPON_TO_PED(our_ped, stun_gun, 1, false, true)
+        Ryan.Player.RemoveGodmode(player_id)
+        MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z + 1, coords.x, coords.y, coords.z, 1000, true, stun_gun, 0, false, true, 1.0)
+    end)
+
+    menu.toggle_loop(player_trolling_kill_root, "Kill (Interior)", {"ryankillsnowball"}, "Use this to kill players inside buildings. May also work on some menus' godmodes.", function()
+		local snowball = util.joaat("weapon_snowball")
+        local our_ped = Ryan.Player.GetPed()
+        local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id))
+		WEAPON.REQUEST_WEAPON_ASSET(snowball)
+		WEAPON.GIVE_WEAPON_TO_PED(our_ped, snowball, 10, false, true)
+        Ryan.Player.RemoveGodmode(player_id)
+		MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z - 2, 200, 0, snowball, 0, true, false, 2500.0)
+    end)
+
+    menu.action(player_trolling_kill_root, "Kill (Paid Menu)", {"ryankillphysics"}, "Use this when removing godmode does not work.", function()
+        Ryan.Player.Squish(player_id)
+    end)
+
+
+    -- Spawn
+    local player_trolling_spawn_root = menu.list(player_trolling_root, "Spawn...", {"ryanspawn"}, "Entity trolling options.")
+    
+    -- -- NASA Satellite
+    Ryan.Trolling.CreateNASAMenu(player_trolling_spawn_root, player_id)
 
     -- -- Military Squad
-    menu.action(player_trolling_entities_root, "Military Squad", {"ryanmilitarysquad"}, "Send an entire fucking military squad.", function()
-		spam_then(player_id, function() Ryan.Trolling.MilitarySquad(player_id, true) end)
+    menu.action(player_trolling_spawn_root, "Military Squad", {"ryanmilitarysquad"}, "Send an entire fucking military squad.", function()
+		Ryan.Trolling.MilitarySquad(player_id, true)
     end)
 
     -- -- SWAT Raid
-    menu.action(player_trolling_entities_root, "SWAT Raid", {"ryanswatraid"}, "Sends a SWAT team to kill them, brutally.", function()
-        spam_then(player_id, function() Ryan.Trolling.SWATTeam(player_id) end)
-    end)
-
-    -- -- Trash Pickup
-    menu.action(player_trolling_entities_root, "Trash Pickup", {"ryantrashpickup"}, "Send the trash man to 'clean up' the street. Yasha's idea.", function()
-        spam_then(player_id, function() Ryan.Trolling.TrashPickup(player_id) end)
+    menu.action(player_trolling_spawn_root, "SWAT Raid", {"ryanswatraid"}, "Sends a SWAT team to kill them, brutally.", function()
+        Ryan.Trolling.SWATTeam(player_id)
     end)
 
     -- -- Flying Yacht
-    menu.action(player_trolling_entities_root, "Flying Yacht", {"ryanflyingyacht"}, "Send the magic school yacht to fuck their shit up.", function()
-        spam_then(player_id, function() Ryan.Trolling.FlyingYacht(player_id) end)
+    menu.action(player_trolling_spawn_root, "Flying Yacht", {"ryanflyingyacht"}, "Send the magic school yacht to fuck their shit up.", function()
+        Ryan.Trolling.FlyingYacht(player_id)
     end)
     
     -- -- Falling Tank
-    menu.action(player_trolling_entities_root, "Falling Tank", {"ryanfallingtank"}, "Send a tank straight from heaven.", function()
-		spam_then(player_id, function() Ryan.Trolling.FallingTank(player_id) end)
+    menu.action(player_trolling_spawn_root, "Falling Tank", {"ryanfallingtank"}, "Send a tank straight from heaven.", function()
+		Ryan.Trolling.FallingTank(player_id)
     end)
 
-    menu.action(player_trolling_entities_root, "NASA Satellite", {"ryannasa"}, "Spawn a NASA satellite to discover something.", function()
-        local hash = util.joaat("prop_air_bigradar")
-        local player_ped = Ryan.Player.GetPed(player_id)
-        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-        Ryan.Basics.RequestModel(hash)
-
-        local radar = entities.create_object(hash, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 20, -3), ENTITY.GET_ENTITY_HEADING(player_ped))
-        Ryan.Entity.RequestControl(radar, false)
-        chat.send_message("using nasa satellites to find who asked", false, true, true)
-        util.yield(10000)
-        entities.delete_by_handle(radar)
-    end)
-
-    menu.divider(player_trolling_entities_root, "Options")
-    menu.text_input(player_trolling_entities_root, "Spam Message", {"ryanentitiesspam"}, "The message to spam before spawning entities.", function(value)
-        entities_message[player_id] = value
-    end, entities_message[player_id] or "")
-    menu.action(player_trolling_entities_root, "Delete All", {"ryanentitiesdelete"}, "Deletes all previously spawned entities.", function()
+    -- -- Spam Message
+    menu.divider(player_trolling_spawn_root, "Options")
+    menu.action(player_trolling_spawn_root, "Delete All", {"ryanentitiesdelete"}, "Deletes all previously spawned entities.", function()
         Ryan.Trolling.DeleteEntities(player_id)
     end)
 
 
-    -- -- Attach
+    -- Attach
     attach_root[player_id] = menu.list(player_trolling_root, "Attach...", {"ryanattach"}, "Attaches to their vehicle on a specific bone.")
     attach_vehicle_offset[player_id] = 0.0
     attach_notice[player_id] = nil
@@ -1915,24 +1860,19 @@ function setup_player(player_id)
         util.toast("Attached to " .. players.get_name(player_id) .. ".")
     end)
 
-    -- -- Kill
-    local player_trolling_kill_root = menu.list(player_trolling_root, "Kill...", {"ryankill"}, "Options to kill players while they're in godmode.")
-    
-    menu.toggle(player_trolling_kill_root, "Remove Godmode", {"ryankillgodmode"}, "Remove godmode from players using Kiddions or inside a building.", function(value)
-        remove_godmode[player_id] = value and true or nil
+
+    -- Vehicle
+    local player_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")    
+
+    vehicle_effects[player_id] = {}
+    Ryan.UI.CreateVehicleEffectList(player_vehicle_root, "ryan", players.get_name(player_id), vehicle_effects[player_id], true)
+
+    menu.toggle(player_vehicle_root, "Leash", {"ryanleash"}, "Brings their vehicle with you like a leash.", function(value)
+        vehicle_effects[player_id].leash = value and true or nil
     end)
 
-    menu.action(player_trolling_kill_root, "Kill (Stun Gun)", {"ryankillstungun"}, "Use this when removing Kiddions or interior godmode.", function()
-        local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id))
-        Ryan.Player.SendScriptEvent(player_id, {-1388926377, player_id, -1762807505, math.random(0, 9999)}, "remove godmode")
-        MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z + 1, coords.x, coords.y, coords.z, 1000, true, util.joaat("weapon_stungun"), Ryan.Player.GetPed(), false, true, 1.0)
-    end)
 
-    menu.action(player_trolling_kill_root, "Kill (Physics)", {"ryankillphysics"}, "Use this when removing godmode does not work.", function()
-        Ryan.Player.KillInGodmode(player_id)
-    end)
-
-    -- -- Glitch
+    -- Glitch
     local player_trolling_glitch_root = Ryan.UI.CreateSavableChoiceWithDefault(player_trolling_root, "Glitch: %", "ryanglitch", players.get_name(player_id), "Glitch the player and their vehicle.", glitch_type_names, function(value)
         for i = 1, #glitch_type_names do
             if glitch_type_names[i] == value then
@@ -1941,31 +1881,31 @@ function setup_player(player_id)
         end
     end)
 
-    -- -- Fake Money Drop
+    -- Fake Money Drop
     menu.toggle(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function(value)
         money_drop[player_id] = value and true or nil
     end)
 
-    -- -- Steal Vehicle
+    -- Turn Into Animal
+    menu.action(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
+        local our_ped = Ryan.Player.GetPed(player_id)
+        if PED.IS_PED_MODEL(our_ped, 0x9C9EFFD8) or PED.IS_PED_MODEL(our_ped, 0x705E61F2) then
+            Ryan.Player.BecomeAnimal(player_id)
+        else
+            util.toast("Player is already an animal.")
+        end
+    end)
+
+    -- Steal Vehicle
     menu.action(player_trolling_root, "Steal Vehicle", {"ryansteal"}, "Steals the player's car.", function()
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(Ryan.Player.GetPed(player_id))
         if vehicle ~= 0 then Ryan.Vehicle.Steal(vehicle)
         else Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Steal Vehicle", players.get_name(player_id) .. " is not in a vehicle.") end
     end)
 
-    -- -- Turn Into Animal
-    menu.action(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
-        local player_ped = Ryan.Player.GetPed(player_id)
-        if PED.IS_PED_MODEL(player_ped, 0x9C9EFFD8) or PED.IS_PED_MODEL(player_ped, 0x705E61F2) then
-            Ryan.Player.SendScriptEvent(player_id, {-1178972880, player_id, 8, -1, 1, 1, 1}, "become an animal")
-        else
-            util.toast("Player is already not a human.")
-        end
-    end)
-
 
     -- Removal --
-    -- -- Text & Kick
+    -- Spam Message / Block Joins
     local removal_block_joins = false
     local removal_message = ""
     
@@ -1979,14 +1919,14 @@ function setup_player(player_id)
 
     menu.divider(player_removal_root, "Go")
 
-    -- -- Kick
+    -- Kick
     menu.action(player_removal_root, "Stand Kick", {"ryankick"}, "Use the best possible kick method.", function()
         Ryan.Player.SpamSMSAndBlockJoins(player_id, removal_block_joins, removal_message, function()
             Ryan.Player.Kick(player_id)
         end)
     end)
 
-    -- -- Crash
+    -- Crash
     menu.action(player_removal_root, "Stand Crash", {"ryancrash"}, "Use the best possible crash methods.", function()
         if player_id == players.user() then
             Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Attach", "You just almost crashed yourself. Good job!")
@@ -2007,7 +1947,7 @@ function setup_player(player_id)
 
     -- Divorce Kick --
     menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
-        Ryan.Player.BlockJoins(players.get_name(player_id))
+        menu.trigger_commands("historyblock" .. players.get_name(player_id))
         Ryan.Player.Kick(player_id)
         menu.trigger_commands("players")
     end)
@@ -2043,7 +1983,7 @@ util.create_thread(function()
         end
         util.yield()
     end
-end) 
+end)
 
 util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
@@ -2082,7 +2022,7 @@ util.create_tick_handler(function()
     for _, player_id in pairs(players.list()) do
         if remove_godmode[player_id] == true then
             local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed(player_id))
-            Ryan.Player.SendScriptEvent(player_id, {-1388926377, player_id, -1762807505, math.random(0, 9999)}, "remove godmode")
+            Ryan.Player.RemoveGodmode(player_id)
         end
         if glitch_state[player_id] ~= glitch[player_id] then
             util.create_thread(function()
@@ -2090,11 +2030,11 @@ util.create_tick_handler(function()
                 while glitch[player_id] == glitch_type do
                     if glitch_type == "Default" then
                         Ryan.Basics.RequestModel(util.joaat("prop_shuttering03"))
-                        local player_ped = Ryan.Player.GetPed(player_id)
-                        local coords = ENTITY.GET_ENTITY_COORDS(player_ped, false)
+                        local our_ped = Ryan.Player.GetPed(player_id)
+                        local coords = ENTITY.GET_ENTITY_COORDS(our_ped, false)
                         local objects = {
-                            entities.create_object(util.joaat("prop_shuttering03"), ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 1, 0)),
-                            entities.create_object(util.joaat("prop_shuttering03"), ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 0, 0))
+                            entities.create_object(util.joaat("prop_shuttering03"), ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(our_ped, 0, 1, 0)),
+                            entities.create_object(util.joaat("prop_shuttering03"), ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(our_ped, 0, 0, 0))
                         }
                         ENTITY.SET_ENTITY_VISIBLE(objects[1], false)
                         ENTITY.SET_ENTITY_VISIBLE(objects[2], false)
@@ -2104,8 +2044,8 @@ util.create_tick_handler(function()
                     elseif glitch[player_id] ~= "Off" then
                         Ryan.Basics.RequestModel(util.joaat(glitch[player_id]))
                         Ryan.Basics.RequestModel(util.joaat("rallytruck"))
-                        local player_ped = Ryan.Player.GetPed(player_id)
-                        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped, false)
+                        local our_ped = Ryan.Player.GetPed(player_id)
+                        local player_coords = ENTITY.GET_ENTITY_COORDS(our_ped, false)
                         local objects = {
                             entities.create_object(util.joaat(glitch[player_id]), player_coords),
                             entities.create_vehicle(util.joaat("rallytruck"), player_coords, 0)

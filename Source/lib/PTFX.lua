@@ -71,6 +71,13 @@ Ryan.PTFX = {
         end
     end,
 
+    GetByName = function(name)
+		for _, ptfx_data in pairs(Ryan.PTFX.Types) do
+			if ptfx_data[1] == name then return ptfx_data end
+		end
+        return nil
+    end,
+
     CreateList = function(root, loop)
         for _, ptfx in pairs(Ryan.PTFX.Types) do
             menu.toggle_loop(root, ptfx[1], {"ryan" .. ptfx[1]:lower()}, "Plays the " .. ptfx[1] .. " effect.", function()

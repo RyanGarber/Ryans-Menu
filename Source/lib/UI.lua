@@ -84,6 +84,14 @@ Ryan.UI = {
         end
     end,
 
+    CreateTeleportList = function(root, name, coordinates)
+        for i = 1, #coordinates do
+            menu.action(root, name .. " " .. i, {"ryan" .. Ryan.Basics.CommandName(name) .. i}, "Teleport to " .. name .. " #" .. i .. ".", function()
+                Ryan.Player.Teleport({x = coordinates[i][1], y = coordinates[i][2], z = coordinates[i][3]}, false)
+            end)
+        end
+    end,
+
 
     -- God Finger UI --
     GodFingerActivationModes = {
