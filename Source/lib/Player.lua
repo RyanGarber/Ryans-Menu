@@ -72,35 +72,34 @@ Ryan.Player.New = function(player_id)
     -- Crash a player using a bugged parachute model.
     player.super_crash = function(block_syncs)
         util.toast("Crashing a player...")
-        local ourself = Ryan.Player.Self()
         local bush = util.joaat("h4_prop_bush_mang_ad")
         local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
-        local starting_coords = ENTITY.GET_ENTITY_COORDS(ourself.ped_id)
+        local starting_coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
 
         local crash = function()
             util.yield(100)
 
-            ENTITY.SET_ENTITY_VISIBLE(ourself.ped_id, false)
-            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(ourself.ped_id, coords.x, coords.y, coords.z, false, false, false)
+            ENTITY.SET_ENTITY_VISIBLE(players.user_ped(), false)
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), coords.x, coords.y, coords.z, false, false, false)
             PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user(), bush)
-            PED.SET_PED_COMPONENT_VARIATION(ourself.ped_id, 5, 8, 0, 0)
+            PED.SET_PED_COMPONENT_VARIATION(players.user_ped(), 5, 8, 0, 0)
             util.yield(500)
             
             PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user())
             util.yield(2000)
 
-            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(ourself.ped_id, coords.x, coords.y, coords.z, false, false, false)
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), coords.x, coords.y, coords.z, false, false, false)
             PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user(), bush)
-            PED.SET_PED_COMPONENT_VARIATION(ourself.ped_id, 5, 31, 0, 0)
+            PED.SET_PED_COMPONENT_VARIATION(players.user_ped(), 5, 31, 0, 0)
             util.yield(500)
 
             PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user())
             util.yield(2000)
 
             for i = 1, 5 do util.spoof_script("freemode", SYSTEM.WAIT) end
-            ENTITY.SET_ENTITY_HEALTH(ourself.ped_id, 0)
+            ENTITY.SET_ENTITY_HEALTH(players.user_ped(), 0)
             NETWORK.NETWORK_RESURRECT_LOCAL_PLAYER(starting_coords.x, starting_coords.y, starting_coords.z, 0, false, false, 0)
-            ENTITY.SET_ENTITY_VISIBLE(ourself.ped_id, true)
+            ENTITY.SET_ENTITY_VISIBLE(players.user_ped(), true)
         end
 
         if block_syncs then player.do_with_exclusive_syncs(crash)
@@ -122,7 +121,7 @@ Ryan.Player.New = function(player_id)
     -- Block syncs to this player.
     player.block_syncs = function(block)
         util.toast((block and "Blocked" or "Unblocked") .. " syncs with " .. player.name .. ".")
-        local outgoing_syncs = menu.ref_by_rel_path(menu.player_root(id), "Outgoing Syncs>Block")
+        local outgoing_syncs = menu.ref_by_rel_path(menu.player_root(player.id), "Outgoing Syncs>Block")
         menu.trigger_command(outgoing_syncs, block and "on" or "off")
     end
 

@@ -945,10 +945,9 @@ end)
 -- -- All Entities Visible
 menu.toggle_loop(world_root, "All Entities Visible", {"ryannoinvisible"}, "Makes all invisible entities visible again.", function()
     for _, player_id in pairs(players.list()) do
-        local our_ped = Ryan.Player.Get(player_id).ped_id
-        ENTITY.SET_ENTITY_ALPHA(our_ped, 255)
-        ENTITY.SET_ENTITY_VISIBLE(our_ped, true, 0)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(our_ped, true)
+        ENTITY.SET_ENTITY_ALPHA(players.user_ped(), 255)
+        ENTITY.SET_ENTITY_VISIBLE(players.user_ped(), true, 0)
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
         if vehicle ~= 0 then
             ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
             ENTITY.SET_ENTITY_VISIBLE(vehicle, true, 0)
@@ -1175,10 +1174,10 @@ menu.action(session_crash_all_root, "Super Crash", {"ryancrashallsuper"}, "Let t
 end)
 
 menu.divider(session_crash_all_root, "Options")
-menu.toggle(session_crash_all_root, "Include Modders", {"ryancrashallmodders"}, "If enabled, modders are included in the Omnicrash.", function(value)
+menu.toggle(session_crash_all_root, "Include Modders", {"ryancrashallmodders"}, "If enabled, modders are included.\nRecommended only when using Super Crash.", function(value)
     crash_all_modders = value
 end)
-menu.toggle(session_crash_all_root, "Include Friends", {"ryancrashallfriends"}, "If enabled, friends are included in the Omnicrash.", function(value)
+menu.toggle(session_crash_all_root, "Include Friends", {"ryancrashallfriends"}, "If enabled, friends are included.", function(value)
     crash_all_friends = value
 end)
 
@@ -1771,7 +1770,7 @@ menu.colour(settings_root, "ESP Color", {"ryanespcolor"}, "The color of on-scree
 end)
 
 util.create_tick_handler(function()
-    if afk_coords ~= nil and Ryan.Vector.Distance(Ryan.Player.Self().get_coords(), afk_room) > 50 then
+    if afk_coords ~= nil and Ryan.Vector.Distance(ENTITY.GET_ENTITY_COORDS(players.user_ped()), afk_room) > 50 then
         menu.trigger_commands("ryanghost off")
     end
     util.yield(1000)
@@ -1817,22 +1816,20 @@ function setup_player(player_id)
 
     menu.toggle_loop(player_trolling_kill_root, "Kill (Kiddions)", {"ryankillstungun"}, "Use this to kill players using Kiddions godmode. May also work in some buildings.", function()
         local player = Ryan.Player.Get(player_id)
-        local ourself = Ryan.Player.Self()
         local stun_gun = util.joaat("weapon_stungun")
         local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
 		WEAPON.REQUEST_WEAPON_ASSET(stun_gun)
-		WEAPON.GIVE_WEAPON_TO_PED(ourself.ped_id, stun_gun, 1, false, true)
+		WEAPON.GIVE_WEAPON_TO_PED(players.user_ped(), stun_gun, 1, false, true)
         player.remove_godmode()
         MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z + 1, coords.x, coords.y, coords.z, 1000, true, stun_gun, 0, false, true, 1.0)
     end)
 
     menu.toggle_loop(player_trolling_kill_root, "Kill (Interior)", {"ryankillsnowball"}, "Use this to kill players inside buildings. May also work on some menus' godmodes.", function()
         local player = Ryan.Player.Get(player_id)
-        local ourself = Ryan.Player.Self()
 		local snowball = util.joaat("weapon_snowball")
         local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
 		WEAPON.REQUEST_WEAPON_ASSET(snowball)
-		WEAPON.GIVE_WEAPON_TO_PED(ourself.ped_id, snowball, 10, false, true)
+		WEAPON.GIVE_WEAPON_TO_PED(players.user_ped(), snowball, 10, false, true)
         player.remove_godmode()
 		MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z - 2, 200, 0, snowball, 0, true, false, 2500.0)
     end)
