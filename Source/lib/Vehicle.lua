@@ -113,10 +113,9 @@ Ryan.Vehicle = {
     end,
 
     MakeBlind = function(vehicle)
-        local driver = PED.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
-
-        PED.SET_DRIVER_AGGRESSIVENESS(driver, 1.0)
+        local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
         local coords = Ryan.Vector.Add(ENTITY.GET_ENTITY_COORDS(vehicle), {x = math.random(-500, 500), y = math.random(-500, 500), z = 0})
+        PED.SET_DRIVER_AGGRESSIVENESS(driver, 1.0)
         TASK.TASK_VEHICLE_DRIVE_TO_COORD_LONGRANGE(driver, vehicle, coords.x, coords.y, coords.z, 150.0, 524800, 20.0)
 
         --TASK.TASK_VEHICLE_DRIVE_WANDER(driver, vehicle, 10.0, 4719104)
