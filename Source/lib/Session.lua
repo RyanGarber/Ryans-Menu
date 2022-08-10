@@ -15,16 +15,6 @@ Ryan.Session = {
         end
     end,
 
-    SpamChat = function(message, delay)
-        local sent = 0
-        while sent < 32 do
-            Ryan.Basics.SendChatMessage(message)
-            util.yield(delay)
-            sent = sent + 1
-        end
-        util.yield(wait_for)
-    end,
-
     -- Sorting Types --
     ListHighestAndLowest = function(get_value)
         local highest_amount = 0
@@ -33,7 +23,7 @@ Ryan.Session = {
         local lowest_player = nil
     
         for _, player_id in pairs(players.list()) do
-            local player = Ryan.Player.ById(player_id)
+            local player = Ryan.Player.Get(player_id)
             amount = get_value(player)
             if amount > highest_amount and amount < 2147483647 then
                 highest_amount = amount

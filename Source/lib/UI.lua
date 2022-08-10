@@ -43,8 +43,14 @@ Ryan.UI = {
             for _, choice in pairs(options) do
                 if effects[Ryan.Basics.ToTableName(effect_name)] == nil then effects[Ryan.Basics.ToTableName(effect_name)] = {} end
 
-                Ryan.UI.CreateSavableChoiceWithDefault(effect_root, choice .. ": %", command .. Ryan.Basics.CommandName(choice), "", "", Ryan.UI.GodFingerActivationModes, function(value)
+                local choice_root = Ryan.UI.CreateSavableChoiceWithDefault(effect_root, choice, command .. Ryan.Basics.CommandName(choice), "", "", Ryan.UI.GodFingerActivationModes, function(value)
                     effects[Ryan.Basics.ToTableName(effect_name)][Ryan.Basics.ToTableName(choice)] = value
+                end)
+                local show_state = false
+                menu.on_focus(choice_root, function() show_state = true end)
+                menu.on_blur(choice_root, function() show_state = false end)
+                util.create_tick_handler(function()
+                    if show_state then util.draw_debug_text(choice .. ": " .. effects[Ryan.Basics.ToTableName(effect_name)][Ryan.Basics.ToTableName(choice)]) end
                 end)
             end
         else
@@ -71,8 +77,14 @@ Ryan.UI = {
 
     CreateEffectToggle = function(root, command_prefix, effects, effect_name, effect_description, god_finger)
         if god_finger then
-            Ryan.UI.CreateSavableChoiceWithDefault(root, effect_name .. ": %", command_prefix .. Ryan.Basics.CommandName(effect_name), "", effect_description, Ryan.UI.GodFingerActivationModes, function(value)
+            local choice_root = Ryan.UI.CreateSavableChoiceWithDefault(root, effect_name, command_prefix .. Ryan.Basics.CommandName(effect_name), "", effect_description, Ryan.UI.GodFingerActivationModes, function(value)
                 effects[Ryan.Basics.ToTableName(effect_name)] = value
+            end)
+            local show_state = false
+            menu.on_focus(choice_root, function() show_state = true end)
+            menu.on_blur(choice_root, function() show_state = false end)
+            util.create_tick_handler(function()
+                if show_state then util.draw_debug_text(effect_name .. ": " .. effects[Ryan.Basics.ToTableName(effect_name)]) end
             end)
         else
             menu.toggle(root, effect_name, {command_prefix .. Ryan.Basics.CommandName(effect_name)}, effect_description, function(value)
@@ -81,18 +93,18 @@ Ryan.UI = {
         end
     end,
 
-    CreateTeleportList = function(root, name, coordinates)
-        for i = 1, #coordinates do
+    CreateTeleportList = function(root, name, coords)
+        for i = 1, #coords do
             local draw_beacon = false
             local teleport = menu.action(root, name .. " " .. i, {"ryan" .. Ryan.Basics.CommandName(name) .. i}, "Teleport to " .. name .. " #" .. i .. ".", function()
-                Ryan.Basics.Teleport({x = coordinates[i][1], y = coordinates[i][2], z = coordinates[i][3]}, false)
+                Ryan.Basics.Teleport({x = coords[i][1], y = coords[i][2], z = coords[i][3]}, false)
             end)
             menu.on_focus(teleport, function() draw_beacon = true end)
             menu.on_blur(teleport, function() draw_beacon = false end)
+            util.create_tick_handler(function()
+                if draw_beacon then util.draw_ar_beacon({x = coords[i][1], y = coords[i][2], z = coords[i][3]}) end
+            end)
         end
-        util.create_tick_handler(function()
-            if draw_beacon then util.draw_ar_beacon(coordinates) end
-        end)
     end,
 
 
@@ -253,7 +265,7 @@ Ryan.UI = {
         end
 
         if parsed.flee and not state[npc].flee then
-            TASK.TASK_SMART_FLEE_PED(npc, Ryan.Player.Self().ped_id, 500.0, -1, false, false)
+            TASK.TASK_SMART_FLEE_PED(npc, players.user_ped(), 500.0, -1, false, false)
             PED.SET_PED_KEEP_TASK(npc, true)
             state[npc].flee = true
         end
@@ -275,7 +287,7 @@ Ryan.UI = {
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Doors", "Change the vehicle's door lock state.", {"Lock", "Unlock"}, god_finger)
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Tires", "Change the vehicle's tire health.", {"Burst", "Fix"}, god_finger)
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Engine", "Change the vehicle's engine health.", {"Kill", "Fix"}, god_finger)
-        Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Upgrades", "Change the vehicle's upgrades.", {"All", "None"}, god_finger)
+        if enable_risky then Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Upgrades", "Change the vehicle's upgrades.", {"All", "None"}, god_finger) end
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Godmode", "Change the vehicle's upgrades.", {"On", "Off"}, god_finger)
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Gravity", "Change the vehicle's gravity.", {"None", "Normal"}, god_finger)
         Ryan.UI.CreateEffectToggle(root, command_prefix, effects, "Theft Alarm", "Trigger the vehicle's theft alarm.", god_finger)
@@ -352,18 +364,16 @@ Ryan.UI = {
             end, is_a_player)
         end
 
-        if enable_risky then
-            if parsed.upgrades and parsed.upgrades.all and (not is_a_player or state[vehicle].upgrades ~= "all") then
-                Ryan.Vehicle.Modify(vehicle, function()
-                    Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
-                    state[vehicle].upgrades = "all"
-                end, is_a_player)
-            elseif parsed.upgrades and parsed.upgrades.none and (not is_a_player or state[vehicle].upgrades ~= "none") then
-                Ryan.Vehicle.Modify(vehicle, function()
-                    Ryan.Vehicle.SetFullyUpgraded(vehicle, false)
-                    state[vehicle].upgrades = "none"
-                end, is_a_player)
-            end
+        if parsed.upgrades and parsed.upgrades.all and (not is_a_player or state[vehicle].upgrades ~= "all") then
+            Ryan.Vehicle.Modify(vehicle, function()
+                Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
+                state[vehicle].upgrades = "all"
+            end, is_a_player)
+        elseif parsed.upgrades and parsed.upgrades.none and (not is_a_player or state[vehicle].upgrades ~= "none") then
+            Ryan.Vehicle.Modify(vehicle, function()
+                Ryan.Vehicle.SetFullyUpgraded(vehicle, false)
+                state[vehicle].upgrades = "none"
+            end, is_a_player)
         end
 
         if parsed.godmode and parsed.godmode.on and (not is_a_player or state[vehicle].godmode ~= "on") then

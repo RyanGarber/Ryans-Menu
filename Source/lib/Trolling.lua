@@ -15,7 +15,7 @@ Ryan.Trolling = {
     end,
 
     MilitarySquad = function(player_id, with_crusaders)
-        local player = Ryan.Player.ById(player_id)
+        local player = Ryan.Player.Get(player_id)
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
         local black_ops = util.joaat("s_m_y_blackops_01"); Ryan.Basics.RequestModel(black_ops)
@@ -27,16 +27,15 @@ Ryan.Trolling = {
         end
 
         for i = 1, #vehicles do
-            local coords_ptr = memory.alloc()
             local node_ptr = memory.alloc()
+            local coords = v3.new()
 
-            if not PATHFIND.GET_RANDOM_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, 80, 0, 0, 0, coords_ptr, node_ptr) then
+            if not PATHFIND.GET_RANDOM_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, 80, 0, 0, 0, coords, node_ptr) then
                 player_coords.x = player_coords.x + math.random(-20, 20)
                 player_coords.y = player_coords.y + math.random(-20, 20)
-                PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords_ptr, 1, 100, 2.5)
+                PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords, 1, 100, 2.5)
             end
-
-            local coords = memory.read_vector3(coords_ptr)
+            
             local vehicle = entities.create_vehicle(vehicles[i], coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
             Ryan.Trolling.AddEntity(player_id, vehicle, i < 3)
             Ryan.Entity.FaceEntity(vehicle, player_ped, true)
@@ -67,7 +66,7 @@ Ryan.Trolling = {
     end,
 
     SWATTeam = function(player_id)
-        local player = Ryan.Player.ById(player_id)
+        local player = Ryan.Player.Get(player_id)
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
         local swat = util.joaat("s_m_y_swat_01"); Ryan.Basics.RequestModel(swat)
@@ -101,7 +100,7 @@ Ryan.Trolling = {
         local buzzard = util.joaat("buzzard2"); Ryan.Basics.RequestModel(buzzard)
         local black_ops = util.joaat("s_m_y_blackops_01"); Ryan.Basics.RequestModel(black_ops)
 
-        local player = Ryan.Player.ById(player_id)
+        local player = Ryan.Player.Get(player_id)
         local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
         local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
@@ -158,7 +157,7 @@ Ryan.Trolling = {
     end,
 
     FallingTank = function(player_id)
-        local player = Ryan.Player.ById(player_id)
+        local player = Ryan.Player.Get(player_id)
         local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
         coords.z = coords.z + 5
 
@@ -173,7 +172,7 @@ Ryan.Trolling = {
 
     FakeMoneyDrop = function(player_id)
         menu.trigger_commands("notifybanked" .. players.get_name(player_id) .. " " .. math.random(100, 5000))
-        local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.ById(player_id).ped_id)
+        local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.Get(player_id).ped_id)
         local bag = entities.create_object(2628187989, Ryan.Vector.Add(coords, {x = 0, y = 0, z = 2}))
         ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -20, 0.0, 0.0, 0.0, true, true)
         util.yield(333)
@@ -194,7 +193,7 @@ Ryan.Trolling = {
             local hash = util.joaat("prop_air_bigradar")
             Ryan.Basics.RequestModel(hash)
     
-            local player_ped = Ryan.Player.ById(player_id).ped_id
+            local player_ped = Ryan.Player.Get(player_id).ped_id
             local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
             local radar = entities.create_object(hash, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 20, -3), ENTITY.GET_ENTITY_HEADING(player_ped))
             Ryan.Entity.RequestControl(radar, false)

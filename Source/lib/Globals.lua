@@ -18,11 +18,11 @@ Ryan.Globals = {
 		if waiting_for_session then
 			if NETWORK.NETWORK_IS_SESSION_ACTIVE() then
 				waiting_for_session = false
-				waiting_for_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.Self().ped_id)
+				waiting_for_coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
 			end
 		end
 		if waiting_for_coords ~= nil then
-			local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.Self().ped_id)
+			local coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
 			if Ryan.Vector.Distance(coords, waiting_for_coords) > 0.1 then
 				waiting_for_coords = nil
 			end
@@ -33,8 +33,20 @@ Ryan.Globals = {
     end,
     
     Color = {
+        Black = 2,
+        Gray = 5,
+        Blue = 9,
+        Orange = 15,
+        Pink = 24,
+        Green = 25,
+        Red = 27,
+        LightPink = 30,
+        Teal = 37,
+        Tan = 38,
+        LightGreen = 46,
+        Navy = 47,
         Purple = 49,
-        Red = 6
+        Yellow = 50
     },
 
     Controls = {

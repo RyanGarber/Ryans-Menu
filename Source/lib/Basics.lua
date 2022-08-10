@@ -54,7 +54,7 @@ Ryan.Basics = {
 					updating = 0
 
 					Ryan.Basics.ShowTextMessage(49, "Auto-Update", "You're up to date. Enjoy!")
-					Ryan.Audio.PlayFromEntity(Ryan.Player.Self().ped_id, "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
+					Ryan.Audio.PlayFromEntity(players.user_ped(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
 				end
 			end, function()
 				Ryan.Basics.ShowTextMessage(6, "Auto-Update", "Failed to get the latest version. Use the installer instead.")
@@ -190,8 +190,8 @@ Ryan.Basics = {
 		)
 
 		result.did_hit = memory.read_byte(did_hit) ~= 0
-		result.hit_coords = Ryan.Vector.FromV3(v3.get(hit_coords))
-		result.hit_normal = Ryan.Vector.FromV3(v3.get(hit_normal))
+		result.hit_coords = hit_coords
+		result.hit_normal = hit_normal
 		result.hit_entity = memory.read_int(hit_entity)
 
 		return result
@@ -259,7 +259,7 @@ Ryan.Basics = {
 		coords = Ryan.Vector.Add(coords, offset)
 
 		local firework = util.joaat("weapon_firework")
-		local player_ped = Ryan.Player.Self().ped_id
+		local player_ped = players.user_ped()
 		WEAPON.REQUEST_WEAPON_ASSET(firework)
 		WEAPON.GIVE_WEAPON_TO_PED(player_ped, firework, 20, false, true)
 		MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z + 100, 0, true, firework, player_ped, true, false, 500.0)
@@ -267,7 +267,7 @@ Ryan.Basics = {
 
 	Teleport = function(coords, with_vehicle)
         util.toast("Teleporting...")
-        local player_ped = Ryan.Player.Self().ped_id
+        local player_ped = players.user_ped()
         if with_vehicle and PED.IS_PED_IN_ANY_VEHICLE(player_ped, true) then
             local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
             ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
@@ -277,8 +277,10 @@ Ryan.Basics = {
     end,
 
 	SendChatMessage = function(message)
-		for _, player in pairs(Ryan.Player.List(true, true, true)) do
-			player.send_sms(message)
-		end
+		chat.send_message(message .. " [" .. math.random(1, 999999) .. "]", false, true, true)
+		-- TODO: check if Stand ratelimited the script
+		--for _, player in pairs(Ryan.Player.List(true, true, true)) do
+		--	player.send_sms(message)
+		--end
 	end
 }

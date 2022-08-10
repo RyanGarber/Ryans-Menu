@@ -29,9 +29,7 @@ Ryan.Vehicle = {
         VEHICLE.SET_VEHICLE_MOD_KIT(vehicle, 0)
         for i = 0, 50 do
             local mod = -1
-            if fully_upgraded then
-                mod = VEHICLE.GET_NUM_VEHICLE_MODS(vehicle, i) - 1
-            end
+            if fully_upgraded then mod = VEHICLE.GET_NUM_VEHICLE_MODS(vehicle, i) - 1 end
             VEHICLE.SET_VEHICLE_MOD(vehicle, i, mod, fully_upgraded)
         end
     end,
@@ -85,7 +83,7 @@ Ryan.Vehicle = {
             local driver_player_id = nil
             if driver ~= 0 and PED.IS_PED_A_PLAYER(driver) then
                 for _, player_id in pairs(players.list()) do
-                    if Ryan.Player.ById(player_id).ped_id == driver then
+                    if Ryan.Player.Get(player_id).ped_id == driver then
                         driver_player_id = player_id
                     end
                 end
@@ -107,7 +105,7 @@ Ryan.Vehicle = {
                 util.yield()
             end
             if not failed_to_kick then
-                PED.SET_PED_INTO_VEHICLE(Ryan.Player.Self().ped_id, vehicle, -1)
+                PED.SET_PED_INTO_VEHICLE(players.user_ped(), vehicle, -1)
             end
         end
     end,

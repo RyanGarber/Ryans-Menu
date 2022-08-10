@@ -7,14 +7,13 @@ Ryan.Entity = {
 
     GetAllNearby = function(coords, range, types)
         types = types or Ryan.Entity.Type.All
-    
-        local player_ped = Ryan.Player.Self().ped_id
-        local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
+
+        local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped())
         local nearby_entities = {}
     
         if types == Ryan.Entity.Type.Peds or types == Ryan.Entity.Type.All then
             for _, ped in pairs(entities.get_all_peds_as_handles()) do
-                if ped ~= player_ped then
+                if ped ~= players.user_ped() then
                     local ped_coords = ENTITY.GET_ENTITY_COORDS(ped)
                     if Ryan.Vector.Distance(coords, ped_coords) <= range then
                         table.insert(nearby_entities, ped)
@@ -85,9 +84,9 @@ Ryan.Entity = {
         local maximum = v3.new()
         if ENTITY.DOES_ENTITY_EXIST(entity) then
             MISC.GET_MODEL_DIMENSIONS(ENTITY.GET_ENTITY_MODEL(entity), minimum, maximum)
-            local width  = 2 * v3.getX(maximum)
-            local length = 2 * v3.getY(maximum)
-            local depth  = 2 * v3.getZ(maximum)
+            local width  = 2 * maximum.x
+            local length = 2 * maximum.y
+            local depth  = 2 * maximum.z
     
             local offset1 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity, -width / 2,  length / 2,  depth / 2)
             local offset4 = ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,  width / 2,  length / 2,  depth / 2)
@@ -135,13 +134,10 @@ Ryan.Entity = {
         local coords = ENTITY.GET_ENTITY_COORDS(entity)
         local model = ENTITY.GET_ENTITY_MODEL(entity)
 
-        local minimum_ptr, maximum_ptr = memory.alloc(), memory.alloc()
-        MISC.GET_MODEL_DIMENSIONS(model, minimum_ptr, maximum_ptr)
-        local minimum = memory.read_vector3(minimum_ptr)
-        local maximum = memory.read_vector3(maximum_ptr)
+        local minimum, maximum = v3.new(), v3.new()
+        MISC.GET_MODEL_DIMENSIONS(model, minimum, maximum)
 
         local wall_light = util.joaat("prop_wall_light_15a")
-
         if Ryan.Entity.Spotlights[entity] ~= nil then
             Ryan.Entity.DetachAll(entity)
         end
