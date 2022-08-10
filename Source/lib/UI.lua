@@ -10,7 +10,7 @@ Ryan.UI = {
 			menu.toggle(choices_root, choice, {command_name .. Ryan.Basics.CommandName(choice)}, "", function(value)
                 if value and choice ~= state then
                     menu.trigger_commands(command_name .. Ryan.Basics.CommandName(state) .. player_name .. " off")
-                    menu.set_menu_name(choices_root, menu_name:gsub("%%", state))
+                    menu.set_menu_name(choices_root, menu_name:gsub("%%", choice))
                     state = choice
                     on_update(state)
 				end
