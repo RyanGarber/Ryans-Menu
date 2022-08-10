@@ -274,7 +274,7 @@ Ryan.UI = {
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Grip", "Change the grip of the vehicle's tires.", {"None", "Normal"}, god_finger)
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Doors", "Change the vehicle's door lock state.", {"Lock", "Unlock"}, god_finger)
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Tires", "Change the vehicle's tire health.", {"Burst", "Fix"}, god_finger)
-        Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Health", "Change the vehicle's health.", {"Kill", "Fix"}, god_finger)
+        Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Engine", "Change the vehicle's engine health.", {"Kill", "Fix"}, god_finger)
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Upgrades", "Change the vehicle's upgrades.", {"All", "None"}, god_finger)
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Godmode", "Change the vehicle's upgrades.", {"On", "Off"}, god_finger)
         Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Gravity", "Change the vehicle's gravity.", {"None", "Normal"}, god_finger)
@@ -340,12 +340,12 @@ Ryan.UI = {
             end, is_a_player)
         end
 
-        if parsed.health and parsed.health.kill and (not is_a_player or state[vehicle].health ~= "kill") then
+        if parsed.engine and parsed.engine.kill and (not is_a_player or state[vehicle].engine ~= "kill") then
             Ryan.Vehicle.Modify(vehicle, function()
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
                 state[vehicle].engine = "kill"
             end, is_a_player)
-        elseif parsed.health and parsed.health.fix and (not is_a_player or state[vehicle].health ~= "fix") then
+        elseif parsed.engine and parsed.engine.fix and (not is_a_player or state[vehicle].engine ~= "fix") then
             Ryan.Vehicle.Modify(vehicle, function()
                 VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
                 state[vehicle].engine = "fix"
