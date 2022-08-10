@@ -9,7 +9,7 @@ Ryan.Audio = {
     
     PlayOnAllPlayers = function(sound_group, sound_name)
         for _, player_id in pairs(players.list()) do
-            Ryan.Audio.PlayFromEntity(Ryan.Player.GetPed(player_id), sound_group, sound_name)
+            Ryan.Audio.PlayFromEntity(Ryan.Player.ById(player_id).ped_id, sound_group, sound_name)
         end
     end
 }

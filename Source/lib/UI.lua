@@ -8,18 +8,14 @@ Ryan.UI = {
 		local choices_root = menu.list(root, menu_name:gsub("%%", state), {command_name}, description)
 		for _, choice in pairs(choices) do
 			menu.toggle(choices_root, choice, {command_name .. Ryan.Basics.CommandName(choice)}, "", function(value)
-				if value then
-					if choice ~= state then
-						menu.trigger_commands(command_name .. Ryan.Basics.CommandName(state) .. player_name .. " off")
-						util.yield(500)
-						state = choice
-						on_update(state)
-						menu.set_menu_name(choices_root, menu_name:gsub("%%", state))
-					end
+                if value and choice ~= state then
+                    menu.trigger_commands(command_name .. Ryan.Basics.CommandName(state) .. player_name .. " off")
+                    menu.set_menu_name(choices_root, menu_name:gsub("%%", state))
+                    state = choice
+                    on_update(state)
 				end
-
+                state_values[choice] = value
 				state_change = util.current_time_millis()
-				state_values[choice] = value
 			end, choice == choices[1])
 		end
 
@@ -29,8 +25,9 @@ Ryan.UI = {
 				for _, choice in pairs(choices) do
 					if state_values[choice] then has_choice = true end
 				end
-				if not has_choice then menu.trigger_commands(command_name .. Ryan.Basics.CommandName(choices[1]) .. player_name .. " on") end
-				state_change = 2147483647
+				if not has_choice then
+                    menu.trigger_commands(command_name .. Ryan.Basics.CommandName(choices[1]) .. player_name .. " on")
+                end
 			end
 		end)
 
@@ -86,10 +83,16 @@ Ryan.UI = {
 
     CreateTeleportList = function(root, name, coordinates)
         for i = 1, #coordinates do
-            menu.action(root, name .. " " .. i, {"ryan" .. Ryan.Basics.CommandName(name) .. i}, "Teleport to " .. name .. " #" .. i .. ".", function()
-                Ryan.Player.Teleport({x = coordinates[i][1], y = coordinates[i][2], z = coordinates[i][3]}, false)
+            local draw_beacon = false
+            local teleport = menu.action(root, name .. " " .. i, {"ryan" .. Ryan.Basics.CommandName(name) .. i}, "Teleport to " .. name .. " #" .. i .. ".", function()
+                Ryan.Basics.Teleport({x = coordinates[i][1], y = coordinates[i][2], z = coordinates[i][3]}, false)
             end)
+            menu.on_focus(teleport, function() draw_beacon = true end)
+            menu.on_blur(teleport, function() draw_beacon = false end)
         end
+        util.create_tick_handler(function()
+            if draw_beacon then util.draw_ar_beacon(coordinates) end
+        end)
     end,
 
 
@@ -250,7 +253,7 @@ Ryan.UI = {
         end
 
         if parsed.flee and not state[npc].flee then
-            TASK.TASK_SMART_FLEE_PED(npc, Ryan.Player.GetPed(), 500.0, -1, false, false)
+            TASK.TASK_SMART_FLEE_PED(npc, Ryan.Player.Self().ped_id, 500.0, -1, false, false)
             PED.SET_PED_KEEP_TASK(npc, true)
             state[npc].flee = true
         end

@@ -8,7 +8,7 @@ Ryan.Entity = {
     GetAllNearby = function(coords, range, types)
         types = types or Ryan.Entity.Type.All
     
-        local player_ped = Ryan.Player.GetPed()
+        local player_ped = Ryan.Player.Self().ped_id
         local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped)
         local nearby_entities = {}
     
@@ -25,11 +25,9 @@ Ryan.Entity = {
     
         if types == Ryan.Entity.Type.Vehicles or types == Ryan.Entity.Type.All then
             for _, vehicle in pairs(entities.get_all_vehicles_as_handles()) do
-                if vehicle ~= player_vehicle then
-                    local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
-                    if Ryan.Vector.Distance(coords, vehicle_coords) <= range then
-                        table.insert(nearby_entities, vehicle)
-                    end
+                local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+                if Ryan.Vector.Distance(coords, vehicle_coords) <= range then
+                    table.insert(nearby_entities, vehicle)
                 end
             end
         end

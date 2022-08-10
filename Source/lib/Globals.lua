@@ -18,11 +18,11 @@ Ryan.Globals = {
 		if waiting_for_session then
 			if NETWORK.NETWORK_IS_SESSION_ACTIVE() then
 				waiting_for_session = false
-				waiting_for_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+				waiting_for_coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.Self().ped_id)
 			end
 		end
 		if waiting_for_coords ~= nil then
-			local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.GetPed())
+			local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.Self().ped_id)
 			if Ryan.Vector.Distance(coords, waiting_for_coords) > 0.1 then
 				waiting_for_coords = nil
 			end

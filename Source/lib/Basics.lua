@@ -54,7 +54,7 @@ Ryan.Basics = {
 					updating = 0
 
 					Ryan.Basics.ShowTextMessage(49, "Auto-Update", "You're up to date. Enjoy!")
-					Ryan.Audio.PlayFromEntity(Ryan.Player.GetPed(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
+					Ryan.Audio.PlayFromEntity(Ryan.Player.Self().ped_id, "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
 				end
 			end, function()
 				Ryan.Basics.ShowTextMessage(6, "Auto-Update", "Failed to get the latest version. Use the installer instead.")
@@ -246,7 +246,7 @@ Ryan.Basics = {
 					result = result:gsub(from, to)
 				end
 			end
-			chat.send_message(result, false, true, true)
+			Ryan.Basics.SendChatMessage(result)
 			util.toast("Sent!")
 		end, function()
 			util.toast("Failed to translate message.")
@@ -259,9 +259,26 @@ Ryan.Basics = {
 		coords = Ryan.Vector.Add(coords, offset)
 
 		local firework = util.joaat("weapon_firework")
-		local player_ped = Ryan.Player.GetPed()
+		local player_ped = Ryan.Player.Self().ped_id
 		WEAPON.REQUEST_WEAPON_ASSET(firework)
 		WEAPON.GIVE_WEAPON_TO_PED(player_ped, firework, 20, false, true)
-		MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z + 1, 0, false, firework, player_ped, true, false, 500.0)
+		MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z + 100, 0, true, firework, player_ped, true, false, 500.0)
+	end,
+
+	Teleport = function(coords, with_vehicle)
+        util.toast("Teleporting...")
+        local player_ped = Ryan.Player.Self().ped_id
+        if with_vehicle and PED.IS_PED_IN_ANY_VEHICLE(player_ped, true) then
+            local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
+            ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
+        else
+            ENTITY.SET_ENTITY_COORDS(player_ped, coords.x, coords.y, coords.z)
+        end
+    end,
+
+	SendChatMessage = function(message)
+		for _, player in pairs(Ryan.Player.List(true, true, true)) do
+			player.send_sms(message)
+		end
 	end
 }

@@ -85,7 +85,7 @@ Ryan.Vehicle = {
             local driver_player_id = nil
             if driver ~= 0 and PED.IS_PED_A_PLAYER(driver) then
                 for _, player_id in pairs(players.list()) do
-                    if Ryan.Player.GetPed(player_id) == driver then
+                    if Ryan.Player.ById(player_id).ped_id == driver then
                         driver_player_id = player_id
                     end
                 end
@@ -107,7 +107,7 @@ Ryan.Vehicle = {
                 util.yield()
             end
             if not failed_to_kick then
-                PED.SET_PED_INTO_VEHICLE(Ryan.Player.GetPed(), vehicle, -1)
+                PED.SET_PED_INTO_VEHICLE(Ryan.Player.Self().ped_id, vehicle, -1)
             end
         end
     end,
