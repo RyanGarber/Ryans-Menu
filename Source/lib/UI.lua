@@ -395,16 +395,7 @@ Ryan.UI = {
             end, is_a_player)
         end
 
-        if parsed.catapult then
-            if not state[vehicle].catapult or VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) and util.current_time_millis() - state[vehicle].catapult > 250 then
-                Ryan.Vehicle.Modify(vehicle, function()
-                    Ryan.Vehicle.Catapult(vehicle)
-                end, is_a_player)
-                state[vehicle].catapult = util.current_time_millis()
-            end
-        end
-
-        if parsed.alarm then
+        if parsed.theft_alarm then
             if not VEHICLE.IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
                 Ryan.Vehicle.Modify(vehicle, function()
                     VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
@@ -413,6 +404,15 @@ Ryan.UI = {
             end
         end
 
+        if parsed.catapult then
+            if not state[vehicle].catapult or VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) and util.current_time_millis() - state[vehicle].catapult > 250 then
+                Ryan.Vehicle.Modify(vehicle, function()
+                    Ryan.Vehicle.Catapult(vehicle)
+                end, is_a_player)
+                state[vehicle].catapult = util.current_time_millis()
+            end
+        end
+        
         if parsed.delete then
             entities.delete_by_handle(vehicle)
         end
