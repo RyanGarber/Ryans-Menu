@@ -9,6 +9,7 @@ SUBFOLDER_NAME = "Ryan's Menu" .. (DEV_ENVIRONMENT and " (Dev)" or "")
 
 Ryan = {}
 
+
 -- Initialize --
 function exists(name) return filesystem.exists(filesystem.scripts_dir() .. name) end
 for required_directory, required_files in pairs(MANIFEST) do
@@ -28,10 +29,10 @@ for required_directory, required_files in pairs(MANIFEST) do
     end
 end
 
+Ryan.Basics.DoUpdate(false)
+
 Ryan.Globals.Initialize()
 util.create_tick_handler(Ryan.Globals.OnTick)
-
-Ryan.Basics.DoUpdate(false)
 
 
 -- Main Menu --
