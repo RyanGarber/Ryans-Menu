@@ -78,24 +78,23 @@ Ryan.Player.New = function(player_id)
 
         local crash = function()
             util.yield(100)
-
             ENTITY.SET_ENTITY_VISIBLE(players.user_ped(), false)
             ENTITY.SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), coords.x, coords.y, coords.z, false, false, false)
             PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user(), bush)
             PED.SET_PED_COMPONENT_VARIATION(players.user_ped(), 5, 8, 0, 0)
-            util.yield(500)
             
+            util.yield(500)
             PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user())
+            
             util.yield(2000)
-
             ENTITY.SET_ENTITY_COORDS_NO_OFFSET(players.user_ped(), coords.x, coords.y, coords.z, false, false, false)
             PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user(), bush)
             PED.SET_PED_COMPONENT_VARIATION(players.user_ped(), 5, 31, 0, 0)
+            
             util.yield(500)
-
             PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(players.user())
+            
             util.yield(2000)
-
             for i = 1, 5 do util.spoof_script("freemode", SYSTEM.WAIT) end
             ENTITY.SET_ENTITY_HEALTH(players.user_ped(), 0)
             NETWORK.NETWORK_RESURRECT_LOCAL_PLAYER(starting_coords.x, starting_coords.y, starting_coords.z, 0, false, false, 0)

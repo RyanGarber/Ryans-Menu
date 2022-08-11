@@ -1942,11 +1942,6 @@ function setup_player(player_id)
         end)
     end)
     menu.action(player_removal_root, "Stand Crash", {"ryancrash"}, "Use the best possible crash methods.", function()
-        if player_id == players.user() then
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Attach", "You just almost crashed yourself. Good job!")
-            return
-        end
-
         local player = Ryan.Player.Get(player_id)
         player.spam_sms_and_block_joins(removal_block_joins, removal_message, function()
             player.crash()
