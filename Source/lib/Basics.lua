@@ -277,7 +277,7 @@ Ryan.Basics = {
     end,
 
 	SendChatMessage = function(message)
-		chat.send_message(message .. " [" .. math.random(1, 999999) .. "]", false, true, true)
+		chat.send_message(message .. " [" .. math.random(1, 99999) .. "]", false, true, true)
 		-- TODO: check if Stand ratelimited the script
 		--for _, player in pairs(Ryan.Player.List(true, true, true)) do
 		--	player.send_sms(message)

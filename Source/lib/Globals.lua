@@ -174,8 +174,8 @@ Ryan.Globals = {
         {"Trunk", "boot"}
     },
 
-    ForcefieldModes = {
-        "Off",
+    ForcefieldForces = {
+        "None",
         "Push",
         "Pull",
         "Spin",
@@ -196,18 +196,6 @@ Ryan.Globals = {
         "Smash",
         "Chaos",
         "Explode"
-    },
-
-    CrosshairModes = {
-        "Off",
-        "When Pointing",
-        "Always"
-    },
-    
-    FireFingerModes = {
-        "Off",
-        "When Pointing",
-        "Always"
     },
 
     AntihermitModes = {

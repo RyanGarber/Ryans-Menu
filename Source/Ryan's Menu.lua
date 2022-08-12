@@ -51,10 +51,11 @@ entities_exploded = {}
 
 menu.divider(self_root, "General")
 self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
-self_forcefield_root = Ryan.UI.CreateSavableChoiceWithDefault(self_root, "Forcefield...", "ryanforcefield", "", "An expanded and enhanced forcefield.", Ryan.Globals.ForcefieldModes, function(value) forcefield_mode = value end)
-self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
-self_crosshair_root = Ryan.UI.CreateSavableChoiceWithDefault(self_root, "Crosshair...", "ryancrosshair", "", "Add an on-screen crosshair.", Ryan.Globals.CrosshairModes, function(value) crosshair_mode = value end)
 self_spotlight_root = menu.list(self_root, "Spotlight...", {"ryanspotlight"}, "Attach lights to you or your vehicle.")
+self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
+self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An expanded and enhanced forcefield.")
+self_character_root = menu.list(self_root, "Character...", {"ryancharacter"}, "Effects for your character.")
+self_crosshair_root = menu.toggle(self_root, "Crosshair", {"ryancrosshair"}, "Add an on-screen crosshair.", function(value) crosshair = value end)
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
@@ -203,10 +204,16 @@ end)
 
 -- -- Forcefield
 forcefield_size = 10
+forcefield_force = 1
+
+Ryan.UI.CreateList(self_forcefield_root, "Force", "ryanforcefieldforce", "The type of force to apply.", Ryan.Globals.ForcefieldForces, function(value)
+    forcefield_mode = value
+end)
+
+menu.divider(self_forcefield_root, "Options")
 forcefield_size_input = menu.slider(self_forcefield_root, "Size", {"ryanforcefieldsize"}, "Diameter of the forcefield sphere.", 10, 250, 10, 10, function(value)
     forcefield_size = value
 end)
-forcefield_force = 1
 menu.slider(self_forcefield_root, "Force", {"ryanforcefieldforce"}, "Force applied by the forcefield.", 1, 100, 1, 1, function(value)
     forcefield_force = value
 end)
@@ -220,7 +227,7 @@ util.create_tick_handler(function()
         GRAPHICS._DRAW_SPHERE(coords.x, coords.y, coords.z, forcefield_size, esp_color.r * 255, esp_color.g * 255, esp_color.b * 255, 0.3)
     end
 
-    if forcefield_mode ~= "Off" then
+    if forcefield_mode ~= "None" then
         local our_ped = players.user_ped()
         local player_coords = ENTITY.GET_ENTITY_COORDS(our_ped)
         local nearby = Ryan.Entity.GetAllNearby(player_coords, forcefield_size, Ryan.Entity.Type.All)
@@ -716,9 +723,9 @@ menu.action(self_spotlight_root, "Remove All", {"ryanspotlightremove"}, "Removes
     end
 end)
 
--- -- Ghost Mode
+-- -- Character
 ghost_mode = false
-menu.toggle(self_root, "Ghost Mode", {"ryanghost"}, "Become entirely invisible to other players.", function(value)
+menu.toggle(self_character_root, "Ghost Mode", {"ryanghost"}, "Become entirely invisible to other players.", function(value)
     ghost_mode = value
     menu.trigger_commands("invisibility " .. (value and "remote" or "off"))
     menu.trigger_commands("otr " .. (value and "on" or "off"))
@@ -729,8 +736,7 @@ util.create_tick_handler(function()
     if ghost_mode then util.draw_debug_text("Ghost Mode") end
 end)
 
--- -- Become Nude
-menu.action(self_root, "Become Nude", {"ryannude"}, "Make yourself a stripper with her tits out.", function()
+menu.action(self_character_root, "Become Nude", {"ryannude"}, "Make yourself a stripper with her tits out.", function()
     Ryan.Basics.RequestModel(util.joaat("a_f_y_topless_01"))
     local ourself = Ryan.Player.Self()
     local vehicle_id = players.get_vehicle_model(ourself.id) ~= 0 and PED.GET_VEHICLE_PED_IS_IN(ourself.ped_id, false) or 0
@@ -820,7 +826,6 @@ end)
 menu.divider(world_root, "General")
 world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Affects all NPCs in the world.")
 world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
-Ryan.Trolling.CreateNASAMenu(world_root, nil)
 
 -- -- All NPCs
 all_npcs_include_drivers = false
@@ -1072,7 +1077,7 @@ menu.on_blur(enter_closest_vehicle, function() draw_closest_vehicle_esp = false 
 util.create_tick_handler(function()
     if draw_closest_vehicle_esp then
         local closest_vehicle = Ryan.Vehicle.GetClosest(ENTITY.GET_ENTITY_COORDS(players.user_ped(), true))
-        if closest_vehicle ~= 0 then Ryan.Entity.DrawESP(closest_vehicle, esp_color) end
+        if closest_vehicle ~= 0 then util.draw_ar_beacon(ENTITY.GET_ENTITY_COORDS(closest_vehicle))--[[ Ryan.Entity.DrawESP(closest_vehicle, esp_color)]] end
     end
 end)
 
@@ -1185,7 +1190,7 @@ end)
 -- -- Anti-Hermit
 antihermit_time = 300000
 
-Ryan.UI.CreateSavableChoiceWithDefault(sassion_antihermit_root, "Mode: %", "ryanantihermit", "", "What to do with the hermits.", Ryan.Globals.AntihermitModes, function(value)
+Ryan.UI.CreateList(sassion_antihermit_root, "Mode", "ryanantihermit", "What to do with the hermits.", Ryan.Globals.AntihermitModes, function(value)
     antihermit_mode = value
 end)
 menu.slider(sassion_antihermit_root, "Time (Minutes)", {"ryanantihermittime"}, "How long, in minutes, to let players stay inside.", 1, 15, 5, 1, function(value)
@@ -1313,6 +1318,9 @@ util.create_tick_handler(function()
     util.yield(1000)
 end)
 
+-- -- NASA Satellite
+Ryan.Trolling.CreateNASAMenu(session_root, nil)
+
 -- -- Turn Into Animals
 turn_all_into_animals = false
 menu.toggle(session_root, "Turn Into Animals", {"ryananimalall"}, "Turns all players into a random animal.", function(value) turn_all_into_animals = value end)
@@ -1321,7 +1329,7 @@ util.create_tick_handler(function()
     if turn_all_into_animals then
         for _, player in pairs(Ryan.Player.List(true, true, true)) do
             player.turn_into_animal()
-            util.yield(100)
+            util.yield(30000)
         end
     end
 end)
@@ -1337,7 +1345,7 @@ mk2_ban_evaders = {}
 mk2_ban_warnings = {}
 
 mk2_modes = {"Normal", "Banned", "Chaos"}
-Ryan.UI.CreateSavableChoiceWithDefault(session_root, "Mk II: %", "ryanmk2", "", "How Oppressor Mk IIs are handled in the session.", mk2_modes, function(value)
+Ryan.UI.CreateList(session_root, "Mk II", "ryanmk2", "How Oppressor Mk IIs are handled in the session.", mk2_modes, function(value)
     if mk2_mode == "Banned" then mk2_ban_notice = 0 end
     if mk2_mode == "Chaos" then mk2_chaos_notice = 0 end
     mk2_mode = value
@@ -1396,36 +1404,6 @@ util.create_tick_handler(function()
             Ryan.Basics.FreeModel(oppressor2)
             mk2_chaos_notice = util.current_time_millis()
         end
-    end
-end)
-
-session_drivers_root = menu.list(session_root, "Driver List...", {"ryandrivers"}, "Lists the players driving vehicles.")
-
--- -- Driver List
-drivers = {}
-drivers_refresh = 0
-drivers_refresh_text = nil
-
-util.create_thread(function()
-    while true do
-        if util.current_time_millis() - drivers_refresh >= 10000 then
-            if drivers_refresh_text ~= nil then menu.delete(drivers_refresh_text) end
-            for _, driver in pairs(drivers) do menu.delete(driver) end
-            drivers = {}
-            for _, player_id in pairs(players.list()) do
-                local vehicle = players.get_vehicle_model(player_id)
-                if vehicle ~= 0 then
-                    table.insert(drivers, menu.action(session_drivers_root, players.get_name(player_id), {"ryandriver" .. players.get_name(player_id)}, "", function()
-                        menu.trigger_commands("p " .. players.get_name(player_id))
-                    end))
-                end
-            end
-            drivers_refresh_text = menu.divider(session_drivers_root, "")
-            drivers_refresh = util.current_time_millis()
-        elseif drivers_refresh_text ~= nil then
-            menu.set_menu_name(drivers_refresh_text, "Refreshing In: " .. math.floor(11 - (util.current_time_millis() - drivers_refresh) / 1000))
-        end
-        util.yield()
     end
 end)
 
@@ -1753,29 +1731,12 @@ menu.action(settings_root, "Reinstall", {"ryanreinstall"}, "Force update the scr
 menu.hyperlink(settings_root, "Website", "https://gta.ryanmade.site/", "Opens the official website, for downloading the installer and viewing the changelog.")
 
 menu.divider(settings_root, "Options")
-menu.toggle(settings_root, "AFK", {"ryanafk"}, "Safely go AFK.", function(value)
-    if value then
-        menu.trigger_commands("ryanghost on")
-        afk_coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
-        Ryan.Basics.Teleport({x = -158.71494, y = -982.75885, z = 149.13135})
-    else
-        menu.trigger_commands("ryanghost off")
-        Ryan.Basics.Teleport(afk_coords)
-        afk_coords = nil
-    end
-end)
 menu.colour(settings_root, "ESP Color", {"ryanespcolor"}, "The color of on-screen ESP.", 0.29, 0.69, 1.0, 1.0, false, function(value)
     esp_color.r = value.r
     esp_color.g = value.g
     esp_color.b = value.b
 end)
 
-util.create_tick_handler(function()
-    if afk_coords ~= nil and Ryan.Vector.Distance(ENTITY.GET_ENTITY_COORDS(players.user_ped()), afk_room) > 50 then
-        menu.trigger_commands("ryanghost off")
-    end
-    util.yield(1000)
-end)
 
 -- Player Options --
 ptfx_attack = {}
@@ -1899,7 +1860,7 @@ function setup_player(player_id)
     end)
 
     -- -- Glitch
-    local player_trolling_glitch_root = Ryan.UI.CreateSavableChoiceWithDefault(player_trolling_root, "Glitch: %", "ryanglitch", players.get_name(player_id), "Glitch the player and their vehicle.", glitch_type_names, function(value)
+    local player_trolling_glitch_root = Ryan.UI.CreateList(player_trolling_root, "Glitch", "ryanglitch", "Glitch the player and their vehicle.", glitch_type_names, function(value)
         for i = 1, #glitch_type_names do
             if glitch_type_names[i] == value then
                 glitch[player_id] = glitch_type_hashes[i]
@@ -2109,7 +2070,7 @@ players.dispatch_on_join()
 util.keep_running()
 
 while true do
-    if crosshair_mode == "Always" or (crosshair_mode == "When Pointing" and Ryan.Globals.PlayerIsPointing) then
+    if crosshair or god_finger_active then
         local weapon = WEAPON.GET_SELECTED_PED_WEAPON(players.user_ped())
         if WEAPON.GET_WEAPONTYPE_GROUP(weapon) ~= -1212426201 then
             HUD.HIDE_HUD_COMPONENT_THIS_FRAME(14)

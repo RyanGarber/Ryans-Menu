@@ -35,7 +35,7 @@ Ryan.Trolling = {
                 player_coords.y = player_coords.y + math.random(-20, 20)
                 PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords, 1, 100, 2.5)
             end
-            
+
             local vehicle = entities.create_vehicle(vehicles[i], coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
             Ryan.Trolling.AddEntity(player_id, vehicle, i < 3)
             Ryan.Entity.FaceEntity(vehicle, player_ped, true)
@@ -185,7 +185,7 @@ Ryan.Trolling = {
         local message = "who asked"
         local nasa_root = menu.list(root, "NASA Satellite...", {command}, "Use NASA satellites to discover something.")
     
-        menu.text_input(nasa_root, "To Find", {command .. "message"}, "What we're trying to find.", function(value)
+        menu.text_input(nasa_root, "Find", {command .. "find"}, "What we're trying to find.", function(value)
             message = value
         end, "who asked")
     
