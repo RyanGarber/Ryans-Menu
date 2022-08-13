@@ -1,4 +1,4 @@
-VERSION = "0.10.2"
+VERSION = "0.10.3"
 MANIFEST = {
     lib = {"Audio.lua", "Basics.lua", "Entity.lua", "Globals.lua", "JSON.lua", "Natives.lua", "Player.lua", "PTFX.lua", "Session.lua", "Stats.lua", "Trolling.lua", "UI.lua", "Vector.lua", "Vehicle.lua"},
     resources = {"Crosshair.png"}
