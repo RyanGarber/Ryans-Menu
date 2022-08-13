@@ -240,7 +240,7 @@ Ryan.Globals.NoCopsPedTypes = {
     6, 27, 29 -- Law Enforcement
 }
 Ryan.Globals.NoCopsPeds = {
-    1885233650, -1094177627, 337826907 -- Casino Heist
+    1885233650, -1094177627, 337826907, -- Casino Heist
     1821116645, 193469166 -- Cayo Perico Heist
 }
 

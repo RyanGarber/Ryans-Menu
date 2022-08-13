@@ -1004,13 +1004,13 @@ menu.toggle_loop(world_root, "No Cops / Guards", {"ryannocops"}, "Clears the wor
                         entities.delete_by_handle(entity)
                     end
                 end
-            elseif ENTITY.IS_ENTITY_A_VEHICLE(entity) then
+            --[[elseif ENTITY.IS_ENTITY_A_VEHICLE(entity) then
                 for _, vehicle_model in pairs(Ryan.Globals.NoCopsVehicles) do
                     if VEHICLE.IS_VEHICLE_MODEL(entity, vehicle_model) and entity ~= entities.get_user_vehicle_as_handle() then
                         Ryan.Entity.RequestControl(entity)
                         entities.delete_by_handle(entity)
                     end
-                end
+                end]]
             end
         end
     end
