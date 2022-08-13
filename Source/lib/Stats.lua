@@ -31,7 +31,7 @@ Ryan.Stats = {
             Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000)
             Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000)
     
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "CEO Office Money", "Done! Switch sessions and start a Special Cargo sale to apply your changes.")
+            Ryan.Basics.ShowTextMessage(Ryan.Globals.BackgroundColors.Purple, "CEO Office Money", "Done! Switch sessions and start a Special Cargo sale to apply your changes.")
         end)
     end,
 
@@ -47,7 +47,7 @@ Ryan.Stats = {
                 Ryan.Stats.SetInteger(Ryan.Stats.GetHash(Ryan.Stats.Type.Character, "LIFETIME_BIKER_SELL_UNDERTA" .. i), 1000)
             end
     
-            Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "M.C. Clubhouse Clutter", "Done! Switch sessions and start a sale in every business to apply changes.")
+            Ryan.Basics.ShowTextMessage(Ryan.Globals.BackgroundColors.Purple, "M.C. Clubhouse Clutter", "Done! Switch sessions and start a sale in every business to apply changes.")
         end)
     end,
 

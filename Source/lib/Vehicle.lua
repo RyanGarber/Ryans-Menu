@@ -40,8 +40,8 @@ Ryan.Vehicle = {
                 VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, -1.0)
                 ENTITY.SET_ENTITY_MAX_SPEED(vehicle, 64)
             else
-                VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, speed == Ryan.Vehicle.Speed.Fast and 1000000 or 2)
-                ENTITY.SET_ENTITY_MAX_SPEED(vehicle, speed == Ryan.Vehicle.Speed.Fast and 64 or 1)
+                VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, if speed == Ryan.Vehicle.Speed.Fast then 1000000 else 2)
+                ENTITY.SET_ENTITY_MAX_SPEED(vehicle, if speed == Ryan.Vehicle.Speed.Fast then 64 else 1)
             end
         end
     end,
@@ -54,7 +54,7 @@ Ryan.Vehicle = {
     end,
 
     SetDoorsLocked = function(vehicle, doors_locked)
-        VEHICLE.SET_VEHICLE_DOORS_LOCKED(vehicle, doors_locked and 4 or 0)
+        VEHICLE.SET_VEHICLE_DOORS_LOCKED(vehicle, if doors_locked then 4 else 0)
     end,
 
     SetTiresBursted = function(vehicle, tires_bursted)
@@ -90,7 +90,7 @@ Ryan.Vehicle = {
             end
 
             if driver_player_id ~= nil then
-                Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Purple, "Steal Vehicle", "Stealing the vehicle...")
+                Ryan.Basics.ShowTextMessage(Ryan.Globals.BackgroundColors.Purple, "Steal Vehicle", "Stealing the vehicle...")
                 menu.trigger_commands("vehkick" .. players.get_name(driver_player_id))
             elseif driver ~= 0 then
                 entities.delete_by_handle(driver)
@@ -98,7 +98,7 @@ Ryan.Vehicle = {
             
             while driver ~= 0 and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == driver do
                 if util.current_time_millis() - start_time > 10000 then
-                    Ryan.Basics.ShowTextMessage(Ryan.Globals.Color.Red, "Steal Vehicle", "Failed to kick the driver of the vehicle.")
+                    Ryan.Basics.ShowTextMessage(Ryan.Globals.BackgroundColors.Red, "Steal Vehicle", "Failed to kick the driver of the vehicle.")
                     failed_to_kick = true
                     break
                 end

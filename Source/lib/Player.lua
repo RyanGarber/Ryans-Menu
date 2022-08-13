@@ -119,9 +119,9 @@ Ryan.Player.New = function(player_id)
 
     -- Block syncs to this player.
     player.block_syncs = function(block)
-        util.toast((block and "Blocked" or "Unblocked") .. " syncs with " .. player.name .. ".")
+        util.toast((if block then "Blocked" else "Unblocked") .. " syncs with a player.")
         local outgoing_syncs = menu.ref_by_rel_path(menu.player_root(player.id), "Outgoing Syncs>Block")
-        menu.trigger_command(outgoing_syncs, block and "on" or "off")
+        menu.trigger_command(outgoing_syncs, if block then "on" else "off")
     end
 
     -- Get the seat the player is in.
@@ -181,7 +181,7 @@ Ryan.Player.New = function(player_id)
         util.toast("Attempting to kill " .. player.name .. "...")
 
         local coords = ENTITY.GET_ENTITY_COORDS(player.id)
-        local distance = TASK.IS_PED_STILL(player.ped_id) and 0 or 3
+        local distance = if TASK.IS_PED_STILL(player.ped_id) then 0 else 3
         local vehicle = {["name"] = "Khanjali", ["height"] = 2.8, ["offset"] = 0}  -- {["name"] = "APC", ["height"] = 3.4, ["offset"] = -1.5}
         local vehicle_hash = util.joaat(vehicle.name)
 
@@ -201,6 +201,7 @@ Ryan.Player.New = function(player_id)
 
         util.yield(7500)
         for i = 1, #vehicles do entities.delete_by_handle(vehicles[i]) end
+        Ryan.Basics.FreeModel(vehicle_hash)    
     end
 
     -- Send an SMS to a player.

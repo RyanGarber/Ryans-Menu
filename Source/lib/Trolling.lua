@@ -18,9 +18,9 @@ Ryan.Trolling = {
         local player = Ryan.Player.Get(player_id)
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
-        local black_ops = util.joaat("s_m_y_blackops_01"); Ryan.Basics.RequestModel(black_ops)
-        local vehicles = with_crusaders and {"apc", "apc", "crusader", "crusader", "crusader"} or {"apc", "apc"}
-
+        local blackops = util.joaat("s_m_y_blackops_01")
+        Ryan.Basics.RequestModel(blackops)
+        local vehicles = if with_crusaders then {"apc", "apc", "crusader", "crusader", "crusader"} else {"apc", "apc"}
         for i = 1, #vehicles do
             vehicles[i] = util.joaat(vehicles[i])
             Ryan.Basics.RequestModel(vehicles[i])
@@ -45,7 +45,7 @@ Ryan.Trolling = {
 
             local seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicles[i])
             for seat = -1, seats - 2 do
-                local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+                local ped = entities.create_ped(29, blackops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
                 Ryan.Trolling.AddEntity(player_id, ped, false)
                 PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
                 WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
@@ -53,23 +53,27 @@ Ryan.Trolling = {
                 PED.SET_PED_MAX_HEALTH(ped, 500)
                 ENTITY.SET_ENTITY_HEALTH(ped, 500)
                 PED.SET_PED_SHOOT_RATE(ped, 1000)
-                PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, black_ops)
+                PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, blackops)
                 TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
             end
         end
 
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, black_ops, player.ped_group())
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player.ped_group(), black_ops)
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, black_ops, black_ops)
+        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, blackops, player.ped_group())
+        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player.ped_group(), blackops)
+        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, blackops, blackops)
 
-        for i = 1, #vehicles do STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(vehicles[i]) end
+        Ryan.Basics.FreeModel(blackops)
+        for i = 1, #vehicles do
+            Ryan.Basics.FreeModel(vehicles[i])
+        end
     end,
 
     SWATTeam = function(player_id)
         local player = Ryan.Player.Get(player_id)
         local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
-        local swat = util.joaat("s_m_y_swat_01"); Ryan.Basics.RequestModel(swat)
+        local swat = util.joaat("s_m_y_swat_01")
+        Ryan.Basics.RequestModel(swat)
         
         for i = 1, 4 do
             local coords = Ryan.Vector.Add(player_coords, {x = math.random(-3, 3), y = math.random(-3, 3), z = 0})
@@ -92,20 +96,19 @@ Ryan.Trolling = {
         PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player.ped_group(), swat)
         PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, swat, swat)
 
-        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(swat)
+        Ryan.Basics.FreeModel(swat)
     end,
 
     FlyingYacht = function(player_id)
-        local yacht = util.joaat("prop_cj_big_boat"); Ryan.Basics.RequestModel(yacht)
-        local buzzard = util.joaat("buzzard2"); Ryan.Basics.RequestModel(buzzard)
-        local black_ops = util.joaat("s_m_y_blackops_01"); Ryan.Basics.RequestModel(black_ops)
+        local big_boat, buzzard, blackops = util.joaat("prop_cj_big_boat"), util.joaat("buzzard2"), util.joaat("s_m_y_blackops_01")
+        Ryan.Basics.RequestModel(big_boat); Ryan.Basics.RequestModel(buzzard); Ryan.Basics.RequestModel(blackops)
 
         local player = Ryan.Player.Get(player_id)
         local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
         local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
 
         local vehicle = entities.create_vehicle(buzzard, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-        local attachment = entities.create_object(yacht, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        local attachment = entities.create_object(big_boat, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
         Ryan.Trolling.AddEntity(player_id, attachment, false); Ryan.Trolling.AddEntity(player_id, vehicle, true)
         NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
         if ENTITY.DOES_ENTITY_EXIST(vehicle) then
@@ -116,6 +119,7 @@ Ryan.Trolling = {
             coords.x = coords.x + math.random(-20, 20)
             coords.y = coords.y + math.random(-20, 20)
             coords.z = coords.z + 30
+
             ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
             NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
             ENTITY.SET_ENTITY_INVINCIBLE(vehicle, true)
@@ -132,7 +136,7 @@ Ryan.Trolling = {
             PED.SET_PED_KEEP_TASK(ped, true)
 
             for seat = 1, 2 do 
-                local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+                local ped = entities.create_ped(29, blackops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
                 Ryan.Trolling.AddEntity(player_id, ped, false)
                 PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
                 WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
@@ -140,20 +144,18 @@ Ryan.Trolling = {
                 PED.SET_PED_MAX_HEALTH(ped, 500)
                 ENTITY.SET_ENTITY_HEALTH(ped, 500)
                 PED.SET_PED_SHOOT_RATE(ped, 1000)
-                PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, black_ops)
+                PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, blackops)
                 TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
             end
 
             util.yield(100)
         end
 
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, black_ops, player.ped_group())
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player.ped_group(), black_ops)
-        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, black_ops, black_ops)
+        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, blackops, player.ped_group())
+        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, player.ped_group(), blackops)
+        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, blackops, blackops)
 
-        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(yacht)
-        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(buzzard)
-        STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(black_ops)
+        Ryan.Basics.FreeModel(big_boat); Ryan.Basics.FreeModel(buzzard); Ryan.Basics.FreeModel(blackops)
     end,
 
     FallingTank = function(player_id)
@@ -161,27 +163,31 @@ Ryan.Trolling = {
         local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
         coords.z = coords.z + 5
 
-        local tank = util.joaat("rhino"); Ryan.Basics.RequestModel(tank)
+        local tank = util.joaat("rhino")
+        Ryan.Basics.RequestModel(tank)
+        
         local entity = entities.create_vehicle(tank, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
         Ryan.Trolling.AddEntity(player_id, entity, true)
         ENTITY.SET_ENTITY_LOAD_COLLISION_FLAG(entity, true)
         ENTITY.SET_ENTITY_MAX_SPEED(entity, 64)
         ENTITY.APPLY_FORCE_TO_ENTITY(entity, 3, 0.0, 0.0, -1000.00, 0.0, 0.0, 0.0, 0, true, true, false, true)
+
         Ryan.Basics.FreeModel(tank)
     end,
 
     FakeMoneyDrop = function(player_id)
-        menu.trigger_commands("notifybanked" .. players.get_name(player_id) .. " " .. math.random(100, 5000))
         local coords = ENTITY.GET_ENTITY_COORDS(Ryan.Player.Get(player_id).ped_id)
         local bag = entities.create_object(2628187989, Ryan.Vector.Add(coords, {x = 0, y = 0, z = 2}))
         ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -20, 0.0, 0.0, 0.0, true, true)
+        
         util.yield(333)
+        menu.trigger_commands("notifybanked" .. players.get_name(player_id) .. " " .. math.random(100, 5000))
         AUDIO.PLAY_SOUND_FROM_COORD(-1, "LOCAL_PLYR_CASH_COUNTER_COMPLETE", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true, 2, false)
         entities.delete_by_handle(bag)
     end,
 
     CreateNASAMenu = function(root, player_id)
-        local command = "ryannasa" .. (not player_id and "all" or "")
+        local command = "ryannasa" .. (if not player_id then "all" else "")
         local message = "who asked"
         local nasa_root = menu.list(root, "NASA Satellite...", {command}, "Use NASA satellites to discover something.")
     
@@ -190,17 +196,18 @@ Ryan.Trolling = {
         end, "who asked")
     
         function go(player_id)
-            local hash = util.joaat("prop_air_bigradar")
-            Ryan.Basics.RequestModel(hash)
+            local bigradar = util.joaat("prop_air_bigradar")
+            Ryan.Basics.RequestModel(bigradar)
     
             local player_ped = Ryan.Player.Get(player_id).ped_id
             local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-            local radar = entities.create_object(hash, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 20, -3), ENTITY.GET_ENTITY_HEADING(player_ped))
+            local radar = entities.create_object(bigradar, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 20, -3), ENTITY.GET_ENTITY_HEADING(player_ped))
             Ryan.Entity.RequestControl(radar, false)
             Ryan.Trolling.AddEntity(player_id, radar, true)
             
             util.yield(10000)
             entities.delete_by_handle(radar)
+            Ryan.Basics.FreeModel(bigradar)
         end
         
         menu.action(nasa_root, "Go", {command .. "go"}, "Spawn a NASA satellite to discover something.", function()
