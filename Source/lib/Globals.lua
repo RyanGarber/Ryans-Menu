@@ -235,13 +235,14 @@ Ryan.Globals.BedSoundCoords = {
     {x = 2099.765, y = 1766.219, z = 102.698}
 }
 
--- Which peds to delete when using "No Cops / Guards."
-Ryan.Globals.NoCopsPedTypes = {
-    6, 27, 29 -- Law Enforcement
+-- Hashes of ped models and groups.
+Ryan.Globals.PedGroups = {
+    LawEnforcement = {6, 27, 29}
 }
-Ryan.Globals.NoCopsPeds = {
-    1885233650, -1094177627, 337826907, -- Casino Heist
-    1821116645, 193469166 -- Cayo Perico Heist
+Ryan.Globals.PedModels = {
+    CayoPericoHeist = {1821116645, 193469166, 2127932792},
+    CasinoHeist = {1885233650, -1094177627, 337826907},
+    DoomsdayHeist = {-1275859404, 1650288984, 1297520375, 2618542997, 2431602996}
 }
 
 -- Hashes of vehicles that can haul trailers.

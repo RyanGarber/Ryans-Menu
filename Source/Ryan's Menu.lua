@@ -452,7 +452,7 @@ util.create_tick_handler(function()
 
         if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
             local ped = raycast.hit_entity
-            util.toast(ENTITY.GET_ENTITY_MODEL(raycast.hit_entity))
+            util.toast("NPC: " .. ENTITY.GET_ENTITY_MODEL(raycast.hit_entity))
 
             if PED.IS_PED_A_PLAYER(ped) then
                 -- Player
@@ -496,9 +496,10 @@ util.create_tick_handler(function()
             if keybinds_vehicle:len() > 0 then keybinds["Vehicle"] = keybinds_vehicle end
 
             local vehicle = raycast.hit_entity
-            local is_a_player = PED.IS_PED_A_PLAYER(VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1))
+            local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+            util.toast("Driver: " .. (if driver ~= 0 then ENTITY.GET_ENTITY_MODEL(driver) else "none"))
     
-            Ryan.UI.ApplyVehicleEffectList(vehicle, god_finger_vehicle_effects, god_finger_vehicle_state, is_a_player, true)
+            Ryan.UI.ApplyVehicleEffectList(vehicle, god_finger_vehicle_effects, god_finger_vehicle_state, PED.IS_PED_A_PLAYER(is_a_player), true)
             if Ryan.UI.GetGodFingerActivation(god_finger_vehicle_effects.steal) > 0 and ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
                 if util.current_time_millis() - god_finger_vehicle_state.steal > 1000 then
                     god_finger_vehicle_state.steal = util.current_time_millis()
@@ -738,12 +739,12 @@ util.create_tick_handler(function()
 
     local last_shown = util.current_time_millis() - god_finger_keybinds_shown
     if god_finger_keybinds:len() > 0 then
-        if non_world_keybind_now or last_shown > 500 then
+        --[[if non_world_keybind_now or last_shown > 500 then]]
             util.show_corner_help(god_finger_keybinds:sub(0, god_finger_keybinds:len() - 2))
             god_finger_keybinds_shown = util.current_time_millis()
-        end
+        --[[end]]
     else
-        if last_shown > 500 or world_keybind_before then
+        if last_shown > 500--[[ or world_keybind_before]] then
             util.show_corner_help("No God Finger effects available.")
         end
     end
@@ -810,7 +811,7 @@ menu.action(self_character_root, "Become Nude", {"ryannude"}, "Make yourself a s
     PED.SET_PED_COMPONENT_VARIATION(ourself.ped_id, 8, 1, -1, 0)
     if vehicle_id ~= 0 then PED.SET_PED_INTO_VEHICLE(ourself.ped_id, vehicle_id, seat_id) end
 
-    Ryan.FreeModel(topless)
+    Ryan.Basics.FreeModel(topless)
 end)
 
 
@@ -974,47 +975,15 @@ Ryan.UI.CreateTeleportList(world_usb_sticks_root, "USB Stick", Ryan.Globals.USBS
 
 -- -- All Entities Visible
 menu.toggle_loop(world_root, "All Entities Visible", {"ryannoinvisible"}, "Makes all invisible entities visible again.", function()
-    for _, player_id in pairs(players.list()) do
-        ENTITY.SET_ENTITY_ALPHA(players.user_ped(), 255)
-        ENTITY.SET_ENTITY_VISIBLE(players.user_ped(), true, 0)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
+    for _, player in pairs(Ryan.Player.List(false, true, true)) do
+        ENTITY.SET_ENTITY_ALPHA(player.ped_id, 255)
+        ENTITY.SET_ENTITY_VISIBLE(player.ped_id, true, 0)
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id, true)
         if vehicle ~= 0 then
             ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
             ENTITY.SET_ENTITY_VISIBLE(vehicle, true, 0)
         end
     end
-end)
-
--- -- No Cops / Guards
-menu.toggle_loop(world_root, "No Cops / Guards", {"ryannocops"}, "Clears the world of cops and guards during heists. Also deletes their vehicles.", function()
-    if not CUTSCENE.IS_CUTSCENE_ACTIVE() then
-        local coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
-        MISC.CLEAR_AREA_OF_COPS(coords.x, coords.y, coords.z, 500, 0) -- might as well
-        for _, entity in pairs(Ryan.Entity.GetAllNearby(coords, 500, Ryan.Entity.Type.All)) do
-            if ENTITY.IS_ENTITY_A_PED(entity) then
-                for _, ped_type in pairs(Ryan.Globals.NoCopsPedTypes) do
-                    if PED.GET_PED_TYPE(entity) == ped_type then
-                        Ryan.Entity.RequestControl(entity)
-                        entities.delete_by_handle(entity)
-                    end
-                end
-                for _, ped_hash in pairs(Ryan.Globals.NoCopsPeds) do
-                    if ENTITY.GET_ENTITY_MODEL(entity) == ped_hash then
-                        Ryan.Entity.RequestControl(entity)
-                        entities.delete_by_handle(entity)
-                    end
-                end
-            --[[elseif ENTITY.IS_ENTITY_A_VEHICLE(entity) then
-                for _, vehicle_model in pairs(Ryan.Globals.NoCopsVehicles) do
-                    if VEHICLE.IS_VEHICLE_MODEL(entity, vehicle_model) and entity ~= entities.get_user_vehicle_as_handle() then
-                        Ryan.Entity.RequestControl(entity)
-                        entities.delete_by_handle(entity)
-                    end
-                end]]
-            end
-        end
-    end
-    util.yield(250)
 end)
 
 -- -- Fireworks
@@ -1057,6 +1026,58 @@ util.create_tick_handler(function()
     end
     util.yield(100)
 end)
+
+-- -- Remove
+remove_modes = {"None", "Cops", "Cayo Perico Guards", "Casino Guards", "Doomsday Guards"}
+Ryan.UI.CreateList(world_root, "Remove", "ryanremove", "Clears the world of certain types of peds.", remove_modes, function(value)
+    remove_mode = value
+end)
+util.create_tick_handler(function()
+    if not CUTSCENE.IS_CUTSCENE_ACTIVE() then
+        local coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+        for _, entity in pairs(Ryan.Entity.GetAllNearby(coords, 500, Ryan.Entity.Type.Peds)) do
+            if ENTITY.IS_ENTITY_A_PED(entity) then
+                pluto_switch remove_mode do
+                    case "Cops":
+                        for _, ped_type in pairs(Ryan.Globals.PedGroups.LawEnforcement) do
+                            if PED.GET_PED_TYPE(entity) == ped_type then
+                                Ryan.Entity.RequestControl(entity)
+                                entities.delete_by_handle(entity)
+                                util.toast("Removed a cop.")
+                            end
+                        end
+                        break
+                    case "Cayo Perico Guards":
+                        for _, ped_hash in pairs(Ryan.Globals.PedModels.CayoPericoHeist) do
+                            if ENTITY.GET_ENTITY_MODEL(entity) == ped_hash then
+                                Ryan.Entity.RequestControl(entity)
+                                entities.delete_by_handle(entity)
+                                util.toast("Removed a Cayo Perico guard.")
+                            end
+                        end
+                    case "Casino Guards":
+                        for _, ped_hash in pairs(Ryan.Globals.PedModels.CasinoHeist) do
+                            if ENTITY.GET_ENTITY_MODEL(entity) == ped_hash then
+                                Ryan.Entity.RequestControl(entity)
+                                entities.delete_by_handle(entity)
+                                util.toast("Removed a Casino guard.")
+                            end
+                        end
+                    case "Doomsday Guards":
+                        for _, ped_hash in pairs(Ryan.Globals.PedModels.DoomsdayHeist) do
+                            if ENTITY.GET_ENTITY_MODEL(entity) == ped_hash then
+                                Ryan.Entity.RequestControl(entity)
+                                entities.delete_by_handle(entity)
+                                util.toast("Removed a Doomsday guard.")
+                            end
+                        end
+                end
+            end
+        end
+    end
+    util.yield(250)
+end)
+
 
 menu.divider(world_root, "Vehicle")
 
@@ -1342,7 +1363,8 @@ end)
 -- -- Max Players
 max_players_amount = 0
 
-max_players_prefer_kd = true
+max_players_prefer_highest_kd = true
+max_players_prefer_richest = false
 max_players_prefer_modders = false
 
 max_players_include_modders = false
@@ -1356,23 +1378,32 @@ menu.divider(session_max_players_root, "Prefer Kicking")
 menu.toggle(session_max_players_root, "Modders", {"ryanmaxprefermodders"}, "Kicks players detected as modders first.", function(value)
     if value then
         menu.trigger_commands("ryanmaxpreferkd off")
+        menu.trigger_commands("ryanmaxprefermoney off")
         if not max_players_include_modders then menu.trigger_commands("ryanmaxincludemodders on") end
     end
-    max_players_modders = value
+    max_players_prefer_modders = value
 end)
-menu.toggle(session_max_players_root, "High K/D", {"ryanmaxpreferkd"}, "Kicks players with the highest K/D first.", function(value)
+menu.toggle(session_max_players_root, "Richest", {"ryanmaxpreferrichest"}, "Kicks players with the highest balance first.", function(value)
     if value then
+        menu.trigger_commands("ryanmaxpreferkd off")
         menu.trigger_commands("ryanmaxprefermodders off")
     end
-    max_players_prefer_kd = value
-end, true)
+    max_players_prefer_richest = value
+end)
+menu.toggle(session_max_players_root, "Highest K/D", {"ryanmaxpreferhighestkd"}, "Kicks players with the most money first.", function(value)
+    if value then
+        menu.trigger_commands("ryanmaxprefermoney off")
+        menu.trigger_commands("ryanmaxprefermodders off")
+    end
+    max_players_prefer_highest_kd = value
+end)
 
-menu.divider(session_max_players_root, "Options")
-menu.toggle(session_max_players_root, "Include Modders", {"ryanmaxincludemodders"}, "If enabled, modders will be kicked.", function(value)
+menu.divider(session_max_players_root, "Include")
+menu.toggle(session_max_players_root, "Modders", {"ryanmaxincludemodders"}, "If enabled, modders will be kicked.", function(value)
     if not value then menu.trigger_commands("ryanmaxprefermodders off") end
     max_players_include_modders = value
 end)
-menu.toggle(session_max_players_root, "Include Friends", {"ryanmaxincludefriends"}, "If enabled, friends will be kicked.", function(value)
+menu.toggle(session_max_players_root, "Friends", {"ryanmaxincludefriends"}, "If enabled, friends will be kicked.", function(value)
     max_players_include_modders = value
 end)
 
@@ -1380,12 +1411,14 @@ util.create_tick_handler(function()
     if max_players_amount ~= 0 then
         local player_list = players.list()
         if #player_list > max_players_amount then
-            if max_players_prefer_kd or max_players_prefer_modders then
+            if max_players_prefer_modders or max_players_prefer_richest or max_players_prefer_highest_kd then
                 table.sort(player_list, function(player_1, player_2)
-                    if max_players_prefer_kd then
-                        return players.get_kd(player_1) > players.get_kd(player_2)
-                    elseif max_players_prefer_modders then
+                    if max_players_prefer_modders then
                         return (if players.get_tags_string(player_1):find("M") then 1 else 0) > (if players.get_tags_string(player_2):find("M") then 1 else 0)
+                    elseif max_players_prefer_richest then
+                        return players.get_money(player_1) > players.get_money(player_2)
+                    elseif max_players_prefer_highest_kd then
+                        return players.get_kd(player_1) > players.get_kd(player_2)
                     end
                 end)
             end
@@ -1396,9 +1429,14 @@ util.create_tick_handler(function()
                 local can_kick = (max_players_include_modders or not players.get_tags_string(player_list[i]):find("M"))
                              and (max_players_include_friends or not players.get_tags_string(player_list[i]):find("F"))
                 if player_list[i] ~= players.user() and can_kick and kicked < kick_count then
-                    local reason = if max_players_prefer_kd then ("having a " .. string.format("%.1f", players.get_kd(player_list[i])) .. " K/D") else ("being a modder")
+                    --local reason = if max_players_prefer_highest_kd then ("having a " .. string.format("%.1f", players.get_kd(player_list[i])) .. " K/D") else ("being a modder")
+                    local player = Ryan.Player.Get(player_list[i])
+                    local reason = "no reason"
+                    if max_players_prefer_modders then reason = "being a modder"
+                    elseif max_players_prefer_richest then reason = "having $" .. Ryan.Basics.FormatNumber(players.get_money(player_list[i]))
+                    elseif max_players_prefer_highest_kd then reason = "having a " .. string.format("%.1f", players.get_kd(player_list[i])) .. " K/D" end
                     Ryan.Basics.ShowTextMessage(Ryan.Globals.BackgroundColors.Purple, "Max Players", "Kicking " .. players.get_name(player_list[i]) .. " for " .. reason .. ".")
-                    Ryan.Player.Kick(player_list[i])
+                    player.kick()
                     kicked = kicked + 1
                 end
             end
