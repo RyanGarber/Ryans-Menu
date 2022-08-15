@@ -1,31 +1,32 @@
 Ryan.Entity = {}
-_spotlights = {}
 
 -- Entity types to include.
-Ryan.Entity.Type = {All, Ped, Vehicle}
+Ryan.Entity.Type = {
+    All = 1,
+    Ped = 2,
+    Vehicle = 3
+}
 
 -- Get all entities of type in range of the specified coordinates.
 Ryan.Entity.GetAllNearby = function(coords, range, types)
-    types = types or Ryan.Entity.Type.All
-
     local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped())
     local nearby_entities = {}
 
-    if types == Ryan.Entity.Type.Peds or types == Ryan.Entity.Type.All then
+    if types == Ryan.Entity.Type.Ped or types == Ryan.Entity.Type.All then
         for _, ped in pairs(entities.get_all_peds_as_handles()) do
             if ped ~= players.user_ped() then
                 local ped_coords = ENTITY.GET_ENTITY_COORDS(ped)
-                if Ryan.Vector.Distance(coords, ped_coords) <= range then
+                if coords:distance(ped_coords) <= range then
                     table.insert(nearby_entities, ped)
                 end
             end
         end
     end
 
-    if types == Ryan.Entity.Type.Vehicles or types == Ryan.Entity.Type.All then
+    if types == Ryan.Entity.Type.Vehicle or types == Ryan.Entity.Type.All then
         for _, vehicle in pairs(entities.get_all_vehicles_as_handles()) do
             local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
-            if Ryan.Vector.Distance(coords, vehicle_coords) <= range then
+            if coords:distance(vehicle_coords) <= range then
                 table.insert(nearby_entities, vehicle)
             end
         end
@@ -57,27 +58,14 @@ Ryan.Entity.RequestControl = function(entity, loop)
     return NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity)
 end
 
--- Make an entity face another entity.
-Ryan.Entity.FaceEntity = function(entity_1, entity_2, use_pitch)
-    local coords_1 = ENTITY.GET_ENTITY_COORDS(ent1, false)
-    local coords_2 = ENTITY.GET_ENTITY_COORDS(ent2, false)
-    local difference = Ryan.Vector.Subtract(coords_2, coords_1)
-    local rotation = Ryan.Vector.DirectionToRotation(difference)
-    if not use_pitch then
-        ENTITY.SET_ENTITY_HEADING(entity_1, rotation.z)
-    else
-        ENTITY.SET_ENTITY_ROTATION(entity_1, rotation.x, rotation.y, rotation.z)
-    end
-end
-
 -- Draw an ESP box around an entity.
 Ryan.Entity.DrawESP = function(entity)
-    if Ryan.Globals.HUDUseBeacon then
-        Ryan.Basics.DrawBeacon(ENTITY.GET_ENTITY_COORDS(entity))
+    if Ryan.HUDUseBeacon then
+        Ryan.DrawBeacon(ENTITY.GET_ENTITY_COORDS(entity))
         return
     end
 
-    local color = {r = math.floor(Ryan.Globals.HUDColor.r * 255), g = math.floor(Ryan.Globals.HUDColor.g * 255), b = math.floor(Ryan.Globals.HUDColor.b * 255)}
+    local color = {r = math.floor(Ryan.HUDColor.r * 255), g = math.floor(Ryan.HUDColor.g * 255), b = math.floor(Ryan.HUDColor.b * 255)}
     local minimum = v3.new()
     local maximum = v3.new()
     if ENTITY.DOES_ENTITY_EXIST(entity) then
@@ -113,10 +101,12 @@ Ryan.Entity.DrawESP = function(entity)
 end
 
 -- Add spotlights to an entity at the specific offset and intensity.
+_spotlights = {}
+
 Ryan.Entity.AddSpotlight = function(entity, offset, intensity)
     if ENTITY.IS_ENTITY_A_VEHICLE(entity) then
-        for i = 1, #Ryan.Globals.Haulers do
-            if VEHICLE.IS_VEHICLE_MODEL(entity, Ryan.Globals.Haulers[i]) then
+        for i = 1, #Ryan.Haulers do
+            if VEHICLE.IS_VEHICLE_MODEL(entity, Ryan.Haulers[i]) then
                 local trailer_ptr = memory.alloc_int()
                 VEHICLE.GET_VEHICLE_TRAILER_VEHICLE(entity, trailer_ptr)
                 local trailer = memory.read_int(trailer_ptr)
@@ -153,8 +143,9 @@ Ryan.Entity.AddSpotlight = function(entity, offset, intensity)
             {x = (-maximum.x * offset), y = 0.0, z = -0.5}
         }
         for i = 1, #offsets do
-            local light = entities.create_object(wall_light, {x = coords.x + offsets[i].x, y = coords.y + offsets[i].y, z = coords.z + offsets[i].z})
-            local rotation = Ryan.Vector.DirectionToRotation(Ryan.Vector.Normalize(Ryan.Vector.Subtract(ENTITY.GET_ENTITY_COORDS(light), ENTITY.GET_ENTITY_COORDS(entity))))
+            local coords = v3(coords.x + offsets[i].x, coords.y + offsets[i].y, coords.z + offsets[i].z)
+            local light = entities.create_object(wall_light, coords)
+            local rotation = ENTITY.GET_ENTITY_COORDS(entity):lookAt(coords)
             ENTITY.ATTACH_ENTITY_TO_ENTITY(light, entity, 0, offsets[i].x, offsets[i].y, offsets[i].z, rotation.x, rotation.y, rotation.z, false, false, false, false, 0, true)
         end
     end

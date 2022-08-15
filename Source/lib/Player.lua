@@ -168,11 +168,11 @@ Ryan.Player.New = function(player_id)
         local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
         FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z, 0, 100, true, false, 150, false)
         if with_earrape then
-            Ryan.Audio.PlayAtCoords(coords, "WastedSounds", "MP_Flash", 999999999)
+            Ryan.PlaySoundAtCoords(coords, "WastedSounds", "MP_Flash", 999999999)
             coords.z = 2000.0
-            Ryan.Audio.PlayAtCoords(coords, "WastedSounds", "MP_Flash", 999999999)
+            Ryan.PlaySoundAtCoords(coords, "WastedSounds", "MP_Flash", 999999999)
             coords.z = -2000.0
-            Ryan.Audio.PlayAtCoords(coords, "WastedSounds", "MP_Flash", 999999999)
+            Ryan.PlaySoundAtCoords(coords, "WastedSounds", "MP_Flash", 999999999)
         end
     end
 
@@ -185,7 +185,7 @@ Ryan.Player.New = function(player_id)
         local vehicle = {["name"] = "Khanjali", ["height"] = 2.8, ["offset"] = 0}  -- {["name"] = "APC", ["height"] = 3.4, ["offset"] = -1.5}
         local vehicle_hash = util.joaat(vehicle.name)
 
-        Ryan.Basics.RequestModel(vehicle_hash)    
+        Ryan.RequestModel(vehicle_hash)    
         local vehicles = {
             entities.create_vehicle(vehicle_hash, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, vehicle.offset, distance, vehicle.height), ENTITY.GET_ENTITY_HEADING(player.ped_id)),
             entities.create_vehicle(vehicle_hash, coords, 0),
@@ -201,7 +201,7 @@ Ryan.Player.New = function(player_id)
 
         util.yield(7500)
         for i = 1, #vehicles do entities.delete_by_handle(vehicles[i]) end
-        Ryan.Basics.FreeModel(vehicle_hash)    
+        Ryan.FreeModel(vehicle_hash)    
     end
 
     -- Send an SMS to a player.
@@ -251,6 +251,18 @@ Ryan.Player.New = function(player_id)
     -- Remove godmode via Force Camera Forward.
     player.remove_godmode = function()
         player.send_script_event({-1388926377, player.id, -1762807505, math.random(0, 9999)}, "remove godmode")
+    end
+
+    -- Drop a fake money bag on the player.
+    player.drop_fake_money = function()
+        local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id); coords:add(v3(0, 0, 2))
+        local bag = entities.create_object(2628187989, coords)
+        ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -20, 0.0, 0.0, 0.0, true, true)
+        
+        util.yield(333)
+        menu.trigger_commands("notifybanked" .. player.name .. " " .. math.random(100, 5000))
+        AUDIO.PLAY_SOUND_FROM_COORD(-1, "LOCAL_PLYR_CASH_COUNTER_COMPLETE", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true, 2, false)
+        entities.delete_by_handle(bag)
     end
 
     -- Update cache.
