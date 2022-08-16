@@ -25,8 +25,23 @@ Ryan.OnTick = function()
         end
     end
 
-    Ryan.PlayerIsPointing = memory.read_int(memory.script_global(4521801 + 930)) == 3
-    Ryan.PlayerIsSwitchingSessions = not (_waiting_for_session or _waiting_for_coords)
+    PlayerIsPointing = memory.read_int(memory.script_global(4521801 + 930)) == 3
+    PlayerIsSwitchingSessions = not (_waiting_for_session or _waiting_for_coords)
+end
+
+-- Better toasts.
+Ryan.Toast = function(...)
+    local args = { count = select("#", ...); ... }
+	local toast = ""
+	for i = 1, args.count do
+		if args[i] == nil then toast = toast .. "[undefined]\n"
+		elseif type(args[i]) == 'number' or type(object) == 'boolean' or type(args[i]) == 'string' then toast = toast .. args[i] .. "\n"
+		elseif args[i].id and args[i].name then toast = toast .. "p(" .. args[i].name .. ")\n"
+		elseif args[i].x and args[i].y and args[i].z then toast = toast .. "v3(" .. args[i].x .. ", " .. args[i].y .. ", " .. args[i].z .. ")\n"
+		else toast = toast .. "[" .. type(args[i]) .. "]\n" end
+	end
+	if toast:len() > 0 then toast = toast:sub(1, -2) end
+	util.toast(toast)
 end
 
 -- HUD settings.
@@ -197,7 +212,7 @@ Ryan.USBSticks = {
 }
 
 -- Vehicle bones useful for attaching to.
-Ryan.VehicleAttachBones = {
+VehicleAttachBones = {
     {"Center", nil},
     {"Hood", "bonnet"},
     {"Windshield", "windscreen"},
@@ -238,8 +253,8 @@ Ryan.PedGroups = {
 }
 Ryan.PedModels = {
     CayoPericoHeist = {1821116645, 193469166, 2127932792},
-    CasinoHeist = {1885233650, -1094177627, 337826907},
-    DoomsdayHeist = {-1275859404, 1650288984, 1297520375, 2618542997, 2431602996}
+    CasinoHeist = {-1094177627, 337826907},
+    DoomsdayHeist = {-1275859404, 1650288984, 2618542997, 2431602996}
 }
 
 -- Hashes of vehicles that can haul trailers.
@@ -317,17 +332,10 @@ Ryan.DoUpdate = function(force)
 		async_http.dispatch()
 		
 		while updating ~= 0 do
-			if updating == 2 then util.toast("Downloading files for Ryan's Menu...") end
+			if updating == 2 then Ryan.Toast("Downloading files for Ryan's Menu...") end
 
 			util.yield(333)
 		end		
-	end
-end
-
--- Run multiple commands at once.
-Ryan.RunCommands = function(commands)
-	for i = 1, #commands do
-		menu.trigger_commands(commands[i])
 	end
 end
 
@@ -472,7 +480,7 @@ Ryan.RequestModel = function(model)
 			util.yield()
 		end
 	else
-		util.toast("Invalid model: \"" .. model .."\"!")
+		Ryan.Toast("Invalid model: \"" .. model .."\"!")
 	end
 end
 	
@@ -503,7 +511,7 @@ end
 
 -- Translate a message between languages.
 Ryan.Translate = function(message, language, latin, on_result)
-	util.toast("Translating...")
+	Ryan.Toast("Translating...")
 	async_http.init("gta.ryanmade.site", "/translate?text=" .. message .. "&language=" .. language, function(result)
 		if latin then
 			for from, to in pairs(Ryan.CyrillicAlphabet) do
@@ -531,7 +539,7 @@ end
 
 -- Teleport with or without our vehicle.
 Ryan.Teleport = function(coords, with_vehicle)
-	util.toast("Teleporting...")
+	Ryan.Toast("Teleporting...")
 	local player_ped = players.user_ped()
 	if with_vehicle and PED.IS_PED_IN_ANY_VEHICLE(player_ped, true) then
 		local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
@@ -549,8 +557,8 @@ Ryan.SendChatMessage = function(message)
 		chat.send_message(message, false, true, true)
 		_repeat_messages[util.joaat(message)] = util.current_time_millis()
 	else
-		for _, player in pairs(Ryan.Player.List(true, true, true)) do
-			player.send_sms(message)
+		for _, player in pairs(Player:List(true, true, true)) do
+			player:send_sms(message)
 		end
 	end
 end
@@ -613,7 +621,7 @@ end
 -- Play a sound on all players at once.
 Ryan.PlaySoundOnAllPlayers = function(sound_group, sound_name)
     for _, player_id in pairs(players.list()) do
-        Ryan.PlaySoundFromEntity(Ryan.Player.Get(player_id).ped_id, sound_group, sound_name)
+        Ryan.PlaySoundFromEntity(Player:Get(player_id).ped_id, sound_group, sound_name)
     end
 end
 
@@ -631,14 +639,4 @@ Ryan.ToggleSelectSound = function(value, state, key)
         Ryan.PlaySelectSound()
         state[key] = nil
     end
-end
-
--- Better toasts.
-util._toast = util.toast
-util.toast = function(object)
-    if object == nil then util._toast("[undefined]")
-    elseif type(object) == 'number' or type(object) == 'boolean' or type(object) == 'string' then util._toast(object)
-    elseif object.id and object.name then util._toast("p(" .. object.name .. ")")
-    elseif object.x and object.y and object.z then util._toast("v3(" .. object.x .. ", " .. object.y .. ", " .. object.z .. ")")
-    else util._toast("[" .. type(object) .. "]") end
 end

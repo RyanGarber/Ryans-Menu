@@ -1,6 +1,6 @@
-Ryan.PTFX = {}
+PTFX = {}
 
-Ryan.PTFX.Types = {
+PTFX.Types = {
     {"Trail (White)", "scr_rcbarry2", "scr_exp_clown_trails", 500},
     {"Trail (Color)", "scr_powerplay", "sp_powerplay_beast_appear_trails", 500},
     {"Electrical Fire (Silent)", "core", "ent_dst_elec_fire_sp", 200},
@@ -49,46 +49,46 @@ Ryan.PTFX.Types = {
     {"Flame (Real)", "core", "ent_sht_flame", 7500}
 }
 
-Ryan.PTFX.PlayerBones = {
+PTFX.PlayerBones = {
     Head = {"IK_Head"},
     Hands = {"IK_L_Hand", "IK_R_Hand"},
     Pointer = {"IK_L_Hand"},
     Feet = {"IK_L_Foot", "IK_R_Foot"}
 }
     
-Ryan.PTFX.VehicleBones = {
+PTFX.VehicleBones = {
     Wheels = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"},
     Exhaust = {"exhaust", "exhaust_2", "exhaust_3", "exhaust_4", "exhaust_5", "exhaust_6", "exhaust_7", "exhaust_8"}
 }
     
-Ryan.PTFX.WeaponBones = {
+PTFX.WeaponBones = {
     Muzzle = {"gun_vfx_eject"}
 }
 
-Ryan.PTFX.Request = function(asset)
+PTFX.Request = function(asset)
     STREAMING.REQUEST_NAMED_PTFX_ASSET(asset)
     while not STREAMING.HAS_NAMED_PTFX_ASSET_LOADED(asset) do
         util.yield()
     end
 end
 
-Ryan.PTFX.GetByName = function(name)
-    for _, ptfx_data in pairs(Ryan.PTFX.Types) do
+PTFX.GetByName = function(name)
+    for _, ptfx_data in pairs(PTFX.Types) do
         if ptfx_data[1] == name then return ptfx_data end
     end
     return nil
 end
 
-Ryan.PTFX.CreateList = function(root, loop)
-    for _, ptfx in pairs(Ryan.PTFX.Types) do
+PTFX.CreateList = function(root, loop)
+    for _, ptfx in pairs(PTFX.Types) do
         menu.toggle_loop(root, ptfx[1], {"ryan" .. ptfx[1]:lower()}, "Plays the " .. ptfx[1] .. " effect.", function()
             loop(ptfx)
         end)
     end
 end
 
-Ryan.PTFX.PlayAtCoords = function(coords, ptfx_group, ptfx_name, color)
-    Ryan.PTFX.Request(ptfx_group)
+PTFX.PlayAtCoords = function(coords, ptfx_group, ptfx_name, color)
+    PTFX.Request(ptfx_group)
     GRAPHICS.USE_PARTICLE_FX_ASSET(ptfx_group)
     if color then GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(color.r, color.g, color.b) end
     GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(
@@ -98,8 +98,8 @@ Ryan.PTFX.PlayAtCoords = function(coords, ptfx_group, ptfx_name, color)
     )
 end
 
-Ryan.PTFX.PlayOnEntity = function(entity, ptfx_group, ptfx_name, color)
-    Ryan.PTFX.Request(ptfx_group)
+PTFX.PlayOnEntity = function(entity, ptfx_group, ptfx_name, color)
+    PTFX.Request(ptfx_group)
     GRAPHICS.USE_PARTICLE_FX_ASSET(ptfx_group)
     if color then GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(color.r, color.g, color.b) end
     GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY(
@@ -109,8 +109,8 @@ Ryan.PTFX.PlayOnEntity = function(entity, ptfx_group, ptfx_name, color)
     )
 end
 
-Ryan.PTFX.PlayOnEntityBones = function(entity, bones, ptfx_group, ptfx_name, color)
-    Ryan.PTFX.Request(ptfx_group)
+PTFX.PlayOnEntityBones = function(entity, bones, ptfx_group, ptfx_name, color)
+    PTFX.Request(ptfx_group)
     GRAPHICS.USE_PARTICLE_FX_ASSET(ptfx_group)
     for _, bone in pairs(bones) do
         local bone_index = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
@@ -129,12 +129,12 @@ Ryan.PTFX.PlayOnEntityBones = function(entity, bones, ptfx_group, ptfx_name, col
     end
 end
 
-Ryan.PTFX.PlayAtEntityBoneCoords = function(entity, bones, ptfx_group, name, color)
+PTFX.PlayAtEntityBoneCoords = function(entity, bones, ptfx_group, name, color)
     for _, bone in pairs(bones) do
         local bone_index = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
         local coords = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(entity, bone_index)
         if coords:magnitude() > 0.0 then
-            Ryan.PTFX.PlayAtCoords(coords, ptfx_group, name, color)
+            PTFX.PlayAtCoords(coords, ptfx_group, name, color)
         end
     end
 end

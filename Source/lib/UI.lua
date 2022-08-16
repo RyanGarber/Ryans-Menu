@@ -1,14 +1,14 @@
-Ryan.UI = {}
+UI = {}
 
 -- General UI --
-Ryan.UI.CreateList = function(root, menu_name, command_name, description, choices, on_update)
+UI.CreateList = function(root, menu_name, command_name, description, choices, on_update)
     on_update(choices[1])
     return menu.list_select(root, menu_name, {command_name}, description, choices, 1, function(value)
         on_update(choices[value])
     end)
 end
 
-Ryan.UI.CreateEffectChoice = function(root, command_prefix, player_name, effects, effect_name, effect_description, options, god_finger)
+UI.CreateEffectChoice = function(root, command_prefix, player_name, effects, effect_name, effect_description, options, god_finger)
     local command = command_prefix .. Ryan.CommandName(effect_name)
 
     if god_finger then
@@ -16,7 +16,7 @@ Ryan.UI.CreateEffectChoice = function(root, command_prefix, player_name, effects
         for _, choice in pairs(options) do
             if effects[Ryan.ToTableName(effect_name)] == nil then effects[Ryan.ToTableName(effect_name)] = {} end
 
-            Ryan.UI.CreateList(effect_root, choice, command .. Ryan.CommandName(choice), "", Ryan.UI.GodFingerActivationModes, function(value)
+            UI.CreateList(effect_root, choice, command .. Ryan.CommandName(choice), "", UI.GodFingerActivationModes, function(value)
                 effects[Ryan.ToTableName(effect_name)][Ryan.ToTableName(choice)] = value
             end)
         end
@@ -42,9 +42,9 @@ Ryan.UI.CreateEffectChoice = function(root, command_prefix, player_name, effects
     end
 end
 
-Ryan.UI.CreateEffectToggle = function(root, command_prefix, effects, effect_name, effect_description, god_finger)
+UI.CreateEffectToggle = function(root, command_prefix, effects, effect_name, effect_description, god_finger)
     if god_finger then
-        Ryan.UI.CreateList(root, effect_name, command_prefix .. Ryan.CommandName(effect_name), effect_description, Ryan.UI.GodFingerActivationModes, function(value)
+        UI.CreateList(root, effect_name, command_prefix .. Ryan.CommandName(effect_name), effect_description, UI.GodFingerActivationModes, function(value)
             effects[Ryan.ToTableName(effect_name)] = value
         end)
     else
@@ -54,7 +54,7 @@ Ryan.UI.CreateEffectToggle = function(root, command_prefix, effects, effect_name
     end
 end
 
-Ryan.UI.CreateTeleportList = function(root, name, coords)
+UI.CreateTeleportList = function(root, name, coords)
     for i = 1, #coords do
         local draw_beacon = false
         local teleport = menu.action(root, name .. " " .. i, {"ryan" .. Ryan.CommandName(name) .. i}, "Teleport to " .. name .. " #" .. i .. ".", function()
@@ -70,7 +70,7 @@ end
 
 
 -- God Finger UI --
-Ryan.UI.GodFingerActivationModes = {
+UI.GodFingerActivationModes = {
     "Off",
     "Look",
     "Hold Q",
@@ -87,7 +87,7 @@ Ryan.UI.GodFingerActivationModes = {
     "Hold 5",
 }
 
-Ryan.UI.GetGodFingerActivation = function(key)
+UI.GetGodFingerActivation = function(key)
     local activated = false
     pluto_switch key do
         case "Off":    activated = 0                                                                      break
@@ -112,7 +112,7 @@ Ryan.UI.GetGodFingerActivation = function(key)
     end
 end
 
-Ryan.UI.DisplayGodFingerKeybind = function(mode)
+UI.DisplayGodFingerKeybind = function(mode)
     if Ryan.TextKeybinds then return "<b>" .. mode:sub(6) .. "</b>]" end
 
     pluto_switch mode do
@@ -132,7 +132,7 @@ Ryan.UI.DisplayGodFingerKeybind = function(mode)
     end
 end
 
-Ryan.UI.GetGodFingerKeybinds = function(effects)
+UI.GetGodFingerKeybinds = function(effects)
     function split(help, new_help)
         local help_line = help:sub(1 - (help:reverse():find("\n") or 0))
         local help_line_length = help_line:gsub("~[A-Z_]+~", ""):gsub("<b>[^<]+</b>.", ""):gsub("   ", ""):len()
@@ -147,12 +147,12 @@ Ryan.UI.GetGodFingerKeybinds = function(effects)
         if type(value) == "table" then
             for choice, mode in pairs(value) do
                 if mode:find("Hold") then
-                    help = help .. split(help, Ryan.UI.DisplayGodFingerKeybind(mode) .. " " .. Ryan.FromTableName(effect) .. ": " .. Ryan.FromTableName(choice))
+                    help = help .. split(help, UI.DisplayGodFingerKeybind(mode) .. " " .. Ryan.FromTableName(effect) .. ": " .. Ryan.FromTableName(choice))
                 end
             end
         else
             if value:find("Hold") then
-                help = help .. split(help, Ryan.UI.DisplayGodFingerKeybind(value) .. " " .. Ryan.FromTableName(effect))
+                help = help .. split(help, UI.DisplayGodFingerKeybind(value) .. " " .. Ryan.FromTableName(effect))
             end
         end
     end
@@ -160,7 +160,7 @@ Ryan.UI.GetGodFingerKeybinds = function(effects)
     return help
 end
 
-Ryan.UI.DisableGodFingerKeybinds = function()
+UI.DisableGodFingerKeybinds = function()
     PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.Cover, true)                  -- Q
     PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleRadioWheel, true)      -- Q
     PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleHorn, true)            -- E
@@ -181,17 +181,17 @@ Ryan.UI.DisableGodFingerKeybinds = function()
     PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponSpecial, true)    -- 5
 end
 
-Ryan.UI.ParseEffectList = function(effects, god_finger)
+UI.ParseEffectList = function(effects, god_finger)
     local parsed = {}
     for effect, value in pairs(effects) do
         if god_finger then
             if type(value) == "table" then
                 if parsed[effect] == nil then parsed[effect] = {} end
                 for choice, mode in pairs(value) do
-                    parsed[effect][choice] = Ryan.UI.GetGodFingerActivation(mode) > 0
+                    parsed[effect][choice] = UI.GetGodFingerActivation(mode) > 0
                 end
             else
-                parsed[effect] = Ryan.UI.GetGodFingerActivation(value) > 0
+                parsed[effect] = UI.GetGodFingerActivation(value) > 0
             end
         else
             if type(value) == "boolean" then
@@ -207,17 +207,17 @@ end
 
 
 -- NPC Effects UI --
-Ryan.UI.CreateNPCEffectList = function(root, command_prefix, effects, god_finger)
-    Ryan.UI.CreateEffectChoice(root, command_prefix, "", effects, "Scenario", "Change the NPC's current scenario.", {"Musician", "Janitor", "Paparazzi", "Human Statue"}, god_finger)
-    Ryan.UI.CreateEffectToggle(root, command_prefix, effects, "Nude", "Make the NPC nude.", god_finger)
-    Ryan.UI.CreateEffectToggle(root, command_prefix, effects, "Flee", "Make the NPC flee you.", god_finger)
-    Ryan.UI.CreateEffectToggle(root, command_prefix, effects, "Ragdoll", "Make the NPC ragdoll.", god_finger)
-    Ryan.UI.CreateEffectToggle(root, command_prefix, effects, "Delete", "Delete the NPC.", god_finger)
+UI.CreateNPCEffectList = function(root, command_prefix, effects, god_finger)
+    UI.CreateEffectChoice(root, command_prefix, "", effects, "Scenario", "Change the NPC's current scenario.", {"Musician", "Janitor", "Paparazzi", "Human Statue"}, god_finger)
+    UI.CreateEffectToggle(root, command_prefix, effects, "Nude", "Make the NPC nude.", god_finger)
+    UI.CreateEffectToggle(root, command_prefix, effects, "Flee", "Make the NPC flee you.", god_finger)
+    UI.CreateEffectToggle(root, command_prefix, effects, "Ragdoll", "Make the NPC ragdoll.", god_finger)
+    UI.CreateEffectToggle(root, command_prefix, effects, "Delete", "Delete the NPC.", god_finger)
 end
 
-Ryan.UI.ApplyNPCEffectList = function(npc, effects, state, god_finger)
+UI.ApplyNPCEffectList = function(npc, effects, state, god_finger)
     if state[npc] == nil then state[npc] = {} end
-    local parsed = Ryan.UI.ParseEffectList(effects, god_finger)
+    local parsed = UI.ParseEffectList(effects, god_finger)
 
     if parsed.scenario and parsed.scenario.musician and state[npc].scenario ~= "musician" then
         TASK.CLEAR_PED_TASKS_IMMEDIATELY(npc)
@@ -283,95 +283,95 @@ end
 
 
 -- Vehicle Effects UI --
-Ryan.UI.CreateVehicleEffectList = function(root, command_prefix, player_name, effects, enable_risky, god_finger)
-    Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Speed", "Change the speed of the vehicle.", {"Fast", "Slow", "Normal"}, god_finger)
-    Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Grip", "Change the grip of the vehicle's tires.", {"None", "Normal"}, god_finger)
-    Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Doors", "Change the vehicle's door lock state.", {"Lock", "Unlock"}, god_finger)
-    Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Tires", "Change the vehicle's tire health.", {"Burst", "Fix"}, god_finger)
-    Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Engine", "Change the vehicle's engine health.", {"Kill", "Fix"}, god_finger)
+UI.CreateVehicleEffectList = function(root, command_prefix, player_name, effects, enable_risky, god_finger)
+    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Speed", "Change the speed of the vehicle.", {"Fast", "Slow", "Normal"}, god_finger)
+    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Grip", "Change the grip of the vehicle's tires.", {"None", "Normal"}, god_finger)
+    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Doors", "Change the vehicle's door lock state.", {"Lock", "Unlock"}, god_finger)
+    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Tires", "Change the vehicle's tire health.", {"Burst", "Fix"}, god_finger)
+    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Engine", "Change the vehicle's engine health.", {"Kill", "Fix"}, god_finger)
     if enable_risky then
-        Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Upgrades", "Change the vehicle's upgrades.", {"All", "None"}, god_finger)
+        UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Upgrades", "Change the vehicle's upgrades.", {"All", "None"}, god_finger)
     end
-    Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Godmode", "Change the vehicle's upgrades.", {"On", "Off"}, god_finger)
-    Ryan.UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Gravity", "Change the vehicle's gravity.", {"None", "Normal"}, god_finger)
-    Ryan.UI.CreateEffectToggle(root, command_prefix, effects, "Theft Alarm", "Trigger the vehicle's theft alarm.", god_finger)
-    Ryan.UI.CreateEffectToggle(root, command_prefix, effects, "Catapult", "Catapult the vehicle non-stop.", god_finger)
-    Ryan.UI.CreateEffectToggle(root, command_prefix, effects, "Delete", "Delete the vehicle.", god_finger)
+    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Godmode", "Change the vehicle's upgrades.", {"On", "Off"}, god_finger)
+    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Gravity", "Change the vehicle's gravity.", {"None", "Normal"}, god_finger)
+    UI.CreateEffectToggle(root, command_prefix, effects, "Theft Alarm", "Trigger the vehicle's theft alarm.", god_finger)
+    UI.CreateEffectToggle(root, command_prefix, effects, "Catapult", "Catapult the vehicle non-stop.", god_finger)
+    UI.CreateEffectToggle(root, command_prefix, effects, "Delete", "Delete the vehicle.", god_finger)
 end
 
-Ryan.UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_finger)
+UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_finger)
     if state[vehicle] == nil then state[vehicle] = {} end
-    local parsed = Ryan.UI.ParseEffectList(effects, god_finger)
+    local parsed = UI.ParseEffectList(effects, god_finger)
 
     if parsed.speed and parsed.speed.fast and state[vehicle].speed ~= "fast" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Fast)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetSpeed(vehicle, Vehicle.Speed.Fast)
             state[vehicle].speed = "fast"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.speed and parsed.speed.slow and state[vehicle].speed ~= "slow" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Slow)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetSpeed(vehicle, Vehicle.Speed.Slow)
             state[vehicle].speed = "slow"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.speed and parsed.speed.normal and state[vehicle].speed ~= "normal" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetSpeed(vehicle, Ryan.Vehicle.Speed.Normal)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetSpeed(vehicle, Vehicle.Speed.Normal)
             state[vehicle].speed = "normal"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     end
 
     if parsed.grip and parsed.grip.none and state[vehicle].grip ~= "none" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetNoGrip(vehicle, true)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetNoGrip(vehicle, true)
             state[vehicle].grip = "none"
         end, is_a_player)
     elseif parsed.grip and parsed.grip.normal and state[vehicle].grip ~= "normal" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetNoGrip(vehicle, false)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetNoGrip(vehicle, false)
             state[vehicle].grip = "normal"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     end
 
     if parsed.doors and parsed.doors.lock and state[vehicle].doors ~= "lock" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetDoorsLocked(vehicle, true)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetDoorsLocked(vehicle, true)
             state[vehicle].doors = "lock"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.doors and parsed.doors.unlock and state[vehicle].doors ~= "unlock" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetDoorsLocked(vehicle, false)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetDoorsLocked(vehicle, false)
             state[vehicle].doors = "unlock"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     end
 
     if parsed.tires and parsed.tires.burst and state[vehicle].tires ~= "burst" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetTiresBursted(vehicle, true)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetTiresBursted(vehicle, true)
             state[vehicle].tires = "burst"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.tires and parsed.tires.fix and state[vehicle].tires ~= "fix" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetTiresBursted(vehicle, false)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetTiresBursted(vehicle, false)
             state[vehicle].tires = "fix"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     end
 
     if parsed.engine and parsed.engine.kill and state[vehicle].engine ~= "kill" then
-        Ryan.Vehicle.Modify(vehicle, function()
+        Vehicle.Modify(vehicle, function()
             VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
             state[vehicle].engine = "kill"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.engine and parsed.engine.fix and state[vehicle].engine ~= "fix" then
-        Ryan.Vehicle.Modify(vehicle, function()
+        Vehicle.Modify(vehicle, function()
             VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
             state[vehicle].engine = "fix"
             if god_finger then Ryan.PlaySelectSound() end
@@ -379,21 +379,21 @@ Ryan.UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, 
     end
 
     if parsed.upgrades and parsed.upgrades.all and state[vehicle].upgrades ~= "all" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetFullyUpgraded(vehicle, true)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetFullyUpgraded(vehicle, true)
             state[vehicle].upgrades = "all"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.upgrades and parsed.upgrades.none and state[vehicle].upgrades ~= "none" then
-        Ryan.Vehicle.Modify(vehicle, function()
-            Ryan.Vehicle.SetFullyUpgraded(vehicle, false)
+        Vehicle.Modify(vehicle, function()
+            Vehicle.SetFullyUpgraded(vehicle, false)
             state[vehicle].upgrades = "none"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     end
 
     if parsed.godmode and parsed.godmode.on and state[vehicle].godmode ~= "on" then
-        Ryan.Vehicle.Modify(vehicle, function()
+        Vehicle.Modify(vehicle, function()
             ENTITY.SET_ENTITY_PROOFS(vehicle, true, true, true, true, true, 0, 0, true)
             ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
             VEHICLE.SET_VEHICLE_FIXED(vehicle)
@@ -401,7 +401,7 @@ Ryan.UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, 
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.godmode and parsed.godmode.off and state[vehicle].godmode ~= "off" then
-        Ryan.Vehicle.Modify(vehicle, function()
+        Vehicle.Modify(vehicle, function()
             ENTITY.SET_ENTITY_PROOFS(vehicle, false, false, false, false, false, 0, 0, false)
             ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
             state[vehicle].godmode = "off"
@@ -410,14 +410,14 @@ Ryan.UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, 
     end
 
     if parsed.gravity and parsed.gravity.none and state[vehicle].gravity ~= "on" then
-        Ryan.Vehicle.Modify(vehicle, function()
+        Vehicle.Modify(vehicle, function()
             ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, false)
             VEHICLE.SET_VEHICLE_GRAVITY(vehicle, false)
             state[vehicle].gravity = "none"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.gravity and parsed.gravity.normal and state[vehicle].gravity ~= "off" then
-        Ryan.Vehicle.Modify(vehicle, function()
+        Vehicle.Modify(vehicle, function()
             ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, true)
             VEHICLE.SET_VEHICLE_GRAVITY(vehicle, true)
             state[vehicle].gravity = "normal"
@@ -426,7 +426,7 @@ Ryan.UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, 
     end
 
     if parsed.theft_alarm and not VEHICLE.IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
-        Ryan.Vehicle.Modify(vehicle, function()
+        Vehicle.Modify(vehicle, function()
             VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
             VEHICLE.START_VEHICLE_ALARM(vehicle)
         end, is_a_player)
@@ -435,8 +435,8 @@ Ryan.UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, 
 
     if parsed.catapult then
         if not state[vehicle].catapult or VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) and util.current_time_millis() - state[vehicle].catapult >= 500 then
-            Ryan.Vehicle.Modify(vehicle, function()
-                Ryan.Vehicle.Catapult(vehicle)
+            Vehicle.Modify(vehicle, function()
+                Vehicle.Catapult(vehicle)
             end, is_a_player)
             state[vehicle].catapult = util.current_time_millis()
             if god_finger then Ryan.PlaySelectSound() end
@@ -471,7 +471,7 @@ function _set_deaths(deaths)
     STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "DEATHS_PLAYER"), deaths)
 end
 
-Ryan.UI.UpdateKDMenu = function(root)
+UI.UpdateKDMenu = function(root)
     if _kills ~= nil then menu.delete(_kills); _kills = nil end
     if _deaths ~= nil then menu.delete(_deaths); _deaths = nil end
     if _kd ~= nil then menu.delete(_kd); _kd = nil end
@@ -484,7 +484,7 @@ Ryan.UI.UpdateKDMenu = function(root)
         else
             Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Stats", "The kill count you provided was not a valid number.")
         end
-        Ryan.UI.UpdateKDMenu(root)
+        UI.UpdateKDMenu(root)
     end)
 
     _deaths = menu.text_input(root, "Deaths: -", {"ryandeaths"}, "The amount of deaths you have received.", function(value)
@@ -495,7 +495,7 @@ Ryan.UI.UpdateKDMenu = function(root)
         else
             Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Stats", "The death count you provided was not a valid number.")
         end
-        Ryan.UI.UpdateKDMenu(root)
+        UI.UpdateKDMenu(root)
     end)
 
     _kd = menu.divider(root, "K/D: -")
@@ -511,7 +511,7 @@ util.create_tick_handler(function()
     end
 end)
 
-Ryan.UI.CreateOfficeMoneyButton = function(root, percentage, amount)
+UI.CreateOfficeMoneyButton = function(root, percentage, amount)
     menu.action(root, percentage .. "% Full", {"ryanofficemoney" .. percentage}, "Make the office " .. percentage .. "% full with money.", function(click_type)
         menu.show_warning(menu.ref_by_command_name("ryanofficemoney" .. percentage), click_type, "Make sure you have at least 1 crate of Special Cargo to sell before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell that cargo.", function()
             STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_CONTRA_EARNINGS"), amount, true)
@@ -524,7 +524,7 @@ Ryan.UI.CreateOfficeMoneyButton = function(root, percentage, amount)
     end)
 end
 
-Ryan.UI.CreateMCClutterButton = function(root, percentage, amount)
+UI.CreateMCClutterButton = function(root, percentage, amount)
     local command = menu.action(root, percentage .. "% Full", {"ryanmcclutter" .. percentage}, "Add drugs, money, and other clutter to your M.C. clubhouse.", function(click_type)
         menu.show_warning(menu.ref_by_command_name("ryanmcclutter" .. percentage), click_type, "Make sure you have at least 1 unit of stock to sell, in every business, before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell all of those, one by one.", function()
             for i = 0, 5 do
