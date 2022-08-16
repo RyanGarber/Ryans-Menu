@@ -333,7 +333,6 @@ Ryan.DoUpdate = function(force)
 		
 		while updating ~= 0 do
 			if updating == 2 then Ryan.Toast("Downloading files for Ryan's Menu...") end
-
 			util.yield(333)
 		end		
 	end
