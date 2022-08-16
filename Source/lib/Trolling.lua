@@ -40,8 +40,8 @@ Trolling.MilitarySquad = function(player_id, with_crusaders)
         local rotation = coords:lookAt(ENTITY.GET_ENTITY_COORDS(player.ped_id))
         ENTITY.SET_ENTITY_ROTATION(vehicle, rotation.x, rotation.y, rotation.z, 2, true)
         VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
-        Vehicle.SetSpeed(vehicle, Vehicle.Speed.Fast)
-        Vehicle.SetFullyUpgraded(vehicle, true)
+        Objects.SetVehicleSpeed(vehicle, Objects.VehicleSpeed.Fast)
+        Objects.SetVehicleFullyUpgraded(vehicle, true)
 
         local seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicles[i])
         for seat = -1, seats - 2 do

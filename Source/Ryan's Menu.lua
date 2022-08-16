@@ -229,7 +229,7 @@ util.create_tick_handler(function()
 
     if forcefield_type ~= "Off" then
         local ourself = Player:Self()
-        local nearby = Objects.GetAllNearby(ourself.get_coords(), forcefield_size, Objects.Type.All)
+        local nearby = Objects.GetAllNearCoords(ourself.get_coords(), forcefield_size, Objects.Type.All)
         for _, entity in pairs(nearby) do
             if (players.get_vehicle_model(players.user()) == 0 or entity ~= entities.get_user_vehicle_as_handle()) and entity ~= players.user_ped() then
             pluto_switch forcefield_type do
@@ -500,7 +500,7 @@ util.create_tick_handler(function()
             if UI.GetGodFingerActivation(god_finger_vehicle_effects.steal) > 0 and ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
                 if util.current_time_millis() - god_finger_vehicle_state.steal > 1000 then
                     god_finger_vehicle_state.steal = util.current_time_millis()
-                    Vehicle.Steal(raycast.hit_entity)
+                    Objects.StealVehicle(raycast.hit_entity)
                     Ryan.PlaySelectSound()
                 end
             end
@@ -866,7 +866,7 @@ end)
 -- -- E-Brake
 ebrake = false
 menu.toggle(self_root, "E-Brake", {"ryanebrake"}, "Makes your vehicle drift while holding Shift.", function(value)
-    if not value then Vehicle.SetNoGrip(vehicle, false) end
+    if not value then Objects.SetVehicleHasGrip(vehicle, true) end
     ebrake = value
 end)
 
@@ -875,7 +875,7 @@ util.create_tick_handler(function()
         local our_ped = players.user_ped()
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(our_ped, false)
         if vehicle ~= 0 and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == our_ped then
-            Vehicle.SetNoGrip(vehicle, PAD.IS_CONTROL_PRESSED(0, Ryan.Controls.Sprint))
+            Objects.SetVehicleHasGrip(vehicle, not PAD.IS_CONTROL_PRESSED(0, Ryan.Controls.Sprint))
         end
     end
 end)
@@ -930,7 +930,7 @@ util.create_tick_handler(function()
         end
 
         local player_coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
-        for _, ped in pairs(Objects.GetAllNearby(player_coords, 250, Objects.Type.Ped)) do
+        for _, ped in pairs(Objects.GetAllNearCoords(player_coords, 250, Objects.Type.Ped)) do
             local vehicle = PED.GET_VEHICLE_PED_IS_IN(ped, false)
             if not PED.IS_PED_A_PLAYER(ped) and (all_npcs_include_drivers or vehicle == 0) then
                 if vehicle ~= 0 then
@@ -1038,7 +1038,7 @@ end)
 util.create_tick_handler(function()
     if not CUTSCENE.IS_CUTSCENE_ACTIVE() then
         local coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
-        for _, entity in pairs(Objects.GetAllNearby(coords, 500, Objects.Type.Ped)) do
+        for _, entity in pairs(Objects.GetAllNearCoords(coords, 500, Objects.Type.Ped)) do
             if ENTITY.IS_ENTITY_A_PED(entity) then
                 pluto_switch remove_mode do
                     case "Cops":
@@ -1124,7 +1124,7 @@ util.create_tick_handler(function()
     local player_coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
     local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped())
 
-    local vehicles = Objects.GetAllNearby(player_coords, 250, Objects.Type.Vehicle)
+    local vehicles = Objects.GetAllNearCoords(player_coords, 250, Objects.Type.Vehicle)
     for _, vehicle in pairs(vehicles) do
         local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
         local player = if PED.IS_PED_A_PLAYER(driver) then Player:ByPedId(driver) else nil
@@ -1144,7 +1144,7 @@ util.create_tick_handler(function()
 
                 -- Blind
                 if all_vehicles_effects.blind and player == nil and (all_vehicles_state[vehicle].blind ~= true or math.random(1, 10) <= 3) then
-                    Vehicle.MakeBlind(vehicle)
+                    Objects.MakeVehicleBlind(vehicle)
                     all_vehicles_state[vehicle].blind = true
                 end
             end
@@ -1156,7 +1156,7 @@ end)
 
 -- -- Enter Closest Vehicle
 enter_closest_vehicle = menu.action(world_root, "Enter Closest Vehicle", {"ryandrivevehicle"}, "Teleports into the closest vehicle.", function()
-    local closest_vehicle = Vehicle.GetClosest(ENTITY.GET_ENTITY_COORDS(players.user_ped(), true))
+    local closest_vehicle = Objects.GetAllNearCoords(Player:Self().coords, 100, Objects.Type.Vehicle, false)[1]
     local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(closest_vehicle, -1)
     
     if VEHICLE.IS_VEHICLE_SEAT_FREE(closest_vehicle, -1) then
@@ -1188,7 +1188,7 @@ menu.on_blur(enter_closest_vehicle, function() draw_closest_vehicle_esp = false 
 
 util.create_tick_handler(function()
     if draw_closest_vehicle_esp then
-        local closest_vehicle = Vehicle.GetClosest(ENTITY.GET_ENTITY_COORDS(players.user_ped(), true))
+        local closest_vehicle = Objects.GetAllNearCoords(Player:Self().coords, 100, Objects.Type.Vehicle, false)[1]
         if closest_vehicle ~= 0 then Objects.DrawESP(closest_vehicle) end
     end
 end)
@@ -1520,7 +1520,7 @@ util.create_tick_handler(function()
 
             local oppressor2 = util.joaat("oppressor2")
             local coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
-            for _, vehicle in pairs(Objects.GetAllNearby(coords, 9999, Objects.Type.Vehicle)) do
+            for _, vehicle in pairs(Objects.GetAllNearCoords(coords, 9999, Objects.Type.Vehicle)) do
                 if VEHICLE.IS_VEHICLE_MODEL(vehicle, oppressor2) then
                     Objects.RequestControl(vehicle, false)
                     entities.delete_by_handle(vehicle)
@@ -1561,7 +1561,7 @@ util.create_tick_handler(function()
                     direction:mul(7.5); coords:add(direction)
                     local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player.ped_id))
                     Objects.RequestControl(vehicle, true)
-                    Vehicle.SetFullyUpgraded(vehicle, true)
+                    Objects.SetVehicleFullyUpgraded(vehicle, true)
                     ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
                     VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
                     VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
@@ -1748,7 +1748,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
                                 local direction = ENTITY.GET_ENTITY_ROTATION(player.ped_id, 2):toDir()
                                 direction:mul(7.5); coords:add(direction)
                                 Objects.RequestControl(vehicle, true)
-                                Vehicle.SetFullyUpgraded(vehicle, true)
+                                Objects.SetVehicleFullyUpgraded(vehicle, true)
                                 ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
                                 VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
                                 VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
@@ -1951,7 +1951,7 @@ function setup_player(player_id)
     end)
     menu.action(player_trolling_root, "Steal Vehicle", {"ryansteal"}, "Steals the player's car.", function()
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(Player:Get(player_id).ped_id)
-        if vehicle ~= 0 then Vehicle.Steal(vehicle)
+        if vehicle ~= 0 then Objects.StealVehicle(vehicle)
         else Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Steal Vehicle", players.get_name(player_id) .. " is not in a vehicle.") end
     end)
     local player_trolling_glitch_root = UI.CreateList(player_trolling_root, "Glitch", "ryanglitch", "Glitch the player and their vehicle.", glitch_type_names, function(value)

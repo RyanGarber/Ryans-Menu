@@ -304,74 +304,74 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
     local parsed = UI.ParseEffectList(effects, god_finger)
 
     if parsed.speed and parsed.speed.fast and state[vehicle].speed ~= "fast" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetSpeed(vehicle, Vehicle.Speed.Fast)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleSpeed(vehicle, Objects.VehicleSpeed.Fast)
             state[vehicle].speed = "fast"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.speed and parsed.speed.slow and state[vehicle].speed ~= "slow" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetSpeed(vehicle, Vehicle.Speed.Slow)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleSpeed(vehicle, Objects.VehicleSpeed.Slow)
             state[vehicle].speed = "slow"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.speed and parsed.speed.normal and state[vehicle].speed ~= "normal" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetSpeed(vehicle, Vehicle.Speed.Normal)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleSpeed(vehicle, Objects.VehicleSpeed.Normal)
             state[vehicle].speed = "normal"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     end
 
     if parsed.grip and parsed.grip.none and state[vehicle].grip ~= "none" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetNoGrip(vehicle, true)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleHasGrip(vehicle, false)
             state[vehicle].grip = "none"
         end, is_a_player)
     elseif parsed.grip and parsed.grip.normal and state[vehicle].grip ~= "normal" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetNoGrip(vehicle, false)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleHasGrip(vehicle, true)
             state[vehicle].grip = "normal"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     end
 
     if parsed.doors and parsed.doors.lock and state[vehicle].doors ~= "lock" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetDoorsLocked(vehicle, true)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleDoorsLocked(vehicle, true)
             state[vehicle].doors = "lock"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.doors and parsed.doors.unlock and state[vehicle].doors ~= "unlock" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetDoorsLocked(vehicle, false)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleDoorsLocked(vehicle, false)
             state[vehicle].doors = "unlock"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     end
 
     if parsed.tires and parsed.tires.burst and state[vehicle].tires ~= "burst" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetTiresBursted(vehicle, true)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleTiresBursted(vehicle, true)
             state[vehicle].tires = "burst"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.tires and parsed.tires.fix and state[vehicle].tires ~= "fix" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetTiresBursted(vehicle, false)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleTiresBursted(vehicle, false)
             state[vehicle].tires = "fix"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     end
 
     if parsed.engine and parsed.engine.kill and state[vehicle].engine ~= "kill" then
-        Vehicle.Modify(vehicle, function()
+        Objects.TakeControl(vehicle, function()
             VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
             state[vehicle].engine = "kill"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.engine and parsed.engine.fix and state[vehicle].engine ~= "fix" then
-        Vehicle.Modify(vehicle, function()
+        Objects.TakeControl(vehicle, function()
             VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
             state[vehicle].engine = "fix"
             if god_finger then Ryan.PlaySelectSound() end
@@ -379,21 +379,21 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
     end
 
     if parsed.upgrades and parsed.upgrades.all and state[vehicle].upgrades ~= "all" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetFullyUpgraded(vehicle, true)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleFullyUpgraded(vehicle, true)
             state[vehicle].upgrades = "all"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.upgrades and parsed.upgrades.none and state[vehicle].upgrades ~= "none" then
-        Vehicle.Modify(vehicle, function()
-            Vehicle.SetFullyUpgraded(vehicle, false)
+        Objects.TakeControl(vehicle, function()
+            Objects.SetVehicleFullyUpgraded(vehicle, false)
             state[vehicle].upgrades = "none"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     end
 
     if parsed.godmode and parsed.godmode.on and state[vehicle].godmode ~= "on" then
-        Vehicle.Modify(vehicle, function()
+        Objects.TakeControl(vehicle, function()
             ENTITY.SET_ENTITY_PROOFS(vehicle, true, true, true, true, true, 0, 0, true)
             ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
             VEHICLE.SET_VEHICLE_FIXED(vehicle)
@@ -401,7 +401,7 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.godmode and parsed.godmode.off and state[vehicle].godmode ~= "off" then
-        Vehicle.Modify(vehicle, function()
+        Objects.TakeControl(vehicle, function()
             ENTITY.SET_ENTITY_PROOFS(vehicle, false, false, false, false, false, 0, 0, false)
             ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
             state[vehicle].godmode = "off"
@@ -410,14 +410,14 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
     end
 
     if parsed.gravity and parsed.gravity.none and state[vehicle].gravity ~= "on" then
-        Vehicle.Modify(vehicle, function()
+        Objects.TakeControl(vehicle, function()
             ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, false)
             VEHICLE.SET_VEHICLE_GRAVITY(vehicle, false)
             state[vehicle].gravity = "none"
             if god_finger then Ryan.PlaySelectSound() end
         end, is_a_player)
     elseif parsed.gravity and parsed.gravity.normal and state[vehicle].gravity ~= "off" then
-        Vehicle.Modify(vehicle, function()
+        Objects.TakeControl(vehicle, function()
             ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, true)
             VEHICLE.SET_VEHICLE_GRAVITY(vehicle, true)
             state[vehicle].gravity = "normal"
@@ -426,7 +426,7 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
     end
 
     if parsed.theft_alarm and not VEHICLE.IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
-        Vehicle.Modify(vehicle, function()
+        Objects.TakeControl(vehicle, function()
             VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
             VEHICLE.START_VEHICLE_ALARM(vehicle)
         end, is_a_player)
@@ -435,8 +435,8 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
 
     if parsed.catapult then
         if not state[vehicle].catapult or VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) and util.current_time_millis() - state[vehicle].catapult >= 500 then
-            Vehicle.Modify(vehicle, function()
-                Vehicle.Catapult(vehicle)
+            Objects.TakeControl(vehicle, function()
+                Objects.Catapult(vehicle)
             end, is_a_player)
             state[vehicle].catapult = util.current_time_millis()
             if god_finger then Ryan.PlaySelectSound() end

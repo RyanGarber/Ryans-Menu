@@ -1,5 +1,6 @@
 Objects = {}
 
+--========================= Generic Objects =========================--
 -- Entity types to include.
 Objects.Type = {
     All = 1,
@@ -7,8 +8,9 @@ Objects.Type = {
     Vehicle = 3
 }
 
--- Get all entities of type in range of the specified coordinates.
-Objects.GetAllNearby = function(coords, range, types)
+-- Get all entities of type within range of the specified coordinates.
+Objects.GetAllNearCoords = function(coords, range, types, include_own_vehicle)
+    if include_own_vehicle == nil then include_own_vehicle = true end
     local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped())
     local nearby_objects = {}
 
@@ -25,13 +27,19 @@ Objects.GetAllNearby = function(coords, range, types)
 
     if types == Objects.Type.Vehicle or types == Objects.Type.All then
         for _, vehicle in pairs(entities.get_all_vehicles_as_handles()) do
-            local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
-            if coords:distance(vehicle_coords) <= range then
-                table.insert(nearby_objects, vehicle)
+            if include_own_vehicle or players.get_vehicle_model(players.user()) == 0 or vehicle ~= PED.GET_VEHICLE_PED_IS_IN(players.user_ped()) then
+                local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+                if coords:distance(vehicle_coords) <= range then
+                    table.insert(nearby_objects, vehicle)
+                end
             end
         end
     end
 
+    table.sort(nearby_objects, function(object_1, object_2)
+        return coords:distance(ENTITY.GET_ENTITY_COORDS(object_1)) < coords:distance(ENTITY.GET_ENTITY_COORDS(object_2))
+    end)
+    
     return nearby_objects
 end
 
@@ -164,35 +172,24 @@ Objects.DetachAll = function(entity)
     end
 end
 
-Vehicle = {}
+Objects.Catapult = function(object)
+    ENTITY.APPLY_FORCE_TO_ENTITY(object, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
+end
 
-Vehicle.Speed = {
+Objects.TakeControl = function(vehicle, action, loop)
+    if not ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then return end
+    Objects.RequestControl(vehicle, loop)
+    action(vehicle)
+end
+
+--========================= Vehicles =========================--
+Objects.VehicleSpeed = {
     Normal = 0,
     Fast = 1,
     Slow = 2
 }
 
-Vehicle.GetClosest = function(coords)
-    local vehicles = entities.get_all_vehicles_as_handles()
-    local closest_distance = 2147483647
-    local closest_vehicle = 0
-    for _, vehicle in pairs(vehicles) do
-        if vehicle ~= PED.GET_VEHICLE_PED_IS_IN(PLAYER.PLAYER_PED_ID(), false) then
-            local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
-            local distance = MISC.GET_DISTANCE_BETWEEN_COORDS(
-                coords.x, coords.y, coords.z,
-                vehicle_coords.x, vehicle_coords.y, vehicle_coords.z, true
-            )
-            if distance < closest_distance then
-                closest_distance = distance
-                closest_vehicle = vehicle
-            end
-        end
-    end
-    return closest_vehicle
-end
-
-Vehicle.SetFullyUpgraded = function(vehicle, fully_upgraded)
+Objects.SetVehicleFullyUpgraded = function(vehicle, fully_upgraded)
     VEHICLE.SET_VEHICLE_MOD_KIT(vehicle, 0)
     for i = 0, 50 do
         local mod = -1
@@ -201,30 +198,28 @@ Vehicle.SetFullyUpgraded = function(vehicle, fully_upgraded)
     end
 end
 
-Vehicle.SetSpeed = function(vehicle, speed)
+Objects.SetVehicleSpeed = function(vehicle, speed)
     if ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then
-        if speed == Vehicle.Speed.Normal then
+        if speed == Objects.VehicleSpeed.Normal then
             VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, -1.0)
             ENTITY.SET_ENTITY_MAX_SPEED(vehicle, 64)
         else
-            VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, if speed == Vehicle.Speed.Fast then 1000000 else 2)
-            ENTITY.SET_ENTITY_MAX_SPEED(vehicle, if speed == Vehicle.Speed.Fast then 64 else 1)
+            VEHICLE.MODIFY_VEHICLE_TOP_SPEED(vehicle, if speed == Objects.VehicleSpeed.Fast then 1000000 else 2)
+            ENTITY.SET_ENTITY_MAX_SPEED(vehicle, if speed == Objects.VehicleSpeed.Fast then 64 else 1)
         end
     end
 end
 
-Vehicle.SetNoGrip = function(vehicle, no_grip)
-    VEHICLE.SET_VEHICLE_REDUCE_GRIP(vehicle, no_grip)
-    if no_grip then 
-        VEHICLE._SET_VEHICLE_REDUCE_TRACTION(vehicle, 0.0)
-    end
+Objects.SetVehicleHasGrip = function(vehicle, grip)
+    VEHICLE.SET_VEHICLE_REDUCE_GRIP(vehicle, not grip)
+    if not grip then VEHICLE._SET_VEHICLE_REDUCE_TRACTION(vehicle, 0.0) end
 end
 
-Vehicle.SetDoorsLocked = function(vehicle, doors_locked)
+Objects.SetVehicleDoorsLocked = function(vehicle, doors_locked)
     VEHICLE.SET_VEHICLE_DOORS_LOCKED(vehicle, if doors_locked then 4 else 0)
 end
 
-Vehicle.SetTiresBursted = function(vehicle, tires_bursted)
+Objects.SetVehicleTiresBursted = function(vehicle, tires_bursted)
     if tires_bursted then VEHICLE.SET_VEHICLE_TYRES_CAN_BURST(vehicle, true) end
     for tire = 0, 7 do
         if tires_bursted then
@@ -237,11 +232,7 @@ Vehicle.SetTiresBursted = function(vehicle, tires_bursted)
     end
 end
 
-Vehicle.Catapult = function(vehicle)
-    ENTITY.APPLY_FORCE_TO_ENTITY(vehicle, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
-end
-
-Vehicle.Steal = function(vehicle)
+Objects.StealVehicle = function(vehicle)
     if vehicle ~= 0 then
         local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
         local failed_to_kick = false
@@ -277,7 +268,7 @@ Vehicle.Steal = function(vehicle)
     end
 end
 
-Vehicle.MakeBlind = function(vehicle)
+Objects.MakeVehicleBlind = function(vehicle)
     local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
     local coords = ENTITY.GET_ENTITY_COORDS(vehicle)
     coords:add(math.random(-500, 500), math.random(-500, 500), 0)
@@ -286,10 +277,4 @@ Vehicle.MakeBlind = function(vehicle)
 
     --TASK.TASK_VEHICLE_DRIVE_WANDER(driver, vehicle, 10.0, 4719104)
     --MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false)
-end
-
-Vehicle.Modify = function(vehicle, action, take_control_loop)
-    if not ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then return end
-    Objects.RequestControl(vehicle, take_control_loop)
-    action(vehicle)
 end

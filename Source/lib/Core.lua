@@ -1,3 +1,6 @@
+_waiting_for_session = false
+_waiting_for_coords = nil
+
 -- Initialize globals.
 Ryan.Init = function()
     Ryan.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Crosshair.png")
@@ -5,8 +8,6 @@ Ryan.Init = function()
 end
 
 -- Update globals on each tick.
-_waiting_for_session = false
-_waiting_for_coords = nil
 Ryan.OnTick = function()
     if not NETWORK.NETWORK_IS_SESSION_ACTIVE() then
         _waiting_for_session = true
@@ -27,21 +28,6 @@ Ryan.OnTick = function()
 
     PlayerIsPointing = memory.read_int(memory.script_global(4521801 + 930)) == 3
     PlayerIsSwitchingSessions = not (_waiting_for_session or _waiting_for_coords)
-end
-
--- Better toasts.
-Ryan.Toast = function(...)
-    local args = { count = select("#", ...); ... }
-	local toast = ""
-	for i = 1, args.count do
-		if args[i] == nil then toast = toast .. "[undefined]\n"
-		elseif type(args[i]) == 'number' or type(object) == 'boolean' or type(args[i]) == 'string' then toast = toast .. args[i] .. "\n"
-		elseif args[i].id and args[i].name then toast = toast .. "p(" .. args[i].name .. ")\n"
-		elseif args[i].x and args[i].y and args[i].z then toast = toast .. "v3(" .. args[i].x .. ", " .. args[i].y .. ", " .. args[i].z .. ")\n"
-		else toast = toast .. "[" .. type(args[i]) .. "]\n" end
-	end
-	if toast:len() > 0 then toast = toast:sub(1, -2) end
-	util.toast(toast)
 end
 
 -- HUD settings.
@@ -267,6 +253,21 @@ Ryan.Tasks = {
     ["ExitVehicle"] = 2,
     ["EnterVehicle"] = 160
 }
+
+-- Better toasts.
+Ryan.Toast = function(...)
+    local args = { count = select("#", ...); ... }
+	local toast = ""
+	for i = 1, args.count do
+		if args[i] == nil then toast = toast .. "[undefined]\n"
+		elseif type(args[i]) == 'number' or type(object) == 'boolean' or type(args[i]) == 'string' then toast = toast .. args[i] .. "\n"
+		elseif args[i].id and args[i].name then toast = toast .. "p(" .. args[i].name .. ")\n"
+		elseif args[i].x and args[i].y and args[i].z then toast = toast .. "v3(" .. args[i].x .. ", " .. args[i].y .. ", " .. args[i].z .. ")\n"
+		else toast = toast .. "[" .. type(args[i]) .. "]\n" end
+	end
+	if toast:len() > 0 then toast = toast:sub(1, -2) end
+	util.toast(toast)
+end
 
 -- Download the latest version if a new one is available, or if force == true.
 Ryan.DoUpdate = function(force)
