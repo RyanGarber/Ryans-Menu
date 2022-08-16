@@ -445,16 +445,22 @@ Ryan.RaycastFlags = {
 }
 
 -- Do a raycast from the center of the camera.
-Ryan.Raycast = function(distance, flags)
+Ryan.RaycastFromCamera = function(distance, flags)
+	local origin = CAM.GET_FINAL_RENDERED_CAM_COORD()
+	local direction = CAM.GET_FINAL_RENDERED_CAM_ROT(2):toDir()
+	return Ryan.Raycast(origin, direction, distance, flags)
+end
+
+Ryan.Raycast = function(origin, direction, distance, flags)
 	flags = flags or -1
 	local result = {}
 	local did_hit = memory.alloc(8)
 	local hit_coords = v3.new()
 	local hit_normal = v3.new()
 	local hit_entity = memory.alloc_int()
-	local origin = CAM.GET_FINAL_RENDERED_CAM_COORD()
-	local direction = CAM.GET_FINAL_RENDERED_CAM_ROT(2):toDir(); direction:mul(distance)
-	local destination = v3(origin); destination:add(direction)
+	local destination = v3(origin)
+	direction:mul(distance)
+	destination:add(direction)
 
 	SHAPETEST.GET_SHAPE_TEST_RESULT(
 		SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(

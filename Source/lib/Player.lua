@@ -146,14 +146,21 @@ end
 function Player.super_crash(self, block_syncs)
     Ryan.Toast("Crashing a player...")
     local bush = util.joaat("h4_prop_bush_mang_ad")
-    local coords = self.coords
     local user = Player:Self()
     local starting_coords = user.coords
 
     local crash = function()
-        util.yield(100)
+        local coords = v3(self.coords)
         ENTITY.SET_ENTITY_VISIBLE(user.ped_id, false)
+        ENTITY.SET_ENTITY_COORDS_NO_OFFSET(user.ped_id, coords.x, coords.y, coords.z + 50, false, false, false)
+
+        util.yield(500)
+        local raycast = Ryan.Raycast(v3(coords.x, coords.y, 1250), v3(0, 0, -1), 2500, Ryan.RaycastFlags.All)
+        if raycast.did_hit then coords:set(raycast.hit_coords)
+        else Ryan.Toast("Could not find the ground.\nTry using Super Crash closer to the target.") end
         ENTITY.SET_ENTITY_COORDS_NO_OFFSET(user.ped_id, coords.x, coords.y, coords.z, false, false, false)
+
+        util.yield(250)
         PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id, bush)
         PED.SET_PED_COMPONENT_VARIATION(user.ped_id, 5, 8, 0, 0)
         

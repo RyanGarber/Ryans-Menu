@@ -161,6 +161,8 @@ UI.GetGodFingerKeybinds = function(effects)
 end
 
 UI.DisableGodFingerKeybinds = function()
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.CharacterWheel, true)         -- Alt
+
     PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.Cover, true)                  -- Q
     PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleRadioWheel, true)      -- Q
     PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleHorn, true)            -- E

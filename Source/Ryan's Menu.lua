@@ -141,7 +141,7 @@ self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...", {"r
 PTFX.CreateList(self_ptfx_weapon_aiming_root, function(ptfx)
     if ptfx_disable then return end
     if CAM.IS_AIM_CAM_ACTIVE() then
-        local raycast = Ryan.Raycast(500.0)
+        local raycast = Ryan.RaycastFromCamera(500.0, Ryan.RaycastFlags.All)
         if raycast.did_hit then
             PTFX.PlayAtCoords(raycast.hit_coords, ptfx[2], ptfx[3], ptfx_color)
             util.yield(ptfx[4])
@@ -185,7 +185,7 @@ self_ptfx_god_finger_entities_root = menu.list(self_ptfx_god_finger_root, "Entit
 PTFX.CreateList(self_ptfx_god_finger_crosshair_root, function(ptfx)
     if ptfx_disable then return end
     if god_finger_active then
-        local raycast = Ryan.Raycast(1000.0)
+        local raycast = Ryan.RaycastFromCamera(1000.0, Ryan.RaycastFlags.All)
         if raycast.did_hit then
             PTFX.PlayAtCoords(raycast.hit_coords, ptfx[2], ptfx[3], ptfx_color)
             util.yield(ptfx[4])
@@ -435,14 +435,13 @@ util.create_tick_handler(function()
         return
     end
 
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.CharacterWheel, true)
     UI.DisableGodFingerKeybinds()
 
     local raycast = nil
     local keybinds = {}
     memory.write_int(memory.script_global(4521801 + 935), NETWORK.GET_NETWORK_TIME())
 
-    raycast = Ryan.Raycast(500.0, Ryan.RaycastFlags.Vehicles + Ryan.RaycastFlags.Peds + Ryan.RaycastFlags.Objects)
+    raycast = Ryan.RaycastFromCamera(500.0, Ryan.RaycastFlags.Vehicles + Ryan.RaycastFlags.Peds + Ryan.RaycastFlags.Objects)
     if raycast.did_hit then
         god_finger_target = raycast.hit_coords
         Objects.DrawESP(raycast.hit_entity)
@@ -620,7 +619,7 @@ util.create_tick_handler(function()
     else
         god_finger_target = nil
 
-        raycast = Ryan.Raycast(500.0, Ryan.RaycastFlags.World)
+        raycast = Ryan.RaycastFromCamera(500.0, Ryan.RaycastFlags.World)
         if raycast.did_hit then
             -- World
             local keybinds_world = UI.GetGodFingerKeybinds(god_finger_world_effects)
@@ -630,7 +629,7 @@ util.create_tick_handler(function()
                 if util.current_time_millis() - god_finger_world_state.nude_yoga > 2000 then
                     god_finger_world_state.nude_yoga = util.current_time_millis()
 
-                    local raycast = Ryan.Raycast(50.0)
+                    local raycast = Ryan.RaycastFromCamera(50.0, Ryan.RaycastFlags.World)
                     if raycast.did_hit then
                         local topless, acult = util.joaat("a_f_y_topless_01"), util.joaat("a_m_y_acult_01")
                         Ryan.RequestModel(topless); Ryan.RequestAnimations("amb@world_human_yoga@female@base")
@@ -658,7 +657,7 @@ util.create_tick_handler(function()
                 if util.current_time_millis() - god_finger_world_state.police_brutality > 2000 then
                     god_finger_world_state.police_brutality = util.current_time_millis()
 
-                    local raycast = Ryan.Raycast(50.0)
+                    local raycast = Ryan.RaycastFromCamera(50.0, Ryan.RaycastFlags.World)
                     if raycast.did_hit then
                         local famfor, cop = util.joaat("g_m_y_famfor_01"), util.joaat("s_f_y_cop_01")
                         Ryan.RequestModel(famfor); Ryan.RequestAnimations("missheistdockssetup1ig_13@main_action")
@@ -717,7 +716,7 @@ util.create_tick_handler(function()
                 if util.current_time_millis() - god_finger_world_state.fire > 1000 then
                     god_finger_world_state.fire = util.current_time_millis()
 
-                    local raycast = Ryan.Raycast(250.0)
+                    local raycast = Ryan.RaycastFromCamera(250.0, Ryan.RaycastFlags.World)
                     if raycast.did_hit then
                         if raycast.hit_entity then FIRE.START_ENTITY_FIRE(raycast.hit_entity) end
                         FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
@@ -1840,12 +1839,11 @@ glitch_state = {}
 glitch_type_names = {"Off", "Default", "Ferris Wheel", "UFO", "Cement Mixer", "Scaffolding", "Garage Door", "Big Orange Ball", "Stunt Ramp"}
 glitch_type_hashes = {"Off", "Default", "prop_ld_ferris_wheel", "p_spinning_anus_s", "prop_staticmixer_01", "des_scaffolding_root", "prop_sm1_11_garaged", "prop_juicestand", "stt_prop_stunt_jump_l"}
 
-
-function setup_player(player_id)
-    local player_root = menu.player_root(player_id)
+function Player:OnJoin(player)
+    local player_root = menu.player_root(player.id)
     menu.divider(player_root, "Ryan's Menu")
 
-    local player_name = players.get_name(player_id)
+    local player_name = players.get_name(player.id)
     local player_trolling_root = menu.list(player_root, "Trolling...", {"ryantrolling"}, "Options that players may not like.")
     local player_removal_root = menu.list(player_root, "Removal...", {"ryanremoval"}, "Options to remove the player forcibly.")
 
@@ -1855,11 +1853,10 @@ function setup_player(player_id)
     local player_trolling_kill_root = menu.list(player_trolling_root, "Kill...", {"ryankill"}, "Options to kill players while they're in godmode.")
     
     menu.toggle(player_trolling_kill_root, "Remove Godmode", {"ryankillgodmode"}, "Remove godmode from players using Kiddions or inside a building.", function(value)
-        remove_godmode[player_id] = if value then true else nil
+        remove_godmode[player.id] = if value then true else nil
     end)
 
     menu.toggle_loop(player_trolling_kill_root, "Kill (Kiddions)", {"ryankillstungun"}, "Use this to kill players using Kiddions godmode. May also work in some buildings.", function()
-        local player = Player:Get(player_id)
         local stun_gun = util.joaat("weapon_stungun")
         local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
 		WEAPON.REQUEST_WEAPON_ASSET(stun_gun)
@@ -1869,7 +1866,6 @@ function setup_player(player_id)
     end)
 
     menu.toggle_loop(player_trolling_kill_root, "Kill (Interior)", {"ryankillsnowball"}, "Use this to kill players inside buildings. May also work on some menus' godmodes.", function()
-        local player = Player:Get(player_id)
 		local snowball = util.joaat("weapon_snowball")
         local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
 		WEAPON.REQUEST_WEAPON_ASSET(snowball)
@@ -1879,85 +1875,85 @@ function setup_player(player_id)
     end)
 
     menu.action(player_trolling_kill_root, "Kill (Paid Menu)", {"ryankillphysics"}, "Use this when removing godmode does not work.", function()
-        Player:Get(player_id):squish()
+        player:squish()
     end)
 
 
     -- -- Spawn
     local player_trolling_spawn_root = menu.list(player_trolling_root, "Spawn...", {"ryanspawn"}, "Entity trolling options.")
     
-    Trolling.CreateNASAMenu(player_trolling_spawn_root, player_id)
+    Trolling.CreateNASAMenu(player_trolling_spawn_root, player.id)
     menu.action(player_trolling_spawn_root, "Military Squad", {"ryanmilitarysquad"}, "Send an entire fucking military squad.", function()
-		Trolling.MilitarySquad(player_id, true)
+		Trolling.MilitarySquad(player.id, true)
     end)
     menu.action(player_trolling_spawn_root, "SWAT Raid", {"ryanswatraid"}, "Sends a SWAT team to kill them, brutally.", function()
-        Trolling.SWATTeam(player_id)
+        Trolling.SWATTeam(player.id)
     end)
     menu.action(player_trolling_spawn_root, "Flying Yacht", {"ryanflyingyacht"}, "Send the magic school yacht to fuck their shit up.", function()
-        Trolling.FlyingYacht(player_id)
+        Trolling.FlyingYacht(player.id)
     end)
     menu.action(player_trolling_spawn_root, "Falling Tank", {"ryanfallingtank"}, "Send a tank straight from heaven.", function()
-		Trolling.FallingTank(player_id)
+		Trolling.FallingTank(player.id)
     end)
 
     menu.divider(player_trolling_spawn_root, "Options")
     menu.action(player_trolling_spawn_root, "Delete All", {"ryanentitiesdelete"}, "Deletes all previously spawned entities.", function()
-        Trolling.DeleteEntities(player_id)
+        Trolling.DeleteEntities(player.id)
     end)
 
     -- -- Attach
-    attach_root[player_id] = menu.list(player_trolling_root, "Attach...", {"ryanattach"}, "Attaches to their vehicle on a specific bone.")
-    attach_vehicle_offset[player_id] = 0.0
-    attach_notice[player_id] = nil
-    attach_vehicle_bones[player_id] = {}
+    attach_root[player.id] = menu.list(player_trolling_root, "Attach...", {"ryanattach"}, "Attaches to their vehicle on a specific bone.")
+    attach_vehicle_offset[player.id] = 0.0
+    attach_notice[player.id] = nil
+    attach_vehicle_bones[player.id] = {}
 
-    menu.action(attach_root[player_id], "Detach", {"ryandetach"}, "Detaches from anything you're attached to.", function()
+    menu.action(attach_root[player.id], "Detach", {"ryandetach"}, "Detaches from anything you're attached to.", function()
         ENTITY.DETACH_ENTITY(players.user_ped(), false, false)
         Ryan.Toast("Detached from all entities.")
     end)
-    menu.slider(attach_root[player_id], "Offset", {"ryanattachoffset"}, "Offset of the Z coordinate.", -25, 25, 1, 0, function(value)
-        attach_vehicle_offset[player_id] = value
+    menu.slider(attach_root[player.id], "Offset", {"ryanattachoffset"}, "Offset of the Z coordinate.", -25, 25, 1, 0, function(value)
+        attach_vehicle_offset[player.id] = value
     end)
 
 
-    menu.divider(attach_root[player_id], "Attach To")
-    menu.action(attach_root[player_id], "Player", {"ryanattachplayer"}, "Attach to the player.", function()
-        if player_id == players.user() then
+    menu.divider(attach_root[player.id], "Attach To")
+    menu.action(attach_root[player.id], "Player", {"ryanattachplayer"}, "Attach to the player.", function()
+        if player.id == players.user() then
             Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Attach", "You just almost crashed yourself. Good job!")
             return
         end
 
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), Player:Get(player_id).ped_id, 0, 0.0, -0.2, (attach_vehicle_offset[player_id] * 0.2), 1.0, 1.0, 1, true, true, true, false, 0, true)
-        Ryan.Toast("Attached to " .. players.get_name(player_id) .. ".")
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), player.ped_id, 0, 0.0, -0.2, (attach_vehicle_offset[player.id] * 0.2), 1.0, 1.0, 1, true, true, true, false, 0, true)
+        Ryan.Toast("Attached to " .. player.name .. ".")
     end)
 
     -- -- Vehicle
     local player_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")    
 
-    vehicle_effects[player_id] = {}
-    UI.CreateVehicleEffectList(player_vehicle_root, "ryan", players.get_name(player_id), vehicle_effects[player_id], true, false)
+    vehicle_effects[player.id] = {}
+    UI.CreateVehicleEffectList(player_vehicle_root, "ryan", player.name, vehicle_effects[player.id], true, false)
 
     menu.toggle(player_vehicle_root, "Leash", {"ryanleash"}, "Brings their vehicle with you like a leash.", function(value)
-        vehicle_effects[player_id].leash = if value then true else nil
+        vehicle_effects[player.id].leash = if value then true else nil
     end)
 
     -- -- Miscellaneous
     menu.toggle(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function(value)
-        money_drop[player_id] = if value then true else nil
+        money_drop[player.id] = if value then true else nil
     end)
     menu.toggle_loop(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
-        Player:Get(player_id):turn_into_animal()
+        player:turn_into_animal()
         util.yield(30000)
     end)
     menu.action(player_trolling_root, "Steal Vehicle", {"ryansteal"}, "Steals the player's car.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(Player:Get(player_id).ped_id)
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
         if vehicle ~= 0 then Objects.StealVehicle(vehicle)
-        else Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Steal Vehicle", players.get_name(player_id) .. " is not in a vehicle.") end
+        else Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Steal Vehicle", player.name .. " is not in a vehicle.") end
     end)
     local player_trolling_glitch_root = UI.CreateList(player_trolling_root, "Glitch", "ryanglitch", "Glitch the player and their vehicle.", glitch_type_names, function(value)
         for i = 1, #glitch_type_names do
             if glitch_type_names[i] == value then
-                glitch[player_id] = glitch_type_hashes[i]
+                glitch[player.id] = glitch_type_hashes[i]
             end
         end
     end)
@@ -1977,19 +1973,16 @@ function setup_player(player_id)
 
     menu.divider(player_removal_root, "Go")
     menu.action(player_removal_root, "Stand Kick", {"ryankick"}, "Use the best possible kick method.", function()
-        local player = Player:Get(player_id)
         player:spam_sms_and_block_joins(removal_block_joins, removal_message, function()
             player:kick()
         end)
     end)
     menu.action(player_removal_root, "Stand Crash", {"ryancrash"}, "Use the best possible crash methods.", function()
-        local player = Player:Get(player_id)
         player:spam_sms_and_block_joins(removal_block_joins, removal_message, function()
             player:crash()
         end)
     end)
     menu.action(player_removal_root, "Super Crash", {"ryansuper"}, "A crash that should work on 2take1 and Cherax.", function()
-        local player = Player:Get(player_id)
         player:spam_sms_and_block_joins(removal_block_joins, removal_message, function()
             player:super_crash(true)
         end)
@@ -1998,10 +1991,32 @@ function setup_player(player_id)
 
     -- Divorce Kick --
     menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
-        menu.trigger_commands("historyblock" .. players.get_name(player_id))
-        Player:Get(player_id):kick()
-        menu.trigger_commands("players")
+        menu.trigger_commands("historyblock" .. player.name)
+        player:kick()
     end)
+end
+
+function Player:OnLeave(player)
+    money_drop[player.id] = nil
+    ptfx_attack[player.id] = nil
+    remove_godmode[player.id] = nil
+    entities_message[player.id] = nil
+    
+    vehicle_effects[player.id] = nil
+
+    attach_vehicle_bones[player.id] = nil
+    attach_vehicle_id[player.id] = nil
+    attach_notice[player.id] = nil
+    attach_vehicle_offset[player.id] = nil
+    attach_root[player.id] = nil
+
+    glitch[player.id] = nil
+    glitch_state[player.id] = nil
+
+    hermits[player.id] = nil
+    hermit_list[player.id] = nil
+
+    Trolling.DeleteEntities(player.id)
 end
 
 util.create_tick_handler(function()
@@ -2070,24 +2085,22 @@ util.create_tick_handler(function()
 end)
 
 util.create_tick_handler(function()
-    for _, player_id in pairs(players.list()) do
-        if remove_godmode[player_id] == true then
-            Player:Get(player_id):remove_godmode()
+    for _, player in pairs(Player:List(true, true, true)) do
+        if remove_godmode[player.id] == true then
+            player:remove_godmode()
         end
-        if glitch_state[player_id] ~= glitch[player_id] then
+        if glitch_state[player.id] ~= glitch[player.id] then
             util.create_thread(function()
-                local glitch_type = glitch[player_id]
-                while glitch[player_id] == glitch_type do
+                local glitch_type = glitch[player.id]
+                while glitch[player.id] == glitch_type do
                     pluto_switch glitch_type do
                         case "Off":
                             break
                         case "Default":
                             local shuttering = util.joaat("prop_shuttering03")
                             Ryan.RequestModel(shuttering)
-
-                            local player = Player:Get(player_id)
-                            local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id, false)
                             
+                            local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id, false)
                             local objects = {
                                 entities.create_object(shuttering, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, 0, 1, 0)),
                                 entities.create_object(shuttering, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, 0, 0, 0))
@@ -2102,11 +2115,11 @@ util.create_tick_handler(function()
                             Ryan.FreeModel(shuttering)
                             break
                         pluto_default:
-                            local glitch_object, rallytruck = util.joaat(glitch[player_id]), util.joaat("rallytruck")
+                            local glitch_object, rallytruck = util.joaat(glitch[player.id]), util.joaat("rallytruck")
                             Ryan.RequestModel(glitch_object)
                             Ryan.RequestModel(rallytruck)
 
-                            local player_coords = ENTITY.GET_ENTITY_COORDS(Player:Get(player_id).ped_id, false)
+                            local player_coords = ENTITY.GET_ENTITY_COORDS(player.ped_id, false)
 
                             local objects = {
                                 entities.create_object(glitch_object, player_coords),
@@ -2131,40 +2144,13 @@ util.create_tick_handler(function()
                 end
                 return false
             end)
-            glitch_state[player_id] = glitch[player_id]
+            glitch_state[player.id] = glitch[player.id]
         end
     end
 end)
 
-function cleanup_player(player_id)
-    money_drop[player_id] = nil
-    ptfx_attack[player_id] = nil
-    remove_godmode[player_id] = nil
-    entities_message[player_id] = nil
-    
-    vehicle_effects[player_id] = nil
 
-    attach_vehicle_bones[player_id] = nil
-    attach_vehicle_id[player_id] = nil
-    attach_notice[player_id] = nil
-    attach_vehicle_offset[player_id] = nil
-    attach_root[player_id] = nil
-
-    glitch[player_id] = nil
-    glitch_state[player_id] = nil
-
-    hermits[player_id] = nil
-    hermit_list[player_id] = nil
-
-    Trolling.DeleteEntities(player_id)
-end
-
-
--- Initialize --
-function Player:OnJoin(player) setup_player(player.id) end
-function Player:OnLeave(player) cleanup_player(player.id) end
 Player:Init()
-
 util.keep_running()
 
 while true do
