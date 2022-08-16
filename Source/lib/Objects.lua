@@ -176,11 +176,6 @@ Objects.Catapult = function(object)
     ENTITY.APPLY_FORCE_TO_ENTITY(object, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
 end
 
-Objects.TakeControl = function(vehicle, action, loop)
-    if not ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then return end
-    Objects.RequestControl(vehicle, loop)
-    action(vehicle)
-end
 
 --========================= Vehicles =========================--
 Objects.VehicleSpeed = {
