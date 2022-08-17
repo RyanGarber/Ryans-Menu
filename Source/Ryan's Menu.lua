@@ -36,7 +36,7 @@ util.create_tick_handler(Ryan.OnTick)
 
 
 -- Main Menu --
-self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Helpful options for yourself.")
+self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Helpful options for yuser.")
 world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
 session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling options for the entire session.")
 stats_root = menu.list(menu.my_root(), "Stats", {"ryanstats"}, "Common stats you may want to edit.")
@@ -228,14 +228,14 @@ util.create_tick_handler(function()
     end
 
     if forcefield_type ~= "Off" then
-        local ourself = Player:Self()
-        local nearby = Objects.GetAllNearCoords(ourself.get_coords(), forcefield_size, Objects.Type.All)
+        local user = Player:Self()
+        local nearby = Objects.GetAllNearCoords(user.coords, forcefield_size, Objects.Type.All)
         for _, entity in pairs(nearby) do
             if (players.get_vehicle_model(players.user()) == 0 or entity ~= entities.get_user_vehicle_as_handle()) and entity ~= players.user_ped() then
             pluto_switch forcefield_type do
                     case "Push": -- Push entities away
                         local force = ENTITY.GET_ENTITY_COORDS(entity)
-                        force:sub(ourself.get_coords()); force:normalise()
+                        force:sub(user.coords); force:normalise()
                         force:mul(forcefield_force * 0.25)
                         if ENTITY.IS_ENTITY_A_PED(entity) then
                             if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
@@ -250,7 +250,7 @@ util.create_tick_handler(function()
                         break
                     case "Pull": -- Pull entities in
                         local force = ENTITY.GET_ENTITY_COORDS(entity)
-                        force:sub(ourself.get_coords()); force:normalise()
+                        force:sub(user.coords); force:normalise()
                         force:mul(forcefield_force * 0.25)
                         if ENTITY.IS_ENTITY_A_PED(entity) then
                             if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
@@ -798,15 +798,15 @@ util.create_tick_handler(function()
     if ghost_mode then util.draw_debug_text("Ghost Mode") end
 end)
 
-menu.action(self_character_root, "Become Nude", {"ryannude"}, "Make yourself a stripper with her tits out.", function()
+menu.action(self_character_root, "Become Nude", {"ryannude"}, "Make yuser a stripper with her tits out.", function()
     local topless = util.joaat("a_f_y_topless_01")
     Ryan.RequestModel(topless)
 
     local user = Player:Self()
     local vehicle_id = if players.get_vehicle_model(user.id) ~= 0 then PED.GET_VEHICLE_PED_IS_IN(user.ped_id, false) else 0
-    local seat_id = user.get_vehicle_seat()
+    local seat_id = user:get_vehicle_seat()
 
-    local coords = ourself.get_coords(); coords:add(v3(0, 0, 5))
+    local coords = user.coords; coords:add(v3(0, 0, 5))
     if vehicle_id ~= 0 then Ryan.Teleport(coords) end
     PLAYER.SET_PLAYER_MODEL(user.id, topless)
     util.yield(250)
@@ -1744,7 +1744,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
                                 Ryan.RequestModel(oppressor2)
 
                                 local player = Player:Get(sender)
-                                local coords = player:get_coords()
+                                local coords = v3(player.coords)
                                 local direction = ENTITY.GET_ENTITY_ROTATION(player.ped_id, 2):toDir()
                                 direction:mul(7.5); coords:add(direction)
                                 Objects.RequestControl(vehicle, true)
@@ -1935,7 +1935,7 @@ function Player:OnJoin(player)
     menu.divider(attach_root[player.id], "Attach To")
     menu.action(attach_root[player.id], "Player", {"ryanattachplayer"}, "Attach to the player.", function()
         if player.id == players.user() then
-            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Attach", "You just almost crashed yourself. Good job!")
+            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Attach", "You just almost crashed yuser. Good job!")
             return
         end
 
