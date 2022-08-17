@@ -2006,7 +2006,7 @@ function Player:OnJoin(player)
 
 
     -- Divorce Kick --
-    menu.action(player_root, "Divorce", {"divorce"}, "Kicks the player, then blocks future joins by them.", function()
+    menu.action(player_root, "Divorce", {"div"}, "Kicks the player, then blocks future joins by them.", function()
         menu.trigger_commands("historyblock" .. player.name)
         player:kick()
     end)
