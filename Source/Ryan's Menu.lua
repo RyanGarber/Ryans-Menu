@@ -388,6 +388,7 @@ UI.CreateEffectToggle(self_god_finger_vehicle_root, "ryangodfingervehicle", god_
 -- -- World
 UI.CreateEffectToggle(self_god_finger_world_root, "ryangodfingerworld", god_finger_world_effects, "Nude Yoga", "Spawn a nude NPC doing yoga.", true)
 UI.CreateEffectToggle(self_god_finger_world_root, "ryangodfingerworld", god_finger_world_effects, "Police Brutality", "Spawn a scene of police brutality.", true)
+UI.CreateEffectToggle(self_god_finger_world_root, "ryangodfingerworld", god_finger_world_effects, "Stripper El Rubio", "Spawn El Rubio after he gets robbed of his fortune.", true)
 UI.CreateEffectToggle(self_god_finger_world_root, "ryangodfingerworld", god_finger_world_effects, "Fire", "Start a fire.", true)
 
 -- -- NPC
@@ -401,7 +402,7 @@ end
 god_finger_player_state = {["kick"] = 0, ["crash"] = 0, ["super_crash"] = 0}
 god_finger_vehicle_state = {["steal"] = 0}
 god_finger_npc_state = {}
-god_finger_world_state = {["nude_yoga"] = 0, ["police_brutality"] = 0, ["fire"] = 0}
+god_finger_world_state = {["nude_yoga"] = 0, ["police_brutality"] = 0, ["stripper_el_rubio"] = 0, ["fire"] = 0}
 god_finger_force_state = {}
 
 god_finger_keybinds = ""
@@ -712,6 +713,21 @@ util.create_tick_handler(function()
                 end
             end
 
+            if UI.GetGodFingerActivation(god_finger_world_effects.stripper_el_rubio) > 0 then
+                if util.current_time_millis() - god_finger_world_state.stripper_el_rubio > 1000 then
+                    god_finger_world_state.stripper_el_rubio = util.current_time_millis()
+
+                    local raycast = Ryan.RaycastFromCamera(50.0, Ryan.RaycastFlags.World)
+                    if raycast.did_hit then
+                        local juanstrickler = util.joaat("csb_juanstrickler"); Ryan.RequestModel(juanstrickler)
+                        Ryan.RequestAnimations("mini@strip_club@pole_dance@pole_dance1")
+                        local ped = entities.create_ped(1, juanstrickler, raycast.hit_coords, ENTITY.GET_ENTITY_HEADING(Player:Self().ped_id))
+                        TASK.TASK_PLAY_ANIM(ped, "mini@strip_club@pole_dance@pole_dance1", "pd_dance_01", 8.0, 0, -1, 9, 0, false, false, false)
+                        Ryan.FreeModel(juanstrickler)
+                    end
+                end
+            end
+
             if UI.GetGodFingerActivation(god_finger_world_effects.fire) > 0 then
                 if util.current_time_millis() - god_finger_world_state.fire > 1000 then
                     god_finger_world_state.fire = util.current_time_millis()
@@ -996,7 +1012,7 @@ menu.toggle(world_root, "Fireworks Show", {"ryanfireworkshow"}, "A nice display 
 end)
 util.create_tick_handler(function()
     if firework_coords ~= nil then
-        Ryan.DoFireworks(firework_coords, {x = math.random(-150, 150), y = math.random(-200, 50), z = math.random(-25, 25)})
+        Ryan.DoFireworks(firework_coords, v3(math.random(-150, 150), math.random(-200, 50), math.random(-25, 25)))
 
         if math.random(1, 10) == 1 then
             local offset = v3(math.random(-75, 75), math.random(-75, 75), math.random(-25, 25))
