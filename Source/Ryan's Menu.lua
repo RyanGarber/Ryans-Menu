@@ -896,6 +896,7 @@ end)
 menu.divider(world_root, "General")
 world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Affects all NPCs in the world.")
 world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
+world_spectate_root = menu.list(world_root, "Quick Spectate...", {"ryanspectate"}, "Easily spectate everyone in the lobby.")
 
 -- -- All NPCs
 all_npcs_include_drivers = false
@@ -1820,6 +1821,8 @@ util.create_tick_handler(function()
 end)
 
 -- Player Options --
+spectate_buttons = {}
+
 ptfx_attack = {}
 money_drop = {}
 remove_godmode = {}
@@ -1840,6 +1843,19 @@ glitch_type_names = {"Off", "Default", "Ferris Wheel", "UFO", "Cement Mixer", "S
 glitch_type_hashes = {"Off", "Default", "prop_ld_ferris_wheel", "p_spinning_anus_s", "prop_staticmixer_01", "des_scaffolding_root", "prop_sm1_11_garaged", "prop_juicestand", "stt_prop_stunt_jump_l"}
 
 function Player:OnJoin(player)
+    if player.id ~= players.user() then
+        spectate_buttons[player.id] = menu.toggle(world_spectate_root, player.name, {"ryanspectate" .. player.name}, "Spectate the player.", function(value)
+            if value then
+                for player_id, button in pairs(spectate_buttons) do
+                    if player_id ~= player.id then
+                        menu.trigger_command(button, "off")
+                    end
+                end
+            end
+            menu.trigger_commands("spectate" .. player.name .. " " .. (if value then "on" else "off"))
+        end)
+    end
+
     local player_root = menu.player_root(player.id)
     menu.divider(player_root, "Ryan's Menu")
 
@@ -1990,13 +2006,18 @@ function Player:OnJoin(player)
 
 
     -- Divorce Kick --
-    menu.action(player_root, "Divorce", {"ryandivorce"}, "Kicks the player, then blocks future joins by them.", function()
+    menu.action(player_root, "Divorce", {"divorce"}, "Kicks the player, then blocks future joins by them.", function()
         menu.trigger_commands("historyblock" .. player.name)
         player:kick()
     end)
 end
 
 function Player:OnLeave(player)
+    if spectate_buttons[player.id] ~= nil then
+        menu.delete(spectate_buttons[player.id])
+        spectate_buttons[player.id] = nil
+    end
+
     money_drop[player.id] = nil
     ptfx_attack[player.id] = nil
     remove_godmode[player.id] = nil
@@ -2084,11 +2105,23 @@ util.create_tick_handler(function()
     util.yield(500)
 end)
 
+spectate_notice = nil
 util.create_tick_handler(function()
     for _, player in pairs(Player:List(true, true, true)) do
+        local buttons = 0
+        for player_id, button in pairs(spectate_buttons) do buttons = buttons + 1 end
+
+        if buttons > 0 and spectate_notice ~= nil then
+            menu.delete(spectate_notice)
+            spectate_notice = nil
+        elseif buttons == 0 and spectate_notice == nil then
+            spectate_notice = menu.divider(world_spectate_root, "No Players")
+        end
+
         if remove_godmode[player.id] == true then
             player:remove_godmode()
         end
+
         if glitch_state[player.id] ~= glitch[player.id] then
             util.create_thread(function()
                 local glitch_type = glitch[player.id]

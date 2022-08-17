@@ -150,31 +150,36 @@ function Player.super_crash(self, block_syncs)
     local starting_coords = user.coords
 
     local crash = function()
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Super Crash", "Please wait...")
         ENTITY.SET_ENTITY_VISIBLE(user.ped_id, false)
+        PED.SET_PED_CAN_RAGDOLL(user.ped_id, false)
+
+        Ryan.Teleport(self.coords, false)
+        util.yield(2000)
         local coords = v3.new()
         PATHFIND.GET_CLOSEST_VEHICLE_NODE(self.coords.x, self.coords.y, self.coords.z, coords, 1, 3.0, 0)
-        Ryan.Teleport(coords, false)
 
-        util.yield(500)
-        PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id, bush)
-        PED.SET_PED_COMPONENT_VARIATION(user.ped_id, 5, 8, 0, 0)
-        
-        util.yield(500)
-        PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id)
-        
-        util.yield(2000)
-        Ryan.Teleport(coords, false)
-        PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id, bush)
-        PED.SET_PED_COMPONENT_VARIATION(user.ped_id, 5, 31, 0, 0)
-        
-        util.yield(500)
-        PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id)
-        
-        util.yield(2000)
+        for attempt = 1, 2 do
+            Ryan.Teleport(coords, false)
+            if attempt == 1 then util.yield(500)
+            else util.yield(1) end
+            
+            PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id, bush)
+            PED.SET_PED_COMPONENT_VARIATION(user.ped_id, 5, 8, 0, 0)
+            util.yield(500)
+
+            PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id)
+            if attempt == 1 then util.yield(500)
+            else util.yield(2000) end
+        end
+
         for i = 1, 5 do util.spoof_script("freemode", SYSTEM.WAIT) end
         ENTITY.SET_ENTITY_HEALTH(user.ped_id, 0)
         NETWORK.NETWORK_RESURRECT_LOCAL_PLAYER(starting_coords.x, starting_coords.y, starting_coords.z, 0, false, false, 0)
+
         ENTITY.SET_ENTITY_VISIBLE(user.ped_id, true)
+        PED.SET_PED_CAN_RAGDOLL(user.ped_id, true)
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Super Crash", "Done!")
     end
 
     if block_syncs then self:do_with_exclusive_syncs(crash)
