@@ -160,9 +160,8 @@ function Player.super_crash(self, block_syncs)
         PATHFIND.GET_CLOSEST_VEHICLE_NODE(self.coords.x, self.coords.y, self.coords.z, coords, 1, 3.0, 0)
 
         for attempt = 1, 2 do
-            Ryan.Teleport(coords, false)
-            if attempt == 1 then util.yield(500)
-            else util.yield(1) end
+            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(user.ped_id, coords.x, coords.y, coords.z, false, false, false)
+            if attempt == 1 then util.yield(500) end
             
             PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id, bush)
             PED.SET_PED_COMPONENT_VARIATION(user.ped_id, 5, 8, 0, 0)
