@@ -1,7 +1,7 @@
 VERSION = "0.10.6a"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
-    resources = {"Crosshair.png"}
+    resources = {"Crosshair.png", "Logo.png"}
 }
 
 DEV_ENVIRONMENT = debug.getinfo(1, "S").source:lower():find("dev")

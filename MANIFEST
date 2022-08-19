@@ -2,5 +2,5 @@
 {
     "main": "Ryan's Menu.lua",
     "lib": ["Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"],
-    "resources": ["Crosshair.png"]
+    "resources": ["Crosshair.png", "Logo.png"]
 }
