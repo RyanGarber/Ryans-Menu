@@ -398,13 +398,13 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
         if god_finger then Ryan.PlaySelectSound() end
     end
 
-    if parsed.gravity and parsed.gravity.none and state[vehicle].gravity ~= "on" then
+    if parsed.gravity and parsed.gravity.none and state[vehicle].gravity ~= "none" then
         Objects.RequestControl(vehicle, is_a_player)
         ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, false)
         VEHICLE.SET_VEHICLE_GRAVITY(vehicle, false)
         state[vehicle].gravity = "none"
         if god_finger then Ryan.PlaySelectSound() end
-    elseif parsed.gravity and parsed.gravity.normal and state[vehicle].gravity ~= "off" then
+    elseif parsed.gravity and parsed.gravity.normal and state[vehicle].gravity ~= "normal" then
         Objects.RequestControl(vehicle, is_a_player)
         ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, true)
         VEHICLE.SET_VEHICLE_GRAVITY(vehicle, true)

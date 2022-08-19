@@ -1,4 +1,4 @@
-VERSION = "0.10.6"
+VERSION = "0.10.6a"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png"}
@@ -29,11 +29,13 @@ for required_directory, required_files in pairs(MANIFEST) do
     end
 end
 Ryan.Init()
+util.create_tick_handler(Ryan.OnTick)
 
--- DirectX --
+
+-- UI Thread --
 local last_tick = util.current_time_millis()
 local intro_alpha = 1.0
-local intro_blur = directx.blurrect_new()
+--local intro_blur = directx.blurrect_new()
 local ghost_mode = false
 
 util.create_thread(function()
@@ -49,16 +51,16 @@ util.create_thread(function()
     
         if intro_alpha > 1e-10 then
             directx.draw_rect(
-                0.375, 0.425,
+                0.3825, 0.425,
                 0.25, 0.15,
-                {r = 0, g = 0, b = 0, a = intro_alpha / 2}
+                {r = 0, g = 0, b = 0, a = intro_alpha / 1.5}
             )
-            directx.blurrect_draw(
+            --[[directx.blurrect_draw(
                 intro_blur,
                 0.375, 0.425,
                 0.25, 0.15,
                 150
-            )
+            )]]
             directx.draw_texture(
                 Ryan.LogoTexture,
                 0.035, 0.035,
@@ -102,6 +104,7 @@ util.create_thread(function()
             )
         end
     
+        -- Ghost Mode
         if ghost_mode then
             directx.draw_text(
                 0.5, 0.975,
@@ -114,8 +117,9 @@ util.create_thread(function()
     end
 end)
 
+
+-- Auto-Update --
 Ryan.DoUpdate(false)
-util.create_tick_handler(Ryan.OnTick)
 
 
 -- Main Menu --
