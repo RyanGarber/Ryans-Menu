@@ -1,8 +1,9 @@
-_waiting_for_session = false
-_waiting_for_coords = nil
+local _waiting_for_session = false
+local _waiting_for_coords = nil
 
 -- Initialize globals.
 Ryan.Init = function()
+    Ryan.LogoTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Logo.png")
     Ryan.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Crosshair.png")
     Ryan.RequestModel(util.joaat("p_poly_bag_01_s"))
 end
@@ -270,7 +271,15 @@ Ryan.Toast = function(...)
 end
 
 -- Download the latest version if a new one is available, or if force == true.
+Ryan.IntroText = ""
+Ryan.IntroStop = -1
+
 Ryan.DoUpdate = function(force)
+	if DEV_ENVIRONMENT then
+		Ryan.IntroText = "Version " .. VERSION .. " (Dev)"
+		Ryan.IntroStop = util.current_time_millis()
+	end
+
 	if not DEV_ENVIRONMENT or force then
 		local updating = 1
 
@@ -281,8 +290,9 @@ Ryan.DoUpdate = function(force)
 			if latest_version ~= VERSION or force then
 				updating = 2
 
-				util.show_corner_help("<b>Updating Ryan's Menu</b><br>Now downloading v" .. latest_version .. ". Please wait...")
-				
+				--util.show_corner_help("<br>Now downloading Ryan's Menu v" .. latest_version .. ". Please wait...")
+				Ryan.IntroText = "Updating..."
+
 				-- -- Download Update
 				local files_total, files_done = 0, 0
 				for directory, files in pairs(manifest) do
@@ -290,8 +300,11 @@ Ryan.DoUpdate = function(force)
 				end
 
 				function on_update()
-					util.show_corner_help("<b>Update Complete</b><br>Please restart Ryan's Menu to start using version " .. latest_version .. ".")
-					Ryan.ShowTextMessage(49, "Auto-Update", "Updated! Please restart Ryan's Menu to continue.")
+					Ryan.IntroText = "Update complete!"
+					Ryan.IntroStop = util.current_time_millis()
+
+					util.show_corner_help("Please restart Ryan's Menu to start using version " .. latest_version .. ".")
+					--Ryan.ShowTextMessage(49, "Auto-Update", "Updated! Please restart Ryan's Menu to continue.")
 					menu.focus(menu.ref_by_command_name("stopluaryansmenu"))
 					util.stop_script()
 				end
@@ -321,9 +334,10 @@ Ryan.DoUpdate = function(force)
 					end
 				end
 			elseif not force then
-				updating = 0
+				Ryan.IntroText = "Version " .. VERSION
+				Ryan.IntroStop = util.current_time_millis()
 
-				Ryan.ShowTextMessage(49, "Auto-Update", "You're up to date. Enjoy!")
+				updating = 0
 				Ryan.PlaySoundFromEntity(players.user_ped(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
 			end
 		end, function()
@@ -331,11 +345,7 @@ Ryan.DoUpdate = function(force)
 		end)
 
 		async_http.dispatch()
-		
-		while updating ~= 0 do
-			if updating == 2 then Ryan.Toast("Downloading files for Ryan's Menu...") end
-			util.yield(333)
-		end		
+		while updating ~= 0 do util.yield() end
 	end
 end
 
@@ -534,13 +544,16 @@ end
 -- Fire a firework launcher straight up from the specific position.
 Ryan.DoFireworks = function(coords, offset)
 	if coords == nil then return end
-	coords:add(offset)
+	coords = v3(coords); coords:add(offset)
 
-	local firework = util.joaat("weapon_firework")
 	local player_ped = players.user_ped()
+	local firework = util.joaat("weapon_firework")
+
 	WEAPON.REQUEST_WEAPON_ASSET(firework)
 	WEAPON.GIVE_WEAPON_TO_PED(player_ped, firework, 20, false, true)
-	MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z + 100, 0, true, firework, player_ped, true, false, 500.0)
+	WEAPON.SET_CURRENT_PED_WEAPON(player_ped, util.joaat("weapon_unarmed"), false)
+	MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z + 100, 0, false, firework, player_ped, true, false, 500.0)
+	WEAPON.REFILL_AMMO_INSTANTLY(player_ped)
 end
 
 -- Teleport with or without our vehicle.

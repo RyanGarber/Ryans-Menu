@@ -1,4 +1,4 @@
-VERSION = "0.10.5"
+VERSION = "0.10.6"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png"}
@@ -28,20 +28,103 @@ for required_directory, required_files in pairs(MANIFEST) do
         end
     end
 end
+Ryan.Init()
+
+-- DirectX --
+local last_tick = util.current_time_millis()
+local intro_alpha = 1.0
+local intro_blur = directx.blurrect_new()
+local ghost_mode = false
+
+util.create_thread(function()
+    while true do
+        util.yield()
+    
+        local delta_time = util.current_time_millis() - last_tick
+        last_tick = util.current_time_millis()
+    
+        -- Intro
+        if Ryan.IntroStop ~= -1 and util.current_time_millis() - Ryan.IntroStop > 2000 and intro_alpha == 1.0 then intro_alpha = 1.0 - 1e-10 end
+        if intro_alpha < 1.0 then intro_alpha = intro_alpha - (delta_time / 650) end
+    
+        if intro_alpha > 1e-10 then
+            directx.draw_rect(
+                0.375, 0.425,
+                0.25, 0.15,
+                {r = 0, g = 0, b = 0, a = intro_alpha / 2}
+            )
+            directx.blurrect_draw(
+                intro_blur,
+                0.375, 0.425,
+                0.25, 0.15,
+                150
+            )
+            directx.draw_texture(
+                Ryan.LogoTexture,
+                0.035, 0.035,
+                0.5, 0.5,
+                0.425, 0.5,
+                0.0,
+                {r = 1.0, g = 1.0, b = 1.0, a = intro_alpha}
+            )
+            directx.draw_text(
+                0.475, 0.48,
+                "Ryan's Menu",
+                ALIGN_CENTRE_LEFT,
+                1.0,
+                {r = 1.0, g = 1.0, b = 1.0, a = intro_alpha}
+            )
+            directx.draw_text(
+                0.475, 0.52,
+                Ryan.IntroText,
+                ALIGN_CENTRE_LEFT,
+                0.75,
+                {r = 1.0, g = 1.0, b = 1.0, a = intro_alpha}
+            )
+        elseif intro_blur ~= nil then
+            directx.blurrect_free(intro_blur)
+            intro_blur = nil
+        end
+    
+        -- Crosshair
+        if crosshair or god_finger_active then
+            local weapon = WEAPON.GET_SELECTED_PED_WEAPON(players.user_ped())
+            if WEAPON.GET_WEAPONTYPE_GROUP(weapon) ~= -1212426201 then
+                HUD.HIDE_HUD_COMPONENT_THIS_FRAME(14)
+            end
+            directx.draw_texture(
+                Ryan.CrosshairTexture,
+                0.03, 0.03,
+                0.5, 0.5,
+                0.5, 0.5,
+                0.0,
+                {r = 1.0, g = 1.0, b = 1.0, a = 1.0}
+            )
+        end
+    
+        if ghost_mode then
+            directx.draw_text(
+                0.5, 0.975,
+                "Ghost Mode Active",
+                ALIGN_CENTRE,
+                0.66,
+                {r = 1.0, g = 1.0, b = 1.0, a = 1.0}
+            )
+        end
+    end
+end)
 
 Ryan.DoUpdate(false)
-
-Ryan.Init()
 util.create_tick_handler(Ryan.OnTick)
 
 
 -- Main Menu --
-self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Helpful options for yuser.")
-world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
-session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling options for the entire session.")
-stats_root = menu.list(menu.my_root(), "Stats", {"ryanstats"}, "Common stats you may want to edit.")
-chat_root = menu.list(menu.my_root(), "Chat", {"ryanchat"}, "Send special chat messages.")
-settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Settings for Ryan's Menu.")
+local self_root = menu.list(menu.my_root(), "Self", {"ryanself"}, "Helpful options for yuser.")
+local world_root = menu.list(menu.my_root(), "World", {"ryanworld"}, "Helpful options for entities in the world.")
+local session_root = menu.list(menu.my_root(), "Session", {"ryansession"}, "Trolling options for the entire session.")
+local stats_root = menu.list(menu.my_root(), "Stats", {"ryanstats"}, "Common stats you may want to edit.")
+local chat_root = menu.list(menu.my_root(), "Chat", {"ryanchat"}, "Send special chat messages.")
+local settings_root = menu.list(menu.my_root(), "Settings", {"ryansettings"}, "Settings for Ryan's Menu.")
 
 
 -- Self Menu --
@@ -50,21 +133,21 @@ entities_chaosed = {}
 entities_exploded = {}
 
 menu.divider(self_root, "General")
-self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
-self_spotlight_root = menu.list(self_root, "Spotlight...", {"ryanspotlight"}, "Attach lights to you or your vehicle.")
-self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
-self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An expanded and enhanced forcefield.")
-self_character_root = menu.list(self_root, "Character...", {"ryancharacter"}, "Effects for your character.")
-self_crosshair_root = menu.toggle(self_root, "Crosshair", {"ryancrosshair"}, "Add an on-screen crosshair.", function(value) crosshair = value end)
+local self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
+local self_spotlight_root = menu.list(self_root, "Spotlight...", {"ryanspotlight"}, "Attach lights to you or your vehicle.")
+local self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
+local self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An expanded and enhanced forcefield.")
+local self_character_root = menu.list(self_root, "Character...", {"ryancharacter"}, "Effects for your character.")
+local self_crosshair_root = menu.toggle(self_root, "Crosshair", {"ryancrosshair"}, "Add an on-screen crosshair.", function(value) crosshair = value end)
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
 ptfx_disable = false
 
-self_ptfx_body_root = menu.list(self_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body.")
-self_ptfx_weapon_root = menu.list(self_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon.")
-self_ptfx_vehicle_root = menu.list(self_ptfx_root, "Vehicle...", {"ryanptfxvehicle"}, "Special FX on your vehicle.")
-self_ptfx_god_finger_root = menu.list(self_ptfx_root, "God Finger...", {"ryanptfxgodfinger"}, "Special FX when using God Finger.")
+local self_ptfx_body_root = menu.list(self_ptfx_root, "Body...", {"ryanptfxbody"}, "Special FX on your body.")
+local self_ptfx_weapon_root = menu.list(self_ptfx_root, "Weapon...", {"ryanptfxweapon"}, "Special FX on your weapon.")
+local self_ptfx_vehicle_root = menu.list(self_ptfx_root, "Vehicle...", {"ryanptfxvehicle"}, "Special FX on your vehicle.")
+local self_ptfx_god_finger_root = menu.list(self_ptfx_root, "God Finger...", {"ryanptfxgodfinger"}, "Special FX when using God Finger.")
 
 
 menu.divider(self_ptfx_root, "Options")
@@ -78,10 +161,10 @@ menu.toggle(self_ptfx_root, "Disable", {"ryanptfxoff"}, "Disables PTFX but keeps
 end)
 
 -- -- Body PTFX
-self_ptfx_body_head_root = menu.list(self_ptfx_body_root, "Head...", {"ryanptfxhead"}, "Special FX on your head.")
-self_ptfx_body_hands_root = menu.list(self_ptfx_body_root, "Hands...", {"ryanptfxhands"}, "Special FX on your hands.")
-self_ptfx_body_feet_root = menu.list(self_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
-self_ptfx_body_pointer_root = menu.list(self_ptfx_body_root, "Pointer...", {"ryanptfxpointer"}, "Special FX on your finger when pointing.")
+local self_ptfx_body_head_root = menu.list(self_ptfx_body_root, "Head...", {"ryanptfxhead"}, "Special FX on your head.")
+local self_ptfx_body_hands_root = menu.list(self_ptfx_body_root, "Hands...", {"ryanptfxhands"}, "Special FX on your hands.")
+local self_ptfx_body_feet_root = menu.list(self_ptfx_body_root, "Feet...", {"ryanptfxfeet"}, "Special FX on your feet.")
+local self_ptfx_body_pointer_root = menu.list(self_ptfx_body_root, "Pointer...", {"ryanptfxpointer"}, "Special FX on your finger when pointing.")
 
 PTFX.CreateList(self_ptfx_body_head_root, function(ptfx)
     if ptfx_disable then return end
@@ -111,8 +194,8 @@ PTFX.CreateList(self_ptfx_body_pointer_root, function(ptfx)
 end)
 
 -- -- Vehicle PTFX
-self_ptfx_vehicle_wheels_root = menu.list(self_ptfx_vehicle_root, "Wheels...", {"ryanptfxwheels"}, "Special FX on the wheels of your vehicle.")
-self_ptfx_vehicle_exhaust_root = menu.list(self_ptfx_vehicle_root, "Exhaust...", {"ryanptfxexhaust"}, "Speicla FX on the exhaust of your vehicle.")
+local self_ptfx_vehicle_wheels_root = menu.list(self_ptfx_vehicle_root, "Wheels...", {"ryanptfxwheels"}, "Special FX on the wheels of your vehicle.")
+local self_ptfx_vehicle_exhaust_root = menu.list(self_ptfx_vehicle_root, "Exhaust...", {"ryanptfxexhaust"}, "Speicla FX on the exhaust of your vehicle.")
 
 PTFX.CreateList(self_ptfx_vehicle_wheels_root, function(ptfx)
     if ptfx_disable then return end
@@ -133,10 +216,10 @@ PTFX.CreateList(self_ptfx_vehicle_exhaust_root, function(ptfx)
 end)
 
 -- -- Weapon PTFX
-self_ptfx_weapon_aiming_root = menu.list(self_ptfx_weapon_root, "Crosshair...", {"ryanptfxcrosshair"}, "Special FX when aiming at a spot.")
-self_ptfx_weapon_muzzle_root = menu.list(self_ptfx_weapon_root, "Muzzle...", {"ryanptfxmuzzle"}, "Special FX on the end of your weapon's barrel.")
-self_ptfx_weapon_muzzle_flash_root = menu.list(self_ptfx_weapon_root, "Muzzle Flash...", {"ryanptfxmuzzleflash"}, "Special FX on the end of your weapon's barrel when firing.")
-self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
+local self_ptfx_weapon_aiming_root = menu.list(self_ptfx_weapon_root, "Crosshair...", {"ryanptfxcrosshair"}, "Special FX when aiming at a spot.")
+local self_ptfx_weapon_muzzle_root = menu.list(self_ptfx_weapon_root, "Muzzle...", {"ryanptfxmuzzle"}, "Special FX on the end of your weapon's barrel.")
+local self_ptfx_weapon_muzzle_flash_root = menu.list(self_ptfx_weapon_root, "Muzzle Flash...", {"ryanptfxmuzzleflash"}, "Special FX on the end of your weapon's barrel when firing.")
+local self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...", {"ryanptfximpact"}, "Special FX at the impact of your bullets.")
 
 PTFX.CreateList(self_ptfx_weapon_aiming_root, function(ptfx)
     if ptfx_disable then return end
@@ -179,8 +262,8 @@ PTFX.CreateList(self_ptfx_weapon_impact_root, function(ptfx)
 end)
 
 -- -- God Finger PTFX
-self_ptfx_god_finger_crosshair_root = menu.list(self_ptfx_god_finger_root, "Crosshair...", {"ryanptfxgodfingercrosshair"}, "Special FX wherever you point when using God Finger.")
-self_ptfx_god_finger_entities_root = menu.list(self_ptfx_god_finger_root, "Entities...", {"ryanptfxgodfingerentities"}, "Special FX only on entities when using God Finger.")
+local self_ptfx_god_finger_crosshair_root = menu.list(self_ptfx_god_finger_root, "Crosshair...", {"ryanptfxgodfingercrosshair"}, "Special FX wherever you point when using God Finger.")
+local self_ptfx_god_finger_entities_root = menu.list(self_ptfx_god_finger_root, "Entities...", {"ryanptfxgodfingerentities"}, "Special FX only on entities when using God Finger.")
 
 PTFX.CreateList(self_ptfx_god_finger_crosshair_root, function(ptfx)
     if ptfx_disable then return end
@@ -369,11 +452,11 @@ end)
 
 
 menu.divider(self_god_finger_root, "Effects")
-self_god_finger_player_root = menu.list(self_god_finger_root, "Player", {"ryangodfingerplayer"}, "What to do to players.")
-self_god_finger_vehicle_root = menu.list(self_god_finger_root, "Vehicle", {"ryangodfingervehicle"}, "What to do to vehicles.")
-self_god_finger_npc_root = menu.list(self_god_finger_root, "NPC", {"ryangodfingernpc"}, "What to do to NPCs.")
-self_god_finger_world_root = menu.list(self_god_finger_root, "World", {"ryangodfingerworld"}, "What to create in the world.")
-self_god_finger_force_root = menu.list(self_god_finger_root, "Force", {"ryangodfingerforce"}, "The type of force to apply to entities.")
+local self_god_finger_player_root = menu.list(self_god_finger_root, "Player", {"ryangodfingerplayer"}, "What to do to players.")
+local self_god_finger_vehicle_root = menu.list(self_god_finger_root, "Vehicle", {"ryangodfingervehicle"}, "What to do to vehicles.")
+local self_god_finger_npc_root = menu.list(self_god_finger_root, "NPC", {"ryangodfingernpc"}, "What to do to NPCs.")
+local self_god_finger_world_root = menu.list(self_god_finger_root, "World", {"ryangodfingerworld"}, "What to create in the world.")
+local self_god_finger_force_root = menu.list(self_god_finger_root, "Force", {"ryangodfingerforce"}, "The type of force to apply to entities.")
 
 
 -- -- Player
@@ -802,16 +885,12 @@ menu.action(self_spotlight_root, "Remove All", {"ryanspotlightremove"}, "Removes
 end)
 
 -- -- Character
-ghost_mode = false
 menu.toggle(self_character_root, "Ghost Mode", {"ryanghost"}, "Become entirely invisible to other players.", function(value)
     ghost_mode = value
     menu.trigger_commands("invisibility " .. (if value then "remote" else "off"))
     menu.trigger_commands("otr " .. (if value then "on" else "off"))
     if value then Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Ghost Mode", "Ghost Mode enabled. Players can no longer see you.")
     else Ryan.ShowTextMessage(Ryan.BackgroundColors.Orange, "Ghost Mode", "Ghost Mode disabled. Players can see you!") end
-end)
-util.create_tick_handler(function()
-    if ghost_mode then util.draw_debug_text("Ghost Mode") end
 end)
 
 menu.action(self_character_root, "Become Nude", {"ryannude"}, "Make yuser a stripper with her tits out.", function()
@@ -836,7 +915,7 @@ end)
 menu.divider(self_root, "Vehicle")
 
 -- -- Seats
-self_seats_root = menu.list(self_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
+local self_seats_root = menu.list(self_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
 
 switch_seats_actions = {}
 switch_seats_notice = nil
@@ -910,9 +989,9 @@ end)
 
 -- World Menu --
 menu.divider(world_root, "General")
-world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Affects all NPCs in the world.")
-world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
-world_spectate_root = menu.list(world_root, "Quick Spectate...", {"ryanspectate"}, "Easily spectate everyone in the lobby.")
+local world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Affects all NPCs in the world.")
+local world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
+local world_spectate_root = menu.list(world_root, "Quick Spectate...", {"ryanspectate"}, "Easily spectate everyone in the lobby.")
 
 -- -- All NPCs
 all_npcs_include_drivers = false
@@ -962,19 +1041,19 @@ util.create_tick_handler(function()
 end)
 
 -- -- Collectibles
-world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
+local world_action_figures_root = menu.list(world_collectibles_root, "Action Figures...", {"ryanactionfigures"}, "Every action figure in the game.")
 UI.CreateTeleportList(world_action_figures_root, "Action Figure", Ryan.ActionFigures)
 
-world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
+local world_signal_jammers_root = menu.list(world_collectibles_root, "Signal Jammers...", {"ryansignaljammers"}, "Every signal jammer in the game.")
 UI.CreateTeleportList(world_signal_jammers_root, "Signal Jammer", Ryan.SignalJammers)
 
-world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
+local world_playing_cards_root = menu.list(world_collectibles_root, "Playing Cards...", {"ryanplayingcards"}, "Every playing card in the game.")
 UI.CreateTeleportList(world_playing_cards_root, "Playing Card", Ryan.PlayingCards)
 
-world_movie_props_root = menu.list(world_collectibles_root, "Movie Props...", {"ryanmovieprops"}, "Every movie prop in the Solomon Richards quest.")
+local world_movie_props_root = menu.list(world_collectibles_root, "Movie Props...", {"ryanmovieprops"}, "Every movie prop in the Solomon Richards quest.")
 UI.CreateTeleportList(world_movie_props_root, "Movie Prop", Ryan.MovieProps)
 
-world_slasher_root = menu.list(world_collectibles_root, "The Slasher...", {"ryanslasher"}, "Everything needed to activate the Slasher event.")
+local world_slasher_root = menu.list(world_collectibles_root, "The Slasher...", {"ryanslasher"}, "Everything needed to activate the Slasher event.")
 menu.divider(world_slasher_root, "Step 1")
 UI.CreateTeleportList(world_slasher_root, "Slasher Clue", Ryan.SlasherClues)
 menu.divider(world_slasher_root, "Step 2")
@@ -986,10 +1065,10 @@ slasher_spawn = menu.action(world_slasher_root, "Slasher Spawn", {"ryanslashersp
     end)
 end)
 
-world_treasure_hunt_root = menu.list(world_collectibles_root, "Treasure Hunt...", {"ryantreasures"}, "Every treasure in the Treasture Hunt.")
+local world_treasure_hunt_root = menu.list(world_collectibles_root, "Treasure Hunt...", {"ryantreasures"}, "Every treasure in the Treasture Hunt.")
 UI.CreateTeleportList(world_treasure_hunt_root, "Treasure", Ryan.Treasures)
 
-world_usb_sticks_root = menu.list(world_collectibles_root, "USB Sticks...", {"ryanusbsticks"}, "Every USB Stick containing bonus music.")
+local world_usb_sticks_root = menu.list(world_collectibles_root, "USB Sticks...", {"ryanusbsticks"}, "Every USB Stick containing bonus music.")
 UI.CreateTeleportList(world_usb_sticks_root, "USB Stick", Ryan.USBSticks)
 
 -- -- All Entities Visible
@@ -1012,25 +1091,25 @@ menu.toggle(world_root, "Fireworks Show", {"ryanfireworkshow"}, "A nice display 
 end)
 util.create_tick_handler(function()
     if firework_coords ~= nil then
-        Ryan.DoFireworks(firework_coords, v3(math.random(-150, 150), math.random(-200, 50), math.random(-25, 25)))
+        Ryan.DoFireworks(firework_coords, v3(math.random(-75, 75), math.random(-75, 75), math.random(0, 100)))
 
-        if math.random(1, 10) == 1 then
-            local offset = v3(math.random(-75, 75), math.random(-75, 75), math.random(-25, 25))
+        if math.random(1, 5) == 1 then
+            local offset = v3(math.random(-75, 75), math.random(-75, 75), math.random(0, 100))
             offset:add(v3(8, 8, 0)); Ryan.DoFireworks(firework_coords, offset)
             offset:add(v3(-16, 0, 0)); Ryan.DoFireworks(firework_coords, offset)
             offset:add(v3(16, -16, 0)); Ryan.DoFireworks(firework_coords, offset)
             offset:add(v3(-16, 0, 0)); Ryan.DoFireworks(firework_coords, offset)
         end
-        if math.random(1, 10) == 2 then
-            local offset = v3(math.random(-75, 75), math.random(-75, 75), math.random(-25, 25))
+        if math.random(1, 7) == 1 then
+            local offset = v3(math.random(-75, 75), math.random(-75, 75), math.random(0, 100))
             for i = 1, math.random(3, 6) do
-                util.yield(math.random(75, 500))
-                offset:add(v3(8, i + 8, 0)); Ryan.DoFireworks(firework_coords, offset)
-                offset:add(v3(0, (i + 8) * -2, 0)); Ryan.DoFireworks(firework_coords, offset)
+                offset:add(v3(math.random(-25, 25), math.random(-25, 25), 0))
+                Ryan.DoFireworks(firework_coords, offset)
+                util.yield(math.random(50, 100))
             end
         end
 
-        util.yield(math.random(150, 650))
+        util.yield(math.random(500, 1000))
     end
 end)
 
@@ -1054,6 +1133,7 @@ end)
 util.create_tick_handler(function()
     if not CUTSCENE.IS_CUTSCENE_ACTIVE() then
         local coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+        if remove_mode ~= "None" then util.draw_debug_text("Removing " .. remove_mode) end
         for _, entity in pairs(Objects.GetAllNearCoords(coords, 500, Objects.Type.Ped)) do
             if ENTITY.IS_ENTITY_A_PED(entity) then
                 pluto_switch remove_mode do
@@ -1062,7 +1142,6 @@ util.create_tick_handler(function()
                             if PED.GET_PED_TYPE(entity) == ped_type then
                                 Objects.RequestControl(entity)
                                 entities.delete_by_handle(entity)
-                                Ryan.Toast("Removed a cop.")
                             end
                         end
                         break
@@ -1071,16 +1150,13 @@ util.create_tick_handler(function()
                             if ENTITY.GET_ENTITY_MODEL(entity) == ped_hash then
                                 Objects.RequestControl(entity)
                                 entities.delete_by_handle(entity)
-                                Ryan.Toast("Removed a Cayo Perico guard.")
                             end
                         end
                     case "Casino Guards":
                         for _, ped_hash in pairs(Ryan.PedModels.CasinoHeist) do
                             if ENTITY.GET_ENTITY_MODEL(entity) == ped_hash then
-                                Ryan.Toast(ped_hash)
                                 Objects.RequestControl(entity)
                                 entities.delete_by_handle(entity)
-                                Ryan.Toast("Removed a Casino guard.")
                             end
                         end
                     case "Doomsday Guards":
@@ -1088,21 +1164,19 @@ util.create_tick_handler(function()
                             if ENTITY.GET_ENTITY_MODEL(entity) == ped_hash then
                                 Objects.RequestControl(entity)
                                 entities.delete_by_handle(entity)
-                                Ryan.Toast("Removed a Doomsday guard.")
                             end
                         end
                 end
             end
         end
     end
-    util.yield(250)
 end)
 
 
 menu.divider(world_root, "Vehicle")
 
 -- -- All Vehicles
-world_all_vehicles_root = menu.list(world_root, "All Vehicles...", {"ryanallvehicles"}, "Control the vehicles around you.")
+local world_all_vehicles_root = menu.list(world_root, "All Vehicles...", {"ryanallvehicles"}, "Control the vehicles around you.")
 
 all_vehicles_include_npcs = true
 all_vehicles_include_players = false
@@ -1212,11 +1286,11 @@ end)
 
 -- Session Menu --
 menu.divider(session_root, "General")
-session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
-session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
-session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
-session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Handle players that never seem to go outside.")
-session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
+local session_dox_root = menu.list(session_root, "Dox...", {"ryandox"}, "Shares information players probably want private.")
+local session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Plays a siren, timer, and bomb with additional earrape.")
+local session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
+local session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Handle players that never seem to go outside.")
+local session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
 
 -- -- Nuke
 nuke_spam_enabled = false
@@ -1489,7 +1563,7 @@ end)
 menu.divider(session_root, "Vehicle")
 
 -- -- Trolling
-session_vehicle_trolling_root = menu.list(session_root, "Trolling...", {"ryantpvehicles"}, "Forces every vehicle into an area.")
+local session_vehicle_trolling_root = menu.list(session_root, "Trolling...", {"ryantpvehicles"}, "Forces every vehicle into an area.")
     
 menu.toggle_loop(session_vehicle_trolling_root, "Teleport To Me", {"ryantpme"}, "Teleports them to your location.", function()
     for _, player in pairs(Player:List(true, true, true)) do
@@ -1592,27 +1666,27 @@ end)
 
 -- Stats Menu --
 menu.divider(stats_root, "Player")
-stats_kd_root = menu.list(stats_root, "Kills/Deaths...", {"ryankd"}, "Controls your kills and deaths.")
+local stats_kd_root = menu.list(stats_root, "Kills/Deaths...", {"ryankd"}, "Controls your kills and deaths.")
 UI.UpdateKDMenu(stats_kd_root)
 
 menu.divider(stats_root, "World")
 
-stats_office_money_root = menu.list(stats_root, "CEO Office Money...", {"ryanofficemoney"}, "Controls the amount of money in your CEO office.")
+local stats_office_money_root = menu.list(stats_root, "CEO Office Money...", {"ryanofficemoney"}, "Controls the amount of money in your CEO office.")
 UI.CreateOfficeMoneyButton(stats_office_money_root, 0, 0)
 UI.CreateOfficeMoneyButton(stats_office_money_root, 25, 5000000)
 UI.CreateOfficeMoneyButton(stats_office_money_root, 50, 10000000)
 UI.CreateOfficeMoneyButton(stats_office_money_root, 75, 15000000)
 UI.CreateOfficeMoneyButton(stats_office_money_root, 100, 20000000)
 
-stats_mc_clutter_root = menu.list(stats_root, "MC Clubhouse Clutter...", {"ryanmcclutter"}, "Controls the amount of clutter in your clubhouse.")
+local stats_mc_clutter_root = menu.list(stats_root, "MC Clubhouse Clutter...", {"ryanmcclutter"}, "Controls the amount of clutter in your clubhouse.")
 UI.CreateMCClutterButton(stats_mc_clutter_root, 0, 0)
 UI.CreateMCClutterButton(stats_mc_clutter_root, 100, 20000000)
 
 
 -- Chat Menu --
 menu.divider(chat_root, "Translate")
-chat_new_message_root = menu.list(chat_root, "New Message...", {"ryanchatnew"})
-chat_history_root = menu.list(chat_root, "Message History...", {"ryanchathistory"})
+local chat_new_message_root = menu.list(chat_root, "New Message...", {"ryanchatnew"})
+local chat_history_root = menu.list(chat_root, "Message History...", {"ryanchathistory"})
 
 -- -- Send Message
 chat_languages = {"No"}; for i = 1, #Ryan.Languages do table.insert(chat_languages, Ryan.Languages[i][1]) end
@@ -1629,7 +1703,7 @@ end
 UI.CreateList(chat_new_message_root, "Translate", "ryanchattranslate", "Translate the message into another language.", chat_languages, function(value)
     chat_translate = value
 end)
-chat_add_symbol_root = menu.list(chat_new_message_root, "Add Symbol: None", {"ryanchatsymbol"}, "Add a symbol to the message.")
+local chat_add_symbol_root = menu.list(chat_new_message_root, "Add Symbol: None", {"ryanchatsymbol"}, "Add a symbol to the message.")
 for _, symbol in pairs(chat_symbols) do
     local action = menu.action(chat_add_symbol_root, symbol[1], {"ryanchat" .. Ryan.CommandName(symbol[1])}, "", function()
         chat_prefix = if symbol[2]:len() > 0 then (symbol[2] .. " ") else ""
@@ -1851,7 +1925,7 @@ attach_vehicle_bones = {}
 attach_vehicle_id = {}
 attach_notice = {}
 attach_vehicle_offset = {}
-attach_root = {}
+local attach_root = {}
 
 glitch = {}
 glitch_state = {}
@@ -2198,24 +2272,5 @@ util.create_tick_handler(function()
     end
 end)
 
-
 Player:Init()
 util.keep_running()
-
-while true do
-    if crosshair or god_finger_active then
-        local weapon = WEAPON.GET_SELECTED_PED_WEAPON(players.user_ped())
-        if WEAPON.GET_WEAPONTYPE_GROUP(weapon) ~= -1212426201 then
-            HUD.HIDE_HUD_COMPONENT_THIS_FRAME(14)
-        end
-        directx.draw_texture(
-            Ryan.CrosshairTexture,
-            0.03, 0.03,
-            0.5, 0.5,
-            0.5, 0.5,
-            0.0,
-            {r = 1.0, g = 1.0, b = 1.0, a = 1.0}
-        )
-    end
-    util.yield()
-end
