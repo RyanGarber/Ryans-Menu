@@ -271,14 +271,8 @@ Ryan.Toast = function(...)
 end
 
 -- Download the latest version if a new one is available, or if force == true.
-Ryan.IntroText = ""
-Ryan.IntroStop = -1
-
-Ryan.DoUpdate = function(force)
-	if DEV_ENVIRONMENT then
-		Ryan.IntroText = "Version " .. VERSION .. " (Dev)"
-		Ryan.IntroStop = util.current_time_millis()
-	end
+Ryan.Start = function(force)
+	if DEV_ENVIRONMENT then show_intro("Version " .. VERSION .. (if DEV_ENVIRONMENT then " (Dev)" else ""), util.current_time_millis()) end
 
 	if not DEV_ENVIRONMENT or force then
 		local updating = 1
@@ -289,9 +283,7 @@ Ryan.DoUpdate = function(force)
 			
 			if latest_version ~= VERSION or force then
 				updating = 2
-
-				--util.show_corner_help("<br>Now downloading Ryan's Menu v" .. latest_version .. ". Please wait...")
-				Ryan.IntroText = "Updating..."
+				show_intro("Updating...", -1)
 
 				-- -- Download Update
 				local files_total, files_done = 0, 0
@@ -300,8 +292,7 @@ Ryan.DoUpdate = function(force)
 				end
 
 				function on_update()
-					Ryan.IntroText = "Update complete!"
-					Ryan.IntroStop = util.current_time_millis()
+					show_intro("Update complete!", util.current_time_millis())
 
 					util.show_corner_help("Please restart Ryan's Menu to start using version " .. latest_version .. ".")
 					--Ryan.ShowTextMessage(49, "Auto-Update", "Updated! Please restart Ryan's Menu to continue.")
@@ -312,9 +303,13 @@ Ryan.DoUpdate = function(force)
 				for directory, files in pairs(manifest) do
 					if directory == "main" then
 						async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. files, function(contents)
-							local destination = assert(io.open(filesystem.scripts_dir() .. files, "w"))
-							destination:write(contents)
-							assert(destination:close())
+							if DEV_ENVIRONMENT then
+								Ryan.Toast("Saved a file.")
+							else
+								local destination = assert(io.open(filesystem.scripts_dir() .. files, "w"))
+								destination:write(contents)
+								assert(destination:close())
+							end
 							files_done = files_done + 1
 							if files_done == files_total then on_update() end
 						end)
@@ -323,9 +318,13 @@ Ryan.DoUpdate = function(force)
 						filesystem.mkdirs(filesystem.scripts_dir() .. directory .. "\\" .. SUBFOLDER_NAME)
 						for _, file in pairs(files) do
 							async_http.init("raw.githubusercontent.com", "/RyanGarber/Ryans-Menu/main/Source/" .. directory .. "/" .. file, function(contents)
-								local destination = assert(io.open(filesystem.scripts_dir() .. directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. file, if file:find(".png") then "wb" else "w"))
-								destination:write(contents)
-								assert(destination:close())
+								if DEV_ENVIRONMENT then
+								    Ryan.Toast("Saved a file.")
+								else
+									local destination = assert(io.open(filesystem.scripts_dir() .. directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. file, if file:find(".png") then "wb" else "w"))
+									destination:write(contents)
+									assert(destination:close())
+								end
 								files_done = files_done + 1
 								if files_done == files_total then on_update() end
 							end)
@@ -334,10 +333,8 @@ Ryan.DoUpdate = function(force)
 					end
 				end
 			elseif not force then
-				Ryan.IntroText = "Version " .. VERSION
-				Ryan.IntroStop = util.current_time_millis()
-
 				updating = 0
+				show_intro("Version " .. VERSION, util.current_time_millis())
 				Ryan.PlaySoundFromEntity(players.user_ped(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
 			end
 		end, function()
@@ -386,9 +383,9 @@ Ryan.RemoveItemInTable = function(table, element)
 end
 
 -- Get a random item from a table.
-Ryan.GetRandomItemInTable = function(table)
+Ryan.GetRandomItemInTable = function(list)
 	local values = {}
-	for _, value in pairs(table) do table.insert(values, value) end
+	for _, value in pairs(list) do table.insert(values, value) end
 	return values[math.random(1, #values)]
 end
 

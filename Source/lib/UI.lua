@@ -288,7 +288,8 @@ end
 UI.CreateVehicleEffectList = function(root, command_prefix, player_name, effects, enable_risky, god_finger)
     UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Speed", "Change the speed of the vehicle.", {"Fast", "Slow", "Normal"}, god_finger)
     UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Grip", "Change the grip of the vehicle's tires.", {"None", "Normal"}, god_finger)
-    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Doors", "Change the vehicle's door lock state.", {"Lock", "Unlock"}, god_finger)
+    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Door Locks", "Change the vehicle's door lock state.", {"Lock", "Unlock"}, god_finger)
+    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Doors", "Change the vehicle's doors visually.", {"Break", "Fix"}, god_finger)
     UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Tires", "Change the vehicle's tire health.", {"Burst", "Fix"}, god_finger)
     UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Engine", "Change the vehicle's engine health.", {"Kill", "Fix"}, god_finger)
     if enable_risky then
@@ -335,15 +336,31 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
         if god_finger then Ryan.PlaySelectSound() end
     end
 
-    if parsed.doors and parsed.doors.lock and state[vehicle].doors ~= "lock" then
+    if parsed.doors and parsed.doors.break and state[vehicle].doors ~= "break" then
+        Objects.RequestControl(vehicle, is_a_player)
+        local model = ENTITY.GET_ENTITY_MODEL(vehicle)
+        local door_count = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(model)
+        for i = -1, door_count - 1 do
+            VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle, i, false)
+        end
+        state[vehicle].doors = "break"
+        if god_finger then Ryan.PlaySelectSound() end
+    elseif parsed.doors and parsed.doors.fix and state[vehicle].doors ~= "fix" then
+        Objects.RequestControl(vehicle, is_a_player)
+        VEHICLE.SET_VEHICLE_FIXED(vehicle)
+        state[vehicle].doors = "fix"
+        if god_finger then Ryan.PlaySelectSound() end
+    end
+
+    if parsed.door_locks and parsed.door_locks.lock and state[vehicle].door_locks ~= "lock" then
         Objects.RequestControl(vehicle, is_a_player)
         Objects.SetVehicleDoorsLocked(vehicle, true)
-        state[vehicle].doors = "lock"
+        state[vehicle].door_locks = "lock"
         if god_finger then Ryan.PlaySelectSound() end
-    elseif parsed.doors and parsed.doors.unlock and state[vehicle].doors ~= "unlock" then
+    elseif parsed.door_locks and parsed.door_locks.unlock and state[vehicle].door_locks ~= "unlock" then
         Objects.RequestControl(vehicle, is_a_player)
         Objects.SetVehicleDoorsLocked(vehicle, false)
-        state[vehicle].doors = "unlock"
+        state[vehicle].door_locks = "unlock"
         if god_finger then Ryan.PlaySelectSound() end
     end
 

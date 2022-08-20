@@ -1,4 +1,4 @@
-VERSION = "0.10.6a"
+VERSION = "0.10.6b"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -34,9 +34,17 @@ util.create_tick_handler(Ryan.OnTick)
 
 -- UI Thread --
 local last_tick = util.current_time_millis()
+local intro_text = 1.0
+local intro_stop_at = 1.0
 local intro_alpha = 1.0
 --local intro_blur = directx.blurrect_new()
 local ghost_mode = false
+
+function show_intro(text, stop_at)
+    intro_text = text
+    intro_stop_at = stop_at
+    intro_alpha = 1.0
+end
 
 util.create_thread(function()
     while true do
@@ -46,7 +54,7 @@ util.create_thread(function()
         last_tick = util.current_time_millis()
     
         -- Intro
-        if Ryan.IntroStop ~= -1 and util.current_time_millis() - Ryan.IntroStop > 2000 and intro_alpha == 1.0 then intro_alpha = 1.0 - 1e-10 end
+        if intro_stop_at ~= -1 and util.current_time_millis() - intro_stop_at > 2000 and intro_alpha == 1.0 then intro_alpha = 1.0 - 1e-10 end
         if intro_alpha < 1.0 then intro_alpha = intro_alpha - (delta_time / 650) end
     
         if intro_alpha > 1e-10 then
@@ -78,7 +86,7 @@ util.create_thread(function()
             )
             directx.draw_text(
                 0.475, 0.52,
-                Ryan.IntroText,
+                intro_text,
                 ALIGN_CENTRE_LEFT,
                 0.75,
                 {r = 1.0, g = 1.0, b = 1.0, a = intro_alpha}
@@ -119,7 +127,7 @@ end)
 
 
 -- Auto-Update --
-Ryan.DoUpdate(false)
+Ryan.Start(false)
 
 
 -- Main Menu --
@@ -471,6 +479,7 @@ UI.CreateEffectToggle(self_god_finger_player_root, "ryangodfingerplayer", god_fi
 -- -- Vehicle
 UI.CreateVehicleEffectList(self_god_finger_vehicle_root, "ryangodfingervehicle", "", god_finger_vehicle_effects, true, true)
 UI.CreateEffectToggle(self_god_finger_vehicle_root, "ryangodfingervehicle", god_finger_vehicle_effects, "Steal", "Steal the vehicle.", true)
+UI.CreateEffectToggle(self_god_finger_vehicle_root, "ryangodfingervehicle", god_finger_vehicle_effects, "Become Plane", "Turn the vehicle into a plane.", true)
 
 -- -- World
 UI.CreateEffectToggle(self_god_finger_world_root, "ryangodfingerworld", god_finger_world_effects, "Nude Yoga", "Spawn a nude NPC doing yoga.", true)
@@ -590,6 +599,18 @@ util.create_tick_handler(function()
                     Objects.StealVehicle(raycast.hit_entity)
                     Ryan.PlaySelectSound()
                 end
+            end
+            if UI.GetGodFingerActivation(god_finger_vehicle_effects.become_plane) > 0 and all_vehicles_state[vehicle].become_plane ~= true then
+                local hash = util.joaat(Ryan.GetRandomItemInTable({"cuban800", "dodo", "duster", "mammatus", "stunt", "velum"}))
+                local coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+                local heading = ENTITY.GET_ENTITY_HEADING(vehicle)
+                entities.delete_by_handle(vehicle)
+                util.yield(250)
+                Ryan.RequestModel(hash)
+                local plane = entities.create_vehicle(hash, coords, heading)
+                PED.SET_PED_INTO_VEHICLE(driver, plane, -1)
+                all_vehicles_state[vehicle].become_plane = true
+                all_vehicles_state[plane] = {["become_plane"] = true}
             end
         end
 
@@ -1557,7 +1578,7 @@ util.create_tick_handler(function()
     if turn_all_into_animals then
         for _, player in pairs(Player:List(true, true, true)) do
             player:turn_into_animal()
-            util.yield(30000)
+            util.yield(100)
         end
     end
 end)
@@ -1885,7 +1906,7 @@ end)
 -- Settings Menu --
 menu.divider(settings_root, "Updates")
 menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
-menu.action(settings_root, "Reinstall", {"ryanreinstall"}, "Force update the script for patches and troubleshooting.", function() Ryan.DoUpdate(true) end)
+menu.action(settings_root, "Reinstall", {"ryanreinstall"}, "Force update the script for patches and troubleshooting.", function() Ryan.Start(true) end)
 menu.hyperlink(settings_root, "Website", "https://gta.ryanmade.site/", "Opens the official website, for downloading the installer and viewing the changelog.")
 
 menu.divider(settings_root, "HUD")
@@ -2054,6 +2075,24 @@ function Player:OnJoin(player)
     menu.toggle_loop(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
         player:turn_into_animal()
         util.yield(30000)
+    end)
+    local broken = false
+    menu.toggle_loop(player_trolling_root, "Break Doors Loop", {"ryanbreakdoors"}, "Makes their doors break and fix over and over.", function()
+        local model = players.get_vehicle_model(player.id)
+        if model ~= 0 then
+            local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
+            Objects.RequestControl(vehicle, false)
+            if broken then
+                VEHICLE.SET_VEHICLE_FIXED(vehicle)
+            else
+                local door_count = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(model)
+                for door = -1, door_count - 1 do
+                    VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle, door, false)
+                end
+            end
+            broken = not broken
+            util.yield(100)
+        end
     end)
     menu.action(player_trolling_root, "Steal Vehicle", {"ryansteal"}, "Steals the player's car.", function()
         local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
