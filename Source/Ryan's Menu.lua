@@ -1,4 +1,4 @@
-VERSION = "0.10.6b"
+VERSION = "0.10.6c"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -923,15 +923,15 @@ menu.action(self_character_root, "Become Nude", {"ryannude"}, "Make yuser a stri
     Ryan.RequestModel(topless)
 
     local user = Player:Self()
-    local vehicle_id = if players.get_vehicle_model(user.id) ~= 0 then PED.GET_VEHICLE_PED_IS_IN(user.ped_id, false) else 0
-    local seat_id = user:get_vehicle_seat()
+    local seat = user:get_vehicle_seat()
+    local vehicle = if seat ~= nil then PED.GET_VEHICLE_PED_IS_IN(user.ped_id, false) else nil
 
     local coords = user.coords; coords:add(v3(0, 0, 5))
-    if vehicle_id ~= 0 then Ryan.Teleport(coords) end
+    if vehicle ~= nil then Ryan.Teleport(coords) end
     PLAYER.SET_PLAYER_MODEL(user.id, topless)
     util.yield(250)
     PED.SET_PED_COMPONENT_VARIATION(user.ped_id, 8, 1, -1, 0)
-    if vehicle_id ~= 0 then PED.SET_PED_INTO_VEHICLE(user.ped_id, vehicle_id, seat_id) end
+    if vehicle ~= nil then PED.SET_PED_INTO_VEHICLE(user.ped_id, vehicle, seat) end
 
     Ryan.FreeModel(topless)
 end)
@@ -1337,11 +1337,15 @@ menu.action(session_nuke_root, "Go", {"ryannukego"}, "Starts the nuke.", functio
     Ryan.PlaySoundOnAllPlayers("HUD_MINI_GAME_SOUNDSET", "5_SEC_WARNING"); util.yield(125)
     Ryan.PlaySoundOnAllPlayers("HUD_MINI_GAME_SOUNDSET", "5_SEC_WARNING"); util.yield(125)
     Trolling.ExplodeAll(true)
-    if nuke_spam_enabled then Session.SpamChat(nuke_spam_message, 100) end
+    if nuke_spam_enabled then
+        for _, player in pairs(Player:List(true, true, true)) do
+            player:spam_sms(nuke_spam_message, 5000)
+        end
+    end
 end)
 
 menu.divider(session_nuke_root, "Options")
-menu.toggle(session_nuke_root, "Enable Spam", {"ryannukespam"}, "If enabled, spams the chat upon impact.", function(value)
+menu.toggle(session_nuke_root, "Enable Spam", {"ryannukespam"}, "If enabled, spams the text messages upon impact.", function(value)
     nuke_spam_enabled = value
 end)
 menu.text_input(session_nuke_root, "Spam Message", {"ryannukemessage"}, "The message that will be spammed.", function(value)
@@ -1748,7 +1752,7 @@ chat_send = menu.action(chat_new_message_root, "Send", {"ryanchatsend"}, "Send t
     else
         for _, language in pairs(Ryan.Languages) do
             if language[1] == chat_translate then
-                Ryan.Translate(chat_message, language[2], language[3], function(result)
+                Ryan.Translate(chat_message, language[2], language[3], function(message)
                     Ryan.SendChatMessage(chat_prefix .. message)
                 end)
             end

@@ -151,6 +151,9 @@ function Player.super_crash(self, block_syncs)
 
     local crash = function()
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Super Crash", "Please wait...")
+        local seat = user:get_vehicle_seat()
+        local vehicle = if seat ~= nil then entities.get_user_vehicle_as_handle() else nil
+
         ENTITY.SET_ENTITY_VISIBLE(user.ped_id, false)
         PED.SET_PED_CAN_RAGDOLL(user.ped_id, false)
 
@@ -178,6 +181,8 @@ function Player.super_crash(self, block_syncs)
 
         ENTITY.SET_ENTITY_VISIBLE(user.ped_id, true)
         PED.SET_PED_CAN_RAGDOLL(user.ped_id, true)
+
+        if vehicle ~= nil then PED.SET_PED_INTO_VEHICLE(user.ped_id, vehicle, seat) end -- TODO: seat
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Super Crash", "Done!")
     end
 
