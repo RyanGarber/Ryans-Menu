@@ -1,12 +1,35 @@
 local _waiting_for_session = false
 local _waiting_for_coords = nil
 
+Ryan.FriendSpoofsFile = filesystem.store_dir() .. SUBFOLDER_NAME .. "\\FriendSpoofs.json"
+
 -- Initialize globals.
 Ryan.Init = function()
     Ryan.LogoTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Logo.png")
     Ryan.CrosshairTexture = directx.create_texture(filesystem.resources_dir() .. SUBFOLDER_NAME .. "\\Crosshair.png")
     Ryan.RequestModel(util.joaat("p_poly_bag_01_s"))
+	if not filesystem.exists(filesystem.store_dir() .. SUBFOLDER_NAME) then
+		filesystem.mkdirs(filesystem.store_dir() .. SUBFOLDER_NAME)
+	end
+	if not filesystem.exists(Ryan.FriendSpoofsFile) then
+		Ryan.WriteJSON(Ryan.FriendSpoofsFile, {})
+	end
 end
+
+Ryan.ReadJSON = function(file)
+	local destination = assert(io.open(file, "r"))
+	local contents = destination:read("*a")
+	assert(destination:close())
+	return JSON.Decode(contents)
+end
+
+Ryan.WriteJSON = function(file, contents)
+	local destination = assert(io.open(file, "w"))
+	destination:write(JSON.Encode(contents))
+	assert(destination:close())
+end
+
+Ryan.FriendSpoofs = {}
 
 -- Update globals on each tick.
 Ryan.OnTick = function()
@@ -398,6 +421,13 @@ Ryan.ShuffleItemsInTable = function(table)
 		shuffled[i], shuffled[randomized] = shuffled[randomized], shuffled[i]
 	end
 	return shuffled
+end
+
+Ryan.FindItemInTable = function(table, item)
+	for key, value in pairs(table) do
+		if item == value then return key end
+	end
+	return nil
 end
 
 -- Get the name of a seat by its index.

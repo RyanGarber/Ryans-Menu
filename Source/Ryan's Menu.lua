@@ -1,4 +1,4 @@
-VERSION = "0.10.6c"
+VERSION = "0.10.6d"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -45,6 +45,12 @@ function show_intro(text, stop_at)
     intro_stop_at = stop_at
     intro_alpha = 1.0
 end
+
+util.create_tick_handler(function()
+    local vehicle = entities.get_user_vehicle_as_handle()
+    if vehicle == 0 then return end
+    VEHICLE.SET_VEHICLE_WHEELS_CAN_BREAK(vehicle, true)
+end)
 
 util.create_thread(function()
     while true do
@@ -940,47 +946,90 @@ end)
 menu.divider(self_root, "Vehicle")
 
 -- -- Seats
-local self_seats_root = menu.list(self_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
+local self_vehicle_root = menu.list(self_root, "Current...", {"ryanvehicle"}, "Options for your current vehicle.")
+local self_vehicle_seats_root = nil
+local self_vehicle_parts_root = nil
 
-switch_seats_actions = {}
-switch_seats_notice = nil
+local vehicle_seats = {}
+local vehicle_parts = {}
 util.create_tick_handler(function()
     local vehicle_model = players.get_vehicle_model(players.user())
     if vehicle_model ~= 0 then
         local vehicle_id = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
-        local seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicle_model)
-        if seats ~= #switch_seats_actions then
-            for _, action in pairs(switch_seats_actions) do menu.delete(action) end
-            switch_seats_actions = {}
-            for seat = -1, seats - 2 do
-                table.insert(switch_seats_actions, menu.action(self_seats_root, Ryan.SeatName(seat), {"ryanseat" .. (seat + 2)}, "Switch to " .. Ryan.SeatName(seat) .. ".", function()
+
+        -- Seats
+        if self_vehicle_seats_root == nil then
+            self_vehicle_seats_root = menu.list(self_vehicle_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
+        end
+
+        local seat_count = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicle_model)
+        if seat_count ~= #vehicle_seats then
+            for _, action in pairs(vehicle_seats) do menu.delete(action) end
+            vehicle_seats = {}
+            for seat = -1, seat_count - 2 do
+                table.insert(vehicle_seats, menu.action(self_vehicle_seats_root, Ryan.SeatName(seat), {"ryanseat" .. (seat + 2)}, "Switch to " .. Ryan.SeatName(seat) .. ".", function()
                     PED.SET_PED_INTO_VEHICLE(players.user_ped(), vehicle_id, seat)
                 end))
             end
         else
-            for seat = -1, seats - 2 do
+            for seat = -1, seat_count - 2 do
                 if VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle_id, seat) ~= 0 then
-                    menu.set_menu_name(switch_seats_actions[seat + 2], Ryan.SeatName(seat) .. " [Taken]")
+                    menu.set_menu_name(vehicle_seats[seat + 2], Ryan.SeatName(seat) .. " [Taken]")
                 else
-                    menu.set_menu_name(switch_seats_actions[seat + 2], Ryan.SeatName(seat))
+                    menu.set_menu_name(vehicle_seats[seat + 2], Ryan.SeatName(seat))
                 end
             end
         end
 
-        if switch_seats_notice ~= nil then
-            menu.delete(switch_seats_notice)
-            switch_seats_notice = nil
+        -- Parts
+        if self_vehicle_parts_root == nil then
+            self_vehicle_parts_root = menu.list(self_vehicle_root, "Parts...", {"ryanparts"}, "Break or fix various parts of your vehicle.")
+        end
+
+        local parts = VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(vehicle_id)
+        if parts ~= #vehicle_parts then
+            for _, action in pairs(vehicle_parts) do menu.delete(action) end
+            menu.divider(self_vehicle_parts_root, "Break")
+            vehicle_parts = {}
+            local part_count = VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(vehicle_id)
+            for part = 0, part_count - 1 do
+                local part_name = "Door " .. (part + 1)
+                if part == part_count - 2 then part_name = "Hood"
+                elseif part == part_count - 1 then part_name = "Trunk" end
+                table.insert(vehicle_parts, menu.action(self_vehicle_parts_root, part_name, {"ryanpart" .. (part + 1)}, "", function()
+                    VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle_id, part, false)
+                end))
+            end
+            menu.divider(self_vehicle_parts_root, "Fix")
+            menu.action(self_vehicle_parts_root, "All", {"ryanpartsfix"}, "Fix the car.", function()
+                VEHICLE.SET_VEHICLE_FIXED(vehicle_id)
+            end)
+        end
+
+        if no_vehicle_notice ~= nil then
+            menu.delete(no_vehicle_notice)
+            no_vehicle_notice = nil
         end
     else
-        for _, action in pairs(switch_seats_actions) do menu.delete(action) end
-        switch_seats_actions = {}
+        if self_vehicle_seats_root ~= nil then
+            menu.delete(self_vehicle_seats_root)
+            self_vehicle_seats_root = nil
+            vehicle_seats = {}
+        end
+        if self_vehicle_parts_root ~= nil then
+            menu.delete(self_vehicle_parts_root)
+            self_vehicle_parts_root = nil
+            vehicle_parts = {}
+        end
 
-        if switch_seats_notice == nil then
-            switch_seats_notice = menu.divider(self_seats_root, "Vehicle Needed")
+        if no_vehicle_notice == nil then
+            no_vehicle_notice = menu.divider(self_vehicle_root, "Vehicle Needed")
         end
     end
     util.yield(200)
 end)
+
+
 
 -- -- E-Brake
 ebrake = false
@@ -1926,6 +1975,40 @@ menu.toggle(settings_root, "Text Keybinds", {"ryantextkeybinds"}, "Enable this t
     Ryan.TextKeybinds = value
 end)
 
+menu.divider(settings_root, "Other")
+settings_friend_spoofs_root = menu.list(settings_root, "Friend Spoofs", {"ryanspoofs"}, "Add friends' RIDs spoofs in order to keep from affecting them.")
+menu.text_input(settings_friend_spoofs_root, "Add RID", {"ryanspoofsadd"}, "Add a player's RID.", function(value)
+    if value:len() == 0 then return end
+    Ryan.FriendSpoofs = Ryan.ReadJSON(Ryan.FriendSpoofsFile)
+    if Ryan.FindItemInTable(Ryan.FriendSpoofs, value) == nil then
+        table.insert(Ryan.FriendSpoofs, value)
+        Ryan.WriteJSON(Ryan.FriendSpoofsFile, Ryan.FriendSpoofs)
+        update_friend_spoofs()
+        util.toast("Added an RID.")
+    else
+        util.toast("That RID already exists.")
+    end
+end)
+
+menu.divider(settings_friend_spoofs_root, "RIDs")
+local rid_list = {}
+function update_friend_spoofs()
+    Ryan.FriendSpoofs = Ryan.ReadJSON(Ryan.FriendSpoofsFile)
+    for _, toggle in pairs(rid_list) do menu.delete(toggle) end; rid_list = {}
+    for i, rid in pairs(Ryan.FriendSpoofs) do
+        rid_list[i] = menu.action(settings_friend_spoofs_root, rid, {"ryanspoofs" .. rid}, "Click to delete this RID.", function(value, click_type)
+            menu.show_warning(rid_list[i], click_type, "Are you sure you want to delete this RID?", function()
+                Ryan.FriendSpoofs = Ryan.ReadJSON(Ryan.FriendSpoofsFile)
+                table.remove(Ryan.FriendSpoofs, Ryan.FindItemInTable(Ryan.FriendSpoofs, value))
+                Ryan.WriteJSON(Ryan.FriendSpoofsFile, Ryan.FriendSpoofs)
+                update_friend_spoofs()
+                util.toast("Removed an RID.")
+            end)
+        end)
+    end
+end
+update_friend_spoofs()
+
 hud_preview = 0
 menu.on_focus(hud_color, function() hud_preview = hud_preview + 1 end)
 menu.on_focus(hud_use_beacons, function() hud_preview = hud_preview + 1 end)
@@ -2081,7 +2164,7 @@ function Player:OnJoin(player)
         util.yield(30000)
     end)
     local broken = false
-    menu.toggle_loop(player_trolling_root, "Break Doors Loop", {"ryanbreakdoors"}, "Makes their doors break and fix over and over.", function()
+    menu.toggle_loop(player_trolling_root, "Break Car Loop", {"ryanbreakcar"}, "Breaks their car apart and fix over and over.", function()
         local model = players.get_vehicle_model(player.id)
         if model ~= 0 then
             local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
@@ -2089,9 +2172,9 @@ function Player:OnJoin(player)
             if broken then
                 VEHICLE.SET_VEHICLE_FIXED(vehicle)
             else
-                local door_count = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(model)
-                for door = -1, door_count - 1 do
-                    VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle, door, false)
+                local part_count = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(model)
+                for part = -1, part_count + 1 do
+                    VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle, part, false)
                 end
             end
             broken = not broken
