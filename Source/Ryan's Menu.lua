@@ -1,4 +1,4 @@
-VERSION = "0.10.6d"
+VERSION = "0.10.7"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -1629,9 +1629,9 @@ menu.toggle(session_root, "Turn Into Animals", {"ryananimalall"}, "Turns all pla
 
 util.create_tick_handler(function()
     if turn_all_into_animals then
-        for _, player in pairs(Player:List(true, true, true)) do
+        for _, player in pairs(Player:List(false, true, true)) do
             player:turn_into_animal()
-            util.yield(100)
+            util.yield()
         end
     end
 end)
@@ -2156,15 +2156,26 @@ function Player:OnJoin(player)
     end)
 
     -- -- Miscellaneous
+    menu.toggle_loop(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
+        player:turn_into_animal()
+        util.yield()
+    end)
     menu.toggle(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function(value)
         money_drop[player.id] = if value then true else nil
     end)
-    menu.toggle_loop(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
-        player:turn_into_animal()
-        util.yield(30000)
+    menu.toggle_loop(player_trolling_root, "Send Vehicle Under", {"ryanunder"}, "Sends their car to the underworld.", function()
+        if players.get_vehicle_model(player.id) ~= 0 then
+            local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
+            if vehicle ~= 0 and VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
+                local coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+                coords:add(v3(0, 0, -10))
+                player:teleport_vehicle(coords)
+            end
+        end
     end)
+
     local broken = false
-    menu.toggle_loop(player_trolling_root, "Break Car Loop", {"ryanbreakcar"}, "Breaks their car apart and fix over and over.", function()
+    menu.toggle_loop(player_trolling_root, "Break Vehicle", {"ryanbreak"}, "Breaks their car apart and fix over and over.", function()
         local model = players.get_vehicle_model(player.id)
         if model ~= 0 then
             local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
@@ -2172,8 +2183,8 @@ function Player:OnJoin(player)
             if broken then
                 VEHICLE.SET_VEHICLE_FIXED(vehicle)
             else
-                local part_count = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(model)
-                for part = -1, part_count + 1 do
+                local part_count = VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(model)
+                for part = 0, part_count - 1 do
                     VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle, part, false)
                 end
             end
