@@ -122,7 +122,7 @@ end
 
 -- Get whether the player is a friend of the user.
 function Player.is_a_friend(self)
-    return players.get_tags_string(self.id):find("F") or Ryan.FindItemInTable(Ryan.FriendSpoofs, self.id)
+    return players.get_tags_string(self.id):find("F") or Ryan.FindItemInTable(Ryan.FriendSpoofs, tostring(players.get_rockstar_id(self.id))) ~= nil
 end
 
 -- Kick a player using Stand's Smart kick, using Breakup if that fails.

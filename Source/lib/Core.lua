@@ -425,7 +425,9 @@ end
 
 Ryan.FindItemInTable = function(table, item)
 	for key, value in pairs(table) do
-		if item == value then return key end
+		if item == value then
+			return key
+		end
 	end
 	return nil
 end
