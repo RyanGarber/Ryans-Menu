@@ -178,6 +178,45 @@ end
 
 
 --========================= Vehicles =========================--
+Objects.VehicleModChoices = {
+    [0] = "Spoilers",
+    [1] = "Front Bumper",
+    [2] = "Rear Bumper",
+    [3] = "Side Skirt",
+    [4] = "Exhaust",
+    [5] = "Frame",
+    [6] = "Grille",
+    [7] = "Hood",
+    [8] = "Fender",
+    [9] = "Right Fender",
+    [10] = "Roof",
+    [11] = "Engine",
+    [12] = "Brakes",
+    [13] = "Transmission",
+    [14] = "Horns",
+    [15] = "Suspension",
+    [16] = "Armor",
+    [23] = "Wheels Design",
+    [24] = "Motorcycle Back Wheel Design",
+    [25] = "Plate Holders",
+    [27] = "Trim Design",
+    [28] = "Ornaments",
+    [30] = "Dial Design",
+    [33] = "Steering Wheel",
+    [34] = "Shifter Leavers",
+    [35] = "Plaques",
+    [38] = "Hydraulics",
+    [48] = "Livery"
+}
+Objects.VehicleModToggles = {
+    [17] = "UNK17",
+    [18] = "Turbo Turning",
+    [19] = "UNK19",
+    [20] = "Tire Smoke",
+    [21] = "UNK21",
+    [22] = "Xenon Headlights"
+}
+
 Objects.VehicleSpeed = {
     Normal = 0,
     Fast = 1,
@@ -272,4 +311,168 @@ Objects.MakeVehicleBlind = function(vehicle)
 
     --TASK.TASK_VEHICLE_DRIVE_WANDER(driver, vehicle, 10.0, 4719104)
     --MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false)
+end
+
+Objects.GetVehicleData = function(vehicle)
+    local data = {model = ENTITY.GET_ENTITY_MODEL(vehicle)}
+    local r, g, b, color = memory.alloc_int(), memory.alloc_int(), memory.alloc_int(), memory.alloc_int()
+
+    data.colors = {primary = {}, secondary = {}}
+
+    -- Base Color
+    local primary, secondary = memory.alloc_int(), memory.alloc_int()
+    VEHICLE.GET_VEHICLE_COLOURS(vehicle, primary, secondary)
+    data.colors.primary.base, data.colors.secondary.base = memory.read_int(primary), memory.read_int(secondary)
+
+    -- Primary Color
+    if VEHICLE.GET_IS_VEHICLE_PRIMARY_COLOUR_CUSTOM(vehicle) then
+        VEHICLE.GET_VEHICLE_CUSTOM_PRIMARY_COLOUR(vehicle, r, g, b)
+        data.colors.primary.custom = {r = memory.read_int(r), b = memory.read_int(g), g = memory.read_int(b)}
+    else
+        local type, color, pearlescent = memory.alloc_int(), memory.alloc_int(), memory.alloc_int()
+        VEHICLE.GET_VEHICLE_MOD_COLOR_1(vehicle, type, color, pearlescent)
+        data.colors.primary.type, data.colors.primary.color, data.colors.primary.pearlescent = memory.read_int(type), memory.read_int(color), memory.read_int(pearlescent)
+    end
+
+    -- Secondary Color
+    if VEHICLE.GET_IS_VEHICLE_SECONDARY_COLOUR_CUSTOM(vehicle) then
+        VEHICLE.GET_VEHICLE_CUSTOM_SECONDARY_COLOUR(vehicle, r, g, b)
+        data.colors.secondary.custom = {r = memory.read_int(r), b = memory.read_int(g), g = memory.read_int(b)}
+    else
+        local type, color = memory.alloc_int(), memory.alloc_int()
+        VEHICLE.GET_VEHICLE_MOD_COLOR_2(vehicle, type, color)
+        data.colors.secondary.type, data.colors.secondary.color = memory.read_int(type), memory.read_int(color)
+    end
+
+    -- Pearlescent & Wheel Color
+    local pearlescent, wheel = memory.alloc_int(), memory.alloc_int()
+    VEHICLE.GET_VEHICLE_EXTRA_COLOURS(vehicle, pearlescent, wheel)
+    data.extra_colors = {pearlescent = memory.read_int(pearlescent), wheel = memory.read_int(wheel)}
+
+    -- Tire Smoke Color
+    VEHICLE.GET_VEHICLE_TYRE_SMOKE_COLOR(vehicle, r, g, b)
+    data.tire_smoke_color = {r = memory.read_int(r), g = memory.read_int(g), b = memory.read_int(b)}
+
+    -- Dashboard Color
+    VEHICLE._GET_VEHICLE_DASHBOARD_COLOR(vehicle, color)
+    data.dashboard_color = memory.read_int(color)
+
+    -- Interior Color
+    VEHICLE._GET_VEHICLE_INTERIOR_COLOR(vehicle, color)
+    data.interior_color = memory.read_int(color)
+
+    -- Mods
+    data.mod_choices = {}
+    for id, name in pairs(Objects.VehicleModChoices) do
+        data.mod_choices[id] = VEHICLE.GET_VEHICLE_MOD(vehicle, id)
+    end
+
+    data.mod_toggles = {}
+    for id, name in pairs(Objects.VehicleModToggles) do
+        data.mod_toggles[id] = VEHICLE.IS_TOGGLE_MOD_ON(vehicle, id)
+    end
+
+    data.mod_extras = {}
+    for i = 1, 14 do
+        if VEHICLE.DOES_EXTRA_EXIST(vehicle, i) then
+            data.mod_extras[i] = VEHICLE.IS_VEHICLE_EXTRA_TURNED_ON(vehicle, i)
+        end
+    end
+
+    -- Neon
+    VEHICLE._GET_VEHICLE_NEON_LIGHTS_COLOUR(vehicle, r, g, b)
+    data.neon = {
+        enabled = {
+            left = VEHICLE._IS_VEHICLE_NEON_LIGHT_ENABLED(vehicle, 0),
+            right = VEHICLE._IS_VEHICLE_NEON_LIGHT_ENABLED(vehicle, 1),
+            front = VEHICLE._IS_VEHICLE_NEON_LIGHT_ENABLED(vehicle, 2),
+            back = VEHICLE._IS_VEHICLE_NEON_LIGHT_ENABLED(vehicle, 3)
+        },
+        color = {r = memory.read_int(r), g = memory.read_int(g), b = memory.read_int(b)}
+    }
+
+    -- License Plate
+    data.license_plate = {
+        type = VEHICLE.GET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(vehicle),
+        text = VEHICLE.GET_VEHICLE_NUMBER_PLATE_TEXT(vehicle)
+    }
+
+    -- Miscellaneous
+    data.livery = VEHICLE.GET_VEHICLE_LIVERY(vehicle)
+    data.window_tint = VEHICLE.GET_VEHICLE_WINDOW_TINT(vehicle)
+    data.xenon_color = VEHICLE._GET_VEHICLE_XENON_LIGHTS_COLOR(vehicle)
+    data.dirt_level = VEHICLE.GET_VEHICLE_DIRT_LEVEL(vehicle)
+    data.has_bulletproof_tires = not VEHICLE.GET_VEHICLE_TYRES_CAN_BURST(vehicle)
+    data.is_engine_on = VEHICLE.GET_IS_VEHICLE_ENGINE_RUNNING(vehicle)
+    data.is_siren_on = VEHICLE.IS_VEHICLE_SIREN_ON(vehicle)
+
+    return data
+end
+
+Objects.SetVehicleData = function(vehicle, data)
+    VEHICLE.SET_VEHICLE_MOD_KIT(vehicle, 0)
+
+    -- Base Color
+    VEHICLE.SET_VEHICLE_COLOURS(vehicle, data.colors.primary.base, data.colors.secondary.base)
+
+    -- Primary Color
+    if data.colors.primary.custom ~= nil then
+        VEHICLE.SET_VEHICLE_CUSTOM_PRIMARY_COLOUR(vehicle, data.colors.primary.custom.r, data.colors.primary.custom.b, data.colors.primary.custom.g)
+    else
+        VEHICLE.SET_VEHICLE_MOD_COLOR_1(vehicle, data.colors.secondary.type, data.colors.secondary.color, data.colors.secondary.pearlescent)
+    end
+
+    -- Secondary Color
+    if data.colors.secondary.custom then
+        VEHICLE.SET_VEHICLE_CUSTOM_SECONDARY_COLOUR(vehicle, data.colors.secondary.r, data.colors.secondary.b, data.colors.secondary.g)
+    else
+        VEHICLE.SET_VEHICLE_MOD_COLOR_2(vehicle, data.colors.secondary.type, data.colors.secondary.color)
+    end
+
+    -- Pearlescent & Wheel Color
+    VEHICLE.SET_VEHICLE_EXTRA_COLOURS(vehicle, data.extra_colors.pearlescent, data.extra_colors.wheel)
+
+    -- Tire Smoke Color
+    VEHICLE.SET_VEHICLE_TYRE_SMOKE_COLOR(vehicle, data.tire_smoke_color.r, data.tire_smoke_color.g, data.tire_smoke_color.b)
+
+    -- Dashboard Color
+    VEHICLE._SET_VEHICLE_DASHBOARD_COLOR(vehicle, data.dashboard_color)
+
+    -- Interior Color
+    VEHICLE._SET_VEHICLE_INTERIOR_COLOR(vehicle, data.interior_color)
+
+    -- Mods
+    for id, name in pairs(Objects.VehicleModChoices) do
+        if data.mod_choices[id] then
+            VEHICLE.SET_VEHICLE_MOD(vehicle, id, data.mod_choices[id])
+        end
+    end
+
+    for id, name in pairs(Objects.VehicleModToggles) do
+        VEHICLE.TOGGLE_VEHICLE_MOD(vehicle, id, data.mod_toggles[id])
+    end
+
+    for i = 1, 14 do
+        VEHICLE.SET_VEHICLE_EXTRA(vehicle, i, if data.mod_extras[i] ~= nil then (not data.mod_extras[i]) else true)
+    end
+
+    -- Neon
+    VEHICLE._SET_VEHICLE_NEON_LIGHTS_COLOUR(vehicle, data.neon.color.r, data.neon.color.g, data.neon.color.b)
+    VEHICLE._SET_VEHICLE_NEON_LIGHT_ENABLED(vehicle, 0, data.neon.enabled.left)
+    VEHICLE._SET_VEHICLE_NEON_LIGHT_ENABLED(vehicle, 1, data.neon.enabled.right)
+    VEHICLE._SET_VEHICLE_NEON_LIGHT_ENABLED(vehicle, 2, data.neon.enabled.front)
+    VEHICLE._SET_VEHICLE_NEON_LIGHT_ENABLED(vehicle, 3, data.neon.enabled.back)
+
+    -- License Plate
+    VEHICLE.SET_VEHICLE_NUMBER_PLATE_TEXT(vehicle, data.license_plate.text)
+    VEHICLE.SET_VEHICLE_NUMBER_PLATE_TEXT_INDEX(vehicle, data.license_plate.type)
+
+    -- Miscellaneous
+    VEHICLE.SET_VEHICLE_LIVERY(vehicle, data.livery)
+    VEHICLE.SET_VEHICLE_WINDOW_TINT(vehicle, data.window_tint)
+    VEHICLE._SET_VEHICLE_XENON_LIGHTS_COLOR(vehicle, data.xenon_color)
+    VEHICLE.SET_VEHICLE_DIRT_LEVEL(vehicle, data.dirt_level)
+    VEHICLE.SET_VEHICLE_TYRES_CAN_BURST(vehicle, data.has_bulletproof_tires)
+    VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, data.is_engine_on, true, false)
+    VEHICLE.SET_VEHICLE_SIREN(vehicle, data.is_siren_on) -- _SET_SIREN_KEEP_ON?
 end

@@ -1,4 +1,4 @@
-VERSION = "0.10.7"
+VERSION = "0.10.8"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -582,6 +582,8 @@ util.create_tick_handler(function()
                 end
             else
                 -- NPC
+                util.toast(ENTITY.GET_ENTITY_MODEL(ped))
+
                 local keybinds_npc = UI.GetGodFingerKeybinds(god_finger_npc_effects)
                 if keybinds_npc:len() > 0 then keybinds["NPC"] = keybinds_npc end
 
@@ -2154,6 +2156,32 @@ function Player:OnJoin(player)
     menu.toggle(player_vehicle_root, "Leash", {"ryanleash"}, "Brings their vehicle with you like a leash.", function(value)
         vehicle_effects[player.id].leash = if value then true else nil
     end)
+    
+    menu.action(player_vehicle_root, "Steal", {"ryansteal"}, "Steals their vehicle.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
+        if vehicle ~= 0 then Objects.StealVehicle(vehicle)
+        else Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Steal Vehicle", player.name .. " is not in a vehicle.") end
+    end)
+
+    -- -- Vehicle Control
+    local player_vehicle_control_root = menu.list(player_trolling_root, "Vehicle Control...", {"ryancontrol"}, "Take control of their vehicle.")
+
+    menu.action(player_vehicle_control_root, "Start Driving", {"ryancontroldrive"}, "Drive their vehicle normally.", function()
+        Trolling.ReturnControlOfVehicle(player)
+        util.yield(250)
+        Trolling.TakeControlOfVehicle(player, false)
+    end)
+    menu.action(player_vehicle_control_root, "Start Flying", {"ryancontrolfly"}, "Fly their vehicle like an Oppressor Mk II.", function()
+        Trolling.ReturnControlOfVehicle(player)
+        util.yield(250)
+        Trolling.TakeControlOfVehicle(player, true)
+    end)
+    menu.divider(player_vehicle_control_root, "")
+    menu.action(player_vehicle_control_root, "Stop Controlling", {"ryancontrolstop"}, "Return control of their vehicle.", function()
+        if not Trolling.ReturnControlOfVehicle(player) then
+            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Control", "You aren't controlling " .. player.name .. "'s vehicle.")
+        end
+    end)
 
     -- -- Miscellaneous
     menu.toggle_loop(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
@@ -2163,40 +2191,7 @@ function Player:OnJoin(player)
     menu.toggle(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function(value)
         money_drop[player.id] = if value then true else nil
     end)
-    menu.toggle_loop(player_trolling_root, "Send Vehicle Under", {"ryanunder"}, "Sends their car to the underworld.", function()
-        if players.get_vehicle_model(player.id) ~= 0 then
-            local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
-            if vehicle ~= 0 and VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
-                local coords = ENTITY.GET_ENTITY_COORDS(vehicle)
-                coords:add(v3(0, 0, -10))
-                player:teleport_vehicle(coords)
-            end
-        end
-    end)
 
-    local broken = false
-    menu.toggle_loop(player_trolling_root, "Break Vehicle", {"ryanbreak"}, "Breaks their car apart and fix over and over.", function()
-        local model = players.get_vehicle_model(player.id)
-        if model ~= 0 then
-            local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
-            Objects.RequestControl(vehicle, false)
-            if broken then
-                VEHICLE.SET_VEHICLE_FIXED(vehicle)
-            else
-                local part_count = VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(model)
-                for part = 0, part_count - 1 do
-                    VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle, part, false)
-                end
-            end
-            broken = not broken
-            util.yield(100)
-        end
-    end)
-    menu.action(player_trolling_root, "Steal Vehicle", {"ryansteal"}, "Steals the player's car.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
-        if vehicle ~= 0 then Objects.StealVehicle(vehicle)
-        else Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Steal Vehicle", player.name .. " is not in a vehicle.") end
-    end)
     local player_trolling_glitch_root = UI.CreateList(player_trolling_root, "Glitch", "ryanglitch", "Glitch the player and their vehicle.", glitch_type_names, function(value)
         for i = 1, #glitch_type_names do
             if glitch_type_names[i] == value then
@@ -2269,6 +2264,7 @@ function Player:OnLeave(player)
     hermit_list[player.id] = nil
 
     Trolling.DeleteEntities(player.id)
+    Trolling.ReturnControlOfVehicle(player)
 end
 
 util.create_tick_handler(function()

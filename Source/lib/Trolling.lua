@@ -221,3 +221,54 @@ Trolling.ExplodeAll = function(with_earrape)
         player:explode(with_earrape)
     end
 end
+
+Trolling.ControlledVehicles = {}
+
+Trolling.TakeControlOfVehicle = function(player, fly)
+    if players.get_vehicle_model(player.id) == 0 then
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Control", player.name .. " is not driving a vehicle.")
+        return false
+    end
+    if Trolling.ControlledVehicles[player.id] ~= nil then
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Control", "You're already controlling " .. player.name .. "'s vehicle.")
+        return
+    end
+    
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
+    local vehicle_data = Objects.GetVehicleData(vehicle)
+    local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+    local vehicle_velocity = ENTITY.GET_ENTITY_VELOCITY(vehicle)
+    
+    local clone_model = if fly then util.joaat("oppressor2") else vehicle_data.model; Ryan.RequestModel(clone_model)
+    local clone_coords = v3(vehicle_coords); clone_coords:add(v3(0, 0, 5))
+    local clone_heading = ENTITY.GET_ENTITY_HEADING(vehicle)
+
+    Objects.RequestControl(vehicle, true)
+    local clone = entities.create_vehicle(clone_model, clone_coords, clone_heading)
+    Objects.SetVehicleData(clone, vehicle_data)
+    ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle, clone, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, false, true, false, false, 2, true)
+    ENTITY.SET_ENTITY_COORDS(clone, vehicle_coords.x, vehicle_coords.y, vehicle_coords.z)
+    ENTITY.SET_ENTITY_VELOCITY(clone, vehicle_velocity.x, vehicle_velocity.y, vehicle_velocity.z)
+    
+    for i = 1, 5 do
+        TASK.TASK_WARP_PED_INTO_VEHICLE(players.user_ped(), clone, -1)
+        util.yield(10)
+    end
+
+    Trolling.ControlledVehicles[player.id] = {vehicle = vehicle, clone = clone}
+    return true
+end
+
+Trolling.ReturnControlOfVehicle = function(player)
+    if Trolling.ControlledVehicles[player.id] == nil
+    or not ENTITY.IS_ENTITY_A_VEHICLE(Trolling.ControlledVehicles[player.id].vehicle)
+    or not ENTITY.IS_ENTITY_A_VEHICLE(Trolling.ControlledVehicles[player.id].clone) then
+        return false
+    end
+
+    ENTITY.DETACH_ENTITY(Trolling.ControlledVehicles[player.id].vehicle, true, true)
+    entities.delete_by_handle(Trolling.ControlledVehicles[player.id].clone)
+
+    Trolling.ControlledVehicles[player.id] = nil
+    return true
+end
