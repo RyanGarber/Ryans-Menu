@@ -1,4 +1,4 @@
-VERSION = "0.10.8"
+VERSION = "0.10.8a"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -38,7 +38,7 @@ local intro_text = 1.0
 local intro_stop_at = 1.0
 local intro_alpha = 1.0
 --local intro_blur = directx.blurrect_new()
-local ghost_mode = false
+Ryan.PlayerIsInGhostMode = false
 
 function show_intro(text, stop_at)
     intro_text = text
@@ -119,7 +119,7 @@ util.create_thread(function()
         end
     
         -- Ghost Mode
-        if ghost_mode then
+        if Ryan.PlayerIsInGhostMode then
             directx.draw_text(
                 0.5, 0.975,
                 "Ghost Mode Active",
@@ -495,6 +495,7 @@ UI.CreateEffectToggle(self_god_finger_world_root, "ryangodfingerworld", god_fing
 
 -- -- NPC
 UI.CreateNPCEffectList(self_god_finger_npc_root, "ryangodfingernpc", god_finger_npc_effects, true)
+UI.CreateEffectToggle(self_god_finger_npc_root, "ryangodfingernpc", god_finger_npc_effects, "Transform", "", true)
 
 -- -- Force
 for _, mode in pairs(Ryan.GodFingerForces) do
@@ -582,12 +583,20 @@ util.create_tick_handler(function()
                 end
             else
                 -- NPC
-                util.toast(ENTITY.GET_ENTITY_MODEL(ped))
-
                 local keybinds_npc = UI.GetGodFingerKeybinds(god_finger_npc_effects)
                 if keybinds_npc:len() > 0 then keybinds["NPC"] = keybinds_npc end
-
+                
                 UI.ApplyNPCEffectList(ped, god_finger_npc_effects, god_finger_npc_state, true)
+
+                if UI.GetGodFingerActivation(god_finger_npc_effects.transform) > 0 then
+                    local data = Objects.GetPedData(ped)
+                    if ENTITY.GET_ENTITY_MODEL(players.user_ped()) ~= data.model then
+                        Ryan.RequestModel(data.model)
+                        PLAYER.SET_PLAYER_MODEL(players.user(), data.model)
+                        util.yield(333)
+                        Objects.SetPedData(players.user_ped(), data)
+                    end
+                end
             end
         end
 
@@ -919,7 +928,7 @@ end)
 
 -- -- Character
 menu.toggle(self_character_root, "Ghost Mode", {"ryanghost"}, "Become entirely invisible to other players.", function(value)
-    ghost_mode = value
+    Ryan.PlayerIsInGhostMode = value
     menu.trigger_commands("invisibility " .. (if value then "remote" else "off"))
     menu.trigger_commands("otr " .. (if value then "on" else "off"))
     if value then Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Ghost Mode", "Ghost Mode enabled. Players can no longer see you.")
@@ -937,7 +946,7 @@ menu.action(self_character_root, "Become Nude", {"ryannude"}, "Make yuser a stri
     local coords = user.coords; coords:add(v3(0, 0, 5))
     if vehicle ~= nil then Ryan.Teleport(coords) end
     PLAYER.SET_PLAYER_MODEL(user.id, topless)
-    util.yield(250)
+    util.yield(333)
     PED.SET_PED_COMPONENT_VARIATION(user.ped_id, 8, 1, -1, 0)
     if vehicle ~= nil then PED.SET_PED_INTO_VEHICLE(user.ped_id, vehicle, seat) end
 
@@ -2166,18 +2175,52 @@ function Player:OnJoin(player)
     -- -- Vehicle Control
     local player_vehicle_control_root = menu.list(player_trolling_root, "Vehicle Control...", {"ryancontrol"}, "Take control of their vehicle.")
 
-    menu.action(player_vehicle_control_root, "Start Driving", {"ryancontroldrive"}, "Drive their vehicle normally.", function()
+    menu.divider(player_vehicle_control_root, "Drive")
+    menu.action(player_vehicle_control_root, "Clone Vehicle", {"ryancontroldrive"}, "Drive their vehicle normally.", function()
         Trolling.ReturnControlOfVehicle(player)
         util.yield(250)
-        Trolling.TakeControlOfVehicle(player, false)
+        Trolling.TakeControlOfVehicle(player, false, nil)
     end)
-    menu.action(player_vehicle_control_root, "Start Flying", {"ryancontrolfly"}, "Fly their vehicle like an Oppressor Mk II.", function()
+    menu.action(player_vehicle_control_root, "Fly Vehicle", {"ryancontrolfly"}, "Fly their vehicle like an Oppressor Mk II.", function()
         Trolling.ReturnControlOfVehicle(player)
         util.yield(250)
-        Trolling.TakeControlOfVehicle(player, true)
+        Trolling.TakeControlOfVehicle(player, false, "oppressor2")
     end)
-    menu.divider(player_vehicle_control_root, "")
-    menu.action(player_vehicle_control_root, "Stop Controlling", {"ryancontrolstop"}, "Return control of their vehicle.", function()
+
+    menu.divider(player_vehicle_control_root, "Tow")
+    menu.action(player_vehicle_control_root, "With Bicycle", {"ryancontrolbicycle"}, "Pull their vehicle with your thunder thighs.", function()
+        Trolling.ReturnControlOfVehicle(player)
+        util.yield(250)
+        Trolling.TakeControlOfVehicle(player, true, "bmx")
+    end)
+    menu.action(player_vehicle_control_root, "With Motorcycle", {"ryancontrolmotorcycle"}, "Pull their vehicle with your thunder thighs.", function()
+        Trolling.ReturnControlOfVehicle(player)
+        util.yield(250)
+        Trolling.TakeControlOfVehicle(player, true, "shotaro")
+    end)
+    menu.action(player_vehicle_control_root, "With Hauler", {"ryancontrolhauler"}, "Pull their vehicle with your thunder thighs.", function()
+        Trolling.ReturnControlOfVehicle(player)
+        util.yield(250)
+        Trolling.TakeControlOfVehicle(player, true, "hauler")
+    end)
+    menu.action(player_vehicle_control_root, "With Supercar", {"ryancontrolsupercar"}, "Pull their vehicle with your thunder thighs.", function()
+        Trolling.ReturnControlOfVehicle(player)
+        util.yield(250)
+        Trolling.TakeControlOfVehicle(player, true, "torero")
+    end)
+    menu.action(player_vehicle_control_root, "With Truck", {"ryancontroltruck"}, "Pull their vehicle with your thunder thighs.", function()
+        Trolling.ReturnControlOfVehicle(player)
+        util.yield(250)
+        Trolling.TakeControlOfVehicle(player, true, "caracara2")
+    end)
+    menu.action(player_vehicle_control_root, "With Jet", {"ryancontroljet"}, "Pull their vehicle with your thunder thighs.", function()
+        Trolling.ReturnControlOfVehicle(player)
+        util.yield(250)
+        Trolling.TakeControlOfVehicle(player, true, "hydra")
+    end)
+    
+    menu.divider(player_vehicle_control_root, "Cancel")
+    menu.action(player_vehicle_control_root, "Stop All", {"ryancontrolstop"}, "Return control of their vehicle.", function()
         if not Trolling.ReturnControlOfVehicle(player) then
             Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Control", "You aren't controlling " .. player.name .. "'s vehicle.")
         end
@@ -2408,6 +2451,13 @@ util.create_tick_handler(function()
         end
     end
 end)
+
+--[[local cow_model = util.joaat("a_c_cow"); Ryan.RequestModel(cow_model)
+local bmx_model = util.joaat("bmx"); Ryan.RequestModel(bmx_model)
+local bmx = entities.create_vehicle(bmx_model, ENTITY.GET_ENTITY_COORDS(players.user_ped()), ENTITY.GET_ENTITY_HEADING(players.user_ped()))
+local cow = entities.create_ped(0, cow_model, v3(0, 0, 0), 0)
+ENTITY.ATTACH_ENTITY_TO_ENTITY(cow, bmx, 0, 0, 0, 0.25, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
+TASK.TASK_SMART_FLEE_PED(cow, players.user_ped(), 100, -1, true, false)]]
 
 Player:Init()
 util.keep_running()

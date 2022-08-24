@@ -73,11 +73,10 @@ Objects.DrawESP = function(entity)
         return
     end
 
-    local color = {r = math.floor(Ryan.HUDColor.r * 255), g = math.floor(Ryan.HUDColor.g * 255), b = math.floor(Ryan.HUDColor.b * 255)}
-    local minimum = v3.new()
-    local maximum = v3.new()
     if ENTITY.DOES_ENTITY_EXIST(entity) then
+        local minimum, maximum = v3.new(), v3.new()
         MISC.GET_MODEL_DIMENSIONS(ENTITY.GET_ENTITY_MODEL(entity), minimum, maximum)
+
         local width  = 2 * maximum.x
         local length = 2 * maximum.y
         local depth  = 2 * maximum.z
@@ -93,6 +92,7 @@ Objects.DrawESP = function(entity)
             ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(entity,  width / 2, -length / 2, -depth / 2)
         }
 
+        local color = {r = math.floor(Ryan.HUDColor.r * 255), g = math.floor(Ryan.HUDColor.g * 255), b = math.floor(Ryan.HUDColor.b * 255)}
         GRAPHICS.DRAW_LINE(offsets[1].x, offsets[1].y, offsets[1].z, offsets[4].x, offsets[4].y, offsets[4].z, color.r, color.g, color.b, 255)
         GRAPHICS.DRAW_LINE(offsets[1].x, offsets[1].y, offsets[1].z, offsets[2].x, offsets[2].y, offsets[2].z, color.r, color.g, color.b, 255)
         GRAPHICS.DRAW_LINE(offsets[1].x, offsets[1].y, offsets[1].z, offsets[5].x, offsets[5].y, offsets[5].z, color.r, color.g, color.b, 255)
@@ -475,4 +475,27 @@ Objects.SetVehicleData = function(vehicle, data)
     VEHICLE.SET_VEHICLE_TYRES_CAN_BURST(vehicle, data.has_bulletproof_tires)
     VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, data.is_engine_on, true, false)
     VEHICLE.SET_VEHICLE_SIREN(vehicle, data.is_siren_on) -- _SET_SIREN_KEEP_ON?
+end
+
+Objects.GetPedData = function(ped)
+    local data = {
+        model = ENTITY.GET_ENTITY_MODEL(ped),
+        components = {}
+    }
+
+    for id = 0, 11 do
+        data.components[id] = {
+            drawable = PED.GET_PED_DRAWABLE_VARIATION(ped, id),
+            texture = PED.GET_PED_TEXTURE_VARIATION(ped, id),
+            palette = PED.GET_PED_PALETTE_VARIATION(ped, id)
+        }
+    end
+
+    return data
+end
+
+Objects.SetPedData = function(ped, data)
+    for id, component in pairs(data.components) do
+        PED.SET_PED_COMPONENT_VARIATION(ped, id, component.drawable, component.texture, component.palette)
+    end
 end
