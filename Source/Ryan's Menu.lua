@@ -1,4 +1,4 @@
-VERSION = "0.10.8a"
+VERSION = "0.10.9"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -2175,56 +2175,17 @@ function Player:OnJoin(player)
     -- -- Vehicle Control
     local player_vehicle_control_root = menu.list(player_trolling_root, "Vehicle Control...", {"ryancontrol"}, "Take control of their vehicle.")
 
-    menu.divider(player_vehicle_control_root, "Drive")
-    menu.action(player_vehicle_control_root, "Clone Vehicle", {"ryancontroldrive"}, "Drive their vehicle normally.", function()
-        Trolling.ReturnControlOfVehicle(player)
-        util.yield(250)
-        Trolling.TakeControlOfVehicle(player, false, nil)
-    end)
-    menu.action(player_vehicle_control_root, "Fly Vehicle", {"ryancontrolfly"}, "Fly their vehicle like an Oppressor Mk II.", function()
-        Trolling.ReturnControlOfVehicle(player)
-        util.yield(250)
-        Trolling.TakeControlOfVehicle(player, false, "oppressor2")
-    end)
+    menu.divider(player_vehicle_control_root, "Control")
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Clone", "clone", false)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Mk II", "oppressor2", false)
 
     menu.divider(player_vehicle_control_root, "Tow")
-    menu.action(player_vehicle_control_root, "With Bicycle", {"ryancontrolbicycle"}, "Pull their vehicle with your thunder thighs.", function()
-        Trolling.ReturnControlOfVehicle(player)
-        util.yield(250)
-        Trolling.TakeControlOfVehicle(player, true, "bmx")
-    end)
-    menu.action(player_vehicle_control_root, "With Motorcycle", {"ryancontrolmotorcycle"}, "Pull their vehicle with your thunder thighs.", function()
-        Trolling.ReturnControlOfVehicle(player)
-        util.yield(250)
-        Trolling.TakeControlOfVehicle(player, true, "shotaro")
-    end)
-    menu.action(player_vehicle_control_root, "With Hauler", {"ryancontrolhauler"}, "Pull their vehicle with your thunder thighs.", function()
-        Trolling.ReturnControlOfVehicle(player)
-        util.yield(250)
-        Trolling.TakeControlOfVehicle(player, true, "hauler")
-    end)
-    menu.action(player_vehicle_control_root, "With Supercar", {"ryancontrolsupercar"}, "Pull their vehicle with your thunder thighs.", function()
-        Trolling.ReturnControlOfVehicle(player)
-        util.yield(250)
-        Trolling.TakeControlOfVehicle(player, true, "torero")
-    end)
-    menu.action(player_vehicle_control_root, "With Truck", {"ryancontroltruck"}, "Pull their vehicle with your thunder thighs.", function()
-        Trolling.ReturnControlOfVehicle(player)
-        util.yield(250)
-        Trolling.TakeControlOfVehicle(player, true, "caracara2")
-    end)
-    menu.action(player_vehicle_control_root, "With Jet", {"ryancontroljet"}, "Pull their vehicle with your thunder thighs.", function()
-        Trolling.ReturnControlOfVehicle(player)
-        util.yield(250)
-        Trolling.TakeControlOfVehicle(player, true, "hydra")
-    end)
-    
-    menu.divider(player_vehicle_control_root, "Cancel")
-    menu.action(player_vehicle_control_root, "Stop All", {"ryancontrolstop"}, "Return control of their vehicle.", function()
-        if not Trolling.ReturnControlOfVehicle(player) then
-            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Control", "You aren't controlling " .. player.name .. "'s vehicle.")
-        end
-    end)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Bicycle", "scorcher", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Motorcycle", "shotaro", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Hauler", "hauler", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Supercar", "torero", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Truck", "caracara2", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Jet", "hydra", true)
 
     -- -- Miscellaneous
     menu.toggle_loop(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
@@ -2308,6 +2269,7 @@ function Player:OnLeave(player)
 
     Trolling.DeleteEntities(player.id)
     Trolling.ReturnControlOfVehicle(player)
+    enabled_controls[player.id] = nil
 end
 
 util.create_tick_handler(function()
