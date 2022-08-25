@@ -276,10 +276,10 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
     Trolling.ControlledVehicles[player.id] = {model = model}
     _was_in_ghost_mode = Ryan.PlayerIsInGhostMode
 
-    if Player:Self().coords:distance(player.coords) > 100 then
+    if Player:Self().coords:distance(player.coords) > 50 then
         if not _was_in_ghost_mode then menu.trigger_commands("ryanghost on") end
         Ryan.Teleport(player.coords)
-        util.yield(1000)
+        util.yield(500)
         if not _was_in_ghost_mode then menu.trigger_commands("ryanghost off") end
     end
 
@@ -323,18 +323,25 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
     Objects.RequestControl(vehicle, true)
     offset:setY(if with_trailer then vehicle_min.y + clone_min.y - 0.5 else 0)
     offset:setZ(if with_trailer then -vehicle_min.z else 0)
-    ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle, clone, 0, offset.x, offset.y, offset.z, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
     
+    for i = 1, 25 do
+        if ENTITY.IS_ENTITY_ATTACHED_TO_ENTITY(clone, vehicle) then break end
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle, clone, 0, offset.x, offset.y, offset.z, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
+        util.yield(100)
+    end
+
     ENTITY.SET_ENTITY_COORDS(clone, vehicle_coords.x, vehicle_coords.y, vehicle_coords.z)
     ENTITY.SET_ENTITY_VELOCITY(clone, vehicle_velocity.x, vehicle_velocity.y, vehicle_velocity.z)
     
-    for i = 1, 5 do
-        TASK.TASK_WARP_PED_INTO_VEHICLE(players.user_ped(), clone, -1)
-        util.yield(10)
+    for i = 1, 25 do
+        if VEHICLE.GET_PED_IN_VEHICLE_SEAT(clone, -1, false) == players.user_ped() then break end
+        PED.SET_PED_INTO_VEHICLE(players.user_ped(), clone, -1)
+        util.yield(100)
     end
 
     Trolling.ControlledVehicles[player.id].vehicle = vehicle
     Trolling.ControlledVehicles[player.id].clone = clone
+
     return true
 end
 

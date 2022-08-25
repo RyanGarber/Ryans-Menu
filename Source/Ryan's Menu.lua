@@ -1,4 +1,4 @@
-VERSION = "0.10.9"
+VERSION = "0.10.9a"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -2103,8 +2103,17 @@ function Player:OnJoin(player)
 		MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z - 2, 200, 0, snowball, 0, true, false, 2500.0)
     end)
 
-    menu.action(player_trolling_kill_root, "Kill (Paid Menu)", {"ryankillphysics"}, "Use this when removing godmode does not work.", function()
+    menu.action(player_trolling_kill_root, "Kill (Squish)", {"ryankillphysics1"}, "Use this when removing godmode does not work.", function()
         player:squish()
+    end)
+
+    menu.action(player_trolling_kill_root, "Kill (Teleport)", {"ryankillphysics2"}, "Use this when removing godmode does not work.", function()
+        if players.get_vehicle_model(player.id) == 0 then
+            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Kill", player.name .. " isn't in a vehicle.")
+            return
+        end
+        util.toast(players.get_vehicle_model(player.id))
+        menu.trigger_commands("ryantpunder" .. player.name)
     end)
 
 
@@ -2154,6 +2163,22 @@ function Player:OnJoin(player)
 
         ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), player.ped_id, 0, 0.0, -0.2, (attach_vehicle_offset[player.id] * 0.2), 1.0, 1.0, 1, true, true, true, false, 0, true)
         Ryan.Toast("Attached to " .. player.name .. ".")
+    end)
+
+    -- -- Teleport
+    local player_teleport_root = menu.list(player_trolling_root, "Teleport...", {"ryantp"}, "Teleport the player.")
+
+    menu.divider(player_teleport_root, "Vehicle")
+    menu.action(player_teleport_root, "Under the Map", {"ryantpunder"}, "Teleport this under the map; potentially kills modders.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id, true)
+        if vehicle == 0 then
+            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Teleport", player.name .. " doesn't have a vehicle.")
+            return
+        end
+        local coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+        coords:setZ(coords.z - 10)
+        player:teleport_vehicle(coords)
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Teleport", "Teleported " .. player.name .. " under the map!")
     end)
 
     -- -- Vehicle
@@ -2269,7 +2294,6 @@ function Player:OnLeave(player)
 
     Trolling.DeleteEntities(player.id)
     Trolling.ReturnControlOfVehicle(player)
-    enabled_controls[player.id] = nil
 end
 
 util.create_tick_handler(function()
