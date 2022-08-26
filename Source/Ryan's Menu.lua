@@ -1,4 +1,4 @@
-VERSION = "0.11.0a"
+VERSION = "0.11.0b"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -2176,13 +2176,13 @@ function Player:OnJoin(player)
     local player_vehicle_control_root = menu.list(player_trolling_root, "Control...", {"ryanvcontrol"}, "Take control of their vehicle.")
 
     menu.divider(player_vehicle_control_root, "Control")
-    for model, name in pairs(Trolling.VehicleControlModes.Control) do
-        Trolling.CreateVehicleControl(player_vehicle_control_root, player, name, model, false)
+    for _, mode in pairs(Trolling.VehicleControlModes.Control) do
+        Trolling.CreateVehicleControl(player_vehicle_control_root, player, mode[1], mode[2], false)
     end
 
     menu.divider(player_vehicle_control_root, "Tow")
-    for model, name in pairs(Trolling.VehicleControlModes.Tow) do
-        Trolling.CreateVehicleControl(player_vehicle_control_root, player, name, model, true)
+    for _, mode in pairs(Trolling.VehicleControlModes.Tow) do
+        Trolling.CreateVehicleControl(player_vehicle_control_root, player, mode[1], mode[2], true)
     end
 
     -- -- Vehicle Attachments

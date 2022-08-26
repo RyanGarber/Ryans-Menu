@@ -223,8 +223,8 @@ Trolling.ExplodeAll = function(with_earrape)
 end
 
 Trolling.VehicleControlModes = {
-    Control = {["clone"] = "Clone", ["oppressor2"] = "Mk II"},
-    Tow = {["hydra"] = "Jet", ["caracara2"] = "Truck", ["scorcher"] = "Bicycle", ["hauler"] = "Hauler", ["police3"] = "Cop Car", ["policeb"] = "Cop Motorcycle", ["polmav"] = "Cop Helicopter"}
+    Control = {{"Clone", "clone"}, {"Mk II", "oppressor2"}},
+    Tow = {{"Jet", "hydra"}, {"Truck", "caracara2"}, {"Bicycle", "scorcher"}, {"Semi", "hauler"}, {"Cop Car", "police3"}, {"Cop Motorcycle", "policeb"}, {"Cop Helicopter", "polmav"}}
 }
 
 Trolling.CreateVehicleControl = function(root, player, name, with_trailer, model)
@@ -249,9 +249,9 @@ Trolling.DeactivateVehicleControl = function(player, ignore_choice)
     for _, mode in pairs(Trolling.VehicleControlModes.Control) do table.insert(modes, mode) end
     for _, mode in pairs(Trolling.VehicleControlModes.Tow) do table.insert(modes, mode) end
 
-    for _, choice in pairs(modes) do
-        if choice ~= ignore_choice then
-            local ref = menu.ref_by_rel_path(player_root, "Trolling...>Control...>With " .. choice)
+    for _, mode in pairs(modes) do
+        if mode[1] ~= ignore_choice then
+            local ref = menu.ref_by_rel_path(player_root, "Trolling...>Control...>With " .. mode[1])
             if menu.get_value(ref) then
                 menu.trigger_command(ref, "off")
                 util.yield(750)
