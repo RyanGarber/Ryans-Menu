@@ -223,8 +223,8 @@ Trolling.ExplodeAll = function(with_earrape)
 end
 
 Trolling.VehicleControlModes = {
-    Control = {"Clone", "Mk II"},
-    Tow = {"Bicycle", "Motorcycle", "Hauler", "Supercar", "Truck", "Jet"}
+    Control = {["clone"] = "Clone", ["oppressor2"] = "Mk II"},
+    Tow = {["hydra"] = "Jet", ["caracara2"] = "Truck", ["scorcher"] = "Bicycle", ["hauler"] = "Hauler", ["police3"] = "Cop Car", ["policeb"] = "Cop Motorcycle", ["polmav"] = "Cop Helicopter"}
 }
 
 Trolling.CreateVehicleControl = function(root, player, name, with_trailer, model)

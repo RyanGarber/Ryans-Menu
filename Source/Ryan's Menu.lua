@@ -2176,18 +2176,14 @@ function Player:OnJoin(player)
     local player_vehicle_control_root = menu.list(player_trolling_root, "Control...", {"ryanvcontrol"}, "Take control of their vehicle.")
 
     menu.divider(player_vehicle_control_root, "Control")
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Clone", "clone", false)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Mk II", "oppressor2", false)
+    for model, name in pairs(Trolling.VehicleControlModes.Control) do
+        Trolling.CreateVehicleControl(player_vehicle_control_root, player, name, model, false)
+    end
 
     menu.divider(player_vehicle_control_root, "Tow")
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Jet", "hydra", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Truck", "caracara2", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Bicycle", "scorcher", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Hauler", "hauler", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Supercar", "torero", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Cop Car", "police3", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Cop Motorcycle", "policeb", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Cop Helicopter", "polmav", true)
+    for model, name in pairs(Trolling.VehicleControlModes.Tow) do
+        Trolling.CreateVehicleControl(player_vehicle_control_root, player, name, model, true)
+    end
 
     -- -- Vehicle Attachments
     local player_vehicle_attach_root = menu.list(player_trolling_root, "Attachments...", {"ryanvattach"}, "Attach various objects to the player's vehicle.")
