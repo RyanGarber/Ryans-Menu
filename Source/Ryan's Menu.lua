@@ -1,4 +1,4 @@
-VERSION = "0.10.9a"
+VERSION = "0.11.0"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -152,7 +152,6 @@ entities_exploded = {}
 
 menu.divider(self_root, "General")
 local self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX options.")
-local self_spotlight_root = menu.list(self_root, "Spotlight...", {"ryanspotlight"}, "Attach lights to you or your vehicle.")
 local self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
 local self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An expanded and enhanced forcefield.")
 local self_character_root = menu.list(self_root, "Character...", {"ryancharacter"}, "Effects for your character.")
@@ -186,27 +185,27 @@ local self_ptfx_body_pointer_root = menu.list(self_ptfx_body_root, "Pointer...",
 
 PTFX.CreateList(self_ptfx_body_head_root, function(ptfx)
     if ptfx_disable then return end
-    PTFX.PlayOnEntityBones(players.user_ped(), PTFX.PlayerBones.Head, ptfx[2], ptfx[3], ptfx_color)
+    PTFX.PlayOnEntityBones(players.user_ped(), Objects.PlayerBones.Head, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 PTFX.CreateList(self_ptfx_body_hands_root, function(ptfx)
     if ptfx_disable then return end
-    PTFX.PlayOnEntityBones(players.user_ped(), PTFX.PlayerBones.Hands, ptfx[2], ptfx[3], ptfx_color)
+    PTFX.PlayOnEntityBones(players.user_ped(), Objects.PlayerBones.Hands, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 
 PTFX.CreateList(self_ptfx_body_feet_root, function(ptfx)
     if ptfx_disable then return end
-    PTFX.PlayOnEntityBones(players.user_ped(), PTFX.PlayerBones.Feet, ptfx[2], ptfx[3], ptfx_color)
+    PTFX.PlayOnEntityBones(players.user_ped(), Objects.PlayerBones.Feet, ptfx[2], ptfx[3], ptfx_color)
     util.yield(ptfx[4])
 end)
 
 PTFX.CreateList(self_ptfx_body_pointer_root, function(ptfx)
     if ptfx_disable then return end
     if PlayerIsPointing then
-        PTFX.PlayOnEntityBones(players.user_ped(), PTFX.PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
+        PTFX.PlayOnEntityBones(players.user_ped(), Objects.PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -219,7 +218,7 @@ PTFX.CreateList(self_ptfx_vehicle_wheels_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
     if vehicle ~= 0 then
-        PTFX.PlayOnEntityBones(vehicle, PTFX.VehicleBones.Wheels, ptfx[2], ptfx[3], ptfx_color)
+        PTFX.PlayOnEntityBones(vehicle, Objects.VehicleBones.Wheels, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -228,7 +227,7 @@ PTFX.CreateList(self_ptfx_vehicle_exhaust_root, function(ptfx)
     if ptfx_disable then return end
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
     if vehicle ~= 0 then
-        PTFX.PlayOnEntityBones(vehicle, PTFX.VehicleBones.Exhaust, ptfx[2], ptfx[3], ptfx_color)
+        PTFX.PlayOnEntityBones(vehicle, Objects.VehicleBones.Exhaust, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -254,7 +253,7 @@ PTFX.CreateList(self_ptfx_weapon_muzzle_root, function(ptfx)
     if ptfx_disable then return end
     local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(players.user_ped())
     if weapon ~= NULL then
-        PTFX.PlayAtEntityBoneCoords(weapon, PTFX.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
+        PTFX.PlayAtEntityBoneCoords(weapon, Objects.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
 end)
@@ -265,7 +264,7 @@ PTFX.CreateList(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
     if PED.IS_PED_SHOOTING(our_ped) then
         local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(our_ped)
         if weapon ~= NULL then
-            PTFX.PlayAtEntityBoneCoords(weapon, PTFX.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
+            PTFX.PlayAtEntityBoneCoords(weapon, Objects.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
             util.yield(ptfx[4])
         end
     end
@@ -545,7 +544,7 @@ util.create_tick_handler(function()
     local keybinds = {}
     memory.write_int(memory.script_global(4521801 + 935), NETWORK.GET_NETWORK_TIME())
 
-    raycast = Ryan.RaycastFromCamera(500.0, Ryan.RaycastFlags.Vehicles + Ryan.RaycastFlags.Peds + Ryan.RaycastFlags.Objects)
+    raycast = Ryan.RaycastFromCamera(500.0, Ryan.RaycastFlags.Vehicles + Ryan.RaycastFlags.Peds + Ryan.RaycastFlags.Objects, false)
     if raycast.did_hit then
         god_finger_target = raycast.hit_coords
         Objects.DrawESP(raycast.hit_entity)
@@ -755,27 +754,24 @@ util.create_tick_handler(function()
                 if util.current_time_millis() - god_finger_world_state.nude_yoga > 2000 then
                     god_finger_world_state.nude_yoga = util.current_time_millis()
 
-                    local raycast = Ryan.RaycastFromCamera(50.0, Ryan.RaycastFlags.World)
-                    if raycast.did_hit then
-                        local topless, acult = util.joaat("a_f_y_topless_01"), util.joaat("a_m_y_acult_01")
-                        Ryan.RequestModel(topless); Ryan.RequestAnimations("amb@world_human_yoga@female@base")
-                        Ryan.RequestModel(acult); Ryan.RequestAnimations("switch@trevor@jerking_off")
+                    local topless, acult = util.joaat("a_f_y_topless_01"), util.joaat("a_m_y_acult_01")
+                    Ryan.RequestModel(topless); Ryan.RequestAnimations("amb@world_human_yoga@female@base")
+                    Ryan.RequestModel(acult); Ryan.RequestAnimations("switch@trevor@jerking_off")
 
-                        local heading = ENTITY.GET_ENTITY_HEADING(players.user_ped())
-                        local ped = entities.create_ped(0, topless, raycast.hit_coords, heading)
-                        PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
-                        TASK.TASK_PLAY_ANIM(ped, "amb@world_human_yoga@female@base", "base_a", 8.0, 0, -1, 9, 0, false, false, false)
+                    local heading = ENTITY.GET_ENTITY_HEADING(players.user_ped())
+                    local ped = entities.create_ped(0, topless, raycast.hit_coords, heading)
+                    PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                    TASK.TASK_PLAY_ANIM(ped, "amb@world_human_yoga@female@base", "base_a", 8.0, 0, -1, 9, 0, false, false, false)
 
-                        local heading = ENTITY.GET_ENTITY_HEADING(players.user_ped())
-                        local coords = raycast.hit_coords; coords:add(v3(-3, 0, 0))
-                        local ped = entities.create_ped(0, acult, coords, heading)
-                        PED.SET_PED_COMPONENT_VARIATION(ped, 4, 0, 0, 0)
-                        PED.SET_PED_COMPONENT_VARIATION(ped, 8, 0, 0, 0)
-                        TASK.TASK_PLAY_ANIM(ped, "switch@trevor@jerking_off", "trev_jerking_off_loop", 8.0, 0, -1, 9, 0, false, false, false)
-                        
-                        Ryan.FreeModel(topless)
-                        Ryan.FreeModel(acult)
-                    end
+                    local heading = ENTITY.GET_ENTITY_HEADING(players.user_ped())
+                    local coords = raycast.hit_coords; coords:add(v3(-3, 0, 0))
+                    local ped = entities.create_ped(0, acult, coords, heading)
+                    PED.SET_PED_COMPONENT_VARIATION(ped, 4, 0, 0, 0)
+                    PED.SET_PED_COMPONENT_VARIATION(ped, 8, 0, 0, 0)
+                    TASK.TASK_PLAY_ANIM(ped, "switch@trevor@jerking_off", "trev_jerking_off_loop", 8.0, 0, -1, 9, 0, false, false, false)
+                    
+                    Ryan.FreeModel(topless)
+                    Ryan.FreeModel(acult)
                 end
             end
 
@@ -783,58 +779,55 @@ util.create_tick_handler(function()
                 if util.current_time_millis() - god_finger_world_state.police_brutality > 2000 then
                     god_finger_world_state.police_brutality = util.current_time_millis()
 
-                    local raycast = Ryan.RaycastFromCamera(50.0, Ryan.RaycastFlags.World)
-                    if raycast.did_hit then
-                        local famfor, cop = util.joaat("g_m_y_famfor_01"), util.joaat("s_f_y_cop_01")
-                        Ryan.RequestModel(famfor); Ryan.RequestAnimations("missheistdockssetup1ig_13@main_action")
-                        Ryan.RequestModel(cop); Ryan.RequestAnimations("move_m@intimidation@cop@unarmed")
+                    local famfor, cop = util.joaat("g_m_y_famfor_01"), util.joaat("s_f_y_cop_01")
+                    Ryan.RequestModel(famfor); Ryan.RequestAnimations("missheistdockssetup1ig_13@main_action")
+                    Ryan.RequestModel(cop); Ryan.RequestAnimations("move_m@intimidation@cop@unarmed")
 
-                        local heading = ENTITY.GET_ENTITY_HEADING(players.user_ped())
+                    local heading = ENTITY.GET_ENTITY_HEADING(players.user_ped())
 
-                        civilians = {}
-                        for i = 1, 3 do
-                            local coords = raycast.hit_coords; coords:add(v3(i, math.random(-1, 1), 0))
-                            local ped = entities.create_ped(0, famfor, coords, heading)
-                            PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, famfor)
-                            PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
-                            animations = {"guard_beatup_mainaction_dockworker", "guard_beatup_mainaction_guard1", "guard_beatup_mainaction_guard2"}
-                            TASK.TASK_PLAY_ANIM(ped, "missheistdockssetup1ig_13@main_action", animations[i], 8.0, 0, -1, 9, 0, false, false, false)
-                            
-                            table.insert(civilians, ped)
-                        end
-
-                        util.yield(750)
-
-                        cops = {}
-                        for i = 1, 3 do
-                            local coords = raycast.hit_coords; coords:add(v3(3 + i, math.random(-1, 1), 0))
-                            local ped = entities.create_ped(0, cop, coords, heading)
-                            PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, cop)
-                            PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
-                            TASK.TASK_PLAY_ANIM(ped, "move_m@intimidation@cop@unarmed", "idle", 8.0, 0, -1, 9, 0, false, false, false)
-
-                            WEAPON.GIVE_WEAPON_TO_PED(ped, util.joaat("weapon_appistol"), 1000, false, true)
-                            PED.SET_PED_COMBAT_ATTRIBUTES(ped, 5, true)
-                            PED.SET_PED_COMBAT_ATTRIBUTES(ped, 46, true)
-
-                            local rotation = coords:lookAt(ENTITY.GET_ENTITY_COORDS(civilians[i]))
-                            ENTITY.SET_ENTITY_ROTATION(ped, rotation.x, rotation.y, rotation.z, 2, true)
-                            rotation = ENTITY.GET_ENTITY_COORDS(civilians[i]):lookAt(coords)
-                            ENTITY.SET_ENTITY_ROTATION(civilians[i], rotation.x, rotation.y, rotation.z, 2, true)
-
-                            table.insert(cops, ped)
-                        end
-
-                        util.yield(750)
-
-                        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("g_m_y_famfor_01"), util.joaat("s_f_y_cop_01"))
-                        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("s_f_y_cop_01"), util.joaat("g_m_y_famfor_01"))
-                        PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, util.joaat("s_f_y_cop_01"), util.joaat("s_f_y_cop_01"))
-                        for i = 1, #cops do TASK.TASK_COMBAT_PED(cops[i], civilians[i], 0, 16) end
-
-                        Ryan.FreeModel(famfor)
-                        Ryan.FreeModel(cop)
+                    civilians = {}
+                    for i = 1, 3 do
+                        local coords = raycast.hit_coords; coords:add(v3(i, math.random(-1, 1), 0))
+                        local ped = entities.create_ped(0, famfor, coords, heading)
+                        PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, famfor)
+                        PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                        animations = {"guard_beatup_mainaction_dockworker", "guard_beatup_mainaction_guard1", "guard_beatup_mainaction_guard2"}
+                        TASK.TASK_PLAY_ANIM(ped, "missheistdockssetup1ig_13@main_action", animations[i], 8.0, 0, -1, 9, 0, false, false, false)
+                        
+                        table.insert(civilians, ped)
                     end
+
+                    util.yield(750)
+
+                    cops = {}
+                    for i = 1, 3 do
+                        local coords = raycast.hit_coords; coords:add(v3(3 + i, math.random(-1, 1), 0))
+                        local ped = entities.create_ped(0, cop, coords, heading)
+                        PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, cop)
+                        PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                        TASK.TASK_PLAY_ANIM(ped, "move_m@intimidation@cop@unarmed", "idle", 8.0, 0, -1, 9, 0, false, false, false)
+
+                        WEAPON.GIVE_WEAPON_TO_PED(ped, util.joaat("weapon_appistol"), 1000, false, true)
+                        PED.SET_PED_COMBAT_ATTRIBUTES(ped, 5, true)
+                        PED.SET_PED_COMBAT_ATTRIBUTES(ped, 46, true)
+
+                        local rotation = coords:lookAt(ENTITY.GET_ENTITY_COORDS(civilians[i]))
+                        ENTITY.SET_ENTITY_ROTATION(ped, rotation.x, rotation.y, rotation.z, 2, true)
+                        rotation = ENTITY.GET_ENTITY_COORDS(civilians[i]):lookAt(coords)
+                        ENTITY.SET_ENTITY_ROTATION(civilians[i], rotation.x, rotation.y, rotation.z, 2, true)
+
+                        table.insert(cops, ped)
+                    end
+
+                    util.yield(750)
+
+                    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("g_m_y_famfor_01"), util.joaat("s_f_y_cop_01"))
+                    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("s_f_y_cop_01"), util.joaat("g_m_y_famfor_01"))
+                    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, util.joaat("s_f_y_cop_01"), util.joaat("s_f_y_cop_01"))
+                    for i = 1, #cops do TASK.TASK_COMBAT_PED(cops[i], civilians[i], 0, 16) end
+
+                    Ryan.FreeModel(famfor)
+                    Ryan.FreeModel(cop)
                 end
             end
 
@@ -842,14 +835,11 @@ util.create_tick_handler(function()
                 if util.current_time_millis() - god_finger_world_state.stripper_el_rubio > 1000 then
                     god_finger_world_state.stripper_el_rubio = util.current_time_millis()
 
-                    local raycast = Ryan.RaycastFromCamera(50.0, Ryan.RaycastFlags.World)
-                    if raycast.did_hit then
-                        local juanstrickler = util.joaat("csb_juanstrickler"); Ryan.RequestModel(juanstrickler)
-                        Ryan.RequestAnimations("mini@strip_club@pole_dance@pole_dance1")
-                        local ped = entities.create_ped(1, juanstrickler, raycast.hit_coords, ENTITY.GET_ENTITY_HEADING(Player:Self().ped_id))
-                        TASK.TASK_PLAY_ANIM(ped, "mini@strip_club@pole_dance@pole_dance1", "pd_dance_01", 8.0, 0, -1, 9, 0, false, false, false)
-                        Ryan.FreeModel(juanstrickler)
-                    end
+                    local juanstrickler = util.joaat("csb_juanstrickler"); Ryan.RequestModel(juanstrickler)
+                    Ryan.RequestAnimations("mini@strip_club@pole_dance@pole_dance1")
+                    local ped = entities.create_ped(1, juanstrickler, raycast.hit_coords, ENTITY.GET_ENTITY_HEADING(Player:Self().ped_id))
+                    TASK.TASK_PLAY_ANIM(ped, "mini@strip_club@pole_dance@pole_dance1", "pd_dance_01", 8.0, 0, -1, 9, 0, false, false, false)
+                    Ryan.FreeModel(juanstrickler)
                 end
             end
 
@@ -857,11 +847,8 @@ util.create_tick_handler(function()
                 if util.current_time_millis() - god_finger_world_state.fire > 1000 then
                     god_finger_world_state.fire = util.current_time_millis()
 
-                    local raycast = Ryan.RaycastFromCamera(250.0, Ryan.RaycastFlags.World)
-                    if raycast.did_hit then
-                        if raycast.hit_entity then FIRE.START_ENTITY_FIRE(raycast.hit_entity) end
-                        FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
-                    end
+                    if raycast.hit_entity then FIRE.START_ENTITY_FIRE(raycast.hit_entity) end
+                    FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
                 end
             end
         end
@@ -889,40 +876,6 @@ util.create_tick_handler(function()
         if last_shown > 500--[[ or world_keybind_before]] then
             util.show_corner_help("No God Finger effects available.")
         end
-    end
-end)
-
--- -- Spotlight
-spotlight_offset = 3.0
-spotlight_intensity = 1
-
-menu.action(self_spotlight_root, "Add To Body", {"ryanspotlightbody"}, "Adds spotlights to your body.", function()
-    local our_ped = players.user_ped()
-    if our_ped ~= 0 then
-        Objects.AddSpotlight(our_ped, spotlight_offset, spotlight_intensity)
-    end
-end)
-
-menu.action(self_spotlight_root, "Add To Vehicle", {"ryanspotlightvehicle"}, "Adds spotlights to your vehicle.", function()
-    local player_id, our_ped = players.user(), players.user_ped()
-    local vehicle = entities.get_user_vehicle_as_handle()
-    if vehicle ~= 0 then
-        Objects.AddSpotlight(vehicle, spotlight_offset, spotlight_intensity)
-    end
-end)
-
-menu.divider(self_spotlight_root, "Options")
-menu.slider(self_spotlight_root, "Offset", {"ryanspotlightoffset"}, "How far the lights are away from the model.", 1, 100, 30, 5, function(value)
-    spotlight_offset = value / 10.0
-end)
-menu.slider(self_spotlight_root, "Intensity", {"ryanspotlightintensity"}, "How bright the light is.", 1, 50, 1, 1, function(value)
-    spotlight_intensity = value
-end)
-menu.action(self_spotlight_root, "Remove All", {"ryanspotlightremove"}, "Removes previously added spotlights.", function()
-    Objects.DetachAll(players.user_ped())
-    local vehicle = entities.get_user_vehicle_as_handle()
-    if vehicle ~= 0 then
-        Objects.DetachAll(vehicle)
     end
 end)
 
@@ -1039,8 +992,6 @@ util.create_tick_handler(function()
     end
     util.yield(200)
 end)
-
-
 
 -- -- E-Brake
 ebrake = false
@@ -2033,6 +1984,7 @@ util.create_tick_handler(function()
     end
 end)
 
+
 -- Player Options --
 spectate_buttons = {}
 
@@ -2048,7 +2000,9 @@ attach_vehicle_bones = {}
 attach_vehicle_id = {}
 attach_notice = {}
 attach_vehicle_offset = {}
-local attach_root = {}
+attach_root = {}
+
+vehicle_attach = {}
 
 glitch = {}
 glitch_state = {}
@@ -2078,6 +2032,8 @@ function Player:OnJoin(player)
 
     
     -- Trolling --
+    menu.divider(player_trolling_root, "General")
+
     -- -- Kill
     local player_trolling_kill_root = menu.list(player_trolling_root, "Kill...", {"ryankill"}, "Options to kill players while they're in godmode.")
     
@@ -2181,37 +2137,6 @@ function Player:OnJoin(player)
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Teleport", "Teleported " .. player.name .. " under the map!")
     end)
 
-    -- -- Vehicle
-    local player_vehicle_root = menu.list(player_trolling_root, "Vehicle...", {"ryanvehicle"}, "Vehicle trolling options.")    
-
-    vehicle_effects[player.id] = {}
-    UI.CreateVehicleEffectList(player_vehicle_root, "ryan", player.name, vehicle_effects[player.id], true, false)
-
-    menu.toggle(player_vehicle_root, "Leash", {"ryanleash"}, "Brings their vehicle with you like a leash.", function(value)
-        vehicle_effects[player.id].leash = if value then true else nil
-    end)
-    
-    menu.action(player_vehicle_root, "Steal", {"ryansteal"}, "Steals their vehicle.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
-        if vehicle ~= 0 then Objects.StealVehicle(vehicle)
-        else Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Steal Vehicle", player.name .. " is not in a vehicle.") end
-    end)
-
-    -- -- Vehicle Control
-    local player_vehicle_control_root = menu.list(player_trolling_root, "Vehicle Control...", {"ryancontrol"}, "Take control of their vehicle.")
-
-    menu.divider(player_vehicle_control_root, "Control")
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Clone", "clone", false)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Mk II", "oppressor2", false)
-
-    menu.divider(player_vehicle_control_root, "Tow")
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Bicycle", "scorcher", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Motorcycle", "shotaro", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Hauler", "hauler", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Supercar", "torero", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Truck", "caracara2", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Jet", "hydra", true)
-
     -- -- Miscellaneous
     menu.toggle_loop(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
         player:turn_into_animal()
@@ -2227,6 +2152,93 @@ function Player:OnJoin(player)
                 glitch[player.id] = glitch_type_hashes[i]
             end
         end
+    end)
+
+    menu.divider(player_trolling_root, "Vehicle")
+
+    -- -- Vehicle Effects
+    local player_vehicle_root = menu.list(player_trolling_root, "Effects...", {"ryanveffects"}, "Vehicle trolling options.")    
+
+    vehicle_effects[player.id] = {}
+    UI.CreateVehicleEffectList(player_vehicle_root, "ryanv", player.name, vehicle_effects[player.id], true, false)
+
+    menu.toggle(player_vehicle_root, "Leash", {"ryanvleash"}, "Brings their vehicle with you like a leash.", function(value)
+        vehicle_effects[player.id].leash = if value then true else nil
+    end)
+    
+    menu.action(player_vehicle_root, "Steal", {"ryanvsteal"}, "Steals their vehicle.", function()
+        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
+        if vehicle ~= 0 then Objects.StealVehicle(vehicle)
+        else Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Steal Vehicle", player.name .. " is not in a vehicle.") end
+    end)
+
+    -- -- Vehicle Control
+    local player_vehicle_control_root = menu.list(player_trolling_root, "Control...", {"ryanvcontrol"}, "Take control of their vehicle.")
+
+    menu.divider(player_vehicle_control_root, "Control")
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Clone", "clone", false)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Mk II", "oppressor2", false)
+
+    menu.divider(player_vehicle_control_root, "Tow")
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Bicycle", "scorcher", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Motorcycle", "shotaro", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Hauler", "hauler", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Supercar", "torero", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Truck", "caracara2", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Jet", "hydra", true)
+
+    -- -- Vehicle Attachments
+    local player_vehicle_attach_root = menu.list(player_trolling_root, "Attachments...", {"ryanvattach"}, "Attach various objects to the player's vehicle.")
+    vehicle_attach[player.id] = {attach_to_roof = true, attach_to_wheels = false, stack_size = 1}
+
+    menu.divider(player_vehicle_attach_root, "Options")
+    menu.toggle(player_vehicle_attach_root, "Attach to Roof", {"ryanvattachroof"}, "Attach the object to their roof.", function(value)
+        if value then menu.trigger_commands("ryanvattachwheels" .. player.name .. " off") end
+        vehicle_attach[player.id].attach_to_roof = if value then true else nil
+    end, true)
+    menu.toggle(player_vehicle_attach_root, "Attach to Wheels", {"ryanvattachwheels"}, "Attach the object to all of their wheels.", function(value)
+        if value then menu.trigger_commands("ryanvattachroof" .. player.name .. " off") end
+        vehicle_attach[player.id].attach_to_wheels = if value then true else nil
+    end)
+    menu.slider(player_vehicle_attach_root, "Stack Size", {"ryanvattachstack"}, "The object will be stacked on top of itself this many times.", 1, 10, 1, 1, function(value)
+        vehicle_attach[player.id].stack_size = value
+    end)
+    menu.action(player_vehicle_attach_root, "Delete", {"ryanvdetach"}, "Detach all previously attached objects.", function()
+        Trolling.DetachObjectsFromVehicle(player)
+    end)
+
+    menu.divider(player_vehicle_attach_root, "Attach")
+    menu.action(player_vehicle_attach_root, "Clone Vehicle", {"ryanvattachclone"}, "Clones of their vehicle.", function(value)
+        Trolling.AttachObjectToVehicle(player, players.get_vehicle_model(player.id), vehicle_attach[player.id])
+    end)
+
+    menu.divider(player_vehicle_attach_root, "")
+    menu.action(player_vehicle_attach_root, "Street Light", {"ryanvattachstreetlight"}, "America's finest lamp.", function()
+        Trolling.AttachObjectToVehicle(player, "prop_streetlight_11c", vehicle_attach[player.id])
+    end)
+    menu.action(player_vehicle_attach_root, "Wind Turbine", {"ryanvattachwindturbine"}, "The socialist left is going to ruin your life with renewables!1!!", function()
+        Trolling.AttachObjectToVehicle(player, "prop_windmill_01", vehicle_attach[player.id])
+    end)
+    menu.action(player_vehicle_attach_root, "Inflatable Tube Man", {"ryanvattachairdancer"}, "The Wacky, Inflatable, Arm-Flailing Tube Man.", function()
+        Trolling.AttachObjectToVehicle(player, "p_airdancer_01_s", vehicle_attach[player.id])
+    end)
+    menu.action(player_vehicle_attach_root, "Stop Sign", {"ryanvattachstop"}, "The worst attack on freedom since the invention of DUI.", function()
+        Trolling.AttachObjectToVehicle(player, "prop_sign_road_01a", vehicle_attach[player.id])
+    end)
+    menu.action(player_vehicle_attach_root, "Billboard", {"ryanvattachbillboard"}, "Not a real billboard.", function()
+        Trolling.AttachObjectToVehicle(player, "prop_billboard_14", vehicle_attach[player.id])
+    end)
+    menu.action(player_vehicle_attach_root, "Radar Dish", {"ryanvattachradar"}, "The airport radar dish.", function()
+        Trolling.AttachObjectToVehicle(player, "prop_air_bigradar", vehicle_attach[player.id])
+    end)
+    menu.action(player_vehicle_attach_root, "Christmas Tree", {"ryanvattachxmastree"}, "That Christmas tree - you know the one.", function()
+        Trolling.AttachObjectToVehicle(player, "prop_xmas_tree_int", vehicle_attach[player.id])
+    end)
+    menu.action(player_vehicle_attach_root, "Beer Fridge", {"ryanvattachbeerfridge"}, "Just a beer fridge.", function()
+        Trolling.AttachObjectToVehicle(player, "v_ret_ml_fridge", vehicle_attach[player.id])
+    end)
+    menu.action(player_vehicle_attach_root, "Toilet", {"ryanvattachtoilet"}, "Just a toilet.", function()
+        Trolling.AttachObjectToVehicle(player, "prop_toilet_01", vehicle_attach[player.id])
     end)
 
 
@@ -2285,6 +2297,8 @@ function Player:OnLeave(player)
     attach_notice[player.id] = nil
     attach_vehicle_offset[player.id] = nil
     attach_root[player.id] = nil
+
+    vehicle_attach[player.id] = nil
 
     glitch[player.id] = nil
     glitch_state[player.id] = nil

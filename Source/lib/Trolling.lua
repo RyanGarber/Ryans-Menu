@@ -229,7 +229,7 @@ Trolling.VehicleControlModes = {
 
 Trolling.CreateVehicleControl = function(root, player, name, with_trailer, model)
     local description = if name == "Clone" then "clone of their vehicle" else name
-    local command = "ryancontrol" .. Ryan.CommandName(name)
+    local command = "ryanvcontrol" .. Ryan.CommandName(name)
     menu.toggle(root, "With " .. name, {command}, (if with_trailer then "Tow" else "Control") .. " their vehicle with a " .. description .. ".", function(value)
         if value then
             Trolling.DeactivateVehicleControl(player, name)
@@ -251,7 +251,7 @@ Trolling.DeactivateVehicleControl = function(player, ignore_choice)
 
     for _, choice in pairs(modes) do
         if choice ~= ignore_choice then
-            local ref = menu.ref_by_rel_path(player_root, "Trolling...>Vehicle Control...>With " .. choice)
+            local ref = menu.ref_by_rel_path(player_root, "Trolling...>Control...>With " .. choice)
             if menu.get_value(ref) then
                 menu.trigger_command(ref, "off")
                 util.yield(750)
@@ -320,23 +320,25 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
         Trolling.ControlledVehicles[player.id].trailer = trailer
     end
 
-    Objects.RequestControl(vehicle, true)
     offset:setY(if with_trailer then vehicle_min.y + clone_min.y - 0.5 else 0)
     offset:setZ(if with_trailer then -vehicle_min.z else 0)
     
     for i = 1, 25 do
-        if ENTITY.IS_ENTITY_ATTACHED_TO_ENTITY(clone, vehicle) then break end
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle, clone, 0, offset.x, offset.y, offset.z, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
-        util.yield(100)
+        if not ENTITY.IS_ENTITY_ATTACHED_TO_ENTITY(clone, vehicle) then
+            Objects.RequestControl(vehicle, true)
+            ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle, clone, 0, offset.x, offset.y, offset.z, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
+            util.yield(100)
+        end
     end
 
     ENTITY.SET_ENTITY_COORDS(clone, vehicle_coords.x, vehicle_coords.y, vehicle_coords.z)
     ENTITY.SET_ENTITY_VELOCITY(clone, vehicle_velocity.x, vehicle_velocity.y, vehicle_velocity.z)
     
     for i = 1, 25 do
-        if VEHICLE.GET_PED_IN_VEHICLE_SEAT(clone, -1, false) == players.user_ped() then break end
-        PED.SET_PED_INTO_VEHICLE(players.user_ped(), clone, -1)
-        util.yield(100)
+        if VEHICLE.GET_PED_IN_VEHICLE_SEAT(clone, -1, false) ~= players.user_ped() then
+            PED.SET_PED_INTO_VEHICLE(players.user_ped(), clone, -1)
+            util.yield(100)
+        end
     end
 
     Trolling.ControlledVehicles[player.id].vehicle = vehicle
@@ -356,4 +358,78 @@ Trolling.ReturnControlOfVehicle = function(player)
 
     Trolling.ControlledVehicles[player.id] = nil
     return true
+end
+
+local _vehicle_attachments = {}
+local _vehicle_attachment_offsets = {
+    [1262567554] = 1.15, -- v_ret_ml_fridge
+    [238789712] = 0.25, -- prop_xmas_tree_int
+    [-1988908952] = 1, -- prop_air_bigradar
+}
+
+Trolling.AttachObjectToVehicle = function(player, object, options)
+    if type(object) == "string" then object = util.joaat(object) end
+    if _vehicle_attachments[player.id] == nil then _vehicle_attachments[player.id] = {} end
+
+    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id, true)
+    if vehicle == 0 then
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", player.name .. " does not have a vehicle.")
+        return
+    end
+
+    local bones = {}
+    local roof_z, height_z = 0, 0
+    local is_a_clone = object == ENTITY.GET_ENTITY_MODEL(vehicle)
+
+    local min, max = v3.new(), v3.new()
+    MISC.GET_MODEL_DIMENSIONS(object, min, max)
+    height_z = max.z - min.z
+
+    if options.attach_to_roof then
+        bones[1] = -1
+        local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+        local raycast_coords = v3(vehicle_coords); raycast_coords:setZ(raycast_coords.z + 9.99)
+        local raycast = Ryan.Raycast(raycast_coords, v3(0, 0, -1), 10.01, Ryan.RaycastFlags.Vehicles, true)
+        if not raycast.did_hit then
+            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachment", "Failed to find the roof of your car. Is something on top of it?")
+            return
+        end
+        roof_z = raycast.hit_coords.z - vehicle_coords.z
+        if _vehicle_attachment_offsets[object] ~= nil then roof_z = roof_z + _vehicle_attachment_offsets[object] end
+    elseif options.attach_to_wheels then
+        for i = 1, #Objects.VehicleBones.Wheels do
+            bones[i] = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, Objects.VehicleBones.Wheels[i])
+        end
+    end
+
+    local vehicle_data = if is_a_clone then Objects.GetVehicleData(vehicle) else nil
+    Ryan.RequestModel(object)
+
+    for _, bone in pairs(bones) do
+        local entity = nil
+        for i = 0, options.stack_size - 1 do
+            if STREAMING.IS_MODEL_A_VEHICLE(object) then entity = entities.create_vehicle(object, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
+            else entity = entities.create_object(object, ENTITY.GET_ENTITY_COORDS(vehicle), 0) end
+            Objects.RequestControl(vehicle, true)
+            util.toast("created object at")
+
+            local z = roof_z + (i * (is_a_clone and roof_z or height_z))
+            ENTITY.ATTACH_ENTITY_TO_ENTITY(entity, vehicle, bone, 0, 0, z, 0, 0, 0, false, false, false, false, 0, true)
+            ENTITY.SET_ENTITY_CAN_BE_DAMAGED(entity, false)
+            
+            if vehicle_data ~= nil then Objects.SetVehicleData(entity, vehicle_data) end
+            table.insert(_vehicle_attachments[player.id], entity)
+        end
+    end
+
+    Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Attached an object.")
+end
+
+Trolling.DetachObjectsFromVehicle = function(player)
+    Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Detaching objects...")
+    if _vehicle_attachments[player.id] ~= nil then
+        for _, entity in pairs(_vehicle_attachments[player.id]) do
+            entities.delete_by_handle(entity)
+        end
+    end
 end

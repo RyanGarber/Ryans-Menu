@@ -176,6 +176,21 @@ Objects.Catapult = function(object)
     ENTITY.APPLY_FORCE_TO_ENTITY(object, 1, 0.0, 0.0, 9999, 0.0, 0.0, 0.0, 1, false, true, true, true, true)
 end
 
+Objects.PlayerBones = {
+    Head = {"IK_Head"},
+    Hands = {"IK_L_Hand", "IK_R_Hand"},
+    Pointer = {"IK_L_Hand"},
+    Feet = {"IK_L_Foot", "IK_R_Foot"}
+}
+    
+Objects.VehicleBones = {
+    Wheels = {"wheel_lf", "wheel_lr", "wheel_rf", "wheel_rr"},
+    Exhaust = {"exhaust", "exhaust_2", "exhaust_3", "exhaust_4", "exhaust_5", "exhaust_6", "exhaust_7", "exhaust_8"}
+}
+    
+Objects.WeaponBones = {
+    Muzzle = {"gun_vfx_eject"}
+}
 
 --========================= Vehicles =========================--
 Objects.VehicleModChoices = {

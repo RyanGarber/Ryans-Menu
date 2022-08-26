@@ -104,6 +104,7 @@ Ryan.Controls = {
 -- Translation languages.
 Ryan.Languages = {
     {"Spanish", "ES", false},
+    {"Portugese", "PT", false},
     {"French", "FR", false},
     {"Italian", "IT", false},
     {"German", "DE", false},
@@ -475,23 +476,22 @@ end
 
 -- What to include in a raycast.
 Ryan.RaycastFlags = {
+	All = -1,
 	World = 1,
-	Vehicles = 2,
-	Peds = 8,
+	Peds = 4,
+	Vehicles = 10,
 	Objects = 16,
-	Water = 32,
-	Foliage = 256
+	Vegetation = 256
 }
 
--- Do a raycast from the center of the camera.
+-- Do a raycast from the center of the camera. TODO: raycast further from camera
 Ryan.RaycastFromCamera = function(distance, flags)
 	local origin = CAM.GET_FINAL_RENDERED_CAM_COORD()
 	local direction = CAM.GET_FINAL_RENDERED_CAM_ROT(2):toDir()
-	return Ryan.Raycast(origin, direction, distance, flags)
+	return Ryan.Raycast(origin, direction, distance, flags, false)
 end
 
-Ryan.Raycast = function(origin, direction, distance, flags)
-	flags = flags or -1
+Ryan.Raycast = function(origin, direction, distance, flags, include_self)
 	local result = {}
 	local did_hit = memory.alloc(8)
 	local hit_coords = v3.new()
@@ -505,7 +505,7 @@ Ryan.Raycast = function(origin, direction, distance, flags)
 		SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
 			origin.x, origin.y, origin.z,
 			destination.x, destination.y, destination.z,
-			flags or -1, players.user_ped(), 1
+			flags or -1, if include_self then 0 else players.user_ped(), 1
 		), did_hit, hit_coords, hit_normal, hit_entity
 	)
 
