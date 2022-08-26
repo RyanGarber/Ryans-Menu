@@ -390,11 +390,13 @@ Trolling.AttachObjectToVehicle = function(player, object, options)
         local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
         local raycast_coords = v3(vehicle_coords); raycast_coords:setZ(raycast_coords.z + 9.99)
         local raycast = Ryan.Raycast(raycast_coords, v3(0, 0, -1), 10.01, Ryan.RaycastFlags.Vehicles, true)
-        if not raycast.did_hit then
-            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachment", "Failed to find the roof of your car. Is something on top of it?")
-            return
+        if raycast.did_hit then
+            roof_z = raycast.hit_coords.z - vehicle_coords.z
+        else
+            Ryan.Toast("Failed to find the roof of your car. Falling back to using dimensions.")
+            MISC.GET_MODEL_DIMENSIONS(vehicle, min, max)
+            roof_z = min.z
         end
-        roof_z = raycast.hit_coords.z - vehicle_coords.z
         if _vehicle_attachment_offsets[object] ~= nil then roof_z = roof_z + _vehicle_attachment_offsets[object] end
     elseif options.attach_to_wheels then
         for i = 1, #Objects.VehicleBones.Wheels do

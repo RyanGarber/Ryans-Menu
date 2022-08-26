@@ -1,4 +1,4 @@
-VERSION = "0.11.0"
+VERSION = "0.11.0a"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -2180,12 +2180,14 @@ function Player:OnJoin(player)
     Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Mk II", "oppressor2", false)
 
     menu.divider(player_vehicle_control_root, "Tow")
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Jet", "hydra", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Truck", "caracara2", true)
     Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Bicycle", "scorcher", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Motorcycle", "shotaro", true)
     Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Hauler", "hauler", true)
     Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Supercar", "torero", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Truck", "caracara2", true)
-    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Jet", "hydra", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Cop Car", "police3", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Cop Motorcycle", "policeb", true)
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Cop Helicopter", "polmav", true)
 
     -- -- Vehicle Attachments
     local player_vehicle_attach_root = menu.list(player_trolling_root, "Attachments...", {"ryanvattach"}, "Attach various objects to the player's vehicle.")
