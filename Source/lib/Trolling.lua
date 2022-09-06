@@ -276,16 +276,17 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
     Trolling.ControlledVehicles[player.id] = {model = model}
     _was_in_ghost_mode = Ryan.PlayerIsInGhostMode
 
+    local ghost_menu = menu.ref_by_path("Stand>Lua Scripts>" .. SUBFOLDER_NAME .. ">Self>Character...>Ghost Mode")
     if Player:Self().coords:distance(player.coords) > 50 then
-        if not _was_in_ghost_mode then menu.trigger_commands("ryanghost on") end
+        if not _was_in_ghost_mode then menu.trigger_commands(menu.ref_by_rel_path(ghost_menu, "Character Only")) end
         Ryan.Teleport(player.coords)
         util.yield(500)
-        if not _was_in_ghost_mode then menu.trigger_commands("ryanghost off") end
+        if not _was_in_ghost_mode then menu.trigger_commands(menu.ref_by_rel_path(ghost_menu, "Off")) end
     end
 
     if not _was_in_ghost_mode and not with_trailer then
         Trolling.ControlledVehicles[player.id].ghost_mode = true
-        menu.trigger_commands("ryanghost on")
+        menu.trigger_commands(menu.ref_by_rel_path(ghost_menu, "Character Only"))
     end
     
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
@@ -304,6 +305,10 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
 
     local clone = entities.create_vehicle(clone_model, clone_coords, clone_heading)
     if model == "clone" then Objects.SetVehicleData(clone, vehicle_data) end
+    if model == "polmav" then 
+        VEHICLE.SET_VEHICLE_MOD_KIT(clone, 0)
+        VEHICLE.SET_VEHICLE_MOD(clone, 48, -1)
+    end
 
     local offset = v3(0, 0, 0)
     if with_trailer then
@@ -312,7 +317,7 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
 
         local trailer_min, trailer_max = v3.new(), v3.new()
         MISC.GET_MODEL_DIMENSIONS(trailer_model, trailer_min, trailer_max)
-
+        
         offset:setY(clone_min.y + trailer_min.y + 0.5)
         offset:setZ(-0.25)
         ENTITY.ATTACH_ENTITY_TO_ENTITY(trailer, clone, 0, offset.x, offset.y, offset.z, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
@@ -323,26 +328,39 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
     offset:setY(if with_trailer then vehicle_min.y + clone_min.y - 0.5 else 0)
     offset:setZ(if with_trailer then -vehicle_min.z else 0)
     
-    for i = 1, 25 do
+    local attached = false
+    for i = 1, 10 do
         if not ENTITY.IS_ENTITY_ATTACHED_TO_ENTITY(clone, vehicle) then
+            if i > 1 then Ryan.Toast("Still trying to take control of " .. player.name .. "'s vehicle.") end
             Objects.RequestControl(vehicle, true)
             ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle, clone, 0, offset.x, offset.y, offset.z, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
+            Objects.SetVehicleDoorsLocked(vehicle, true)
             util.yield(100)
+        else
+            attached = true
+            break
         end
     end
-
-    ENTITY.SET_ENTITY_COORDS(clone, vehicle_coords.x, vehicle_coords.y, vehicle_coords.z)
-    ENTITY.SET_ENTITY_VELOCITY(clone, vehicle_velocity.x, vehicle_velocity.y, vehicle_velocity.z)
     
-    for i = 1, 25 do
-        if VEHICLE.GET_PED_IN_VEHICLE_SEAT(clone, -1, false) ~= players.user_ped() then
-            PED.SET_PED_INTO_VEHICLE(players.user_ped(), clone, -1)
-            util.yield(100)
-        end
+    if Trolling.ControlledVehicles[player.id] ~= nil then
+        Trolling.ControlledVehicles[player.id].vehicle = vehicle
+        Trolling.ControlledVehicles[player.id].clone = clone
     end
 
-    Trolling.ControlledVehicles[player.id].vehicle = vehicle
-    Trolling.ControlledVehicles[player.id].clone = clone
+    if attached then
+        ENTITY.SET_ENTITY_COORDS(clone, vehicle_coords.x, vehicle_coords.y, vehicle_coords.z)
+        ENTITY.SET_ENTITY_VELOCITY(clone, vehicle_velocity.x, vehicle_velocity.y, vehicle_velocity.z)
+        
+        for i = 1, 10 do
+            if VEHICLE.GET_PED_IN_VEHICLE_SEAT(clone, -1, false) ~= players.user_ped() then
+                PED.SET_PED_INTO_VEHICLE(players.user_ped(), clone, -1)
+                util.yield(100)
+            end
+        end
+    else
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Control", "Failed to take control of " .. player.name .. "'s vehicle.")
+        Trolling.ReturnControlOfVehicle(player)
+    end
 
     return true
 end
@@ -350,9 +368,13 @@ end
 Trolling.ReturnControlOfVehicle = function(player)
     if Trolling.ControlledVehicles[player.id] == nil then return false end
 
-    if Trolling.ControlledVehicles[player.id].ghost_mode then menu.trigger_commands("ryanghost off") end
+    local ghost_menu = menu.ref_by_path("Stand>Lua Scripts>" .. SUBFOLDER_NAME .. ">Self>Character...>Ghost Mode")
+    if Trolling.ControlledVehicles[player.id].ghost_mode then menu.trigger_commands(menu.ref_by_rel_path(ghost_menu, "Off")) end
 
-    if ENTITY.IS_ENTITY_A_VEHICLE(Trolling.ControlledVehicles[player.id].vehicle) then ENTITY.DETACH_ENTITY(Trolling.ControlledVehicles[player.id].vehicle, true, true) end
+    if ENTITY.IS_ENTITY_A_VEHICLE(Trolling.ControlledVehicles[player.id].vehicle) then
+        ENTITY.DETACH_ENTITY(Trolling.ControlledVehicles[player.id].vehicle, true, true)
+        Objects.SetVehicleDoorsLocked(Trolling.ControlledVehicles[player.id].vehicle, false)
+    end
     if ENTITY.IS_ENTITY_A_VEHICLE(Trolling.ControlledVehicles[player.id].clone) then entities.delete_by_handle(Trolling.ControlledVehicles[player.id].clone) end
     if ENTITY.IS_ENTITY_AN_OBJECT(Trolling.ControlledVehicles[player.id].trailer) then entities.delete_by_handle(Trolling.ControlledVehicles[player.id].trailer) end
 
@@ -369,6 +391,11 @@ local _vehicle_attachment_offsets = {
 
 Trolling.AttachObjectToVehicle = function(player, object, options)
     if type(object) == "string" then object = util.joaat(object) end
+    if not STREAMING.IS_MODEL_VALID(object) then
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "The requested object ID does not exist.")
+        return
+    end
+
     if _vehicle_attachments[player.id] == nil then _vehicle_attachments[player.id] = {} end
 
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id, true)
@@ -378,30 +405,45 @@ Trolling.AttachObjectToVehicle = function(player, object, options)
     end
 
     local bones = {}
-    local roof_z, height_z = 0, 0
+    local base_x, base_y, base_z, width_x, length_y, height_z = 0, 0, 0, 0, 0, 0
     local is_a_clone = object == ENTITY.GET_ENTITY_MODEL(vehicle)
 
     local min, max = v3.new(), v3.new()
     MISC.GET_MODEL_DIMENSIONS(object, min, max)
     height_z = max.z - min.z
+    length_y = max.y - min.y
 
-    if options.attach_to_roof then
+    MISC.GET_MODEL_DIMENSIONS(vehicle, min, max)
+    if options.attach_to == "Roof" then
         bones[1] = -1
         local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
         local raycast_coords = v3(vehicle_coords); raycast_coords:setZ(raycast_coords.z + 9.99)
         local raycast = Ryan.Raycast(raycast_coords, v3(0, 0, -1), 10.01, Ryan.RaycastFlags.Vehicles, true)
         if raycast.did_hit then
-            roof_z = raycast.hit_coords.z - vehicle_coords.z
+            base_z = raycast.hit_coords.z - vehicle_coords.z
         else
             Ryan.Toast("Failed to find the roof of your car. Falling back to using dimensions.")
-            MISC.GET_MODEL_DIMENSIONS(vehicle, min, max)
-            roof_z = min.z
+            base_z = max.z
         end
-        if _vehicle_attachment_offsets[object] ~= nil then roof_z = roof_z + _vehicle_attachment_offsets[object] end
-    elseif options.attach_to_wheels then
+        if _vehicle_attachment_offsets[object] ~= nil then base_z = base_z + _vehicle_attachment_offsets[object] end
+    elseif options.attach_to == "Wheels" then
         for i = 1, #Objects.VehicleBones.Wheels do
             bones[i] = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, Objects.VehicleBones.Wheels[i])
         end
+    elseif options.attach_to == "Front" then
+        bones[1] = -1
+        base_y = max.y
+    elseif options.attach_to == "Back" then
+        bones[1] = -1
+        base_y = min.y
+        length_y = -length_y
+    elseif options.attach_to == "Left Side" then
+        bones[1] = -1
+        base_x = min.x
+    elseif options.attach_to == "Right Side" then
+        bones[1] = -1
+        base_x = max.x
+        width_x = -width_x
     end
 
     local vehicle_data = if is_a_clone then Objects.GetVehicleData(vehicle) else nil
@@ -411,12 +453,14 @@ Trolling.AttachObjectToVehicle = function(player, object, options)
         local entity = nil
         for i = 0, options.stack_size - 1 do
             if STREAMING.IS_MODEL_A_VEHICLE(object) then entity = entities.create_vehicle(object, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
+            elseif STREAMING.IS_MODEL_A_PED(object) then entity = entities.create_ped(0, object, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
             else entity = entities.create_object(object, ENTITY.GET_ENTITY_COORDS(vehicle), 0) end
             Objects.RequestControl(vehicle, true)
-            util.toast("created object at")
 
-            local z = roof_z + (i * (is_a_clone and roof_z or height_z))
-            ENTITY.ATTACH_ENTITY_TO_ENTITY(entity, vehicle, bone, 0, 0, z, 0, 0, 0, false, false, false, false, 0, true)
+            local x = base_x + (i * (is_a_clone and base_x or width_x))
+            local y = base_y + (i * (is_a_clone and base_y or length_y))
+            local z = base_z + (i * (is_a_clone and base_z or height_z))
+            ENTITY.ATTACH_ENTITY_TO_ENTITY(entity, vehicle, bone, x, y, z, 0, 0, 0, false, false, true, false, 0, true)
             ENTITY.SET_ENTITY_CAN_BE_DAMAGED(entity, false)
             
             if vehicle_data ~= nil then Objects.SetVehicleData(entity, vehicle_data) end

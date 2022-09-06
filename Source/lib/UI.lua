@@ -214,6 +214,7 @@ UI.CreateNPCEffectList = function(root, command_prefix, effects, god_finger)
     UI.CreateEffectToggle(root, command_prefix, effects, "Nude", "Make the NPC nude.", god_finger)
     UI.CreateEffectToggle(root, command_prefix, effects, "Flee", "Make the NPC flee you.", god_finger)
     UI.CreateEffectToggle(root, command_prefix, effects, "Ragdoll", "Make the NPC ragdoll.", god_finger)
+    UI.CreateEffectToggle(root, command_prefix, effects, "Skydive", "Make the NPC skydive in place.", god_finger)
     UI.CreateEffectToggle(root, command_prefix, effects, "Delete", "Delete the NPC.", god_finger)
 end
 
@@ -276,6 +277,12 @@ UI.ApplyNPCEffectList = function(npc, effects, state, god_finger)
         PED.SET_PED_TO_RAGDOLL(npc, 1000, 1000, 0, 0, 0, 0)
     end
     if god_finger then Ryan.ToggleSelectSound(parsed, state, "ragdoll") end
+
+    if parsed.skydive and util.current_time_millis() - (state[npc].skydive or 0) >= 2500 then
+        TASK.TASK_SKY_DIVE(npc, true)
+        state[npc].skydive = util.current_time_millis()
+    end
+    if god_finger then Ryan.ToggleSelectSound(parsed, state, "skydive") end
 
     if parsed.delete then
         entities.delete_by_handle(npc)

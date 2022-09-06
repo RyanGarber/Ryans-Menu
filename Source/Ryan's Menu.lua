@@ -1,4 +1,4 @@
-VERSION = "0.11.0b"
+VERSION = "0.11.1"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -38,7 +38,6 @@ local intro_text = 1.0
 local intro_stop_at = 1.0
 local intro_alpha = 1.0
 --local intro_blur = directx.blurrect_new()
-Ryan.PlayerIsInGhostMode = false
 
 function show_intro(text, stop_at)
     intro_text = text
@@ -155,7 +154,6 @@ local self_ptfx_root = menu.list(self_root, "PTFX...", {"ryanptfx"}, "Special FX
 local self_god_finger_root = menu.list(self_root, "God Finger...", {"ryangodfinger"}, "Control objects with your finger.")
 local self_forcefield_root = menu.list(self_root, "Forcefield...", {"ryanforcefield"}, "An expanded and enhanced forcefield.")
 local self_character_root = menu.list(self_root, "Character...", {"ryancharacter"}, "Effects for your character.")
-local self_crosshair_root = menu.toggle(self_root, "Crosshair", {"ryancrosshair"}, "Add an on-screen crosshair.", function(value) crosshair = value end)
 
 -- -- PTFX
 ptfx_color = {r = 1.0, g = 1.0, b = 1.0}
@@ -880,12 +878,20 @@ util.create_tick_handler(function()
 end)
 
 -- -- Character
-menu.toggle(self_character_root, "Ghost Mode", {"ryanghost"}, "Become entirely invisible to other players.", function(value)
-    Ryan.PlayerIsInGhostMode = value
-    menu.trigger_commands("invisibility " .. (if value then "remote" else "off"))
-    menu.trigger_commands("otr " .. (if value then "on" else "off"))
-    if value then Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Ghost Mode", "Ghost Mode enabled. Players can no longer see you.")
+local ghost_mode_types = {"Off", "Character Only", "Character & Vehicle"}
+local ghost_mode_type = 1
+menu.list_select(self_character_root, "Ghost Mode", {"ryanghost"}, "Become entirely invisible to other players.", ghost_mode_types, 1, function(value)
+    menu.trigger_commands("invisibility " .. (if value ~= 1 then "remote" else "off"))
+    menu.trigger_commands("vehinvisibility " .. (if value == 3 then "remote" else "off"))
+    menu.trigger_commands("otr " .. (if value ~= 1 then "on" else "off"))
+    if value ~= 1 then Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Ghost Mode", "Ghost Mode enabled. Players can no longer see you.")
     else Ryan.ShowTextMessage(Ryan.BackgroundColors.Orange, "Ghost Mode", "Ghost Mode disabled. Players can see you!") end
+    Ryan.PlayerIsInGhostMode = value ~= 1
+    ghost_mode_type = value
+end)
+
+menu.toggle_loop(self_character_root, "Beast Mode", {"ryanbeastmode"}, "Jump like a beast.", function(value)
+    MISC._SET_BEAST_MODE_ACTIVE(players.user())
 end)
 
 menu.action(self_character_root, "Become Nude", {"ryannude"}, "Make yuser a stripper with her tits out.", function()
@@ -906,6 +912,8 @@ menu.action(self_character_root, "Become Nude", {"ryannude"}, "Make yuser a stri
     Ryan.FreeModel(topless)
 end)
 
+-- -- Crosshair
+menu.toggle(self_root, "Crosshair", {"ryancrosshair"}, "Add an on-screen crosshair.", function(value) crosshair = value end)
 
 menu.divider(self_root, "Vehicle")
 
@@ -913,6 +921,7 @@ menu.divider(self_root, "Vehicle")
 local self_vehicle_root = menu.list(self_root, "Current...", {"ryanvehicle"}, "Options for your current vehicle.")
 local self_vehicle_seats_root = nil
 local self_vehicle_parts_root = nil
+local make_transparent = nil
 
 local vehicle_seats = {}
 local vehicle_parts = {}
@@ -970,6 +979,14 @@ util.create_tick_handler(function()
             end)
         end
 
+        -- Make Transparent
+        if make_transparent == nil then
+            make_transparent = menu.action(self_vehicle_root, "Make Transparent", {"ryantransparent"}, "Make the car transparent, but keep peds inside visible.", function()
+                local vehicle = entities.get_user_vehicle_as_handle()
+                ENTITY.SET_ENTITY_ALPHA(vehicle, 1)
+            end)
+        end
+
         if no_vehicle_notice ~= nil then
             menu.delete(no_vehicle_notice)
             no_vehicle_notice = nil
@@ -985,6 +1002,10 @@ util.create_tick_handler(function()
             self_vehicle_parts_root = nil
             vehicle_parts = {}
         end
+        if make_transparent ~= nil then
+            menu.delete(make_transparent)
+            make_transparent = nil
+        end
 
         if no_vehicle_notice == nil then
             no_vehicle_notice = menu.divider(self_vehicle_root, "Vehicle Needed")
@@ -992,6 +1013,38 @@ util.create_tick_handler(function()
     end
     util.yield(200)
 end)
+
+function shunt(side)
+    local vehicle = entities.get_user_vehicle_as_handle()
+    if vehicle == 0 then return end
+    local rotation = ENTITY.GET_ENTITY_ROTATION(vehicle)
+    local multiplier = shunt_multiplier
+    pluto_switch side do
+        case "forward":
+        case "backward":
+            multiplier = multiplier * 0.5
+            break
+        case "backward":
+            rotation:setX(rotation.x - 180)
+            break
+        case "left":
+            rotation:setZ(rotation.z + 90)
+            break
+        case "right":
+            rotation:setZ(rotation.z - 90)
+            break
+    end
+    local direction = rotation:toDir()
+    direction:mul(shunt_multiplier)
+    ENTITY.APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehicle, 1, direction.x, direction.y, direction.z, false, false, true, true)
+end
+
+local self_shunt_root = menu.list(self_root, "Shunt...", {"ryanshunt"}, "Improved shunt boost.")
+shunt_multiplier = 35
+menu.action(self_shunt_root, "Forward", {"ryanshuntforward"}, "", function() shunt("forward") end)
+menu.action(self_shunt_root, "Backward", {"ryanshuntbackward"}, "", function() shunt("backward") end)
+menu.action(self_shunt_root, "Left", {"ryanshuntleft"}, "", function() shunt("left") end)
+menu.action(self_shunt_root, "Right", {"ryanshuntright"}, "", function() shunt("right") end)
 
 -- -- E-Brake
 ebrake = false
@@ -1012,14 +1065,33 @@ end)
 
 -- -- Auto-Repair
 menu.toggle_loop(self_root, "Auto-Repair", {"ryanautorepair"}, "Keeps your vehicle in mint condition for all players.", function()
-    local vehicle = entities.get_user_vehicle_as_handle()
+    if players.get_vehicle_model(players.user()) == 0 then return end
+    if vehicle == 0 then return end
 
-    if TASK.GET_IS_TASK_ACTIVE(players.user_ped(), Ryan.Tasks.EnterVehicle)
-        or TASK.GET_IS_TASK_ACTIVE(players.user_ped(), Ryan.Tasks.ExitVehicle)
-        or not VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then return end
+    local vehicle = entities.get_user_vehicle_as_handle()
+    if not VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
+        return
+    end
+    
+    local door_angles = 0
+    for door = 0, VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(vehicle) - 1 do
+        door_angles = door_angles + VEHICLE.GET_VEHICLE_DOOR_ANGLE_RATIO(vehicle, door)
+    end
+    if door_angles > 0 then return end
 
     VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
     VEHICLE.SET_VEHICLE_FIXED(vehicle)
+
+    util.yield(10)
+end)
+
+-- -- Loud Radio
+menu.toggle_loop(self_root, "Loud Radio", {"ryanloudradio"}, "Makes your radio loud enough to hear outside.", function()
+    local vehicle = entities.get_user_vehicle_as_handle()
+    if vehicle ~= 0 then
+        VEHICLE.SET_VEHICLE_KEEP_ENGINE_ON_WHEN_ABANDONED(vehicle, true)
+        AUDIO.SET_VEHICLE_RADIO_LOUD(vehicle, true)
+    end
 end)
 
 
@@ -2190,14 +2262,11 @@ function Player:OnJoin(player)
     vehicle_attach[player.id] = {attach_to_roof = true, attach_to_wheels = false, stack_size = 1}
 
     menu.divider(player_vehicle_attach_root, "Options")
-    menu.toggle(player_vehicle_attach_root, "Attach to Roof", {"ryanvattachroof"}, "Attach the object to their roof.", function(value)
-        if value then menu.trigger_commands("ryanvattachwheels" .. player.name .. " off") end
-        vehicle_attach[player.id].attach_to_roof = if value then true else nil
-    end, true)
-    menu.toggle(player_vehicle_attach_root, "Attach to Wheels", {"ryanvattachwheels"}, "Attach the object to all of their wheels.", function(value)
-        if value then menu.trigger_commands("ryanvattachroof" .. player.name .. " off") end
-        vehicle_attach[player.id].attach_to_wheels = if value then true else nil
+    attach_to = {"Roof", "Wheels", "Front", "Back", "Left Side", "Right Side"}
+    menu.list_select(player_vehicle_attach_root, "Attach To", {"ryanvattach"}, "Attach to part of their vehicle.", attach_to, 1, function(value)
+        vehicle_attach[player.id].attach_to = attach_to[value]
     end)
+    vehicle_attach[player.id].attach_to = attach_to[1]
     menu.slider(player_vehicle_attach_root, "Stack Size", {"ryanvattachstack"}, "The object will be stacked on top of itself this many times.", 1, 10, 1, 1, function(value)
         vehicle_attach[player.id].stack_size = value
     end)
@@ -2206,9 +2275,12 @@ function Player:OnJoin(player)
     end)
 
     menu.divider(player_vehicle_attach_root, "Attach")
-    menu.action(player_vehicle_attach_root, "Clone Vehicle", {"ryanvattachclone"}, "Clones of their vehicle.", function(value)
+    menu.action(player_vehicle_attach_root, "Clone", {"ryanvattachclone"}, "Clones of their vehicle.", function(value)
         Trolling.AttachObjectToVehicle(player, players.get_vehicle_model(player.id), vehicle_attach[player.id])
     end)
+    menu.text_input(player_vehicle_attach_root, "Custom Object", {"ryanvattachcustom"}, "Any object by its name or hash.", function(value)
+        Trolling.AttachObjectToVehicle(player, value, vehicle_attach[player.id])
+    end, "")
 
     menu.divider(player_vehicle_attach_root, "")
     menu.action(player_vehicle_attach_root, "Street Light", {"ryanvattachstreetlight"}, "America's finest lamp.", function()
@@ -2268,9 +2340,19 @@ function Player:OnJoin(player)
             player:super_crash(true)
         end)
     end)
+    
 
-
-    -- Divorce Kick --
+    -- Miscellaneous --
+    menu.toggle_loop(player_root, "Track", {"ryantrack"}, "Put a waypoint and a beacon on the player.", function()
+        HUD.SET_NEW_WAYPOINT(player.coords.x, player.coords.y)
+        if ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), player.ped_id, 17) then
+            Objects.DrawESP(player.ped_id)
+        else
+            Ryan.DrawBeacon(player.coords)
+        end
+    end, function()
+        HUD.SET_WAYPOINT_OFF()
+    end)
     menu.action(player_root, "Divorce", {"div"}, "Kicks the player, then blocks future joins by them.", function()
         menu.trigger_commands("historyblock" .. player.name)
         player:kick()

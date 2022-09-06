@@ -1,6 +1,7 @@
 local _waiting_for_session = false
 local _waiting_for_coords = nil
 
+Ryan.PlayerIsInGhostMode = false
 Ryan.FriendSpoofsFile = filesystem.store_dir() .. SUBFOLDER_NAME .. "\\FriendSpoofs.json"
 
 -- Initialize globals.

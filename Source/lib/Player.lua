@@ -127,10 +127,11 @@ end
 
 -- Kick a player using Stand's Smart kick, using Breakup if that fails.
 function Player.kick(self)
-    menu.trigger_commands("kick" .. self.name)
-    if menu.get_edition() >= 2 then
-        util.yield(500)
-        if Player:ByName(self.name) ~= nil then menu.trigger_commands("breakup" .. self.name) end
+    menu.trigger_commands("hostkick" .. self.name)
+    for i = 1, 10 do
+        util.yield(100)
+        if Player:ByName(self.name) == nil then break end
+        menu.trigger_commands((if menu.get_edition() >= 2 then "breakup" else "kick") .. self.name)
     end
 end
 
