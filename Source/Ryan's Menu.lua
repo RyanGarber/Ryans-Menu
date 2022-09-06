@@ -894,7 +894,7 @@ menu.toggle_loop(self_character_root, "Beast Mode", {"ryanbeastmode"}, "Jump lik
     MISC._SET_BEAST_MODE_ACTIVE(players.user())
 end)
 
-menu.action(self_character_root, "Become Nude", {"ryannude"}, "Make yuser a stripper with her tits out.", function()
+menu.action(self_character_root, "Become Nude", {"ryannude"}, "Become a stripper with her tits out.", function()
     local topless = util.joaat("a_f_y_topless_01")
     Ryan.RequestModel(topless)
 
@@ -921,7 +921,6 @@ menu.divider(self_root, "Vehicle")
 local self_vehicle_root = menu.list(self_root, "Current...", {"ryanvehicle"}, "Options for your current vehicle.")
 local self_vehicle_seats_root = nil
 local self_vehicle_parts_root = nil
-local make_transparent = nil
 
 local vehicle_seats = {}
 local vehicle_parts = {}
@@ -976,14 +975,6 @@ util.create_tick_handler(function()
             menu.divider(self_vehicle_parts_root, "Fix")
             menu.action(self_vehicle_parts_root, "All", {"ryanpartsfix"}, "Fix the car.", function()
                 VEHICLE.SET_VEHICLE_FIXED(vehicle_id)
-            end)
-        end
-
-        -- Make Transparent
-        if make_transparent == nil then
-            make_transparent = menu.action(self_vehicle_root, "Make Transparent", {"ryantransparent"}, "Make the car transparent, but keep peds inside visible.", function()
-                local vehicle = entities.get_user_vehicle_as_handle()
-                ENTITY.SET_ENTITY_ALPHA(vehicle, 1)
             end)
         end
 
