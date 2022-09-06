@@ -422,7 +422,7 @@ Trolling.AttachObjectToVehicle = function(player, object, options)
         if raycast.did_hit then
             base_z = raycast.hit_coords.z - vehicle_coords.z
         else
-            Ryan.Toast("Failed to find the roof of your car. Falling back to using dimensions.")
+            Ryan.Toast("Failed to find the roof of your car. Falling back to using model dimensions.")
             base_z = max.z
         end
         if _vehicle_attachment_offsets[object] ~= nil then base_z = base_z + _vehicle_attachment_offsets[object] end
