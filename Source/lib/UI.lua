@@ -304,7 +304,7 @@ UI.CreateVehicleEffectList = function(root, command_prefix, player_name, effects
     end
     UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Godmode", "Change the vehicle's upgrades.", {"On", "Off"}, god_finger)
     UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Gravity", "Change the vehicle's gravity.", {"None", "Normal"}, god_finger)
-    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Visibility", "Change the vehicle's visibility.", {"Invisible", "Peds Visible", "Visible"}, god_finger)
+    UI.CreateEffectChoice(root, command_prefix, player_name, effects, "Visibility", "Change the vehicle's visibility.", {"Invisible", "Visible"}, god_finger)
     UI.CreateEffectToggle(root, command_prefix, effects, "Theft Alarm", "Trigger the vehicle's theft alarm.", god_finger)
     UI.CreateEffectToggle(root, command_prefix, effects, "Catapult", "Catapult the vehicle non-stop.", god_finger)
     UI.CreateEffectToggle(root, command_prefix, effects, "Delete", "Delete the vehicle.", god_finger)
@@ -441,12 +441,6 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
         ENTITY.SET_ENTITY_VISIBLE(vehicle, false)
         ENTITY.SET_ENTITY_ALPHA(vehicle, 1)
         state[vehicle].visibility = "invisible"
-        if god_finger then Ryan.PlaySelectSound() end
-    elseif parsed.visibility and parsed.visibility.peds_visible and state[vehicle].visibility ~= "peds_visible" then
-        Objects.RequestControl(vehicle, is_a_player)
-        ENTITY.SET_ENTITY_VISIBLE(vehicle, true)
-        ENTITY.SET_ENTITY_ALPHA(vehicle, 1)
-        state[vehicle].visibility = "peds_visible"
         if god_finger then Ryan.PlaySelectSound() end
     elseif parsed.visibility and parsed.visibility.visible and state[vehicle].visibility ~= "visible" then
         Objects.RequestControl(vehicle, is_a_player)

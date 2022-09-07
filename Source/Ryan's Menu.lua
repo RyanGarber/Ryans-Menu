@@ -928,6 +928,7 @@ menu.divider(self_root, "Vehicle")
 local self_vehicle_root = menu.list(self_root, "Current...", {"ryanvehicle"}, "Options for your current vehicle.")
 local self_vehicle_seats_root = nil
 local self_vehicle_parts_root = nil
+local make_transparent = nil
 
 local vehicle_seats = {}
 local vehicle_parts = {}
@@ -985,25 +986,40 @@ util.create_tick_handler(function()
             end)
         end
 
+        -- Make Transparent
+        if make_transparent == nil then
+            make_transparent = menu.action(self_vehicle_root, "Make Transparent", {"ryantransparent"}, "Make the car transparent, but keep peds inside visible.", function()
+                local vehicle = entities.get_user_vehicle_as_handle()
+                ENTITY.SET_ENTITY_ALPHA(vehicle, 1)
+            end)
+        end
+
+
         if no_vehicle_notice ~= nil then
             menu.delete(no_vehicle_notice)
             no_vehicle_notice = nil
         end
     else
+        -- Seats
         if self_vehicle_seats_root ~= nil then
             menu.delete(self_vehicle_seats_root)
             self_vehicle_seats_root = nil
             vehicle_seats = {}
         end
+
+        -- Parts
         if self_vehicle_parts_root ~= nil then
             menu.delete(self_vehicle_parts_root)
             self_vehicle_parts_root = nil
             vehicle_parts = {}
         end
+
+        -- Make Transparent
         if make_transparent ~= nil then
             menu.delete(make_transparent)
             make_transparent = nil
         end
+
 
         if no_vehicle_notice == nil then
             no_vehicle_notice = menu.divider(self_vehicle_root, "Vehicle Needed")
