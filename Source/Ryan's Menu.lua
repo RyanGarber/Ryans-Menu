@@ -1,4 +1,4 @@
-VERSION = "0.11.1a"
+VERSION = "0.11.1b"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -1111,9 +1111,11 @@ function orbital_cleanup()
         CAM.DESTROY_CAM(orbital_camera, false)
         orbital_camera = nil
 
+        GRAPHICS.ANIMPOSTFX_STOP("MP_OrbitalCannon", 0, true)
+        GRAPHICS.CASCADE_SHADOWS_SET_AIRCRAFT_MODE(true)
+
         ENTITY.SET_ENTITY_ALPHA(players.user_ped(), 255)
-        ENTITY.SET_ENTITY_ALPHA(--[[orbital_vehicle]]entities.get_user_vehicle_as_handle(), 255)
-        --ENTITY.SET_ENTITY_ALPHA(orbital_vehicle_attachment, 255)
+        ENTITY.SET_ENTITY_ALPHA(entities.get_user_vehicle_as_handle(), 255)
     end
 end
 
@@ -1132,23 +1134,25 @@ menu.toggle_loop(self_root, "Orbital Cannon", {"ryanorbital"}, "Turn your vehicl
         end
     end]]
 
-    if players.get_vehicle_model(players.user()) == 0--[[ or entities.get_user_vehicle_as_handle() ~= orbital_vehicle]] then
-        --menu.trigger_commands("ryanorbital off")
+    if players.get_vehicle_model(players.user()) == 0 then
         orbital_cleanup()
         return
     end
 
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleAim, true)
     PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleAttack, true)
+    AUDIO.REQUEST_SCRIPT_AUDIO_BANK("DLC_CHRISTMAS2017/XM_ION_CANNON", false, -1)
 
     local vehicle = entities.get_user_vehicle_as_handle()
 
-    if PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.VehicleAim) then -- if aiming        
+    if PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SpecialAbilitySecondary) then       
         if orbital_camera == nil then
             orbital_camera = CAM.CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", false)
             CAM.SET_CAM_FOV(orbital_camera, 75)
             CAM.SET_CAM_ACTIVE(orbital_camera, true)
-            --ENTITY.SET_ENTITY_ALPHA(orbital_vehicle_attachment, 0)
+
+            GRAPHICS.ANIMPOSTFX_PLAY("MP_OrbitalCannon", 0, true)
+            GRAPHICS.CASCADE_SHADOWS_SET_AIRCRAFT_MODE(true)
+            AUDIO.PLAY_SOUND_FRONTEND(-1, "cannon_active", "dlc_xm_orbital_cannon_sounds", true)
         end
 
         local coords = ENTITY.GET_ENTITY_COORDS(vehicle)
@@ -1188,18 +1192,14 @@ menu.toggle_loop(self_root, "Orbital Cannon", {"ryanorbital"}, "Turn your vehicl
         end
 
         if PAD.IS_DISABLED_CONTROL_JUST_PRESSED(0, Ryan.Controls.VehicleAttack) and util.current_time_millis() - orbital_last_fire >= 3000 then
-            Trolling.FireOrbitalCannon(ENTITY.GET_ENTITY_COORDS(players.user_ped()))
+            Trolling.FireOrbitalCannon(ENTITY.GET_ENTITY_COORDS(players.user_ped()), orbital_camera)
             orbital_last_fire = util.current_time_millis()
         end
     else
         orbital_cleanup()
     end
 end, function()
-    --[[if orbital_vehicle ~= nil then
-        entities.delete_by_handle(orbital_vehicle_attachment)
-        entities.delete_by_handle(orbital_vehicle)
-        orbital_vehicle = nil
-    end]]
+    orbital_cleanup()
 end)
 
 -- -- Loud Radio
@@ -2396,6 +2396,9 @@ function Player:OnJoin(player)
         Trolling.AttachObjectToVehicle(player, players.get_vehicle_model(player.id), vehicle_attach[player.id])
     end)
     menu.text_input(player_vehicle_attach_root, "Custom Object", {"ryanvattachcustom"}, "Any object by its name or hash.", function(value)
+        Trolling.AttachObjectToVehicle(player, value, vehicle_attach[player.id])
+    end, "")
+    menu.text_input(player_vehicle_attach_root, "Player Vehicle", {"ryanvattachplayer"}, "Another player's vehicle by the beginning of their name.", function(value)
         Trolling.AttachObjectToVehicle(player, value, vehicle_attach[player.id])
     end, "")
 

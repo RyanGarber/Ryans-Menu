@@ -80,28 +80,30 @@ Ryan.BackgroundColors = {
 
 -- Input control IDs.
 Ryan.Controls = {
-    CharacterWheel         = 19,  -- Alt
-    MultiplayerInfo        = 20,  -- Z
-    Sprint                 = 21,  -- Shift
-    Enter                  = 23,  -- F
-    LookBehind             = 26,  -- C
-    Cover                  = 44,  -- Q
-    Reload                 = 45,  -- R
-    HudSpecial             = 48,  -- Z
-	VehicleAim             = 68,  -- Right Mouse
-	VehicleAttack          = 69,  -- Left Mouse
-    VehicleDuck            = 73,  -- X
-    VehicleExit            = 75,  -- F
-    VehicleLookBehind      = 79,  -- C
-    VehicleCinematicCamera = 80,  -- R
-    VehicleRadioWheel      = 85,  -- Q
-    VehicleHorn            = 86,  -- E
-    MeleeAttackLight       = 140, -- R
-    SelectWeaponUnarmed    = 157, -- 1
-    SelectWeaponMelee      = 158, -- 2
-    SelectWeaponShotgun    = 160, -- 3
-    SelectWeaponHeavy      = 164, -- 4
-    SelectWeaponSpecial    = 165, -- 5
+    CharacterWheel          = 19,  -- Alt
+    MultiplayerInfo         = 20,  -- Z
+    Sprint                  = 21,  -- Shift
+    Enter                   = 23,  -- F
+    LookBehind              = 26,  -- C
+	SpecialAbilitySecondary = 29, -- B
+	SelectWeapon            = 37,  -- Tab
+    Cover                   = 44,  -- Q
+    Reload                  = 45,  -- R
+    HudSpecial              = 48,  -- Z
+	VehicleAim              = 68,  -- Right Mouse
+	VehicleAttack           = 69,  -- Left Mouse
+    VehicleDuck             = 73,  -- X
+    VehicleExit             = 75,  -- F
+    VehicleLookBehind       = 79,  -- C
+    VehicleCinematicCamera  = 80,  -- R
+    VehicleRadioWheel       = 85,  -- Q
+    VehicleHorn             = 86,  -- E
+    MeleeAttackLight        = 140, -- R
+    SelectWeaponUnarmed     = 157, -- 1
+    SelectWeaponMelee       = 158, -- 2
+    SelectWeaponShotgun     = 160, -- 3
+    SelectWeaponHeavy       = 164, -- 4
+    SelectWeaponSpecial     = 165, -- 5
 }
 
 -- Translation languages.

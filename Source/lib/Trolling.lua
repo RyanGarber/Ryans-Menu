@@ -389,9 +389,13 @@ local _vehicle_attachment_offsets = {
     [-1988908952] = 1, -- prop_air_bigradar
 }
 
-Trolling.AttachObjectToVehicle = function(player, object, options)
-    if type(object) == "string" then object = util.joaat(object) end
-    if not STREAMING.IS_MODEL_VALID(object) then
+Trolling.AttachObjectToVehicle = function(player, object_hash, options)
+    local player_to_attach = nil
+    if type(object_hash) == "string" then
+        player_to_attach = Player:ByName(object_hash)
+        if player_to_attach == nil then object_hash = util.joaat(object_hash) end
+    end
+    if player_to_attach == nil and not STREAMING.IS_MODEL_VALID(object_hash) then
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "The requested object ID does not exist.")
         return
     end
@@ -406,10 +410,10 @@ Trolling.AttachObjectToVehicle = function(player, object, options)
 
     local bones = {}
     local base_x, base_y, base_z, width_x, length_y, height_z = 0, 0, 0, 0, 0, 0
-    local is_a_clone = object == ENTITY.GET_ENTITY_MODEL(vehicle)
+    local is_a_clone = player_to_attach == nil and object_hash == ENTITY.GET_ENTITY_MODEL(vehicle)
 
     local min, max = v3.new(), v3.new()
-    MISC.GET_MODEL_DIMENSIONS(object, min, max)
+    MISC.GET_MODEL_DIMENSIONS(if player_to_attach == nil then object_hash else players.get_vehicle_model(player_to_attach.id), min, max)
     height_z = max.z - min.z
     length_y = max.y - min.y
 
@@ -425,7 +429,7 @@ Trolling.AttachObjectToVehicle = function(player, object, options)
             Ryan.Toast("Failed to find the roof of your car. Falling back to using model dimensions.")
             base_z = max.z
         end
-        if _vehicle_attachment_offsets[object] ~= nil then base_z = base_z + _vehicle_attachment_offsets[object] end
+        if _vehicle_attachment_offsets[object_hash] ~= nil then base_z = base_z + _vehicle_attachment_offsets[object_hash] end
     elseif options.attach_to == "Wheels" then
         for i = 1, #Objects.VehicleBones.Wheels do
             bones[i] = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, Objects.VehicleBones.Wheels[i])
@@ -447,14 +451,17 @@ Trolling.AttachObjectToVehicle = function(player, object, options)
     end
 
     local vehicle_data = if is_a_clone then Objects.GetVehicleData(vehicle) else nil
-    Ryan.RequestModel(object)
+    Ryan.RequestModel(object_hash)
 
     for _, bone in pairs(bones) do
         local entity = nil
         for i = 0, options.stack_size - 1 do
-            if STREAMING.IS_MODEL_A_VEHICLE(object) then attachment = entities.create_vehicle(object, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
-            elseif STREAMING.IS_MODEL_A_PED(object) then attachment = entities.create_ped(0, object, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
-            else attachment = entities.create_object(object, ENTITY.GET_ENTITY_COORDS(vehicle), 0) end
+            if player_to_attach ~= nil then attachment = PED.GET_VEHICLE_PED_IS_IN(player_to_attach.ped_id)
+            elseif STREAMING.IS_MODEL_A_VEHICLE(object_hash) then attachment = entities.create_vehicle(object_hash, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
+            elseif STREAMING.IS_MODEL_A_PED(object_hash) then attachment = entities.create_ped(0, object_hash, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
+            else attachment = entities.create_object(object_hash, ENTITY.GET_ENTITY_COORDS(vehicle), 0) end
+
+            Objects.RequestControl(attachment, true)
             Objects.RequestControl(vehicle, true)
 
             local x = base_x + (i * (is_a_clone and base_x or width_x))
@@ -468,7 +475,7 @@ Trolling.AttachObjectToVehicle = function(player, object, options)
         end
     end
 
-    Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Attached an object.")
+    Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Attached an object!")
 end
 
 Trolling.DetachObjectsFromVehicle = function(player)
@@ -493,7 +500,7 @@ Trolling.WillOrbitalCannonHitEntity = function(coords, entity)
 end
 
 -- Orbital cannon code stolen straight from R* themselves :D
-Trolling.FireOrbitalCannon = function(coords)
+Trolling.FireOrbitalCannon = function(coords, camera)
     local ground_z = memory.alloc()
     MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false, false)
     coords:setZ(memory.read_float(ground_z))
@@ -521,5 +528,10 @@ Trolling.FireOrbitalCannon = function(coords)
     explode(coords)
 
     PTFX.PlayAtCoords(coords, "scr_xm_orbital", "scr_xm_orbital_blast", {r = 1.0, g = 1.0, b = 1.0})
-    Ryan.PlaySoundAtCoords(coords, 0, "DLC_XM_Explosions_Orbital_Cannon", 100)
+    Ryan.PlaySoundAtCoords(coords, 0, "DLC_XM_Explosions_Orbital_Cannon", 0)
+
+    if camera ~= nil then
+        CAM.SHAKE_CAM(camera, "GAMEPLAY_EXPLOSION_SHAKE", 1.5)
+        PAD.SET_PAD_SHAKE(0, 500, 256)
+    end
 end
