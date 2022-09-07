@@ -452,19 +452,19 @@ Trolling.AttachObjectToVehicle = function(player, object, options)
     for _, bone in pairs(bones) do
         local entity = nil
         for i = 0, options.stack_size - 1 do
-            if STREAMING.IS_MODEL_A_VEHICLE(object) then entity = entities.create_vehicle(object, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
-            elseif STREAMING.IS_MODEL_A_PED(object) then entity = entities.create_ped(0, object, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
-            else entity = entities.create_object(object, ENTITY.GET_ENTITY_COORDS(vehicle), 0) end
+            if STREAMING.IS_MODEL_A_VEHICLE(object) then attachment = entities.create_vehicle(object, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
+            elseif STREAMING.IS_MODEL_A_PED(object) then attachment = entities.create_ped(0, object, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
+            else attachment = entities.create_object(object, ENTITY.GET_ENTITY_COORDS(vehicle), 0) end
             Objects.RequestControl(vehicle, true)
 
             local x = base_x + (i * (is_a_clone and base_x or width_x))
             local y = base_y + (i * (is_a_clone and base_y or length_y))
             local z = base_z + (i * (is_a_clone and base_z or height_z))
-            ENTITY.ATTACH_ENTITY_TO_ENTITY(entity, vehicle, bone, x, y, z, 0, 0, 0, false, false, true, false, 0, true)
-            ENTITY.SET_ENTITY_CAN_BE_DAMAGED(entity, false)
+            ENTITY.ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, bone, x, y, z, 0, 0, 0, false, false, true, false, 0, true)
+            ENTITY.SET_ENTITY_CAN_BE_DAMAGED(attachment, false)
             
-            if vehicle_data ~= nil then Objects.SetVehicleData(entity, vehicle_data) end
-            table.insert(_vehicle_attachments[player.id], entity)
+            if vehicle_data ~= nil then Objects.SetVehicleData(attachment, vehicle_data) end
+            table.insert(_vehicle_attachments[player.id], attachment)
         end
     end
 
@@ -474,8 +474,52 @@ end
 Trolling.DetachObjectsFromVehicle = function(player)
     Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Detaching objects...")
     if _vehicle_attachments[player.id] ~= nil then
-        for _, entity in pairs(_vehicle_attachments[player.id]) do
-            entities.delete_by_handle(entity)
+        for _, attachment in pairs(_vehicle_attachments[player.id]) do
+            entities.delete_by_handle(attachment)
         end
     end
+end
+
+Trolling.WillOrbitalCannonHitEntity = function(coords, entity)
+    local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
+    return
+        (MISC.GET_DISTANCE_BETWEEN_COORDS(
+            coords.x, coords.y, coords.z,
+            entity_coords.x, entity_coords.y, entity_coords.z,
+            false
+        ) < 15)
+        and
+        (entity_coords.z >= (coords.z - 15))
+end
+
+-- Orbital cannon code stolen straight from R* themselves :D
+Trolling.FireOrbitalCannon = function(coords)
+    local ground_z = memory.alloc()
+    MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false, false)
+    coords:setZ(memory.read_float(ground_z))
+
+    function explode(explosion_coords)
+        FIRE.ADD_OWNED_EXPLOSION(
+            players.user_ped(),
+            explosion_coords.x, explosion_coords.y, explosion_coords.z,
+            59, 1, true, false, 1
+        )
+    end
+
+    for _, player in pairs(Player:List(true, true, true)) do
+        if Trolling.WillOrbitalCannonHitEntity(coords, player.ped_id) then
+            explode(player.coords)
+        end
+    end
+
+    for _, vehicle in pairs(Objects.GetAllNearCoords(coords, 30, Objects.Type.Vehicle)) do
+        if Trolling.WillOrbitalCannonHitEntity(coords, vehicle) then
+            explode(ENTITY.GET_ENTITY_COORDS(vehicle))
+        end
+    end
+
+    explode(coords)
+
+    PTFX.PlayAtCoords(coords, "scr_xm_orbital", "scr_xm_orbital_blast", {r = 1.0, g = 1.0, b = 1.0})
+    Ryan.PlaySoundAtCoords(coords, 0, "DLC_XM_Explosions_Orbital_Cannon", 100)
 end

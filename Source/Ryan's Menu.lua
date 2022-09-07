@@ -1,4 +1,4 @@
-VERSION = "0.11.1"
+VERSION = "0.11.1a"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -433,7 +433,7 @@ util.create_tick_handler(function()
                             local coords = ENTITY.GET_ENTITY_COORDS(entity)
                             FIRE.ADD_EXPLOSION(
                                 coords.x, coords.y, coords.z,
-                                7, 5.0, false, true, 0.0
+                                7, 5.0, false, true, 0, false
                             )
                             entities_exploded[entity] = true
                         end
@@ -646,7 +646,10 @@ util.create_tick_handler(function()
         for key, _ in pairs(forces) do Ryan.ToggleSelectSound(forces, god_finger_force_state, key) end
 
         if forces.default then
-            FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 29, 25.0, false, true, 0.0, true)
+            FIRE.ADD_EXPLOSION(
+                raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z,
+                29, 25, false, true, 0, true
+            )
         elseif forces.push then -- Push entities away
             local force = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
             force:sub(ENTITY.GET_ENTITY_COORDS(players.user_ped())); force:normalise()
@@ -734,7 +737,7 @@ util.create_tick_handler(function()
                 local coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
                 FIRE.ADD_EXPLOSION(
                     coords.x, coords.y, coords.z,
-                    7, 100.0, false, true, 0.0
+                    7, 100, false, true, 0, false
                 )
                 entities_exploded[raycast.hit_entity] = true
             end
@@ -846,7 +849,10 @@ util.create_tick_handler(function()
                     god_finger_world_state.fire = util.current_time_millis()
 
                     if raycast.hit_entity then FIRE.START_ENTITY_FIRE(raycast.hit_entity) end
-                    FIRE.ADD_EXPLOSION(raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z, 3, 100.0, false, false, 0.0)
+                    FIRE.ADD_EXPLOSION(
+                        raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z,
+                        3, 100, false, false, 0, false
+                    )
                 end
             end
         end
@@ -914,6 +920,7 @@ end)
 
 -- -- Crosshair
 menu.toggle(self_root, "Crosshair", {"ryancrosshair"}, "Add an on-screen crosshair.", function(value) crosshair = value end)
+
 
 menu.divider(self_root, "Vehicle")
 
@@ -1074,6 +1081,109 @@ menu.toggle_loop(self_root, "Auto-Repair", {"ryanautorepair"}, "Keeps your vehic
     VEHICLE.SET_VEHICLE_FIXED(vehicle)
 
     util.yield(10)
+end)
+
+-- -- Orbital Cannon
+local orbital_scaleform = GRAPHICS.REQUEST_SCALEFORM_MOVIE("ORBITAL_CANNON_CAM")
+local orbital_camera = nil
+local orbital_last_fire = 0
+
+function orbital_cleanup()
+    if orbital_camera ~= nil then
+        CAM.RENDER_SCRIPT_CAMS(false, false, 0, true, false, 0)
+        CAM.SET_CAM_ACTIVE(orbital_camera, false)
+        CAM.DESTROY_CAM(orbital_camera, false)
+        orbital_camera = nil
+
+        ENTITY.SET_ENTITY_ALPHA(players.user_ped(), 255)
+        ENTITY.SET_ENTITY_ALPHA(--[[orbital_vehicle]]entities.get_user_vehicle_as_handle(), 255)
+        --ENTITY.SET_ENTITY_ALPHA(orbital_vehicle_attachment, 255)
+    end
+end
+
+--local orbital_vehicle, orbital_vehicle_attachment = nil, nil
+menu.toggle_loop(self_root, "Orbital Cannon", {"ryanorbital"}, "Turn your vehicle into a portable orbital cannon, using standard aim & fire buttons.", function()
+    --[[if orbital_vehicle == nil then
+        local player = Player:Self()
+        local oppressor2 = util.joaat("oppressor2"); Ryan.RequestModel(oppressor2)
+        local p_spinning_anus_s = util.joaat("hei_prop_carrier_radar_2"); Ryan.RequestModel(p_spinning_anus_s)
+        orbital_vehicle = entities.create_vehicle(oppressor2, player.coords, ENTITY.GET_ENTITY_HEADING(player.ped_id))
+        orbital_vehicle_attachment = entities.create_object(p_spinning_anus_s, player.coords)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(orbital_vehicle_attachment, orbital_vehicle, -1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, false, false, true, false, 0, true)
+        while entities.get_user_vehicle_as_handle() ~= orbital_vehicle do
+            PED.SET_PED_INTO_VEHICLE(player.ped_id, orbital_vehicle, -1)
+            util.yield()
+        end
+    end]]
+
+    if players.get_vehicle_model(players.user()) == 0--[[ or entities.get_user_vehicle_as_handle() ~= orbital_vehicle]] then
+        --menu.trigger_commands("ryanorbital off")
+        orbital_cleanup()
+        return
+    end
+
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleAim, true)
+    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleAttack, true)
+
+    local vehicle = entities.get_user_vehicle_as_handle()
+
+    if PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.VehicleAim) then -- if aiming        
+        if orbital_camera == nil then
+            orbital_camera = CAM.CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", false)
+            CAM.SET_CAM_FOV(orbital_camera, 75)
+            CAM.SET_CAM_ACTIVE(orbital_camera, true)
+            --ENTITY.SET_ENTITY_ALPHA(orbital_vehicle_attachment, 0)
+        end
+
+        local coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+        local ground_z = memory.alloc()
+        MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false, false)
+        if coords.z - memory.read_float(ground_z) < 25 then
+            coords:setZ(memory.read_float(ground_z) + 25)
+            ENTITY.SET_ENTITY_ALPHA(players.user_ped(), 255)
+            ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
+        else
+            ENTITY.SET_ENTITY_ALPHA(players.user_ped(), 0)
+            ENTITY.SET_ENTITY_ALPHA(vehicle, 0)
+        end
+
+        CAM.SET_CAM_COORD(orbital_camera, coords.x, coords.y, coords.z)
+        CAM.SET_CAM_ROT(orbital_camera, -90, 0, ENTITY.GET_ENTITY_ROTATION(vehicle).z, 2)
+        CAM.RENDER_SCRIPT_CAMS(true, false, 0, true, false, 0)
+        HUD.HIDE_HUD_AND_RADAR_THIS_FRAME()
+
+        GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_scaleform, "SET_STATE")
+        GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(4)
+        GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+        
+        GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_scaleform, "SET_CHARGING_LEVEL")
+        GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_FLOAT((util.current_time_millis() - orbital_last_fire) / 3000)
+        GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+
+        GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_scaleform, "SET_COUNTDOWN")
+        GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(3 - math.floor((util.current_time_millis() - orbital_last_fire) / 1000))
+        GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+
+        GRAPHICS.SET_SCRIPT_GFX_DRAW_ORDER(0)
+        GRAPHICS.DRAW_SCALEFORM_MOVIE_FULLSCREEN(orbital_scaleform, 255, 255, 255, 255, 0)
+
+        for _, player in pairs(Player:List(false, true, true)) do
+            Ryan.DrawBeacon(player.coords)
+        end
+
+        if PAD.IS_DISABLED_CONTROL_JUST_PRESSED(0, Ryan.Controls.VehicleAttack) and util.current_time_millis() - orbital_last_fire >= 3000 then
+            Trolling.FireOrbitalCannon(ENTITY.GET_ENTITY_COORDS(players.user_ped()))
+            orbital_last_fire = util.current_time_millis()
+        end
+    else
+        orbital_cleanup()
+    end
+end, function()
+    --[[if orbital_vehicle ~= nil then
+        entities.delete_by_handle(orbital_vehicle_attachment)
+        entities.delete_by_handle(orbital_vehicle)
+        orbital_vehicle = nil
+    end]]
 end)
 
 -- -- Loud Radio
@@ -2180,7 +2290,7 @@ function Player:OnJoin(player)
             return
         end
 
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), player.ped_id, 0, 0.0, -0.2, (attach_vehicle_offset[player.id] * 0.2), 1.0, 1.0, 1, true, true, true, false, 0, true)
+        ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), player.ped_id, 0, 0.0, -0.2, (attach_vehicle_offset[player.id] * 0.2), 0.0, 0.0, 0.0, true, true, true, false, 0, true)
         Ryan.Toast("Attached to " .. player.name .. ".")
     end)
 

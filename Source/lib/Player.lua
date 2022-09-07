@@ -247,7 +247,10 @@ end
 -- Explode a player with or without Bed Sound.
 function Player.explode(self, with_earrape)
     local coords = ENTITY.GET_ENTITY_COORDS(self.ped_id)
-    FIRE.ADD_EXPLOSION(coords.x, coords.y, coords.z, 0, 100, true, false, 150, false)
+    FIRE.ADD_EXPLOSION(
+        coords.x, coords.y, coords.z,
+        59, 100, true, false, 150, false
+    )
     if with_earrape then
         Ryan.PlaySoundAtCoords(coords, "WastedSounds", "MP_Flash", 999999999)
         coords.z = 2000.0
