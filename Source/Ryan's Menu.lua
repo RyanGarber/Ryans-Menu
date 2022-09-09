@@ -1,4 +1,4 @@
-VERSION = "0.11.1c"
+VERSION = "0.11.2"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -958,18 +958,22 @@ util.create_tick_handler(function()
             self_vehicle_parts_root = menu.list(self_vehicle_root, "Parts...", {"ryanparts"}, "Break or fix various parts of your vehicle.")
         end
 
-        local parts = VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(vehicle_id)
-        if parts ~= #vehicle_parts then
+        local part_count = VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(vehicle_id) + 1
+        if part_count ~= #vehicle_parts then
             for _, action in pairs(vehicle_parts) do menu.delete(action) end
             menu.divider(self_vehicle_parts_root, "Break")
+            menu.action(self_vehicle_parts_root, "All", {"ryanpartsbreak"}, "Break everything off the car.", function()
+                for _, action in pairs(vehicle_parts) do menu.trigger_command(action) end
+            end)
             vehicle_parts = {}
-            local part_count = VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(vehicle_id)
             for part = 0, part_count - 1 do
                 local part_name = "Door " .. (part + 1)
-                if part == part_count - 2 then part_name = "Hood"
-                elseif part == part_count - 1 then part_name = "Trunk" end
+                if part == part_count - 3 then part_name = "Hood"
+                elseif part == part_count - 2 then part_name = "Trunk"
+                elseif part == part_count - 1 then part_name = "Windshield" end
                 table.insert(vehicle_parts, menu.action(self_vehicle_parts_root, part_name, {"ryanpart" .. (part + 1)}, "", function()
-                    VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle_id, part, false)
+                    if part == part_count - 1 then VEHICLE.POP_OUT_VEHICLE_WINDSCREEN(vehicle_id)
+                    else VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle_id, part, false) end
                 end))
             end
             menu.divider(self_vehicle_parts_root, "Fix")
@@ -1018,10 +1022,6 @@ util.create_tick_handler(function()
         end
     end
     util.yield(200)
-end)
-
-menu.action(menu.my_root(), "Test", {}, "", function()
-    VEHICLE.POP_OUT_VEHICLE_WINDSCREEN(entities.get_user_vehicle_as_handle())
 end)
 
 --[[function shunt(side)
@@ -2132,6 +2132,30 @@ menu.text_input(settings_friend_spoofs_root, "Add RID", {"ryanspoofsadd"}, "Add 
         util.toast("That RID already exists.")
     end
 end)
+--menu.trigger_commands("addblacklistmodel freightcar")
+local freightcar = nil
+pcall(function() freightcar = menu.ref_by_path("Online>Protections>Syncs>Custom Model Sync Reactions>Freight Train") end)
+
+local freightcar_started = util.current_time_millis()
+if freightcar == nil then
+    menu.trigger_commands("addblacklistmodel freightcar")
+    while freightcar == nil do
+        if util.current_time_millis() - freightcar_started > 2000 then break end
+        pcall(function() freightcar = menu.ref_by_path("Online>Protections>Syncs>Custom Model Sync Reactions>Freight Train") end)
+        util.yield()
+    end
+end
+
+if freightcar ~= nil then
+    local freightcar_block = menu.ref_by_rel_path(freightcar, "Block")
+    if menu.get_value(freightcar_block) == 0 then
+        menu.set_value(freightcar_block, 1)
+        menu.focus(freightcar_block)
+        util.toast("[Ryan's Menu] Crash protections are now active.\nYou should save 'Block: Strangers' to your profile.")
+    end
+else
+    util.toast("[Ryan's Menu] Failed to enable crash protections automatically.")
+end
 
 menu.divider(settings_friend_spoofs_root, "RIDs")
 local rid_list = {}

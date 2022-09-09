@@ -350,6 +350,7 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
         for i = 0, door_count - 1 do
             VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle, i, false)
         end
+        VEHICLE.POP_OUT_VEHICLE_WINDSCREEN(vehicle_id)
         state[vehicle].parts = "break"
         if god_finger then Ryan.PlaySelectSound() end
     elseif parsed.parts and parsed.parts.fix and state[vehicle].parts ~= "fix" then
@@ -567,7 +568,7 @@ UI.CreateDynamicPlayerList = function(root, include, action, toggle)
     _dynamic_player_lists[root] = {include = include, action = action, divider = menu.divider(root, "Players")}
     util.create_tick_handler(function()
         if _dynamic_player_lists[root] == nil then return false end
-        
+
         for player_id, action in pairs(_dynamic_player_lists[root]) do
             if player_id == "include" or player_id == "action" or player_id == "divider" then continue end
             if not Player:Exists(player_id) or not _dynamic_player_lists[root].include(Player:Get(player_id)) then
