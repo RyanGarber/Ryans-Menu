@@ -1020,9 +1020,9 @@ util.create_tick_handler(function()
     util.yield(200)
 end)
 
---[[menu.action(menu.my_root(), "Test", {}, "", function()
+menu.action(menu.my_root(), "Test", {}, "", function()
     VEHICLE.POP_OUT_VEHICLE_WINDSCREEN(entities.get_user_vehicle_as_handle())
-end)]]
+end)
 
 --[[function shunt(side)
     local vehicle = entities.get_user_vehicle_as_handle()
