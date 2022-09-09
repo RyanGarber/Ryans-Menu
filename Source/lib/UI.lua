@@ -566,6 +566,8 @@ local _dynamic_player_lists = {}
 UI.CreateDynamicPlayerList = function(root, include, action, toggle)
     _dynamic_player_lists[root] = {include = include, action = action, divider = menu.divider(root, "Players")}
     util.create_tick_handler(function()
+        if _dynamic_player_lists[root] == nil then return false end
+        
         for player_id, action in pairs(_dynamic_player_lists[root]) do
             if player_id == "include" or player_id == "action" or player_id == "divider" then continue end
             if not Player:Exists(player_id) or not _dynamic_player_lists[root].include(Player:Get(player_id)) then

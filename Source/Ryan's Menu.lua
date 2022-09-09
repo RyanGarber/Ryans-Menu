@@ -1,4 +1,4 @@
-VERSION = "0.11.1b"
+VERSION = "0.11.1c"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -1020,6 +1020,10 @@ util.create_tick_handler(function()
     util.yield(200)
 end)
 
+--[[menu.action(menu.my_root(), "Test", {}, "", function()
+    VEHICLE.POP_OUT_VEHICLE_WINDSCREEN(entities.get_user_vehicle_as_handle())
+end)]]
+
 --[[function shunt(side)
     local vehicle = entities.get_user_vehicle_as_handle()
     if vehicle == 0 then return end
@@ -1495,6 +1499,18 @@ local session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryan
 local session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
 Trolling.CreateNASAMenu(session_root, nil)
 local session_spectate_root = menu.list(session_root, "Quick Spectate...", {"ryanspectate"}, "Easily spectate everyone in the lobby.")
+UI.CreateDynamicPlayerList(session_spectate_root, function(player)
+    return player.id ~= players.user()
+end, function(player, value)
+    if value then
+        for _, other_player in pairs(Player:List(false, true, true)) do
+            if other_player.id ~= player.id then
+                menu.trigger_command(menu.ref_by_rel_path(session_spectate_root, other_player.name), "off")
+            end
+        end
+    end
+    menu.trigger_commands("spectate" .. player.name .. " " .. (if value then "on" else "off"))
+end, true)
 
 -- -- Nuke
 nuke_spam_enabled = false
@@ -2151,8 +2167,6 @@ end)
 
 
 -- Player Options --
-spectate_buttons = {}
-
 ptfx_attack = {}
 money_drop = {}
 remove_godmode = {}
@@ -2167,7 +2181,8 @@ attach_notice = {}
 attach_vehicle_offset = {}
 attach_root = {}
 
-vehicle_attach = {}
+attachment_options = {}
+attachment_player_list = {}
 
 glitch = {}
 glitch_state = {}
@@ -2175,19 +2190,6 @@ glitch_type_names = {"Off", "Default", "Ferris Wheel", "UFO", "Cement Mixer", "S
 glitch_type_hashes = {"Off", "Default", "prop_ld_ferris_wheel", "p_spinning_anus_s", "prop_staticmixer_01", "des_scaffolding_root", "prop_sm1_11_garaged", "prop_juicestand", "stt_prop_stunt_jump_l"}
 
 function Player:OnJoin(player)
-    if player.id ~= players.user() then
-        spectate_buttons[player.id] = menu.toggle(session_spectate_root, player.name, {"ryanspectate" .. player.name}, "Spectate the player.", function(value)
-            if value then
-                for player_id, button in pairs(spectate_buttons) do
-                    if player_id ~= player.id then
-                        menu.trigger_command(button, "off")
-                    end
-                end
-            end
-            menu.trigger_commands("spectate" .. player.name .. " " .. (if value then "on" else "off"))
-        end)
-    end
-
     local player_root = menu.player_root(player.id)
     menu.divider(player_root, "Ryan's Menu")
 
@@ -2352,60 +2354,88 @@ function Player:OnJoin(player)
 
     -- -- Vehicle Attachments
     local player_vehicle_attach_root = menu.list(player_trolling_root, "Attachments...", {"ryanvattach"}, "Attach various objects to the player's vehicle.")
-    vehicle_attach[player.id] = {attach_to_roof = true, attach_to_wheels = false, stack_size = 1}
+    attachment_options[player.id] = {attach_to_roof = true, attach_to_wheels = false, stack_size = 1}
 
     menu.divider(player_vehicle_attach_root, "Options")
     attach_to = {"Roof", "Wheels", "Front", "Back", "Left Side", "Right Side"}
     menu.list_select(player_vehicle_attach_root, "Attach To", {"ryanvattach"}, "Attach to part of their vehicle.", attach_to, 1, function(value)
-        vehicle_attach[player.id].attach_to = attach_to[value]
+        attachment_options[player.id].attach_to = attach_to[value]
     end)
-    vehicle_attach[player.id].attach_to = attach_to[1]
+
+    attachment_options[player.id].attach_to = attach_to[1]
     menu.slider(player_vehicle_attach_root, "Stack Size", {"ryanvattachstack"}, "The object will be stacked on top of itself this many times.", 1, 10, 1, 1, function(value)
-        vehicle_attach[player.id].stack_size = value
+        attachment_options[player.id].stack_size = value
     end)
-    menu.action(player_vehicle_attach_root, "Delete", {"ryanvdetach"}, "Detach all previously attached objects.", function()
+
+    menu.action(player_vehicle_attach_root, "Detach All", {"ryanvattachdelete"}, "Detach all previously attached objects.", function()
+        ENTITY.DETACH_ENTITY(PED.GET_VEHICLE_PED_IS_IN(player, true), true, true)
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Detached all attachments.")
+    end)
+
+    menu.action(player_vehicle_attach_root, "Delete All", {"ryanvattachdelete"}, "Detach all previously attached objects.", function()
         Trolling.DetachObjectsFromVehicle(player)
     end)
 
     menu.divider(player_vehicle_attach_root, "Attach")
     menu.action(player_vehicle_attach_root, "Clone", {"ryanvattachclone"}, "Attach a clone of their vehicle.", function(value)
-        Trolling.AttachObjectToVehicle(player, players.get_vehicle_model(player.id), vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, players.get_vehicle_model(player.id), attachment_options[player.id])
     end)
+
     menu.text_input(player_vehicle_attach_root, "Object", {"ryanvattachcustom"}, "Attach an object by its name or hash.", function(value)
-        Trolling.AttachObjectToVehicle(player, value, vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, value, attachment_options[player.id])
     end, "")
-    menu.text_input(player_vehicle_attach_root, "Player", {"ryanvattachplayer"}, "Attach another player's vehicle by the beginning of their name.", function(value)
-        Trolling.AttachObjectToVehicle(player, value, vehicle_attach[player.id])
-    end, "") -- list nearby players in car
+
+    attachment_player_list[player.id] = menu.list(player_vehicle_attach_root, "Player", {"ryanvattachplayer"}, "Attach another player's vehicle by the beginning of their name.")
+    UI.CreateDynamicPlayerList(attachment_player_list[player.id], function(player_to_attach)
+        if player_to_attach.id == player.id then return false end
+        if player_to_attach.coords:distance(player.coords) > 500 then return false end
+        if players.get_vehicle_model(player_to_attach.id) == 0 then return false end
+        return true
+    end, function(player_to_attach)
+        Trolling.AttachObjectToVehicle(player, player_to_attach.id, attachment_options[player.id])
+    end)
 
     menu.divider(player_vehicle_attach_root, "")
     menu.action(player_vehicle_attach_root, "Street Light", {"ryanvattachstreetlight"}, "America's finest lamp.", function()
-        Trolling.AttachObjectToVehicle(player, "prop_streetlight_11c", vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, "prop_streetlight_11c", attachment_options[player.id])
     end)
+
     menu.action(player_vehicle_attach_root, "Wind Turbine", {"ryanvattachwindturbine"}, "The socialist left is going to ruin your life with renewables!1!!", function()
-        Trolling.AttachObjectToVehicle(player, "prop_windmill_01", vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, "prop_windmill_01", attachment_options[player.id])
     end)
+
     menu.action(player_vehicle_attach_root, "Inflatable Tube Man", {"ryanvattachairdancer"}, "The Wacky, Inflatable, Arm-Flailing Tube Man.", function()
-        Trolling.AttachObjectToVehicle(player, "p_airdancer_01_s", vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, "p_airdancer_01_s", attachment_options[player.id])
     end)
+
     menu.action(player_vehicle_attach_root, "Stop Sign", {"ryanvattachstop"}, "The worst attack on freedom since the invention of DUI.", function()
-        Trolling.AttachObjectToVehicle(player, "prop_sign_road_01a", vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, "prop_sign_road_01a", attachment_options[player.id])
     end)
+
     menu.action(player_vehicle_attach_root, "Billboard", {"ryanvattachbillboard"}, "Not a real billboard.", function()
-        Trolling.AttachObjectToVehicle(player, "prop_billboard_14", vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, "prop_billboard_14", attachment_options[player.id])
     end)
+
     menu.action(player_vehicle_attach_root, "Radar Dish", {"ryanvattachradar"}, "The airport radar dish.", function()
-        Trolling.AttachObjectToVehicle(player, "prop_air_bigradar", vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, "prop_air_bigradar", attachment_options[player.id])
     end)
+
     menu.action(player_vehicle_attach_root, "Christmas Tree", {"ryanvattachxmastree"}, "That Christmas tree - you know the one.", function()
-        Trolling.AttachObjectToVehicle(player, "prop_xmas_tree_int", vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, "prop_xmas_tree_int", attachment_options[player.id])
     end)
+
     menu.action(player_vehicle_attach_root, "Beer Fridge", {"ryanvattachbeerfridge"}, "Just a beer fridge.", function()
-        Trolling.AttachObjectToVehicle(player, "v_ret_ml_fridge", vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, "v_ret_ml_fridge", attachment_options[player.id])
     end)
+
     menu.action(player_vehicle_attach_root, "Toilet", {"ryanvattachtoilet"}, "Just a toilet.", function()
-        Trolling.AttachObjectToVehicle(player, "prop_toilet_01", vehicle_attach[player.id])
+        Trolling.AttachObjectToVehicle(player, "prop_toilet_01", attachment_options[player.id])
     end)
+
+    menu.action(player_vehicle_attach_root, "Tugboat", {"ryanvattachtug"}, "Amazon Prime.", function()
+        Trolling.AttachObjectToVehicle(player, "tug", attachment_options[player.id])
+    end)
+
 
 
     -- Removal --
@@ -2472,11 +2502,6 @@ util.create_tick_handler(function()
 end)
 
 function Player:OnLeave(player)
-    if spectate_buttons[player.id] ~= nil then
-        menu.delete(spectate_buttons[player.id])
-        spectate_buttons[player.id] = nil
-    end
-
     if tracked_player == player.id then
         menu.set_value(menu.ref_by_rel_path(menu.player_root(player.id), "Track"), "off")
     end
@@ -2494,7 +2519,8 @@ function Player:OnLeave(player)
     attach_vehicle_offset[player.id] = nil
     attach_root[player.id] = nil
 
-    vehicle_attach[player.id] = nil
+    attachment_options[player.id] = nil
+    UI.DeleteDynamicPlayerList(attachment_player_list[player.id])
 
     glitch[player.id] = nil
     glitch_state[player.id] = nil
@@ -2502,7 +2528,6 @@ function Player:OnLeave(player)
     hermits[player.id] = nil
     hermit_list[player.id] = nil
 
-    --UI.DeleteDynamicPlayerList(menu.ref_by_rel_path(menu.player_root(player.id), "Trolling...>Attachments...>Player"))
     Trolling.DeleteEntities(player.id)
     Trolling.ReturnControlOfVehicle(player)
 end
@@ -2572,19 +2597,8 @@ util.create_tick_handler(function()
     util.yield(500)
 end)
 
-spectate_notice = nil
 util.create_tick_handler(function()
     for _, player in pairs(Player:List(true, true, true)) do
-        local buttons = 0
-        for player_id, button in pairs(spectate_buttons) do buttons = buttons + 1 end
-
-        if buttons > 0 and spectate_notice ~= nil then
-            menu.delete(spectate_notice)
-            spectate_notice = nil
-        elseif buttons == 0 and spectate_notice == nil then
-            spectate_notice = menu.divider(session_spectate_root, "No Players")
-        end
-
         if remove_godmode[player.id] == true then
             player:remove_godmode()
         end

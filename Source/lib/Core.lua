@@ -576,7 +576,7 @@ end
 Ryan.Teleport = function(coords, with_vehicle)
 	Ryan.Toast("Teleporting...")
 	local player_ped = players.user_ped()
-	if with_vehicle and PED.IS_PED_IN_ANY_VEHICLE(player_ped, true) then
+	if with_vehicle and players.get_vehicle_model(players.user()) ~= 0 then
 		local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
 		ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
 	else
@@ -624,7 +624,7 @@ Ryan.CloseThirdEye = function()
 	local ghost_menu = menu.ref_by_path("Stand>Lua Scripts>" .. SUBFOLDER_NAME .. ">Self>Character...>Ghost Mode")
 	if not _starting_in_ghost_mode then menu.trigger_command(menu.ref_by_rel_path(ghost_menu, "Off")) end
 
-	Ryan.Teleport(_starting_coords, false)
+	if _starting_coords ~= nil then Ryan.Teleport(_starting_coords, false) end -- why?
 	if _starting_vehicle ~= nil then PED.SET_PED_INTO_VEHICLE(players.user_ped(), _starting_vehicle, _starting_seat) end
 	PED.SET_PED_CAN_RAGDOLL(players.user_ped(), _starting_can_ragdoll)
 

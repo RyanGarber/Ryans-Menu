@@ -47,13 +47,9 @@ end
 Objects.RequestControl = function(entity, loop)
     local network_id = NETWORK.NETWORK_GET_NETWORK_ID_FROM_ENTITY(entity)
     if loop then
-        local tick = 0
-        while not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) and tick < 25 do
+        local starting_time = util.current_time_millis()
+        while not NETWORK.NETWORK_HAS_CONTROL_OF_ENTITY(entity) and util.current_time_millis() - starting_time < 1000 do
             util.yield()
-            NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
-            tick = tick + 1
-        end
-        if NETWORK.NETWORK_IS_SESSION_STARTED() then
             NETWORK.SET_NETWORK_ID_CAN_MIGRATE(network_id, true)
             NETWORK.NETWORK_REQUEST_CONTROL_OF_ENTITY(entity)
         end

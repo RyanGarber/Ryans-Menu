@@ -387,36 +387,26 @@ local _vehicle_attachment_offsets = {
 }
 
 Trolling.AttachObjectToVehicle = function(player, object_hash, options)
-    local player_to_attach = nil
-    if type(object_hash) == "string" then
-        player_to_attach = Player:ByName(object_hash)
-        if player_to_attach == nil then object_hash = util.joaat(object_hash) end
-    end
-    
+    local player_to_attach = if type(object_hash) == "number" then Player:Get(object_hash, true) else nil
     if player_to_attach == nil then
+        if type(object_hash) == "string" then object_hash = util.joaat(object_hash) end
         if not STREAMING.IS_MODEL_VALID(object_hash) then
             Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "The requested object ID does not exist.")
             return
         end
-    else
-        if players.get_vehicle_model(player_to_attach.id) == 0 then
-            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", player_to_attach.name .. " is not driving a vehicle.")
-            return
-        end
+    elseif players.get_vehicle_model(player_to_attach.id) == 0 then
+        return
     end
 
+    if Player:Self().coords:distance(player.coords) > 100 then Ryan.OpenThirdEye(player.coords) end
     
-    if Player:Self().coords:distance(player.coords) > 75 then
-        Ryan.Teleport(Ryan.GetClosestNode(player.coords, true))
-    end
-
-    if _vehicle_attachments[player.id] == nil then _vehicle_attachments[player.id] = {} end
-
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id, true)
     if vehicle == 0 then
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "Player is not in a vehicle.")
         return
     end
+    
+    if _vehicle_attachments[player.id] == nil then _vehicle_attachments[player.id] = {} end
 
     local bones = {}
     local base_x, base_y, base_z, width_x, length_y, height_z = 0, 0, 0, 0, 0, 0
@@ -463,6 +453,7 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
     local vehicle_data = if is_a_clone then Objects.GetVehicleData(vehicle) else nil
     Ryan.RequestModel(object_hash)
 
+    local success = false
     for _, bone in pairs(bones) do
         local entity = nil
         for i = 0, options.stack_size - 1 do
@@ -471,30 +462,37 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
             elseif STREAMING.IS_MODEL_A_PED(object_hash) then attachment = entities.create_ped(0, object_hash, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
             else attachment = entities.create_object(object_hash, ENTITY.GET_ENTITY_COORDS(vehicle), 0) end
 
-            Objects.RequestControl(attachment, true)
-            Objects.RequestControl(vehicle, true)
+            for attempt = 1, 3 do
+                if Objects.RequestControl(attachment, true) and Objects.RequestControl(vehicle, true) then success = true end
 
-            local x = base_x + (i * (is_a_clone and base_x or width_x))
-            local y = base_y + (i * (is_a_clone and base_y or length_y))
-            local z = base_z + (i * (is_a_clone and base_z or height_z))
-            ENTITY.ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, bone, x, y, z, 0, 0, 0, false, false, true, false, 0, true)
-            ENTITY.SET_ENTITY_CAN_BE_DAMAGED(attachment, false)
-            
-            if vehicle_data ~= nil then Objects.SetVehicleData(attachment, vehicle_data) end
-            table.insert(_vehicle_attachments[player.id], attachment)
+                local x = base_x + (i * (is_a_clone and base_x or width_x))
+                local y = base_y + (i * (is_a_clone and base_y or length_y))
+                local z = base_z + (i * (is_a_clone and base_z or height_z))
+                ENTITY.ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, bone, x, y, z, 0, 0, 0, false, false, true, false, 0, true)
+                ENTITY.SET_ENTITY_CAN_BE_DAMAGED(attachment, false)
+                
+                if vehicle_data ~= nil then Objects.SetVehicleData(attachment, vehicle_data) end
+                table.insert(_vehicle_attachments[player.id], attachment)
+                if success then break end
+            end
         end
     end
 
-    Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Attached an object!")
+    Ryan.CloseThirdEye()
+    if success then
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Attached " .. (if player_to_attach ~= nil then "a player" else "an object") .. "!")
+    else
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Orange, "Vehicle Attachments", "Failed to take control of an entity.")
+    end
 end
 
 Trolling.DetachObjectsFromVehicle = function(player)
-    Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Detaching objects...")
     if _vehicle_attachments[player.id] ~= nil then
         for _, attachment in pairs(_vehicle_attachments[player.id]) do
             entities.delete_by_handle(attachment)
         end
     end
+    Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Deleted all attachments.")
 end
 
 Trolling.WillOrbitalCannonHitEntity = function(coords, entity)

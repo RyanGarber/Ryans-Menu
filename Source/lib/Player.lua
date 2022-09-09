@@ -23,10 +23,10 @@ function Player:Exists(id)
     return players.exists(id) and _players[id] ~= nil
 end
 
-function Player:Get(id)
+function Player:Get(id, silent)
     if not players.exists(id) then
-        Ryan.Toast("Tried to get a player that doesn't exist!", debug.getinfo(2).name)
-        return
+        if not silent then Ryan.Toast("Tried to get a player that doesn't exist!", debug.getinfo(2).name) end
+        return nil
     end
 
     if _players[id] ~= nil then
