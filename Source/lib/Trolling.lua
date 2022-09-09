@@ -398,7 +398,9 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
         return
     end
 
-    if Player:Self().coords:distance(player.coords) > 100 then Ryan.OpenThirdEye(player.coords) end
+    local user = Player:Self()
+    local third_eye = user.id ~= player.id and user.coords:distance(player.coords) > 100
+    if third_eye then Ryan.OpenThirdEye(player.coords) end
     
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id, true)
     if vehicle == 0 then
@@ -478,7 +480,7 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
         end
     end
 
-    Ryan.CloseThirdEye()
+    if third_eye then Ryan.CloseThirdEye() end
     if success then
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Attached " .. (if player_to_attach ~= nil then "a player" else "an object") .. "!")
     else
