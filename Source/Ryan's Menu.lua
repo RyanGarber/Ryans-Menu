@@ -1,4 +1,4 @@
-VERSION = "0.11.2"
+VERSION = "0.11.2a"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -50,6 +50,8 @@ util.create_tick_handler(function()
     if vehicle == 0 then return end
     VEHICLE.SET_VEHICLE_WHEELS_CAN_BREAK(vehicle, true)
 end)
+
+
 
 util.create_thread(function()
     while true do

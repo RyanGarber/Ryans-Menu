@@ -388,6 +388,7 @@ local _vehicle_attachment_offsets = {
 
 Trolling.AttachObjectToVehicle = function(player, object_hash, options)
     local player_to_attach = if type(object_hash) == "number" then Player:Get(object_hash, true) else nil
+    Ryan.Toast(object_hash)
     if player_to_attach == nil then
         if type(object_hash) == "string" then object_hash = util.joaat(object_hash) end
         if not STREAMING.IS_MODEL_VALID(object_hash) then
