@@ -118,7 +118,7 @@ util.create_thread(function()
         end
     
         -- Ghost Mode
-        if Ryan.PlayerIsInGhostMode then
+        if Ryan.GhostMode > 1 then
             directx.draw_text(
                 0.5, 0.975,
                 "Ghost Mode Active",
@@ -859,12 +859,6 @@ util.create_tick_handler(function()
     end
     
 
-    local world_keybind_before = god_finger_keybinds:find("World:")
-    local non_world_keybind_now = false
-    for category, _ in pairs(keybinds) do
-        if category ~= "World" then non_world_keybind_now = true end
-    end
-
     god_finger_keybinds = ""
     for category, effects in pairs(keybinds) do
         god_finger_keybinds = god_finger_keybinds .. "<b>" .. category .. ":</b>\n" .. effects .. "\n\n"
@@ -872,10 +866,8 @@ util.create_tick_handler(function()
 
     local last_shown = util.current_time_millis() - god_finger_keybinds_shown
     if god_finger_keybinds:len() > 0 then
-        --[[if non_world_keybind_now or last_shown > 500 then]]
-            util.show_corner_help(god_finger_keybinds:sub(0, god_finger_keybinds:len() - 2))
-            god_finger_keybinds_shown = util.current_time_millis()
-        --[[end]]
+        util.show_corner_help(god_finger_keybinds:sub(0, god_finger_keybinds:len() - 2))
+        god_finger_keybinds_shown = util.current_time_millis()
     else
         if last_shown > 500--[[ or world_keybind_before]] then
             util.show_corner_help("No God Finger effects available.")
@@ -892,7 +884,7 @@ menu.list_select(self_character_root, "Ghost Mode", {"ryanghost"}, "Become entir
     menu.trigger_commands("otr " .. (if value ~= 1 then "on" else "off"))
     if value ~= 1 then Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Ghost Mode", "Ghost Mode enabled. Players can no longer see you.")
     else Ryan.ShowTextMessage(Ryan.BackgroundColors.Orange, "Ghost Mode", "Ghost Mode disabled. Players can see you!") end
-    Ryan.PlayerIsInGhostMode = value ~= 1
+    Ryan.GhostMode = value
     ghost_mode_type = value
 end)
 
@@ -908,10 +900,10 @@ menu.action(self_character_root, "Become Nude", {"ryannude"}, "Become a stripper
     local seat = user:get_vehicle_seat()
     local vehicle = if seat ~= nil then PED.GET_VEHICLE_PED_IS_IN(user.ped_id, false) else nil
 
-    local coords = user.coords; coords:add(v3(0, 0, 5))
+    local coords = user.coords; coords:add(v3(0, 0, 10))
     if vehicle ~= nil then Ryan.Teleport(coords) end
     PLAYER.SET_PLAYER_MODEL(user.id, topless)
-    util.yield(333)
+    util.yield(500)
     PED.SET_PED_COMPONENT_VARIATION(user.ped_id, 8, 1, -1, 0)
     if vehicle ~= nil then PED.SET_PED_INTO_VEHICLE(user.ped_id, vehicle, seat) end
 
@@ -988,7 +980,7 @@ util.create_tick_handler(function()
 
         -- Make Transparent
         if make_transparent == nil then
-            make_transparent = menu.action(self_vehicle_root, "Make Transparent", {"ryantransparent"}, "Make the car transparent, but keep peds inside visible.", function()
+            make_transparent = menu.action(self_vehicle_root, "Make Transparent", {"ryantransparent"}, "Make the car transparent, but keep peds inside visible.\n(LOCAL ONLY)", function()
                 local vehicle = entities.get_user_vehicle_as_handle()
                 ENTITY.SET_ENTITY_ALPHA(vehicle, 1)
             end)
@@ -1028,19 +1020,12 @@ util.create_tick_handler(function()
     util.yield(200)
 end)
 
-function shunt(side)
+--[[function shunt(side)
     local vehicle = entities.get_user_vehicle_as_handle()
     if vehicle == 0 then return end
     local rotation = ENTITY.GET_ENTITY_ROTATION(vehicle)
-    local multiplier = shunt_multiplier
+    local multiplier = 35
     pluto_switch side do
-        case "forward":
-        case "backward":
-            multiplier = multiplier * 0.5
-            break
-        case "backward":
-            rotation:setX(rotation.x - 180)
-            break
         case "left":
             rotation:setZ(rotation.z + 90)
             break
@@ -1049,16 +1034,9 @@ function shunt(side)
             break
     end
     local direction = rotation:toDir()
-    direction:mul(shunt_multiplier)
+    direction:mul(multiplier)
     ENTITY.APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehicle, 1, direction.x, direction.y, direction.z, false, false, true, true)
-end
-
-local self_shunt_root = menu.list(self_root, "Shunt...", {"ryanshunt"}, "Improved shunt boost.")
-shunt_multiplier = 35
-menu.action(self_shunt_root, "Forward", {"ryanshuntforward"}, "", function() shunt("forward") end)
-menu.action(self_shunt_root, "Backward", {"ryanshuntbackward"}, "", function() shunt("backward") end)
-menu.action(self_shunt_root, "Left", {"ryanshuntleft"}, "", function() shunt("left") end)
-menu.action(self_shunt_root, "Right", {"ryanshuntright"}, "", function() shunt("right") end)
+end]]
 
 -- -- E-Brake
 ebrake = false
@@ -1216,7 +1194,6 @@ end)
 menu.divider(world_root, "General")
 local world_all_npcs_root = menu.list(world_root, "All NPCs...", {"ryanallnpcs"}, "Affects all NPCs in the world.")
 local world_collectibles_root = menu.list(world_root, "Collectibles...", {"ryancollectibles"}, "Useful presets to teleport to.")
-local world_spectate_root = menu.list(world_root, "Quick Spectate...", {"ryanspectate"}, "Easily spectate everyone in the lobby.")
 
 -- -- All NPCs
 all_npcs_include_drivers = false
@@ -1516,6 +1493,8 @@ local session_nuke_root = menu.list(session_root, "Nuke...", {"ryannuke"}, "Play
 local session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancrashall"}, "The ultimate session crash.")
 local session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Handle players that never seem to go outside.")
 local session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
+Trolling.CreateNASAMenu(session_root, nil)
+local session_spectate_root = menu.list(session_root, "Quick Spectate...", {"ryanspectate"}, "Easily spectate everyone in the lobby.")
 
 -- -- Nuke
 nuke_spam_enabled = false
@@ -1646,7 +1625,7 @@ end)
 hermits = {}
 hermit_list = {}
 util.create_tick_handler(function()
-    if not PlayerIsSwitchingSessions then
+    if not util.is_session_transition_active() then
         for _, player in pairs(Player:List(false, false, antihermit_include_modders)) do
             local tracked = false
             if players.is_in_interior(player.id) then
@@ -1770,9 +1749,6 @@ util.create_tick_handler(function()
     end
     util.yield(1000)
 end)
-
--- -- NASA Satellite
-Trolling.CreateNASAMenu(session_root, nil)
 
 -- -- Turn Into Animals
 turn_all_into_animals = false
@@ -2200,7 +2176,7 @@ glitch_type_hashes = {"Off", "Default", "prop_ld_ferris_wheel", "p_spinning_anus
 
 function Player:OnJoin(player)
     if player.id ~= players.user() then
-        spectate_buttons[player.id] = menu.toggle(world_spectate_root, player.name, {"ryanspectate" .. player.name}, "Spectate the player.", function(value)
+        spectate_buttons[player.id] = menu.toggle(session_spectate_root, player.name, {"ryanspectate" .. player.name}, "Spectate the player.", function(value)
             if value then
                 for player_id, button in pairs(spectate_buttons) do
                     if player_id ~= player.id then
@@ -2392,15 +2368,15 @@ function Player:OnJoin(player)
     end)
 
     menu.divider(player_vehicle_attach_root, "Attach")
-    menu.action(player_vehicle_attach_root, "Clone", {"ryanvattachclone"}, "Clones of their vehicle.", function(value)
+    menu.action(player_vehicle_attach_root, "Clone", {"ryanvattachclone"}, "Attach a clone of their vehicle.", function(value)
         Trolling.AttachObjectToVehicle(player, players.get_vehicle_model(player.id), vehicle_attach[player.id])
     end)
-    menu.text_input(player_vehicle_attach_root, "Custom Object", {"ryanvattachcustom"}, "Any object by its name or hash.", function(value)
+    menu.text_input(player_vehicle_attach_root, "Object", {"ryanvattachcustom"}, "Attach an object by its name or hash.", function(value)
         Trolling.AttachObjectToVehicle(player, value, vehicle_attach[player.id])
     end, "")
-    menu.text_input(player_vehicle_attach_root, "Player Vehicle", {"ryanvattachplayer"}, "Another player's vehicle by the beginning of their name.", function(value)
+    menu.text_input(player_vehicle_attach_root, "Player", {"ryanvattachplayer"}, "Attach another player's vehicle by the beginning of their name.", function(value)
         Trolling.AttachObjectToVehicle(player, value, vehicle_attach[player.id])
-    end, "")
+    end, "") -- list nearby players in car
 
     menu.divider(player_vehicle_attach_root, "")
     menu.action(player_vehicle_attach_root, "Street Light", {"ryanvattachstreetlight"}, "America's finest lamp.", function()
@@ -2463,15 +2439,18 @@ function Player:OnJoin(player)
     
 
     -- Miscellaneous --
-    menu.toggle_loop(player_root, "Track", {"ryantrack"}, "Put a waypoint and a beacon on the player.", function()
-        HUD.SET_NEW_WAYPOINT(player.coords.x, player.coords.y)
-        if ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), player.ped_id, 17) then
-            Objects.DrawESP(player.ped_id)
+    menu.toggle(player_root, "Track", {"ryantrack"}, "Put a waypoint and a beacon on the player.", function(value)
+        if value then
+            for _, player_id in pairs(players.list()) do
+                if player_id == player.id then continue end
+                local track = menu.ref_by_rel_path(menu.player_root(player_id), "Track")
+                if menu.get_value(track) then menu.set_value(track, false) end
+            end
+            tracked_player = player.id
         else
-            Ryan.DrawBeacon(player.coords)
+            tracked_player = nil
+            HUD.SET_WAYPOINT_OFF()
         end
-    end, function()
-        HUD.SET_WAYPOINT_OFF()
     end)
     menu.action(player_root, "Divorce", {"div"}, "Kicks the player, then blocks future joins by them.", function()
         menu.trigger_commands("historyblock" .. player.name)
@@ -2479,10 +2458,27 @@ function Player:OnJoin(player)
     end)
 end
 
+tracked_player = nil
+util.create_tick_handler(function()
+    if tracked_player ~= nil then
+        local player = Player:Get(tracked_player)
+        HUD.SET_NEW_WAYPOINT(player.coords.x, player.coords.y)
+        if ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), player.ped_id, 17) then
+            Objects.DrawESP(player.ped_id)
+        else
+            Ryan.DrawBeacon(player.coords)
+        end
+    end
+end)
+
 function Player:OnLeave(player)
     if spectate_buttons[player.id] ~= nil then
         menu.delete(spectate_buttons[player.id])
         spectate_buttons[player.id] = nil
+    end
+
+    if tracked_player == player.id then
+        menu.set_value(menu.ref_by_rel_path(menu.player_root(player.id), "Track"), "off")
     end
 
     money_drop[player.id] = nil
@@ -2506,6 +2502,7 @@ function Player:OnLeave(player)
     hermits[player.id] = nil
     hermit_list[player.id] = nil
 
+    --UI.DeleteDynamicPlayerList(menu.ref_by_rel_path(menu.player_root(player.id), "Trolling...>Attachments...>Player"))
     Trolling.DeleteEntities(player.id)
     Trolling.ReturnControlOfVehicle(player)
 end
@@ -2585,7 +2582,7 @@ util.create_tick_handler(function()
             menu.delete(spectate_notice)
             spectate_notice = nil
         elseif buttons == 0 and spectate_notice == nil then
-            spectate_notice = menu.divider(world_spectate_root, "No Players")
+            spectate_notice = menu.divider(session_spectate_root, "No Players")
         end
 
         if remove_godmode[player.id] == true then
@@ -2651,13 +2648,6 @@ util.create_tick_handler(function()
         end
     end
 end)
-
---[[local cow_model = util.joaat("a_c_cow"); Ryan.RequestModel(cow_model)
-local bmx_model = util.joaat("bmx"); Ryan.RequestModel(bmx_model)
-local bmx = entities.create_vehicle(bmx_model, ENTITY.GET_ENTITY_COORDS(players.user_ped()), ENTITY.GET_ENTITY_HEADING(players.user_ped()))
-local cow = entities.create_ped(0, cow_model, v3(0, 0, 0), 0)
-ENTITY.ATTACH_ENTITY_TO_ENTITY(cow, bmx, 0, 0, 0, 0.25, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
-TASK.TASK_SMART_FLEE_PED(cow, players.user_ped(), 100, -1, true, false)]]
 
 Player:Init()
 util.keep_running()

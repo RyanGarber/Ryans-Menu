@@ -561,3 +561,34 @@ UI.CreateMCClutterButton = function(root, percentage, amount)
         end)
     end)
 end
+
+local _dynamic_player_lists = {}
+UI.CreateDynamicPlayerList = function(root, include, action, toggle)
+    _dynamic_player_lists[root] = {include = include, action = action, divider = menu.divider(root, "Players")}
+    util.create_tick_handler(function()
+        for player_id, action in pairs(_dynamic_player_lists[root]) do
+            if player_id == "include" or player_id == "action" or player_id == "divider" then continue end
+            if not Player:Exists(player_id) or not _dynamic_player_lists[root].include(Player:Get(player_id)) then
+                menu.delete(action)
+                _dynamic_player_lists[root][player_id] = nil
+            end
+        end
+    
+        for _, player in pairs(Player:List(true, true, true)) do
+            if _dynamic_player_lists[root][player.id] == nil and _dynamic_player_lists[root].include(player) then
+                local create = if toggle then menu.toggle else menu.action
+                _dynamic_player_lists[root][player.id] = create(root, player.name, {}, "", function(value)
+                    if toggle then
+                        _dynamic_player_lists[root].action(player, value)
+                    else
+                        _dynamic_player_lists[root].action(player)
+                    end
+                end)
+            end
+        end
+    end)
+end
+
+UI.DeleteDynamicPlayerList = function(root)
+    _dynamic_player_lists[root] = nil
+end

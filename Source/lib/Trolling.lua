@@ -112,7 +112,7 @@ Trolling.FlyingYacht = function(player_id)
     Trolling.AddEntity(player_id, attachment, false); Trolling.AddEntity(player_id, vehicle, true)
     NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
     if ENTITY.DOES_ENTITY_EXIST(vehicle) then
-        local ped = entities.create_ped(29, black_ops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        local ped = entities.create_ped(29, blackops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
         Trolling.AddEntity(player_id, ped, false)
         PED.SET_PED_INTO_VEHICLE(ped, vehicle)
         
@@ -273,20 +273,14 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
         return
     end
 
-    Trolling.ControlledVehicles[player.id] = {model = model}
-    _was_in_ghost_mode = Ryan.PlayerIsInGhostMode
-
-    local ghost_menu = menu.ref_by_path("Stand>Lua Scripts>" .. SUBFOLDER_NAME .. ">Self>Character...>Ghost Mode")
-    if Player:Self().coords:distance(player.coords) > 50 then
-        if not _was_in_ghost_mode then menu.trigger_commands(menu.ref_by_rel_path(ghost_menu, "Character Only")) end
-        Ryan.Teleport(player.coords)
-        util.yield(500)
-        if not _was_in_ghost_mode then menu.trigger_commands(menu.ref_by_rel_path(ghost_menu, "Off")) end
+    Trolling.ControlledVehicles[player.id] = {model = model, ghost_mode = Ryan.GhostMode}
+    if not with_trailer and Ryan.GhostMode ~= 2 then
+        local ghost_menu = menu.ref_by_path("Stand>Lua Scripts>" .. SUBFOLDER_NAME .. ">Self>Character...>Ghost Mode")
+        menu.trigger_command(menu.ref_by_rel_path(ghost_menu, "Character Only"))
     end
 
-    if not _was_in_ghost_mode and not with_trailer then
-        Trolling.ControlledVehicles[player.id].ghost_mode = true
-        menu.trigger_commands(menu.ref_by_rel_path(ghost_menu, "Character Only"))
+    if Player:Self().coords:distance(player.coords) > 75 then
+        Ryan.Teleport(Ryan.GetClosestNode(player.coords), true)
     end
     
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
@@ -369,7 +363,10 @@ Trolling.ReturnControlOfVehicle = function(player)
     if Trolling.ControlledVehicles[player.id] == nil then return false end
 
     local ghost_menu = menu.ref_by_path("Stand>Lua Scripts>" .. SUBFOLDER_NAME .. ">Self>Character...>Ghost Mode")
-    if Trolling.ControlledVehicles[player.id].ghost_mode then menu.trigger_commands(menu.ref_by_rel_path(ghost_menu, "Off")) end
+    if Trolling.ControlledVehicles[player.id].ghost_mode ~= 2 then
+        local ghost_mode = if Trolling.ControlledVehicles[player.id].ghost_mode == 1 then "Off" else "Character & Vehicle"
+        menu.trigger_command(menu.ref_by_rel_path(ghost_menu, ghost_mode))
+    end
 
     if ENTITY.IS_ENTITY_A_VEHICLE(Trolling.ControlledVehicles[player.id].vehicle) then
         ENTITY.DETACH_ENTITY(Trolling.ControlledVehicles[player.id].vehicle, true, true)
@@ -395,16 +392,29 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
         player_to_attach = Player:ByName(object_hash)
         if player_to_attach == nil then object_hash = util.joaat(object_hash) end
     end
-    if player_to_attach == nil and not STREAMING.IS_MODEL_VALID(object_hash) then
-        Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "The requested object ID does not exist.")
-        return
+    
+    if player_to_attach == nil then
+        if not STREAMING.IS_MODEL_VALID(object_hash) then
+            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "The requested object ID does not exist.")
+            return
+        end
+    else
+        if players.get_vehicle_model(player_to_attach.id) == 0 then
+            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", player_to_attach.name .. " is not driving a vehicle.")
+            return
+        end
+    end
+
+    
+    if Player:Self().coords:distance(player.coords) > 75 then
+        Ryan.Teleport(Ryan.GetClosestNode(player.coords, true))
     end
 
     if _vehicle_attachments[player.id] == nil then _vehicle_attachments[player.id] = {} end
 
     local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id, true)
     if vehicle == 0 then
-        Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", player.name .. " does not have a vehicle.")
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "Player is not in a vehicle.")
         return
     end
 

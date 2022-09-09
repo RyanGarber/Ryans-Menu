@@ -1,7 +1,7 @@
 local _waiting_for_session = false
 local _waiting_for_coords = nil
 
-Ryan.PlayerIsInGhostMode = false
+Ryan.GhostMode = 1
 Ryan.FriendSpoofsFile = filesystem.store_dir() .. SUBFOLDER_NAME .. "\\FriendSpoofs.json"
 
 -- Initialize globals.
@@ -34,25 +34,7 @@ Ryan.FriendSpoofs = {}
 
 -- Update globals on each tick.
 Ryan.OnTick = function()
-    if not NETWORK.NETWORK_IS_SESSION_ACTIVE() then
-        _waiting_for_session = true
-        _waiting_for_coords = nil
-    end
-    if _waiting_for_session then
-        if NETWORK.NETWORK_IS_SESSION_ACTIVE() then
-            _waiting_for_session = false
-            _waiting_for_coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
-        end
-    end
-    if _waiting_for_coords ~= nil then
-        local coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
-        if coords:distance(_waiting_for_coords) > 0.1 then
-            _waiting_for_coords = nil
-        end
-    end
-
     PlayerIsPointing = memory.read_int(memory.script_global(4521801 + 930)) == 3
-    PlayerIsSwitchingSessions = not (_waiting_for_session or _waiting_for_coords)
 end
 
 -- HUD settings.
@@ -600,6 +582,53 @@ Ryan.Teleport = function(coords, with_vehicle)
 	else
 		ENTITY.SET_ENTITY_COORDS(player_ped, coords.x, coords.y, coords.z)
 	end
+end
+
+-- Get the closest node to the specified coords.
+Ryan.GetClosestNode = function(coords, with_third_eye)
+	if with_third_eye then
+		Ryan.OpenThirdEye(coords)
+		util.yield(1000)
+	end
+
+	local node = v3.new()
+	PATHFIND.GET_CLOSEST_VEHICLE_NODE(coords.x, coords.y, coords.z, node, 1, 3.0, 0)
+
+	if with_third_eye then
+		Ryan.CloseThirdEye()
+	end
+
+	return node
+end
+
+-- Temporarily teleport to a player while ghosted.
+local _starting_coords = nil
+local _starting_vehicle, _starting_seat = nil, nil
+local _starting_in_ghost_mode = nil
+local _starting_can_ragdoll = nil
+
+Ryan.OpenThirdEye = function(coords)
+	local ghost_menu = menu.ref_by_path("Stand>Lua Scripts>" .. SUBFOLDER_NAME .. ">Self>Character...>Ghost Mode")
+	if not _starting_in_ghost_mode then menu.trigger_command(menu.ref_by_rel_path(ghost_menu, "Character Only")) end
+
+	local user = Player:Self()
+	_starting_coords = v3(user.coords)
+	_starting_seat = user:get_vehicle_seat()
+	_starting_vehicle = if _starting_seat ~= nil then entities.get_user_vehicle_as_handle() else nil
+	_starting_in_ghost_mode = Ryan.GhostMode > 1
+	_starting_can_ragdoll = PED.CAN_PED_RAGDOLL(user.ped_id)
+	Ryan.Teleport(coords, false)
+end
+
+Ryan.CloseThirdEye = function()
+	local ghost_menu = menu.ref_by_path("Stand>Lua Scripts>" .. SUBFOLDER_NAME .. ">Self>Character...>Ghost Mode")
+	if not _starting_in_ghost_mode then menu.trigger_command(menu.ref_by_rel_path(ghost_menu, "Off")) end
+
+	Ryan.Teleport(_starting_coords, false)
+	if _starting_vehicle ~= nil then PED.SET_PED_INTO_VEHICLE(players.user_ped(), _starting_vehicle, _starting_seat) end
+	PED.SET_PED_CAN_RAGDOLL(players.user_ped(), _starting_can_ragdoll)
+
+	return _starting_coords
 end
 
 -- Send a chat message, fall back to SMS so Stand doesn't ratelimit us.

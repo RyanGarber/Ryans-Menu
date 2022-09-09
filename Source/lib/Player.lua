@@ -2,6 +2,8 @@ Player = {}
 Player.__index = Player
 
 _players = {}
+--_player_event_queue = {}
+
 players.on_join(function(player_id)
     _players[player_id] = Player:Get(player_id)
     Player:OnJoin(_players[player_id])
@@ -17,6 +19,10 @@ end
 
 --========================= Static =========================--
 -- Get a player by their ID.
+function Player:Exists(id)
+    return players.exists(id) and _players[id] ~= nil
+end
+
 function Player:Get(id)
     if not players.exists(id) then
         Ryan.Toast("Tried to get a player that doesn't exist!", debug.getinfo(2).name)
@@ -148,22 +154,13 @@ function Player.super_crash(self, block_syncs)
     Ryan.Toast("Crashing a player...")
     local bush = util.joaat("h4_prop_bush_mang_ad")
     local user = Player:Self()
-    local starting_coords = user.coords
 
     local crash = function()
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Super Crash", "Please wait...")
-        local seat = user:get_vehicle_seat()
-        local vehicle = if seat ~= nil then entities.get_user_vehicle_as_handle() else nil
-
-        ENTITY.SET_ENTITY_VISIBLE(user.ped_id, false)
-        PED.SET_PED_CAN_RAGDOLL(user.ped_id, false)
-
-        Ryan.Teleport(self.coords, false)
-        util.yield(2000)
-        local coords = v3.new()
-        PATHFIND.GET_CLOSEST_VEHICLE_NODE(self.coords.x, self.coords.y, self.coords.z, coords, 1, 3.0, 0)
+        Ryan.OpenThirdEye(self.coords)
 
         for attempt = 1, 2 do
+            local coords = Ryan.GetClosestNode(self.coords, attempt == 1)
             ENTITY.SET_ENTITY_COORDS(user.ped_id, coords.x, coords.y, coords.z, false, false, false)
             if attempt == 1 then util.yield(500) end
             
@@ -177,13 +174,11 @@ function Player.super_crash(self, block_syncs)
         end
 
         for i = 1, 5 do util.spoof_script("freemode", SYSTEM.WAIT) end
+
+        local starting_coords = Ryan.CloseThirdEye()
         ENTITY.SET_ENTITY_HEALTH(user.ped_id, 0)
         NETWORK.NETWORK_RESURRECT_LOCAL_PLAYER(starting_coords.x, starting_coords.y, starting_coords.z, 0, false, false, 0)
 
-        ENTITY.SET_ENTITY_VISIBLE(user.ped_id, true)
-        PED.SET_PED_CAN_RAGDOLL(user.ped_id, true)
-
-        if vehicle ~= nil then PED.SET_PED_INTO_VEHICLE(user.ped_id, vehicle, seat) end -- TODO: seat
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Super Crash", "Done!")
     end
 
