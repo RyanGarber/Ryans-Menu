@@ -206,6 +206,15 @@ function Player.block_syncs(self, block)
 end
 
 -- Get the seat the player is in.
+function Player.get_vehicle(self)
+    local vehicle_model = players.get_vehicle_model(self.id)
+    if vehicle_model ~= 0 then
+        return PED.GET_VEHICLE_PED_IS_IN(self.ped_id, true)
+    end
+    return nil
+end
+
+-- Get the seat the player is in.
 function Player.get_vehicle_seat(self)
     local vehicle_model = players.get_vehicle_model(self.id)
     if vehicle_model ~= 0 then

@@ -52,7 +52,6 @@ util.create_tick_handler(function()
 end)
 
 
-
 util.create_thread(function()
     while true do
         util.yield()
@@ -1696,7 +1695,7 @@ end)
 -- -- Max Players
 max_players_amount = 0
 
-max_players_prefer_highest_kd = true
+max_players_prefer_highest_kd = false
 max_players_prefer_richest = false
 max_players_prefer_modders = false
 
@@ -2414,8 +2413,9 @@ function Player:OnJoin(player)
     attachment_player_list[player.id] = menu.list(player_vehicle_attach_root, "Player", {"ryanvattachplayer"}, "Attach another player's vehicle by the beginning of their name.")
     UI.CreateDynamicPlayerList(attachment_player_list[player.id], function(player_to_attach)
         if player_to_attach.id == player.id then return false end
+        if player_to_attach:get_vehicle() == 0 then return false end
+        if player_to_attach:get_vehicle() == player:get_vehicle() then return false end
         if player_to_attach.coords:distance(player.coords) > 500 then return false end
-        if players.get_vehicle_model(player_to_attach.id) == 0 then return false end
         return true
     end, function(player_to_attach)
         Trolling.AttachObjectToVehicle(player, player_to_attach.id, attachment_options[player.id])
