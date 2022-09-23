@@ -613,7 +613,7 @@ local _starting_vehicle, _starting_seat = nil, nil
 local _starting_in_ghost_mode = nil
 local _starting_can_ragdoll = nil
 
-Ryan.OpenThirdEye = function(coords)
+Ryan.OpenThirdEye = function(coords, with_vehicle)
 	local ghost_menu = menu.ref_by_path("Stand>Lua Scripts>" .. SUBFOLDER_NAME .. ">Self>Character...>Ghost Mode")
 	if not _starting_in_ghost_mode then menu.trigger_command(menu.ref_by_rel_path(ghost_menu, "Character Only")) end
 
@@ -623,7 +623,7 @@ Ryan.OpenThirdEye = function(coords)
 	_starting_vehicle = if _starting_seat ~= nil then entities.get_user_vehicle_as_handle() else nil
 	_starting_in_ghost_mode = Ryan.GhostMode > 1
 	_starting_can_ragdoll = PED.CAN_PED_RAGDOLL(user.ped_id)
-	Ryan.Teleport(coords, false)
+	Ryan.Teleport(coords, with_vehicle)
 end
 
 Ryan.CloseThirdEye = function()

@@ -1,4 +1,4 @@
-VERSION = "0.11.2a"
+VERSION = "0.11.2b"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -2133,30 +2133,6 @@ menu.text_input(settings_friend_spoofs_root, "Add RID", {"ryanspoofsadd"}, "Add 
         util.toast("That RID already exists.")
     end
 end)
---menu.trigger_commands("addblacklistmodel freightcar")
-local freightcar = nil
-pcall(function() freightcar = menu.ref_by_path("Online>Protections>Syncs>Custom Model Sync Reactions>Freight Train") end)
-
-local freightcar_started = util.current_time_millis()
-if freightcar == nil then
-    menu.trigger_commands("addblacklistmodel freightcar")
-    while freightcar == nil do
-        if util.current_time_millis() - freightcar_started > 2000 then break end
-        pcall(function() freightcar = menu.ref_by_path("Online>Protections>Syncs>Custom Model Sync Reactions>Freight Train") end)
-        util.yield()
-    end
-end
-
-if freightcar ~= nil then
-    local freightcar_block = menu.ref_by_rel_path(freightcar, "Block")
-    if menu.get_value(freightcar_block) == 0 then
-        menu.set_value(freightcar_block, 1)
-        menu.focus(freightcar_block)
-        util.toast("[Ryan's Menu] Crash protections are now active.\nYou should save 'Block: Strangers' to your profile.")
-    end
-else
-    util.toast("[Ryan's Menu] Failed to enable crash protections automatically.")
-end
 
 menu.divider(settings_friend_spoofs_root, "RIDs")
 local rid_list = {}
@@ -2373,9 +2349,11 @@ function Player:OnJoin(player)
     end
 
     menu.divider(player_vehicle_control_root, "Tow")
+    Trolling.CreateVehicleControl(player_vehicle_control_root, player, "Current Vehicle", players.get_vehicle_model(players.user()), true)
     for _, mode in pairs(Trolling.VehicleControlModes.Tow) do
         Trolling.CreateVehicleControl(player_vehicle_control_root, player, mode[1], mode[2], true)
     end
+
 
     -- -- Vehicle Attachments
     local player_vehicle_attach_root = menu.list(player_trolling_root, "Attachments...", {"ryanvattach"}, "Attach various objects to the player's vehicle.")
