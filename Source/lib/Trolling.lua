@@ -437,15 +437,7 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
         if _vehicle_attachment_offsets[object_hash] ~= nil then base_z = base_z + _vehicle_attachment_offsets[object_hash] end
     elseif options.attach_to == "Bottom" then
         bones[1] = -1
-        local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
-        local raycast_coords = v3(vehicle_coords); raycast_coords:setZ(raycast_coords.z - 9.99)
-        local raycast = Ryan.Raycast(raycast_coords, v3(0, 0, 1), 10.01, Ryan.RaycastFlags.Vehicles, true)
-        if raycast.did_hit then
-            base_z = raycast.hit_coords.z - vehicle_coords.z
-        else
-            Ryan.Toast("Failed to find the bottom of the vehicle. Falling back to using model dimensions.")
-            base_z = min.z
-        end
+        base_z = min.z
         if _vehicle_attachment_offsets[object_hash] ~= nil then base_z = base_z + _vehicle_attachment_offsets[object_hash] end
     elseif options.attach_to == "Wheels" then
         for i = 1, #Objects.VehicleBones.Wheels do
