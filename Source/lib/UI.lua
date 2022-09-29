@@ -564,32 +564,43 @@ UI.CreateMCClutterButton = function(root, percentage, amount)
 end
 
 local _dynamic_player_lists = {}
-UI.CreateDynamicPlayerList = function(root, include, action, toggle)
-    _dynamic_player_lists[root] = {include = include, action = action, divider = menu.divider(root, "Players")}
-    util.create_tick_handler(function()
-        if _dynamic_player_lists[root] == nil then return false end
+UI.CreateDynamicPlayerList = function(root, name, command, description, include, action, toggle)
+    local do_update = false
+    local list_root = menu.list(root, name, {command}, description, function()
+        do_update = true
+    end, function()
+        do_update = false
+    end)
 
-        for player_id, action in pairs(_dynamic_player_lists[root]) do
+    _dynamic_player_lists[list_root] = {include = include, action = action, divider = menu.divider(list_root, "Players")}
+    util.create_tick_handler(function()
+        if _dynamic_player_lists[list_root] == nil then return false end
+        if not do_update then return end
+
+        for player_id, action in pairs(_dynamic_player_lists[list_root]) do
             if player_id == "include" or player_id == "action" or player_id == "divider" then continue end
-            if not Player:Exists(player_id) or not _dynamic_player_lists[root].include(Player:Get(player_id)) then
+            if not Player:Exists(player_id) or not _dynamic_player_lists[list_root].include(Player:Get(player_id)) then
                 menu.delete(action)
-                _dynamic_player_lists[root][player_id] = nil
+                _dynamic_player_lists[list_root][player_id] = nil
             end
         end
     
-        for _, player in pairs(Player:List(true, true, true)) do
-            if _dynamic_player_lists[root][player.id] == nil and _dynamic_player_lists[root].include(player) then
+        for _, player_id in pairs(players.list()) do
+            if _dynamic_player_lists[list_root][player_id] == nil and _dynamic_player_lists[list_root].include(Player:Get(player_id)) then
                 local create = if toggle then menu.toggle else menu.action
-                _dynamic_player_lists[root][player.id] = create(root, player.name, {}, "", function(value)
+                _dynamic_player_lists[list_root][player_id] = create(list_root, players.get_name(player_id), {}, "", function(value)
                     if toggle then
-                        _dynamic_player_lists[root].action(player, value)
+                        _dynamic_player_lists[list_root].action(Player:Get(player_id), value)
                     else
-                        _dynamic_player_lists[root].action(player)
+                        _dynamic_player_lists[list_root].action(Player:Get(player_id))
                     end
                 end)
             end
         end
+        util.yield(100)
     end)
+
+    return root
 end
 
 UI.DeleteDynamicPlayerList = function(root)

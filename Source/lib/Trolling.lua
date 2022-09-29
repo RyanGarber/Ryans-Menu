@@ -388,7 +388,6 @@ local _vehicle_attachment_offsets = {
 
 Trolling.AttachObjectToVehicle = function(player, object_hash, options)
     local player_to_attach = if type(object_hash) == "number" then Player:Get(object_hash, true) else nil
-    Ryan.Toast(object_hash)
     if player_to_attach == nil then
         if type(object_hash) == "string" then object_hash = util.joaat(object_hash) end
         if not STREAMING.IS_MODEL_VALID(object_hash) then
@@ -396,6 +395,9 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
             return
         end
     elseif players.get_vehicle_model(player_to_attach.id) == 0 then
+        return
+    elseif options.attach_to == "Wheels" or options.stack_size ~= 1 then
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "Player vehicles may only be attached to 'Top' or 'Bottom' with a stack size of 1.")
         return
     end
 
@@ -421,7 +423,7 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
     length_y = max.y - min.y
 
     MISC.GET_MODEL_DIMENSIONS(vehicle, min, max)
-    if options.attach_to == "Roof" then
+    if options.attach_to == "Top" then
         bones[1] = -1
         local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
         local raycast_coords = v3(vehicle_coords); raycast_coords:setZ(raycast_coords.z + 9.99)
@@ -429,8 +431,20 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
         if raycast.did_hit then
             base_z = raycast.hit_coords.z - vehicle_coords.z
         else
-            Ryan.Toast("Failed to find the roof of your car. Falling back to using model dimensions.")
+            Ryan.Toast("Failed to find the top of the vehicle. Falling back to using model dimensions.")
             base_z = max.z
+        end
+        if _vehicle_attachment_offsets[object_hash] ~= nil then base_z = base_z + _vehicle_attachment_offsets[object_hash] end
+    elseif options.attach_to == "Bottom" then
+        bones[1] = -1
+        local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+        local raycast_coords = v3(vehicle_coords); raycast_coords:setZ(raycast_coords.z - 9.99)
+        local raycast = Ryan.Raycast(raycast_coords, v3(0, 0, 1), 10.01, Ryan.RaycastFlags.Vehicles, true)
+        if raycast.did_hit then
+            base_z = raycast.hit_coords.z - vehicle_coords.z
+        else
+            Ryan.Toast("Failed to find the bottom of the vehicle. Falling back to using model dimensions.")
+            base_z = min.z
         end
         if _vehicle_attachment_offsets[object_hash] ~= nil then base_z = base_z + _vehicle_attachment_offsets[object_hash] end
     elseif options.attach_to == "Wheels" then
@@ -471,7 +485,7 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
                 local x = base_x + (i * (is_a_clone and base_x or width_x))
                 local y = base_y + (i * (is_a_clone and base_y or length_y))
                 local z = base_z + (i * (is_a_clone and base_z or height_z))
-                ENTITY.ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, bone, x, y, z, 0, 0, 0, false, false, true, false, 0, true)
+                ENTITY.ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, bone, x, y, z, 0, 0, 0, false, false, options.collision, false, 0, true)
                 ENTITY.SET_ENTITY_CAN_BE_DAMAGED(attachment, false)
                 
                 if vehicle_data ~= nil then Objects.SetVehicleData(attachment, vehicle_data) end
@@ -489,13 +503,18 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
     end
 end
 
-Trolling.DetachObjectsFromVehicle = function(player)
+Trolling.DetachObjectsFromVehicle = function(player, delete)
     if _vehicle_attachments[player.id] ~= nil then
         for _, attachment in pairs(_vehicle_attachments[player.id]) do
-            entities.delete_by_handle(attachment)
+            if delete then
+                entities.delete_by_handle(attachment)
+            else
+                ENTITY.DETACH_ENTITY(attachment)
+                ENTITY.SET_ENTITY_CAN_BE_DAMAGED(attachment, true)
+            end
         end
     end
-    Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Deleted all attachments.")
+    Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", (if delete then "Deleted" else "Detached") .. " all attached objects.")
 end
 
 Trolling.WillOrbitalCannonHitEntity = function(coords, entity)

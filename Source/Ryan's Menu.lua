@@ -1,4 +1,4 @@
-VERSION = "0.11.2b"
+VERSION = "0.11.3"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -1244,7 +1244,7 @@ util.create_tick_handler(function()
             end
         end
     end
-    util.yield(250)
+    util.yield(1000)
 end)
 
 -- -- Collectibles
@@ -1418,6 +1418,12 @@ end)
 all_vehicles_state = {}
 
 util.create_tick_handler(function()
+    local is_any_effect_enabled = false
+    for effect, value in pairs(all_vehicles_effects) do
+        if value ~= false then is_any_effect_enabled = true end
+    end
+    if not is_any_effect_enabled then return end
+
     local player_coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
     local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped())
 
@@ -1448,7 +1454,7 @@ util.create_tick_handler(function()
         end
     end
 
-    util.yield(500)
+    util.yield(1000)
 end)
 
 -- -- Enter Closest Vehicle
@@ -1499,8 +1505,7 @@ local session_crash_all_root = menu.list(session_root, "Crash All...", {"ryancra
 local session_antihermit_root = menu.list(session_root, "Anti-Hermit...", {"ryanantihermit"}, "Handle players that never seem to go outside.")
 local session_max_players_root = menu.list(session_root, "Max Players...", {"ryanmax"}, "Kicks players when above a certain limit.")
 Trolling.CreateNASAMenu(session_root, nil)
-local session_spectate_root = menu.list(session_root, "Quick Spectate...", {"ryanspectate"}, "Easily spectate everyone in the lobby.")
-UI.CreateDynamicPlayerList(session_spectate_root, function(player)
+local session_spectate_root = UI.CreateDynamicPlayerList(session_root, "Quick Spectate...", "ryanspectate", "Easily spectate everyone in the lobby.", function(player)
     return player.id ~= players.user()
 end, function(player, value)
     if value then
@@ -2277,18 +2282,6 @@ function Player:OnJoin(player)
         attach_vehicle_offset[player.id] = value
     end)
 
-
-    menu.divider(attach_root[player.id], "Attach To")
-    menu.action(attach_root[player.id], "Player", {"ryanattachplayer"}, "Attach to the player.", function()
-        if player.id == players.user() then
-            Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Attach", "You just almost crashed yuser. Good job!")
-            return
-        end
-
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), player.ped_id, 0, 0.0, -0.2, (attach_vehicle_offset[player.id] * 0.2), 0.0, 0.0, 0.0, true, true, true, false, 0, true)
-        Ryan.Toast("Attached to " .. player.name .. ".")
-    end)
-
     -- -- Teleport
     local player_teleport_root = menu.list(player_trolling_root, "Teleport...", {"ryantp"}, "Teleport the player.")
 
@@ -2357,11 +2350,11 @@ function Player:OnJoin(player)
 
     -- -- Vehicle Attachments
     local player_vehicle_attach_root = menu.list(player_trolling_root, "Attachments...", {"ryanvattach"}, "Attach various objects to the player's vehicle.")
-    attachment_options[player.id] = {attach_to_roof = true, attach_to_wheels = false, stack_size = 1}
+    attachment_options[player.id] = {stack_size = 1, collision = true}
 
     menu.divider(player_vehicle_attach_root, "Options")
-    attach_to = {"Roof", "Wheels", "Front", "Back", "Left Side", "Right Side"}
-    menu.list_select(player_vehicle_attach_root, "Attach To", {"ryanvattach"}, "Attach to part of their vehicle.", attach_to, 1, function(value)
+    attach_to = {"Top", "Bottom", "Front", "Back", "Left Side", "Right Side", "Wheels"}
+    menu.list_select(player_vehicle_attach_root, "Attach To", {"ryanvattach"}, "The part of the vehicle to attach objects to.", attach_to, 1, function(value)
         attachment_options[player.id].attach_to = attach_to[value]
     end)
 
@@ -2370,26 +2363,17 @@ function Player:OnJoin(player)
         attachment_options[player.id].stack_size = value
     end)
 
-    menu.action(player_vehicle_attach_root, "Detach All", {"ryanvattachdelete"}, "Detach all previously attached objects.", function()
-        ENTITY.DETACH_ENTITY(PED.GET_VEHICLE_PED_IS_IN(player, true), true, true)
-        Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Vehicle Attachments", "Detached all attachments.")
-    end)
+    menu.toggle(player_vehicle_attach_root, "Collision", {"ryanvattachcollision"}, "If enabled, objects attached will collider with other objects.", function(value)
+        attachment_options[player.id].collision = value
+    end, true)
 
-    menu.action(player_vehicle_attach_root, "Delete All", {"ryanvattachdelete"}, "Detach all previously attached objects.", function()
-        Trolling.DetachObjectsFromVehicle(player)
-    end)
-
-    menu.divider(player_vehicle_attach_root, "Attach")
-    menu.action(player_vehicle_attach_root, "Clone", {"ryanvattachclone"}, "Attach a clone of their vehicle.", function(value)
+    menu.divider(player_vehicle_attach_root, "")
+    menu.divider(player_vehicle_attach_root, "Custom")
+    menu.action(player_vehicle_attach_root, "Cloned Vehicle", {"ryanvattachclone"}, "Attach a clone of their vehicle.", function(value)
         Trolling.AttachObjectToVehicle(player, players.get_vehicle_model(player.id), attachment_options[player.id])
     end)
 
-    menu.text_input(player_vehicle_attach_root, "Object", {"ryanvattachcustom"}, "Attach an object by its name or hash.", function(value)
-        Trolling.AttachObjectToVehicle(player, value, attachment_options[player.id])
-    end, "")
-
-    attachment_player_list[player.id] = menu.list(player_vehicle_attach_root, "Player", {"ryanvattachplayer"}, "Attach another player's vehicle by the beginning of their name.")
-    UI.CreateDynamicPlayerList(attachment_player_list[player.id], function(player_to_attach)
+    attachment_player_list[player.id] = UI.CreateDynamicPlayerList(player_vehicle_attach_root, "Player Vehicle", "ryanvattachplayer", "Attach another nearby player's vehicle.", function(player_to_attach)
         if player_to_attach.id == player.id then return false end
         if player_to_attach:get_vehicle() == 0 then return false end
         if player_to_attach:get_vehicle() == player:get_vehicle() then return false end
@@ -2399,7 +2383,11 @@ function Player:OnJoin(player)
         Trolling.AttachObjectToVehicle(player, player_to_attach.id, attachment_options[player.id])
     end)
 
-    menu.divider(player_vehicle_attach_root, "")
+    menu.text_input(player_vehicle_attach_root, "Object", {"ryanvattachcustom"}, "Attach an object by its name or hash.", function(value)
+        Trolling.AttachObjectToVehicle(player, value, attachment_options[player.id])
+    end, "")
+
+    menu.divider(player_vehicle_attach_root, "Presets")
     menu.action(player_vehicle_attach_root, "Street Light", {"ryanvattachstreetlight"}, "America's finest lamp.", function()
         Trolling.AttachObjectToVehicle(player, "prop_streetlight_11c", attachment_options[player.id])
     end)
@@ -2440,6 +2428,14 @@ function Player:OnJoin(player)
         Trolling.AttachObjectToVehicle(player, "tug", attachment_options[player.id])
     end)
 
+    menu.divider(player_vehicle_attach_root, "")
+    menu.divider(player_vehicle_attach_root, "Undo")
+    menu.action(player_vehicle_attach_root, "Detach Everything", {"ryanvattachdetach"}, "Detach everything attached to their vehicle.", function()
+        Trolling.DetachObjectsFromVehicle(player, false)
+    end)
+    menu.action(player_vehicle_attach_root, "Delete Everything", {"ryanvattachdelete"}, "Delete everything attached to their vehicle.", function()
+        Trolling.DetachObjectsFromVehicle(player, true)
+    end)
 
 
     -- Removal --
@@ -2517,12 +2513,6 @@ function Player:OnLeave(player)
     
     vehicle_effects[player.id] = nil
 
-    attach_vehicle_bones[player.id] = nil
-    attach_vehicle_id[player.id] = nil
-    attach_notice[player.id] = nil
-    attach_vehicle_offset[player.id] = nil
-    attach_root[player.id] = nil
-
     attachment_options[player.id] = nil
     UI.DeleteDynamicPlayerList(attachment_player_list[player.id])
 
@@ -2566,39 +2556,6 @@ util.create_thread(function()
         end
         util.yield()
     end
-end)
-
-util.create_tick_handler(function()
-    for _, player_id in pairs(players.list()) do
-        if attach_root[player_id] ~= nil then
-            local vehicle = PED.GET_VEHICLE_PED_IS_IN(Player:Get(player_id).ped_id, true)
-            if vehicle ~= attach_vehicle_id[player_id] then
-                for _, bone in pairs(attach_vehicle_bones[player_id]) do menu.delete(bone) end
-                attach_vehicle_bones[player_id] = {}
-
-                for i = 1, #VehicleAttachBones do
-                    local bone = if VehicleAttachBones[i][2] ~= nil then ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, VehicleAttachBones[i][2]) else 0
-
-                    if bone ~= -1 then
-                        table.insert(
-                            attach_vehicle_bones[player_id],
-                            menu.action(attach_root[player_id], VehicleAttachBones[i][1], {"ryanattach" .. VehicleAttachBones[i][1]}, "Attaches to the bone.", function()
-                                local vehicle = PED.GET_VEHICLE_PED_IS_IN(Player:Get(player_id).ped_id, true)
-                                ENTITY.ATTACH_ENTITY_TO_ENTITY(players.user_ped(), vehicle, bone, 0.0, -0.2, (if bone == 0 then 2.0 else 1.0) + (attach_vehicle_offset[player_id] * 0.2), 1.0, 1.0, 1, true, true, true, false, 0, true)
-                                Ryan.Toast("Attached to " .. players.get_name(player_id) .. "'s vehicle.")
-                            end)
-                        )
-                    end
-                end
-            elseif vehicle == 0 then
-                for _, bone in pairs(attach_vehicle_bones[player_id]) do menu.delete(bone) end
-                attach_vehicle_bones[player_id] = {}
-            end
-
-            attach_vehicle_id[player_id] = vehicle
-        end
-    end
-    util.yield(500)
 end)
 
 util.create_tick_handler(function()
