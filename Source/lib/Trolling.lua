@@ -395,6 +395,7 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
             return
         end
     elseif players.get_vehicle_model(player_to_attach.id) == 0 then
+        Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", player_to_attach.name .. " isn't in a vehicle.")
         return
     elseif options.attach_to == "Wheels" or options.stack_size ~= 1 then
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "Player vehicles may only be attached to 'Top' or 'Bottom' with a stack size of 1.")
@@ -441,7 +442,8 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
         if _vehicle_attachment_offsets[object_hash] ~= nil then base_z = base_z + _vehicle_attachment_offsets[object_hash] end
     elseif options.attach_to == "Wheels" then
         for i = 1, #Objects.VehicleBones.Wheels do
-            bones[i] = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, Objects.VehicleBones.Wheels[i])
+            local bone = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, Objects.VehicleBones.Wheels[i])
+            if bone ~= -1 then bones[i] = bone end
         end
     elseif options.attach_to == "Front" then
         bones[1] = -1
@@ -472,6 +474,7 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
             else attachment = entities.create_object(object_hash, ENTITY.GET_ENTITY_COORDS(vehicle), 0) end
 
             for attempt = 1, 3 do
+                Ryan.Toast("Attempting to attach an object...")
                 if Objects.RequestControl(attachment, true) and Objects.RequestControl(vehicle, true) then success = true end
 
                 local x = base_x + (i * (is_a_clone and base_x or width_x))

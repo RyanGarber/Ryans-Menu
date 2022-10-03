@@ -1,4 +1,4 @@
-VERSION = "0.11.3"
+VERSION = "0.11.3a"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -2268,20 +2268,6 @@ function Player:OnJoin(player)
         Trolling.DeleteEntities(player.id)
     end)
 
-    -- -- Attach
-    attach_root[player.id] = menu.list(player_trolling_root, "Attach...", {"ryanattach"}, "Attaches to their vehicle on a specific bone.")
-    attach_vehicle_offset[player.id] = 0.0
-    attach_notice[player.id] = nil
-    attach_vehicle_bones[player.id] = {}
-
-    menu.action(attach_root[player.id], "Detach", {"ryandetach"}, "Detaches from anything you're attached to.", function()
-        ENTITY.DETACH_ENTITY(players.user_ped(), false, false)
-        Ryan.Toast("Detached from all entities.")
-    end)
-    menu.slider(attach_root[player.id], "Offset", {"ryanattachoffset"}, "Offset of the Z coordinate.", -25, 25, 1, 0, function(value)
-        attach_vehicle_offset[player.id] = value
-    end)
-
     -- -- Teleport
     local player_teleport_root = menu.list(player_trolling_root, "Teleport...", {"ryantp"}, "Teleport the player.")
 
@@ -2375,11 +2361,12 @@ function Player:OnJoin(player)
 
     attachment_player_list[player.id] = UI.CreateDynamicPlayerList(player_vehicle_attach_root, "Player Vehicle", "ryanvattachplayer", "Attach another nearby player's vehicle.", function(player_to_attach)
         if player_to_attach.id == player.id then return false end
-        if player_to_attach:get_vehicle() == 0 then return false end
+        if player_to_attach:get_vehicle() == nil then return false end
         if player_to_attach:get_vehicle() == player:get_vehicle() then return false end
         if player_to_attach.coords:distance(player.coords) > 500 then return false end
         return true
     end, function(player_to_attach)
+        Ryan.Toast("Attaching " .. player_to_attach.name .. " to " .. player.name .. "...")
         Trolling.AttachObjectToVehicle(player, player_to_attach.id, attachment_options[player.id])
     end)
 

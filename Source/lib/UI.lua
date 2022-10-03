@@ -588,7 +588,9 @@ UI.CreateDynamicPlayerList = function(root, name, command, description, include,
         for _, player_id in pairs(players.list()) do
             if _dynamic_player_lists[list_root][player_id] == nil and _dynamic_player_lists[list_root].include(Player:Get(player_id)) then
                 local create = if toggle then menu.toggle else menu.action
-                _dynamic_player_lists[list_root][player_id] = create(list_root, players.get_name(player_id), {}, "", function(value)
+                local tags = players.get_tags_string(player_id)
+                local name = players.get_name(player_id) .. (if tags:len() > 0 then (" [" .. tags .. "]") else "")
+                _dynamic_player_lists[list_root][player_id] = create(list_root, name, {}, "", function(value)
                     if toggle then
                         _dynamic_player_lists[list_root].action(Player:Get(player_id), value)
                     else
