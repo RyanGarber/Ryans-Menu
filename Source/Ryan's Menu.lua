@@ -1,4 +1,4 @@
-VERSION = "0.11.3a"
+VERSION = "0.11.3b"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -28,8 +28,12 @@ for required_directory, required_files in pairs(MANIFEST) do
         end
     end
 end
+
 Ryan.Init()
-util.create_tick_handler(Ryan.OnTick)
+
+util.create_tick_handler(function()
+    _player_is_pointing = memory.read_int(memory.script_global(4521801 + 930)) == 3
+end)
 
 
 -- UI Thread --
@@ -133,7 +137,7 @@ end)
 
 
 -- Auto-Update --
-Ryan.Start(false)
+Ryan.CheckForUpdates(false)
 
 
 -- Main Menu --
@@ -203,7 +207,7 @@ end)
 
 PTFX.CreateList(self_ptfx_body_pointer_root, function(ptfx)
     if ptfx_disable then return end
-    if PlayerIsPointing then
+    if _player_is_pointing then
         PTFX.PlayOnEntityBones(players.user_ped(), Objects.PlayerBones.Pointer, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
     end
@@ -529,7 +533,7 @@ util.create_tick_handler(function()
 
     ENTITY.SET_ENTITY_PROOFS(players.user_ped(), false, false, UI.GetGodFingerActivation(god_finger_force_effects.default) > 0, false, false, false, 1, false)
 
-    god_finger_active = (god_finger_while_pointing     and PlayerIsPointing)
+    god_finger_active = (god_finger_while_pointing     and _player_is_pointing)
                      or (god_finger_while_holding_alt  and PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.CharacterWheel))
     
     if not god_finger_active then
@@ -1772,19 +1776,6 @@ util.create_tick_handler(function()
     util.yield(1000)
 end)
 
--- -- Turn Into Animals
-turn_all_into_animals = false
-menu.toggle(session_root, "Turn Into Animals", {"ryananimalall"}, "Turns all players into a random animal.", function(value) turn_all_into_animals = value end)
-
-util.create_tick_handler(function()
-    if turn_all_into_animals then
-        for _, player in pairs(Player:List(false, true, true)) do
-            player:turn_into_animal()
-            util.yield()
-        end
-    end
-end)
-
 
 -- Vehicle
 menu.divider(session_root, "Vehicle")
@@ -2108,7 +2099,7 @@ end)
 -- Settings Menu --
 menu.divider(settings_root, "Updates")
 menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
-menu.action(settings_root, "Reinstall", {"ryanreinstall"}, "Force update the script for patches and troubleshooting.", function() Ryan.Start(true) end)
+menu.action(settings_root, "Reinstall", {"ryanreinstall"}, "Force update the script for patches and troubleshooting.", function() Ryan.CheckForUpdates(true) end)
 menu.hyperlink(settings_root, "Website", "https://gta.ryanmade.site/", "Opens the official website, for downloading the installer and viewing the changelog.")
 
 menu.divider(settings_root, "HUD")
@@ -2285,10 +2276,6 @@ function Player:OnJoin(player)
     end)
 
     -- -- Miscellaneous
-    menu.toggle_loop(player_trolling_root, "Turn Into Animal", {"ryananimal"}, "Turns the player into a random animal.", function()
-        player:turn_into_animal()
-        util.yield()
-    end)
     menu.toggle(player_trolling_root, "Fake Money Drop", {"ryanfakemoney"}, "Drops fake money bags on the player.", function(value)
         money_drop[player.id] = if value then true else nil
     end)
@@ -2443,16 +2430,110 @@ function Player:OnJoin(player)
             player:kick()
         end)
     end)
-    menu.action(player_removal_root, "Stand Crash", {"ryancrash"}, "Use the best possible crash methods.", function()
+    menu.action(player_removal_root, "Stand Crash", {"ryancrash"}, "Use the best possible built-in crash.", function()
         player:spam_sms_and_block_joins(removal_block_joins, removal_message, function()
             player:crash()
         end)
     end)
-    menu.action(player_removal_root, "Super Crash", {"ryansuper"}, "A crash that should work on 2take1 and Cherax.", function()
+    menu.action(player_removal_root, "Super Crash", {"ryansuper"}, "Use a custom crash.", function()
         player:spam_sms_and_block_joins(removal_block_joins, removal_message, function()
             player:super_crash(true)
         end)
     end)
+
+    -- BEGIN CRASH TESTS --
+    menu.action(player_removal_root, "Car Crash", {"ryancar"}, "Use a custom crash.", function()
+        player:spam_sms_and_block_joins(removal_block_joins, removal_message, function()
+	        local trafficLights = {}
+	        Ryan.RequestModel(-655644382)
+	        for i = 1, 20 do
+                local coords = v3(player.coords)
+                coords:add(v3(math.random(-5, 5), math.random(-5, 5), math.random(-1, 0)))
+	            trafficLights[#trafficLights + 1] = entities.create_object(-655644382, coords)
+	            ENTITY.SET_ENTITY_ROTATION(trafficLights[#trafficLights + 1], 0, 0, math.random(0, 360), 1, true)
+	        end
+
+	        local stopLights = false
+	        util.create_tick_handler(function()
+	            if stopLights then
+	                return false
+	            end
+	            ENTITY.SET_ENTITY_TRAFFICLIGHT_OVERRIDE(trafficLights[math.random(1, #trafficLights)], math.random(0, 3))
+	        end)
+
+	        Ryan.RequestModel(3253274834)
+	        local vehicles = {}
+	        
+            vehicles[1] = entities.create_vehicle(3253274834, player.coords, 0)
+	        VEHICLE.SET_VEHICLE_MOD_KIT(vehicles[1], 0)
+	        VEHICLE.SET_VEHICLE_NUMBER_PLATE_TEXT(vehicles[1], "ICRASHU")
+	        VEHICLE.SET_VEHICLE_MOD(vehicles[1], 34, 3)
+            local vehicle_data = Objects.GetVehicleData(vehicles[1])
+
+	        for i = 2, 11 do
+                vehicles[i] = entities.create_vehicle(3253274834, player.coords, 0)
+                Objects.SetVehicleData(vehicles[i], vehicle_data)
+	        end
+	        util.yield(3000)
+
+	        for i = 1, #vehicles do
+	            entities.delete_by_handle(vehicles[i])
+	        end
+	        util.yield(5000)
+
+	        stopLights = true
+	        util.yield(500)
+            
+	        for i = 1, #trafficLights do
+	            entities.delete_by_handle(trafficLights[i])
+	        end
+
+            Ryan.FreeModel(3253274834)
+	        Ryan.FreeModel(-655644382)
+        end)
+    end)
+
+    menu.action(player_removal_root, "Rebound Crash", {"ryanrebound"}, "Use a custom crash.", function()
+        player:spam_sms_and_block_joins(removal_block_joins, removal_message, function()
+            local mp_m_freemode_01 = util.joaat("mp_m_freemode_01"); Ryan.RequestModel(mp_m_freemode_01)
+            local taxi = util.joaat("taxi"); Ryan.RequestModel(taxi)
+
+            for i = 1, 10 do
+                local vehicle_id = entities.create_vehicle(taxi, player.coords, 0)
+                local ped_id = entities.create_ped(2, mp_m_freemode_01, player.coords, 0)
+                PED.SET_PED_INTO_VEHICLE(ped_id, vehicle_id, -1)
+                util.yield(100)
+                TASK.TASK_VEHICLE_HELI_PROTECT(ped_id, vehicle_id, player.ped_id, 10.0, 0, 10, 0, 0)
+                util.yield(1000)
+                entities.delete_by_handle(ped_id)
+                entities.delete_by_handle(vehicle_id)
+            end
+
+            Ryan.FreeModel(mp_m_freemode_01)
+            Ryan.FreeModel(taxi)
+        end)
+    end)
+
+    menu.action(player_removal_root, "North Crash", {"ryannorth"}, "Use a custom crash.", function()
+        player:spam_sms_and_block_joins(removal_block_joins, removal_message, function()
+            local player_zero = util.joaat("player_zero"); Ryan.RequestModel(player_zero)
+            local ped_id = entities.create_ped(0, player_zero, player.coords, 0)
+            PED.SET_PED_COMPONENT_VARIATION(ped_id, 0, 0, 6, 0)
+            PED.SET_PED_COMPONENT_VARIATION(ped_id, 0, 0, 7, 0)
+            util.yield()
+
+            ENTITY.SET_ENTITY_COORDS(ped_id, player.coords.x, player.coords.y, player.coords.z, true, false, false, true)
+            util.yield(500)
+
+            local node = Ryan.GetClosestNode(player.coords, false)
+            ENTITY.SET_ENTITY_COORDS(ped_id, node.x, node.y, node.z, true, false, false, true)
+            util.yield(500)
+
+            entities.delete_by_handle(ped_id)
+        end)
+    end)
+
+    -- TODO: BLACK HOLE & HAILSTORM --
     
 
     -- Miscellaneous --

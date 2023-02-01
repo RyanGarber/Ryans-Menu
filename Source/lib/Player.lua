@@ -328,18 +328,6 @@ function Player.send_script_event(self, args, name)
     util.yield(10)
 end
 
--- Force player to become an animal via Halloween events.
-local animal_notice = {}
-function Player.turn_into_animal(self)
-    if PED.IS_PED_MODEL(self.ped_id, 0x9C9EFFD8) or PED.IS_PED_MODEL(self.ped_id, 0x705E61F2) then
-        self:send_script_event({-1178972880, self.id, 8, -1, 1, 1, 1}, "halloween")
-        animal_notice[self.id] = nil
-    elseif animal_notice[self.id] == nil then
-        Ryan.Toast(self.name .. " is now an animal!")
-        animal_notice[self.id] = true
-    end
-end
-
 -- Remove godmode via Force Camera Forward.
 function Player.remove_godmode(self)
     self:send_script_event({-1388926377, self.id, -1762807505, math.random(0, 9999)}, "remove godmode")

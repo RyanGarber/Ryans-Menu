@@ -32,11 +32,6 @@ end
 
 Ryan.FriendSpoofs = {}
 
--- Update globals on each tick.
-Ryan.OnTick = function()
-    PlayerIsPointing = memory.read_int(memory.script_global(4521801 + 930)) == 3
-end
-
 -- HUD settings.
 Ryan.HUDColor = {r = 0.29, g = 0.69, b = 1.0}
 Ryan.HUDUseBeacon = false
@@ -288,7 +283,7 @@ Ryan.Toast = function(...)
 end
 
 -- Download the latest version if a new one is available, or if force == true.
-Ryan.Start = function(force)
+Ryan.CheckForUpdates = function(force)
 	if DEV_ENVIRONMENT then show_intro("Version " .. VERSION .. (if DEV_ENVIRONMENT then " (Dev)" else ""), util.current_time_millis()) end
 
 	if not DEV_ENVIRONMENT or force then
