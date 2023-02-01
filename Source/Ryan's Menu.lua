@@ -38,7 +38,7 @@ end)
 
 -- UI Thread --
 local last_tick = util.current_time_millis()
-local intro_text = 1.0
+local intro_text = "Checking for updates..."
 local intro_stop_at = 1.0
 local intro_alpha = 1.0
 --local intro_blur = directx.blurrect_new()
