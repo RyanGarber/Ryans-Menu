@@ -304,8 +304,6 @@ Ryan.CheckForUpdates = function(force)
 				end
 
 				function on_update()
-					show_intro("Update complete!", util.current_time_millis())
-
 					util.show_corner_help("Please restart Ryan's Menu to start using version " .. latest_version .. ".")
 					--Ryan.ShowTextMessage(49, "Auto-Update", "Updated! Please restart Ryan's Menu to continue.")
 					menu.focus(menu.ref_by_command_name("stopluaryansmenu"))
