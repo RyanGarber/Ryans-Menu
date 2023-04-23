@@ -15,7 +15,7 @@ local push_arg_FloatV3 <const> = function(args,i)
 			push_arg_float(args[i+1])
 			push_arg_float(args[i+2])
 			return 2
-		pluto_default:
+		default:
 			push_arg_vector3(arg)
 			return 0
 	end

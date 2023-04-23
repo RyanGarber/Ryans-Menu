@@ -2063,7 +2063,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
 
                                 Ryan.FreeModel(oppressor2)
                                 break
-                            pluto_default:
+                            default:
                                 local raw_command = command[4]
                                 for i, arg_type in pairs(command[2]) do
                                     if arg_type == "player" then raw_command = raw_command:gsub("{" .. i .. "}", players.get_name(args[i])) end
@@ -2657,7 +2657,7 @@ util.create_tick_handler(function()
 
                             Ryan.FreeModel(shuttering)
                             break
-                        pluto_default:
+                        default:
                             local glitch_object, rallytruck = util.joaat(glitch[player.id]), util.joaat("rallytruck")
                             Ryan.RequestModel(glitch_object)
                             Ryan.RequestModel(rallytruck)

@@ -108,7 +108,7 @@ UI.GetGodFingerActivation = function(key)
     pluto_switch activated do
         case true: return 2
         case false: return 0
-        pluto_default: return activated
+        default: return activated
     end
 end
 
@@ -128,7 +128,7 @@ UI.DisplayGodFingerKeybind = function(mode)
         case "Hold 3": return "~INPUT_SELECT_WEAPON_SHOTGUN~"
         case "Hold 4": return "~INPUT_SELECT_WEAPON_HEAVY~"
         case "Hold 5": return "~INPUT_SELECT_WEAPON_SPECIAL~"
-        pluto_default: return "<b>" .. mode:sub(6) .. "</b>]"
+        default: return "<b>" .. mode:sub(6) .. "</b>]"
     end
 end
 
