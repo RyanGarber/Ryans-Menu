@@ -14,7 +14,8 @@
   },
   "homepage": "https://github.com/RyanGarber/Ryans-Menu#readme",
   "dependencies": {
-    "https": "^1.0.0"
+    "https": "^1.0.0",
+    "nw-builder": "^4.2.3-beta.2"
   },
   "devDependencies": {
     "nwjs-builder-phoenix": "^1.15.0"
@@ -27,12 +28,12 @@
     "nwVersion": "0.14.7",
     "packed": true,
     "win": {
-        "productName": "Install Ryan's Menu",
-        "companyName": "RyanGQ",
-        "icon": "logo.ico"
+      "productName": "Install Ryan's Menu",
+      "companyName": "RyanGQ",
+      "icon": "logo.ico"
     }
   },
   "window": {
-      "icon": "logo.png"
+    "icon": "logo.png"
   }
 }

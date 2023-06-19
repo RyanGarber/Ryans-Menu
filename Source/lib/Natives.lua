@@ -9,13 +9,13 @@ local begin_call, end_call, get_return_value_bool, get_return_value_float, get_r
 local type = type
 local push_arg_FloatV3 <const> = function(args,i)
 	local arg = args[i]
-	pluto_switch type(arg) do
+	switch type(arg) do
 		case "number":
 			push_arg_float(arg)
 			push_arg_float(args[i+1])
 			push_arg_float(args[i+2])
 			return 2
-		pluto_default:
+		default:
 			push_arg_vector3(arg)
 			return 0
 	end

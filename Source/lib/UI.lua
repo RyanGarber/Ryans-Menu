@@ -89,7 +89,7 @@ UI.GodFingerActivationModes = {
 
 UI.GetGodFingerActivation = function(key)
     local activated = false
-    pluto_switch key do
+    switch key do
         case "Off":    activated = 0                                                                      break
         case "Look":   activated = 1                                                                      break
         case "Hold Q": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.Cover);               break
@@ -105,17 +105,17 @@ UI.GetGodFingerActivation = function(key)
         case "Hold 4": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponHeavy);   break
         case "Hold 5": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponSpecial); break
     end
-    pluto_switch activated do
+    switch activated do
         case true: return 2
         case false: return 0
-        pluto_default: return activated
+        default: return activated
     end
 end
 
 UI.DisplayGodFingerKeybind = function(mode)
     if Ryan.TextKeybinds then return "<b>" .. mode:sub(6) .. "</b>]" end
 
-    pluto_switch mode do
+    switch mode do
         case "Hold Q": return "~INPUT_COVER~"
         case "Hold E": return "~INPUT_VEH_HORN~"
         case "Hold R": return "~INPUT_RELOAD~"
@@ -128,7 +128,7 @@ UI.DisplayGodFingerKeybind = function(mode)
         case "Hold 3": return "~INPUT_SELECT_WEAPON_SHOTGUN~"
         case "Hold 4": return "~INPUT_SELECT_WEAPON_HEAVY~"
         case "Hold 5": return "~INPUT_SELECT_WEAPON_SPECIAL~"
-        pluto_default: return "<b>" .. mode:sub(6) .. "</b>]"
+        default: return "<b>" .. mode:sub(6) .. "</b>]"
     end
 end
 

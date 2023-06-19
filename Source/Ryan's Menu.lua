@@ -335,7 +335,7 @@ util.create_tick_handler(function()
         local nearby = Objects.GetAllNearCoords(user.coords, forcefield_size, Objects.Type.All)
         for _, entity in pairs(nearby) do
             if (players.get_vehicle_model(players.user()) == 0 or entity ~= entities.get_user_vehicle_as_handle()) and entity ~= players.user_ped() then
-            pluto_switch forcefield_type do
+            switch forcefield_type do
                     case "Push": -- Push entities away
                         local force = ENTITY.GET_ENTITY_COORDS(entity)
                         force:sub(user.coords); force:normalise()
@@ -1034,7 +1034,7 @@ end)
     if vehicle == 0 then return end
     local rotation = ENTITY.GET_ENTITY_ROTATION(vehicle)
     local multiplier = 35
-    pluto_switch side do
+    switch side do
         case "left":
             rotation:setZ(rotation.z + 90)
             break
@@ -1220,7 +1220,7 @@ UI.CreateNPCEffectList(world_all_npcs_root, "ryanallnpcs", all_npcs_effects, fal
 util.create_tick_handler(function()
     if all_npcs_mode ~= "Off" then
         local scenario = ""
-        pluto_switch all_npcs_mode do
+        switch all_npcs_mode do
             case "Musician":
                 scenario = "WORLD_HUMAN_MUSICIAN"
                 break
@@ -1347,7 +1347,7 @@ util.create_tick_handler(function()
         if remove_mode ~= "None" then util.draw_debug_text("Removing " .. remove_mode) end
         for _, entity in pairs(Objects.GetAllNearCoords(coords, 500, Objects.Type.Ped)) do
             if ENTITY.IS_ENTITY_A_PED(entity) then
-                pluto_switch remove_mode do
+                switch remove_mode do
                     case "Cops":
                         for _, ped_type in pairs(Ryan.PedGroups.LawEnforcement) do
                             if PED.GET_PED_TYPE(entity) == ped_type then
@@ -1669,7 +1669,7 @@ util.create_tick_handler(function()
                     if antihermit_mode ~= "Off" then
                         Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Anti-Hermit", player.name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
                         player:spam_sms("You've been inside too long. Stop being weird and play the game!", 1500)
-                        pluto_switch antihermit_mode do
+                        switch antihermit_mode do
                             case "Teleport Outside":
                                 menu.trigger_commands("apt1" .. player.name)
                                 break
@@ -1819,7 +1819,7 @@ UI.CreateList(session_root, "Mk II", "ryanmk2", "How Oppressor Mk IIs are handle
 end)
 
 util.create_tick_handler(function()
-    pluto_switch mk2_mode do
+    switch mk2_mode do
         case "Banned":
             if util.current_time_millis() - mk2_ban_notice >= 300000 then
                 Ryan.SendChatMessage("This session is in Mk II Ban mode! Go ahead, try and use one.")
@@ -2030,7 +2030,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
 
                     -- Handle Command
                     if not has_error then
-                        pluto_switch command[1] do
+                        switch command[1] do
                             case "help":
                                 local cmd_list = ""
                                 for i, cmd in ipairs(chat_commands) do
@@ -2063,7 +2063,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
 
                                 Ryan.FreeModel(oppressor2)
                                 break
-                            pluto_default:
+                            default:
                                 local raw_command = command[4]
                                 for i, arg_type in pairs(command[2]) do
                                     if arg_type == "player" then raw_command = raw_command:gsub("{" .. i .. "}", players.get_name(args[i])) end
@@ -2636,7 +2636,7 @@ util.create_tick_handler(function()
             util.create_thread(function()
                 local glitch_type = glitch[player.id]
                 while glitch[player.id] == glitch_type do
-                    pluto_switch glitch_type do
+                    switch glitch_type do
                         case "Off":
                             break
                         case "Default":
@@ -2657,7 +2657,7 @@ util.create_tick_handler(function()
 
                             Ryan.FreeModel(shuttering)
                             break
-                        pluto_default:
+                        default:
                             local glitch_object, rallytruck = util.joaat(glitch[player.id]), util.joaat("rallytruck")
                             Ryan.RequestModel(glitch_object)
                             Ryan.RequestModel(rallytruck)
