@@ -4,7 +4,7 @@ _entities = {}
 Trolling.AddEntity = function(player_id, entity, with_blip)
     if _entities[player_id] == nil then _entities[player_id] = {} end
     table.insert(_entities[player_id], entity)
-    if with_blip then HUD.ADD_BLIP_FOR_ENTITY(entity) end
+    if with_blip then ADD_BLIP_FOR_ENTITY(entity) end
 end
 Trolling.DeleteEntities = function(player_id)
     if _entities[player_id] == nil then return end
@@ -15,7 +15,7 @@ end
 
 Trolling.MilitarySquad = function(player_id, with_crusaders)
     local player = Player:Get(player_id)
-    local player_coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
+    local player_coords = GET_ENTITY_COORDS(player.ped_id)
 
     local blackops = util.joaat("s_m_y_blackops_01")
     Ryan.RequestModel(blackops)
@@ -35,32 +35,32 @@ Trolling.MilitarySquad = function(player_id, with_crusaders)
             PATHFIND.GET_CLOSEST_VEHICLE_NODE(player_coords.x, player_coords.y, player_coords.z, coords, 1, 100, 2.5)
         end
 
-        local vehicle = entities.create_vehicle(vehicles[i], coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        local vehicle = entities.create_vehicle(vehicles[i], coords, GET_GAMEPLAY_CAM_ROT(0).z)
         Trolling.AddEntity(player.id, vehicle, i < 3)
-        local rotation = coords:lookAt(ENTITY.GET_ENTITY_COORDS(player.ped_id))
-        ENTITY.SET_ENTITY_ROTATION(vehicle, rotation.x, rotation.y, rotation.z, 2, true)
-        VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
+        local rotation = coords:lookAt(GET_ENTITY_COORDS(player.ped_id))
+        SET_ENTITY_ROTATION(vehicle, rotation.x, rotation.y, rotation.z, 2, true)
+        SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
         Objects.SetVehicleSpeed(vehicle, Objects.VehicleSpeed.Fast)
         Objects.SetVehicleFullyUpgraded(vehicle, true)
 
-        local seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicles[i])
+        local seats = GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicles[i])
         for seat = -1, seats - 2 do
-            local ped = entities.create_ped(29, blackops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+            local ped = entities.create_ped(29, blackops, coords, GET_GAMEPLAY_CAM_ROT(0).z)
             Trolling.AddEntity(player.id, ped, false)
-            PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
-            WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
-            PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
-            PED.SET_PED_MAX_HEALTH(ped, 500)
-            ENTITY.SET_ENTITY_HEALTH(ped, 500)
-            PED.SET_PED_SHOOT_RATE(ped, 1000)
-            PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, blackops)
-            TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
+            SET_PED_INTO_VEHICLE(ped, vehicle, seat)
+            GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
+            SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
+            SET_PED_MAX_HEALTH(ped, 500)
+            SET_ENTITY_HEALTH(ped, 500)
+            SET_PED_SHOOT_RATE(ped, 1000)
+            SET_PED_RELATIONSHIP_GROUP_HASH(ped, blackops)
+            TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
         end
     end
 
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, blackops, PED.GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id))
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, PED.GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id), blackops)
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, blackops, blackops)
+    SET_RELATIONSHIP_BETWEEN_GROUPS(5, blackops, GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id))
+    SET_RELATIONSHIP_BETWEEN_GROUPS(5, GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id), blackops)
+    SET_RELATIONSHIP_BETWEEN_GROUPS(0, blackops, blackops)
 
     Ryan.FreeModel(blackops)
     for i = 1, #vehicles do
@@ -70,31 +70,31 @@ end
 
 Trolling.SWATTeam = function(player_id)
     local player = Player:Get(player_id)
-    local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
+    local coords = GET_ENTITY_COORDS(player.ped_id)
 
     local swat = util.joaat("s_m_y_swat_01")
     Ryan.RequestModel(swat)
     
     for i = 1, 4 do
         coords:add(v3(math.random(-3, 3), math.random(-3, 3), 0))
-        local ped = entities.create_ped(5, swat, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+        local ped = entities.create_ped(5, swat, coords, GET_GAMEPLAY_CAM_ROT(0).z)
         Trolling.AddEntity(player.id, ped, i == 1)
 
-        WEAPON.GIVE_WEAPON_TO_PED(ped, -1312131151, -1, false, true)
-        PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
-        PED.SET_PED_MAX_HEALTH(ped, 500)
-        ENTITY.SET_ENTITY_INVINCIBLE(ped, true)
-        PED.SET_PED_SHOOT_RATE(ped, 1000)
-        WEAPON.SET_PED_INFINITE_AMMO(ped, true, -1312131151)
-        WEAPON.SET_PED_INFINITE_AMMO_CLIP(ped, true)
-        PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, swat)
-        TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 100, 0)
+        GIVE_WEAPON_TO_PED(ped, -1312131151, -1, false, true)
+        SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
+        SET_PED_MAX_HEALTH(ped, 500)
+        SET_ENTITY_INVINCIBLE(ped, true)
+        SET_PED_SHOOT_RATE(ped, 1000)
+        SET_PED_INFINITE_AMMO(ped, true, -1312131151)
+        SET_PED_INFINITE_AMMO_CLIP(ped, true)
+        SET_PED_RELATIONSHIP_GROUP_HASH(ped, swat)
+        TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 100, 0)
         util.yield(375)
     end
 
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, swat, PED.GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id))
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, PED.GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id), swat)
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, swat, swat)
+    SET_RELATIONSHIP_BETWEEN_GROUPS(5, swat, GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id))
+    SET_RELATIONSHIP_BETWEEN_GROUPS(5, GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id), swat)
+    SET_RELATIONSHIP_BETWEEN_GROUPS(0, swat, swat)
 
     Ryan.FreeModel(swat)
 end
@@ -104,73 +104,73 @@ Trolling.FlyingYacht = function(player_id)
     Ryan.RequestModel(big_boat); Ryan.RequestModel(buzzard); Ryan.RequestModel(blackops)
 
     local player = Player:Get(player_id)
-    local player_group = PED.GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
-    local coords = ENTITY.GET_ENTITY_COORDS(player_ped)
+    local player_group = GET_PED_RELATIONSHIP_GROUP_HASH(player_ped)
+    local coords = GET_ENTITY_COORDS(player_ped)
 
-    local vehicle = entities.create_vehicle(buzzard, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
-    local attachment = entities.create_object(big_boat, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    local vehicle = entities.create_vehicle(buzzard, coords, GET_GAMEPLAY_CAM_ROT(0).z)
+    local attachment = entities.create_object(big_boat, coords, GET_GAMEPLAY_CAM_ROT(0).z)
     Trolling.AddEntity(player_id, attachment, false); Trolling.AddEntity(player_id, vehicle, true)
-    NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
-    if ENTITY.DOES_ENTITY_EXIST(vehicle) then
-        local ped = entities.create_ped(29, blackops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    SET_NETWORK_ID_CAN_MIGRATE(VEH_TO_NET(vehicle), false)
+    if DOES_ENTITY_EXIST(vehicle) then
+        local ped = entities.create_ped(29, blackops, coords, GET_GAMEPLAY_CAM_ROT(0).z)
         Trolling.AddEntity(player_id, ped, false)
-        PED.SET_PED_INTO_VEHICLE(ped, vehicle)
+        SET_PED_INTO_VEHICLE(ped, vehicle)
         
         coords.x = coords.x + math.random(-20, 20)
         coords.y = coords.y + math.random(-20, 20)
         coords.z = coords.z + 30
 
-        ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
-        NETWORK.SET_NETWORK_ID_CAN_MIGRATE(NETWORK.VEH_TO_NET(vehicle), false)
-        ENTITY.SET_ENTITY_INVINCIBLE(vehicle, true)
-        VEHICLE.SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
-        VEHICLE.SET_HELI_BLADES_FULL_SPEED(vehicle)
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, "chassis"), 0, 0, 0, 0, 0, 0, false, false, false, false, 0, true)
-        HUD.ADD_BLIP_FOR_ENTITY(vehicle)
+        SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
+        SET_NETWORK_ID_CAN_MIGRATE(VEH_TO_NET(vehicle), false)
+        SET_ENTITY_INVINCIBLE(vehicle, true)
+        SET_VEHICLE_ENGINE_ON(vehicle, true, true, true)
+        SET_HELI_BLADES_FULL_SPEED(vehicle)
+        ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, "chassis"), 0, 0, 0, 0, 0, 0, false, false, false, false, 0, true)
+        ADD_BLIP_FOR_ENTITY(vehicle)
 
-        PED.SET_PED_MAX_HEALTH(ped, 500)
-        ENTITY.SET_ENTITY_HEALTH(ped, 500)
-        ENTITY.SET_ENTITY_INVINCIBLE(ped, true)
-        PED.SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(ped, true)
-        TASK.TASK_HELI_MISSION(ped, vehicle, 0, player_ped, 0.0, 0.0, 0.0, 23, 40.0, 40.0, -1.0, 0, 10, -1.0, 0)
-        PED.SET_PED_KEEP_TASK(ped, true)
+        SET_PED_MAX_HEALTH(ped, 500)
+        SET_ENTITY_HEALTH(ped, 500)
+        SET_ENTITY_INVINCIBLE(ped, true)
+        SET_BLOCKING_OF_NON_TEMPORARY_EVENTS(ped, true)
+        TASK_HELI_MISSION(ped, vehicle, 0, player_ped, 0.0, 0.0, 0.0, 23, 40.0, 40.0, -1.0, 0, 10, -1.0, 0)
+        SET_PED_KEEP_TASK(ped, true)
 
         for seat = 1, 2 do 
-            local ped = entities.create_ped(29, blackops, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+            local ped = entities.create_ped(29, blackops, coords, GET_GAMEPLAY_CAM_ROT(0).z)
             Trolling.AddEntity(player_id, ped, false)
-            PED.SET_PED_INTO_VEHICLE(ped, vehicle, seat)
-            WEAPON.GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
-            PED.SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
-            PED.SET_PED_MAX_HEALTH(ped, 500)
-            ENTITY.SET_ENTITY_HEALTH(ped, 500)
-            PED.SET_PED_SHOOT_RATE(ped, 1000)
-            PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, blackops)
-            TASK.TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
+            SET_PED_INTO_VEHICLE(ped, vehicle, seat)
+            GIVE_WEAPON_TO_PED(ped, 3686625920, -1, false, true)
+            SET_PED_COMBAT_ATTRIBUTES(ped, 20, true)
+            SET_PED_MAX_HEALTH(ped, 500)
+            SET_ENTITY_HEALTH(ped, 500)
+            SET_PED_SHOOT_RATE(ped, 1000)
+            SET_PED_RELATIONSHIP_GROUP_HASH(ped, blackops)
+            TASK_COMBAT_HATED_TARGETS_AROUND_PED(ped, 1000, 0)
         end
 
         util.yield(100)
     end
 
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, blackops, PED.GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id))
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, PED.GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id), blackops)
-    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, blackops, blackops)
+    SET_RELATIONSHIP_BETWEEN_GROUPS(5, blackops, GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id))
+    SET_RELATIONSHIP_BETWEEN_GROUPS(5, GET_PED_RELATIONSHIP_GROUP_HASH(player.ped_id), blackops)
+    SET_RELATIONSHIP_BETWEEN_GROUPS(0, blackops, blackops)
 
     Ryan.FreeModel(big_boat); Ryan.FreeModel(buzzard); Ryan.FreeModel(blackops)
 end
 
 Trolling.FallingTank = function(player_id)
     local player = Player:Get(player_id)
-    local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
+    local coords = GET_ENTITY_COORDS(player.ped_id)
     coords.z = coords.z + 5
 
     local tank = util.joaat("rhino")
     Ryan.RequestModel(tank)
     
-    local entity = entities.create_vehicle(tank, coords, CAM.GET_GAMEPLAY_CAM_ROT(0).z)
+    local entity = entities.create_vehicle(tank, coords, GET_GAMEPLAY_CAM_ROT(0).z)
     Trolling.AddEntity(player_id, entity, true)
-    ENTITY.SET_ENTITY_LOAD_COLLISION_FLAG(entity, true)
-    ENTITY.SET_ENTITY_MAX_SPEED(entity, 64)
-    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 3, 0.0, 0.0, -1000.00, 0.0, 0.0, 0.0, 0, true, true, false, true)
+    SET_ENTITY_LOAD_COLLISION_FLAG(entity, true)
+    SET_ENTITY_MAX_SPEED(entity, 64)
+    APPLY_FORCE_TO_ENTITY(entity, 3, 0.0, 0.0, -1000.00, 0.0, 0.0, 0.0, 0, true, true, false, true)
 
     Ryan.FreeModel(tank)
 end
@@ -189,8 +189,8 @@ Trolling.CreateNASAMenu = function(root, player_id)
         Ryan.RequestModel(bigradar)
 
         local player_ped = Player:Get(player_id).ped_id
-        local player_coords = ENTITY.GET_ENTITY_COORDS(player_ped)
-        local radar = entities.create_object(bigradar, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 20, -3), ENTITY.GET_ENTITY_HEADING(player_ped))
+        local player_coords = GET_ENTITY_COORDS(player_ped)
+        local radar = entities.create_object(bigradar, GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player_ped, 0, 20, -3), GET_ENTITY_HEADING(player_ped))
         Objects.RequestControl(radar, false)
         Trolling.AddEntity(player_id, radar, true)
         
@@ -283,25 +283,25 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
         Ryan.Teleport(Ryan.GetClosestNode(player.coords), true)
     end
     
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
+    local vehicle = GET_VEHICLE_PED_IS_IN(player.ped_id)
     local vehicle_data = Objects.GetVehicleData(vehicle)
-    local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
-    local vehicle_velocity = ENTITY.GET_ENTITY_VELOCITY(vehicle)
+    local vehicle_coords = GET_ENTITY_COORDS(vehicle)
+    local vehicle_velocity = GET_ENTITY_VELOCITY(vehicle)
     
     local clone_model = if model ~= "clone" then util.joaat(model) else vehicle_data.model; Ryan.RequestModel(clone_model)
     local clone_coords = v3(vehicle_coords); clone_coords:add(v3(0, 0, 5))
-    local clone_heading = ENTITY.GET_ENTITY_HEADING(vehicle)
+    local clone_heading = GET_ENTITY_HEADING(vehicle)
     
     local vehicle_min, vehicle_max = v3.new(), v3.new()
-    MISC.GET_MODEL_DIMENSIONS(vehicle_data.model, vehicle_min, vehicle_max)
+    GET_MODEL_DIMENSIONS(vehicle_data.model, vehicle_min, vehicle_max)
     local clone_min, clone_max = v3.new(), v3.new()
-    MISC.GET_MODEL_DIMENSIONS(clone_model, clone_min, clone_max)
+    GET_MODEL_DIMENSIONS(clone_model, clone_min, clone_max)
 
     local clone = entities.create_vehicle(clone_model, clone_coords, clone_heading)
     if model == "clone" then Objects.SetVehicleData(clone, vehicle_data) end
     if model == "polmav" then 
-        VEHICLE.SET_VEHICLE_MOD_KIT(clone, 0)
-        VEHICLE.SET_VEHICLE_MOD(clone, 48, -1)
+        SET_VEHICLE_MOD_KIT(clone, 0)
+        SET_VEHICLE_MOD(clone, 48, -1)
     end
 
     local offset = v3(0, 0, 0)
@@ -310,11 +310,11 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
         local trailer = entities.create_object(trailer_model, clone_coords)
 
         local trailer_min, trailer_max = v3.new(), v3.new()
-        MISC.GET_MODEL_DIMENSIONS(trailer_model, trailer_min, trailer_max)
+        GET_MODEL_DIMENSIONS(trailer_model, trailer_min, trailer_max)
         
         offset:setY(clone_min.y + trailer_min.y + 0.5)
         offset:setZ(-0.25)
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(trailer, clone, 0, offset.x, offset.y, offset.z, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
+        ATTACH_ENTITY_TO_ENTITY(trailer, clone, 0, offset.x, offset.y, offset.z, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
 
         Trolling.ControlledVehicles[player.id].trailer = trailer
     end
@@ -324,10 +324,10 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
     
     local attached = false
     for i = 1, 10 do
-        if not ENTITY.IS_ENTITY_ATTACHED_TO_ENTITY(clone, vehicle) then
+        if not IS_ENTITY_ATTACHED_TO_ENTITY(clone, vehicle) then
             if i > 1 then Ryan.Toast("Still trying to take control of " .. player.name .. "'s vehicle.") end
             Objects.RequestControl(vehicle, true)
-            ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicle, clone, 0, offset.x, offset.y, offset.z, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
+            ATTACH_ENTITY_TO_ENTITY(vehicle, clone, 0, offset.x, offset.y, offset.z, 0.0, 0.0, 0.0, false, true, false, false, 2, true)
             Objects.SetVehicleDoorsLocked(vehicle, true)
             util.yield(100)
         else
@@ -342,12 +342,12 @@ Trolling.TakeControlOfVehicle = function(player, model, with_trailer)
     end
 
     if attached then
-        ENTITY.SET_ENTITY_COORDS(clone, vehicle_coords.x, vehicle_coords.y, vehicle_coords.z)
-        ENTITY.SET_ENTITY_VELOCITY(clone, vehicle_velocity.x, vehicle_velocity.y, vehicle_velocity.z)
+        SET_ENTITY_COORDS(clone, vehicle_coords.x, vehicle_coords.y, vehicle_coords.z)
+        SET_ENTITY_VELOCITY(clone, vehicle_velocity.x, vehicle_velocity.y, vehicle_velocity.z)
         
         for i = 1, 10 do
-            if VEHICLE.GET_PED_IN_VEHICLE_SEAT(clone, -1, false) ~= players.user_ped() then
-                PED.SET_PED_INTO_VEHICLE(players.user_ped(), clone, -1)
+            if GET_PED_IN_VEHICLE_SEAT(clone, -1, false) ~= players.user_ped() then
+                SET_PED_INTO_VEHICLE(players.user_ped(), clone, -1)
                 util.yield(100)
             end
         end
@@ -368,12 +368,12 @@ Trolling.ReturnControlOfVehicle = function(player)
         menu.trigger_command(menu.ref_by_rel_path(ghost_menu, ghost_mode))
     end
 
-    if ENTITY.IS_ENTITY_A_VEHICLE(Trolling.ControlledVehicles[player.id].vehicle) then
-        ENTITY.DETACH_ENTITY(Trolling.ControlledVehicles[player.id].vehicle, true, true)
+    if IS_ENTITY_A_VEHICLE(Trolling.ControlledVehicles[player.id].vehicle) then
+        DETACH_ENTITY(Trolling.ControlledVehicles[player.id].vehicle, true, true)
         Objects.SetVehicleDoorsLocked(Trolling.ControlledVehicles[player.id].vehicle, false)
     end
-    if ENTITY.IS_ENTITY_A_VEHICLE(Trolling.ControlledVehicles[player.id].clone) then entities.delete_by_handle(Trolling.ControlledVehicles[player.id].clone) end
-    if ENTITY.IS_ENTITY_AN_OBJECT(Trolling.ControlledVehicles[player.id].trailer) then entities.delete_by_handle(Trolling.ControlledVehicles[player.id].trailer) end
+    if IS_ENTITY_A_VEHICLE(Trolling.ControlledVehicles[player.id].clone) then entities.delete_by_handle(Trolling.ControlledVehicles[player.id].clone) end
+    if IS_ENTITY_AN_OBJECT(Trolling.ControlledVehicles[player.id].trailer) then entities.delete_by_handle(Trolling.ControlledVehicles[player.id].trailer) end
 
     Trolling.ControlledVehicles[player.id] = nil
     return true
@@ -390,7 +390,7 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
     local player_to_attach = if type(object_hash) == "number" then Player:Get(object_hash, true) else nil
     if player_to_attach == nil then
         if type(object_hash) == "string" then object_hash = util.joaat(object_hash) end
-        if not STREAMING.IS_MODEL_VALID(object_hash) then
+        if not IS_MODEL_VALID(object_hash) then
             Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "The requested object ID does not exist.")
             return
         end
@@ -406,7 +406,7 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
     local third_eye = user.id ~= player.id and user.coords:distance(player.coords) > 100
     if third_eye then Ryan.OpenThirdEye(player.coords) end
     
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id, true)
+    local vehicle = GET_VEHICLE_PED_IS_IN(player.ped_id, true)
     if vehicle == 0 then
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Vehicle Attachments", "Player is not in a vehicle.")
         return
@@ -416,17 +416,17 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
 
     local bones = {}
     local base_x, base_y, base_z, width_x, length_y, height_z = 0, 0, 0, 0, 0, 0
-    local is_a_clone = player_to_attach == nil and object_hash == ENTITY.GET_ENTITY_MODEL(vehicle)
+    local is_a_clone = player_to_attach == nil and object_hash == GET_ENTITY_MODEL(vehicle)
 
     local min, max = v3.new(), v3.new()
-    MISC.GET_MODEL_DIMENSIONS(if player_to_attach == nil then object_hash else players.get_vehicle_model(player_to_attach.id), min, max)
+    GET_MODEL_DIMENSIONS(if player_to_attach == nil then object_hash else players.get_vehicle_model(player_to_attach.id), min, max)
     height_z = max.z - min.z
     length_y = max.y - min.y
 
-    MISC.GET_MODEL_DIMENSIONS(vehicle, min, max)
+    GET_MODEL_DIMENSIONS(vehicle, min, max)
     if options.attach_to == "Top" then
         bones[1] = -1
-        local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+        local vehicle_coords = GET_ENTITY_COORDS(vehicle)
         local raycast_coords = v3(vehicle_coords); raycast_coords:setZ(raycast_coords.z + 9.99)
         local raycast = Ryan.Raycast(raycast_coords, v3(0, 0, -1), 10.01, Ryan.RaycastFlags.Vehicles, true)
         if raycast.did_hit then
@@ -442,7 +442,7 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
         if _vehicle_attachment_offsets[object_hash] ~= nil then base_z = base_z + _vehicle_attachment_offsets[object_hash] end
     elseif options.attach_to == "Wheels" then
         for i = 1, #Objects.VehicleBones.Wheels do
-            local bone = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, Objects.VehicleBones.Wheels[i])
+            local bone = GET_ENTITY_BONE_INDEX_BY_NAME(vehicle, Objects.VehicleBones.Wheels[i])
             if bone ~= -1 then bones[i] = bone end
         end
     elseif options.attach_to == "Front" then
@@ -468,10 +468,10 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
     for _, bone in pairs(bones) do
         local entity = nil
         for i = 0, options.stack_size - 1 do
-            if player_to_attach ~= nil then attachment = PED.GET_VEHICLE_PED_IS_IN(player_to_attach.ped_id)
-            elseif STREAMING.IS_MODEL_A_VEHICLE(object_hash) then attachment = entities.create_vehicle(object_hash, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
-            elseif STREAMING.IS_MODEL_A_PED(object_hash) then attachment = entities.create_ped(0, object_hash, ENTITY.GET_ENTITY_COORDS(vehicle), 0)
-            else attachment = entities.create_object(object_hash, ENTITY.GET_ENTITY_COORDS(vehicle), 0) end
+            if player_to_attach ~= nil then attachment = GET_VEHICLE_PED_IS_IN(player_to_attach.ped_id)
+            elseif IS_MODEL_A_VEHICLE(object_hash) then attachment = entities.create_vehicle(object_hash, GET_ENTITY_COORDS(vehicle), 0)
+            elseif IS_MODEL_A_PED(object_hash) then attachment = entities.create_ped(0, object_hash, GET_ENTITY_COORDS(vehicle), 0)
+            else attachment = entities.create_object(object_hash, GET_ENTITY_COORDS(vehicle), 0) end
 
             for attempt = 1, 3 do
                 Ryan.Toast("Attempting to attach an object...")
@@ -480,8 +480,8 @@ Trolling.AttachObjectToVehicle = function(player, object_hash, options)
                 local x = base_x + (i * (is_a_clone and base_x or width_x))
                 local y = base_y + (i * (is_a_clone and base_y or length_y))
                 local z = base_z + (i * (is_a_clone and base_z or height_z))
-                ENTITY.ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, bone, x, y, z, 0, 0, 0, false, false, options.collision, false, 0, true)
-                ENTITY.SET_ENTITY_CAN_BE_DAMAGED(attachment, false)
+                ATTACH_ENTITY_TO_ENTITY(attachment, vehicle, bone, x, y, z, 0, 0, 0, false, false, options.collision, false, 0, true)
+                SET_ENTITY_CAN_BE_DAMAGED(attachment, false)
                 
                 if vehicle_data ~= nil then Objects.SetVehicleData(attachment, vehicle_data) end
                 table.insert(_vehicle_attachments[player.id], attachment)
@@ -504,8 +504,8 @@ Trolling.DetachObjectsFromVehicle = function(player, delete)
             if delete then
                 entities.delete_by_handle(attachment)
             else
-                ENTITY.DETACH_ENTITY(attachment)
-                ENTITY.SET_ENTITY_CAN_BE_DAMAGED(attachment, true)
+                DETACH_ENTITY(attachment)
+                SET_ENTITY_CAN_BE_DAMAGED(attachment, true)
             end
         end
     end
@@ -513,9 +513,9 @@ Trolling.DetachObjectsFromVehicle = function(player, delete)
 end
 
 Trolling.WillOrbitalCannonHitEntity = function(coords, entity)
-    local entity_coords = ENTITY.GET_ENTITY_COORDS(entity)
+    local entity_coords = GET_ENTITY_COORDS(entity)
     return
-        (MISC.GET_DISTANCE_BETWEEN_COORDS(
+        (GET_DISTANCE_BETWEEN_COORDS(
             coords.x, coords.y, coords.z,
             entity_coords.x, entity_coords.y, entity_coords.z,
             false
@@ -527,11 +527,11 @@ end
 -- Orbital cannon code stolen straight from R* themselves :D
 Trolling.FireOrbitalCannon = function(coords, camera)
     local ground_z = memory.alloc()
-    MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false, false)
+    GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false, false)
     coords:setZ(memory.read_float(ground_z))
 
     function explode(explosion_coords)
-        FIRE.ADD_OWNED_EXPLOSION(
+        ADD_OWNED_EXPLOSION(
             players.user_ped(),
             explosion_coords.x, explosion_coords.y, explosion_coords.z,
             59, 1, true, false, 1
@@ -546,7 +546,7 @@ Trolling.FireOrbitalCannon = function(coords, camera)
 
     for _, vehicle in pairs(Objects.GetAllNearCoords(coords, 30, Objects.Type.Vehicle)) do
         if Trolling.WillOrbitalCannonHitEntity(coords, vehicle) then
-            explode(ENTITY.GET_ENTITY_COORDS(vehicle))
+            explode(GET_ENTITY_COORDS(vehicle))
         end
     end
 
@@ -556,7 +556,7 @@ Trolling.FireOrbitalCannon = function(coords, camera)
     Ryan.PlaySoundAtCoords(coords, 0, "DLC_XM_Explosions_Orbital_Cannon", 0)
 
     if camera ~= nil then
-        CAM.SHAKE_CAM(camera, "GAMEPLAY_EXPLOSION_SHAKE", 1.5)
-        PAD.SET_PAD_SHAKE(0, 500, 256)
+        SHAKE_CAM(camera, "GAMEPLAY_EXPLOSION_SHAKE", 1.5)
+        SET_CONTROL_SHAKE(0, 500, 256)
     end
 end

@@ -1,16 +1,20 @@
-VERSION = "0.11.3b"
+-- TODO:
+-- * use menu.get_activation_key_hash() to verify friends
+
+VERSION = "0.11.5"
 MANIFEST = {
-    lib = {"Core.lua", "JSON.lua", "Natives.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
+    lib = {"Core.lua", "JSON.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
 }
 
 DEV_ENVIRONMENT = debug.getinfo(1, "S").source:lower():find("dev")
 SUBFOLDER_NAME = "Ryan's Menu" .. (if DEV_ENVIRONMENT then " (Dev)" else "")
 
-Ryan = {}
-
 
 -- Initialize --
+Ryan = {}
+
+util.require_natives("2944a", "g")
 function exists(name) return filesystem.exists(filesystem.scripts_dir() .. name) end
 for required_directory, required_files in pairs(MANIFEST) do
     for _, required_file in pairs(required_files) do
@@ -52,7 +56,7 @@ end
 util.create_tick_handler(function()
     local vehicle = entities.get_user_vehicle_as_handle()
     if vehicle == 0 then return end
-    VEHICLE.SET_VEHICLE_WHEELS_CAN_BREAK(vehicle, true)
+    SET_VEHICLE_WHEELS_CAN_BREAK(vehicle, true)
 end)
 
 
@@ -108,9 +112,9 @@ util.create_thread(function()
     
         -- Crosshair
         if crosshair or god_finger_active then
-            local weapon = WEAPON.GET_SELECTED_PED_WEAPON(players.user_ped())
-            if WEAPON.GET_WEAPONTYPE_GROUP(weapon) ~= -1212426201 then
-                HUD.HIDE_HUD_COMPONENT_THIS_FRAME(14)
+            local weapon = GET_SELECTED_PED_WEAPON(players.user_ped())
+            if GET_WEAPONTYPE_GROUP(weapon) ~= -1212426201 then
+                HIDE_HUD_COMPONENT_THIS_FRAME(14)
             end
             directx.draw_texture(
                 Ryan.CrosshairTexture,
@@ -219,7 +223,7 @@ local self_ptfx_vehicle_exhaust_root = menu.list(self_ptfx_vehicle_root, "Exhaus
 
 PTFX.CreateList(self_ptfx_vehicle_wheels_root, function(ptfx)
     if ptfx_disable then return end
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
+    local vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
     if vehicle ~= 0 then
         PTFX.PlayOnEntityBones(vehicle, Objects.VehicleBones.Wheels, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
@@ -228,7 +232,7 @@ end)
 
 PTFX.CreateList(self_ptfx_vehicle_exhaust_root, function(ptfx)
     if ptfx_disable then return end
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
+    local vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
     if vehicle ~= 0 then
         PTFX.PlayOnEntityBones(vehicle, Objects.VehicleBones.Exhaust, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
@@ -243,7 +247,7 @@ local self_ptfx_weapon_impact_root = menu.list(self_ptfx_weapon_root, "Impact...
 
 PTFX.CreateList(self_ptfx_weapon_aiming_root, function(ptfx)
     if ptfx_disable then return end
-    if CAM.IS_AIM_CAM_ACTIVE() then
+    if IS_AIM_CAM_ACTIVE() then
         local raycast = Ryan.RaycastFromCamera(500.0, Ryan.RaycastFlags.All)
         if raycast.did_hit then
             PTFX.PlayAtCoords(raycast.hit_coords, ptfx[2], ptfx[3], ptfx_color)
@@ -254,7 +258,7 @@ end)
 
 PTFX.CreateList(self_ptfx_weapon_muzzle_root, function(ptfx)
     if ptfx_disable then return end
-    local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(players.user_ped())
+    local weapon = GET_CURRENT_PED_WEAPON_ENTITY_INDEX(players.user_ped())
     if weapon ~= NULL then
         PTFX.PlayAtEntityBoneCoords(weapon, Objects.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
         util.yield(ptfx[4])
@@ -264,8 +268,8 @@ end)
 PTFX.CreateList(self_ptfx_weapon_muzzle_flash_root, function(ptfx)
     if ptfx_disable then return end
     local our_ped = players.user_ped()
-    if PED.IS_PED_SHOOTING(our_ped) then
-        local weapon = WEAPON.GET_CURRENT_PED_WEAPON_ENTITY_INDEX(our_ped)
+    if IS_PED_SHOOTING(our_ped) then
+        local weapon = GET_CURRENT_PED_WEAPON_ENTITY_INDEX(our_ped)
         if weapon ~= NULL then
             PTFX.PlayAtEntityBoneCoords(weapon, Objects.WeaponBones.Muzzle, ptfx[2], ptfx[3], ptfx_color)
             util.yield(ptfx[4])
@@ -276,7 +280,7 @@ end)
 PTFX.CreateList(self_ptfx_weapon_impact_root, function(ptfx)
     if ptfx_disable then return end
     local impact = v3.new()
-    if WEAPON.GET_PED_LAST_WEAPON_IMPACT_COORD(players.user_ped(), impact) then
+    if GET_PED_LAST_WEAPON_IMPACT_COORD(players.user_ped(), impact) then
         PTFX.PlayAtCoords(impact, ptfx[2], ptfx[3], ptfx_color)
     end
 end)
@@ -326,8 +330,9 @@ menu.on_blur(forcefield_size_input, function() forcefield_draw_sphere = false en
 
 util.create_tick_handler(function()
     if forcefield_draw_sphere then
-        local coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
-        GRAPHICS._DRAW_SPHERE(coords.x, coords.y, coords.z, forcefield_size, math.floor(Ryan.HUDColor.r * 255), math.floor(Ryan.HUDColor.g * 255), math.floor(Ryan.HUDColor.b * 255), 0.3)
+        local coords = GET_ENTITY_COORDS(players.user_ped())
+        -- TODO
+        DRAW_MARKER_SPHERE(coords.x, coords.y, coords.z, forcefield_size, math.floor(Ryan.HUDColor.r * 255), math.floor(Ryan.HUDColor.g * 255), math.floor(Ryan.HUDColor.b * 255), 0.3)
     end
 
     if forcefield_type ~= "Off" then
@@ -335,81 +340,81 @@ util.create_tick_handler(function()
         local nearby = Objects.GetAllNearCoords(user.coords, forcefield_size, Objects.Type.All)
         for _, entity in pairs(nearby) do
             if (players.get_vehicle_model(players.user()) == 0 or entity ~= entities.get_user_vehicle_as_handle()) and entity ~= players.user_ped() then
-            pluto_switch forcefield_type do
+            switch forcefield_type do
                     case "Push": -- Push entities away
-                        local force = ENTITY.GET_ENTITY_COORDS(entity)
+                        local force = GET_ENTITY_COORDS(entity)
                         force:sub(user.coords); force:normalise()
                         force:mul(forcefield_force * 0.25)
-                        if ENTITY.IS_ENTITY_A_PED(entity) then
-                            if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                        if IS_ENTITY_A_PED(entity) then
+                            if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
                                 Objects.RequestControl(entity)
-                                PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                                SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                                APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                             end
                         else
                             Objects.RequestControl(entity)
-                            ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                         end
                         break
                     case "Pull": -- Pull entities in
-                        local force = ENTITY.GET_ENTITY_COORDS(entity)
+                        local force = GET_ENTITY_COORDS(entity)
                         force:sub(user.coords); force:normalise()
                         force:mul(forcefield_force * 0.25)
-                        if ENTITY.IS_ENTITY_A_PED(entity) then
-                            if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                        if IS_ENTITY_A_PED(entity) then
+                            if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
                                 Objects.RequestControl(entity)
-                                PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
+                                SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                                APPLY_FORCE_TO_ENTITY(entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
                             end
                         else
                             Objects.RequestControl(entity)
-                            ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
+                            APPLY_FORCE_TO_ENTITY(entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
                         end
                         break
                     case "Spin": -- Spin entities around
-                        if not ENTITY.IS_ENTITY_A_PED(entity) and entity ~= entities.get_user_vehicle_as_handle() then
+                        if not IS_ENTITY_A_PED(entity) and entity ~= entities.get_user_vehicle_as_handle() then
                             Objects.RequestControl(entity)
-                            ENTITY.SET_ENTITY_HEADING(entity, ENTITY.GET_ENTITY_HEADING(entity) + 2.5 * forcefield_force)
+                            SET_ENTITY_HEADING(entity, GET_ENTITY_HEADING(entity) + 2.5 * forcefield_force)
                         end
                         break
                     case "Up": -- Force entities into air
                         local force = v3(0, 0, forcefield_force * 0.5)
-                        if ENTITY.IS_ENTITY_A_PED(entity) then
-                            if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                        if IS_ENTITY_A_PED(entity) then
+                            if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
                                 Objects.RequestControl(entity)
-                                PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                                SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                                APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                             end
                         else
                             Objects.RequestControl(entity)
-                            ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                         end
                         break
                     case "Down": -- Force entities into ground
                         local force = v3(0, 0, forcefield_force * -2)
-                        if ENTITY.IS_ENTITY_A_PED(entity) then
-                            if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                        if IS_ENTITY_A_PED(entity) then
+                            if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
                                 Objects.RequestControl(entity)
-                                PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                                SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                                APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                             end
                         else
                             Objects.RequestControl(entity)
-                            ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                         end
                         break
                     case "Smash": -- Smash entities into ground
                         local direction = if util.current_time_millis() % 3000 >= 1250 then -2 else 0.5
                         local force = v3(0, 0, direction * forcefield_force)
-                        if ENTITY.IS_ENTITY_A_PED(entity) then
-                            if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                        if IS_ENTITY_A_PED(entity) then
+                            if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
                                 Objects.RequestControl(entity)
-                                PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                                SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                                APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                             end
                         else
                             Objects.RequestControl(entity)
-                            ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                         end
                         break
                     case "Chaos": -- Chaotic entities
@@ -420,23 +425,23 @@ util.create_tick_handler(function()
                                 y = if math.random(0, 1) == 0 then -amount else amount,
                                 z = 0
                             }
-                            if ENTITY.IS_ENTITY_A_PED(entity) then
-                                if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, true) then
+                            if IS_ENTITY_A_PED(entity) then
+                                if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
                                     Objects.RequestControl(entity)
-                                    PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
+                                    SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                                    APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
                                 end
                             else
                                 Objects.RequestControl(entity)
-                                ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
+                                APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
                             end
                             entities_chaosed[entity] = util.current_time_millis()
                         end
                         break
                     case "Explode": -- Explode entities
                         if entities_exploded[entity] == nil then
-                            local coords = ENTITY.GET_ENTITY_COORDS(entity)
-                            FIRE.ADD_EXPLOSION(
+                            local coords = GET_ENTITY_COORDS(entity)
+                            ADD_EXPLOSION(
                                 coords.x, coords.y, coords.z,
                                 7, 5.0, false, true, 0, false
                             )
@@ -520,21 +525,21 @@ util.create_tick_handler(function()
         if time_elapsed < 2500 then
             local direction = if time_elapsed > 1250 then -3 else 0.5
             local force = {x = 0, y = 0, z = direction * 4}
-            if ENTITY.IS_ENTITY_A_PED(entity) then
-                if not PED.IS_PED_A_PLAYER(entity) and not PED.IS_PED_IN_ANY_VEHICLE(entity, false) then
-                    PED.SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+            if IS_ENTITY_A_PED(entity) then
+                if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, false) then
+                    SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                    APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif entity ~= entities.get_user_vehicle_as_handle() then
-                ENTITY.APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
         end
     end
 
-    ENTITY.SET_ENTITY_PROOFS(players.user_ped(), false, false, UI.GetGodFingerActivation(god_finger_force_effects.default) > 0, false, false, false, 1, false)
+    SET_ENTITY_PROOFS(players.user_ped(), false, false, UI.GetGodFingerActivation(god_finger_force_effects.default) > 0, false, false, false, 1, false)
 
     god_finger_active = (god_finger_while_pointing     and _player_is_pointing)
-                     or (god_finger_while_holding_alt  and PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.CharacterWheel))
+                     or (god_finger_while_holding_alt  and IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.CharacterWheel))
     
     if not god_finger_active then
         god_finger_target = nil;
@@ -545,23 +550,23 @@ util.create_tick_handler(function()
 
     local raycast = nil
     local keybinds = {}
-    memory.write_int(memory.script_global(4521801 + 935), NETWORK.GET_NETWORK_TIME())
+    memory.write_int(memory.script_global(4521801 + 935), GET_NETWORK_TIME())
 
     raycast = Ryan.RaycastFromCamera(500.0, Ryan.RaycastFlags.Vehicles + Ryan.RaycastFlags.Peds + Ryan.RaycastFlags.Objects, false)
     if raycast.did_hit then
         god_finger_target = raycast.hit_coords
         Objects.DrawESP(raycast.hit_entity)
 
-        if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
+        if IS_ENTITY_A_PED(raycast.hit_entity) then
             local ped = raycast.hit_entity
-            --Ryan.Toast("NPC: " .. ENTITY.GET_ENTITY_MODEL(raycast.hit_entity))
+            --Ryan.Toast("NPC: " .. GET_ENTITY_MODEL(raycast.hit_entity))
 
-            if PED.IS_PED_A_PLAYER(ped) then
+            if IS_PED_A_PLAYER(ped) then
                 -- Player
                 local keybinds_player = UI.GetGodFingerKeybinds(god_finger_player_effects)
                 if keybinds_player:len() > 0 then keybinds["Player"] = keybinds_player end
 
-                local player_id = NETWORK.NETWORK_GET_PLAYER_INDEX_FROM_PED(ped)
+                local player_id = NETWORK_GET_PLAYER_INDEX_FROM_PED(ped)
                 if UI.GetGodFingerActivation(god_finger_player_effects.kick) > 0 then
                     if util.current_time_millis() - god_finger_player_state.kick > 1000 then
                         god_finger_player_state.kick = util.current_time_millis()
@@ -592,9 +597,9 @@ util.create_tick_handler(function()
 
                 if UI.GetGodFingerActivation(god_finger_npc_effects.transform) > 0 then
                     local data = Objects.GetPedData(ped)
-                    if ENTITY.GET_ENTITY_MODEL(players.user_ped()) ~= data.model then
+                    if GET_ENTITY_MODEL(players.user_ped()) ~= data.model then
                         Ryan.RequestModel(data.model)
-                        PLAYER.SET_PLAYER_MODEL(players.user(), data.model)
+                        SET_PLAYER_MODEL(players.user(), data.model)
                         util.yield(333)
                         Objects.SetPedData(players.user_ped(), data)
                     end
@@ -602,17 +607,17 @@ util.create_tick_handler(function()
             end
         end
 
-        if ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
+        if IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
             -- Vehicle
             local keybinds_vehicle = UI.GetGodFingerKeybinds(god_finger_vehicle_effects)
             if keybinds_vehicle:len() > 0 then keybinds["Vehicle"] = keybinds_vehicle end
 
             local vehicle = raycast.hit_entity
-            local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
-            --Ryan.Toast("Driver: " .. (if driver ~= 0 then ENTITY.GET_ENTITY_MODEL(driver) else "none"))
+            local driver = GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+            --Ryan.Toast("Driver: " .. (if driver ~= 0 then GET_ENTITY_MODEL(driver) else "none"))
     
-            UI.ApplyVehicleEffectList(vehicle, god_finger_vehicle_effects, god_finger_vehicle_state, PED.IS_PED_A_PLAYER(driver), true)
-            if UI.GetGodFingerActivation(god_finger_vehicle_effects.steal) > 0 and ENTITY.IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
+            UI.ApplyVehicleEffectList(vehicle, god_finger_vehicle_effects, god_finger_vehicle_state, IS_PED_A_PLAYER(driver), true)
+            if UI.GetGodFingerActivation(god_finger_vehicle_effects.steal) > 0 and IS_ENTITY_A_VEHICLE(raycast.hit_entity) then
                 if util.current_time_millis() - god_finger_vehicle_state.steal > 1000 then
                     god_finger_vehicle_state.steal = util.current_time_millis()
                     Objects.StealVehicle(raycast.hit_entity)
@@ -621,13 +626,13 @@ util.create_tick_handler(function()
             end
             if UI.GetGodFingerActivation(god_finger_vehicle_effects.become_plane) > 0 and all_vehicles_state[vehicle].become_plane ~= true then
                 local hash = util.joaat(Ryan.GetRandomItemInTable({"cuban800", "dodo", "duster", "mammatus", "stunt", "velum"}))
-                local coords = ENTITY.GET_ENTITY_COORDS(vehicle)
-                local heading = ENTITY.GET_ENTITY_HEADING(vehicle)
+                local coords = GET_ENTITY_COORDS(vehicle)
+                local heading = GET_ENTITY_HEADING(vehicle)
                 entities.delete_by_handle(vehicle)
                 util.yield(250)
                 Ryan.RequestModel(hash)
                 local plane = entities.create_vehicle(hash, coords, heading)
-                PED.SET_PED_INTO_VEHICLE(driver, plane, -1)
+                SET_PED_INTO_VEHICLE(driver, plane, -1)
                 all_vehicles_state[vehicle].become_plane = true
                 all_vehicles_state[plane] = {["become_plane"] = true}
             end
@@ -651,66 +656,66 @@ util.create_tick_handler(function()
         for key, _ in pairs(forces) do Ryan.ToggleSelectSound(forces, god_finger_force_state, key) end
 
         if forces.default then
-            FIRE.ADD_EXPLOSION(
+            ADD_EXPLOSION(
                 raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z,
                 29, 25, false, true, 0, true
             )
         elseif forces.push then -- Push entities away
-            local force = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
-            force:sub(ENTITY.GET_ENTITY_COORDS(players.user_ped())); force:normalise()
+            local force = GET_ENTITY_COORDS(raycast.hit_entity)
+            force:sub(GET_ENTITY_COORDS(players.user_ped())); force:normalise()
             force:mul(0.4)
-            if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
-                if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
+            if IS_ENTITY_A_PED(raycast.hit_entity) then
+                if not IS_PED_A_PLAYER(raycast.hit_entity) and not IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
                     Objects.RequestControl(raycast.hit_entity)
-                    PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                    SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
+                    APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif raycast.hit_entity ~= entities.get_user_vehicle_as_handle() then
                 Objects.RequestControl(raycast.hit_entity)
-                ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
         elseif forces.pull then -- Pull entities in
-            local force = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
-            force:sub(ENTITY.GET_ENTITY_COORDS(players.user_ped())); force:normalise()
+            local force = GET_ENTITY_COORDS(raycast.hit_entity)
+            force:sub(GET_ENTITY_COORDS(players.user_ped())); force:normalise()
             force:mul(0.35)
-            if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
-                if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
+            if IS_ENTITY_A_PED(raycast.hit_entity) then
+                if not IS_PED_A_PLAYER(raycast.hit_entity) and not IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
                     Objects.RequestControl(raycast.hit_entity)
-                    PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
+                    SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
+                    APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif raycast.hit_entity ~= entities.get_user_vehicle_as_handle() then
                 Objects.RequestControl(raycast.hit_entity)
-                ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
+                APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
             end
         elseif forces.spin then -- Spin entities around
-            if not ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
+            if not IS_ENTITY_A_PED(raycast.hit_entity) then
                 Objects.RequestControl(raycast.hit_entity)
-                ENTITY.SET_ENTITY_HEADING(raycast.hit_entity, ENTITY.GET_ENTITY_HEADING(raycast.hit_entity) + 2.5)
+                SET_ENTITY_HEADING(raycast.hit_entity, GET_ENTITY_HEADING(raycast.hit_entity) + 2.5)
             end
         elseif forces.up then -- Force entities into air
             local force = v3(0, 0, 0.5)
-            if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
-                if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
+            if IS_ENTITY_A_PED(raycast.hit_entity) then
+                if not IS_PED_A_PLAYER(raycast.hit_entity) and not IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
                     Objects.RequestControl(raycast.hit_entity)
-                    PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                    SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
+                    APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif entity ~= entities.get_user_vehicle_as_handle() then
                 Objects.RequestControl(raycast.hit_entity)
-                ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
         elseif forces.down then -- Force entities into ground
             local force = v3(0, 0, -2)
-            if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
-                if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
+            if IS_ENTITY_A_PED(raycast.hit_entity) then
+                if not IS_PED_A_PLAYER(raycast.hit_entity) and not IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
                     Objects.RequestControl(raycast.hit_entity)
-                    PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                    SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
+                    APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                 end
             elseif entity ~= entities.get_user_vehicle_as_handle() then
                 Objects.RequestControl(raycast.hit_entity)
-                ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
             end
         elseif forces.smash then -- Smash entities into ground
             if entities_smashed[raycast.hit_entity] == nil or util.current_time_millis() - entities_smashed[raycast.hit_entity] > 2500 then
@@ -725,22 +730,22 @@ util.create_tick_handler(function()
                     if math.random(0, 1) == 0 then -amount else amount,
                     0
                 )
-                if ENTITY.IS_ENTITY_A_PED(raycast.hit_entity) then
-                    if not PED.IS_PED_A_PLAYER(raycast.hit_entity) and not PED.IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
+                if IS_ENTITY_A_PED(raycast.hit_entity) then
+                    if not IS_PED_A_PLAYER(raycast.hit_entity) and not IS_PED_IN_ANY_VEHICLE(raycast.hit_entity, true) then
                         Objects.RequestControl(raycast.hit_entity)
-                        PED.SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
-                        ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
+                        SET_PED_TO_RAGDOLL(raycast.hit_entity, 1000, 1000, 0, 0, 0, 0)
+                        APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
                     end
                 elseif raycast.hit_entity ~= entities.get_user_vehicle_as_handle() then
                     Objects.RequestControl(raycast.hit_entity)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
+                    APPLY_FORCE_TO_ENTITY(raycast.hit_entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
                 end
                 entities_chaosed[raycast.hit_entity] = util.current_time_millis()
             end
         elseif forces.explode then -- Explode entities
             if entities_exploded[raycast.hit_entity] == nil then
-                local coords = ENTITY.GET_ENTITY_COORDS(raycast.hit_entity)
-                FIRE.ADD_EXPLOSION(
+                local coords = GET_ENTITY_COORDS(raycast.hit_entity)
+                ADD_EXPLOSION(
                     coords.x, coords.y, coords.z,
                     7, 100, false, true, 0, false
                 )
@@ -764,17 +769,17 @@ util.create_tick_handler(function()
                     Ryan.RequestModel(topless); Ryan.RequestAnimations("amb@world_human_yoga@female@base")
                     Ryan.RequestModel(acult); Ryan.RequestAnimations("switch@trevor@jerking_off")
 
-                    local heading = ENTITY.GET_ENTITY_HEADING(players.user_ped())
+                    local heading = GET_ENTITY_HEADING(players.user_ped())
                     local ped = entities.create_ped(0, topless, raycast.hit_coords, heading)
-                    PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
-                    TASK.TASK_PLAY_ANIM(ped, "amb@world_human_yoga@female@base", "base_a", 8.0, 0, -1, 9, 0, false, false, false)
+                    SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                    TASK_PLAY_ANIM(ped, "amb@world_human_yoga@female@base", "base_a", 8.0, 0, -1, 9, 0, false, false, false)
 
-                    local heading = ENTITY.GET_ENTITY_HEADING(players.user_ped())
+                    local heading = GET_ENTITY_HEADING(players.user_ped())
                     local coords = raycast.hit_coords; coords:add(v3(-3, 0, 0))
                     local ped = entities.create_ped(0, acult, coords, heading)
-                    PED.SET_PED_COMPONENT_VARIATION(ped, 4, 0, 0, 0)
-                    PED.SET_PED_COMPONENT_VARIATION(ped, 8, 0, 0, 0)
-                    TASK.TASK_PLAY_ANIM(ped, "switch@trevor@jerking_off", "trev_jerking_off_loop", 8.0, 0, -1, 9, 0, false, false, false)
+                    SET_PED_COMPONENT_VARIATION(ped, 4, 0, 0, 0)
+                    SET_PED_COMPONENT_VARIATION(ped, 8, 0, 0, 0)
+                    TASK_PLAY_ANIM(ped, "switch@trevor@jerking_off", "trev_jerking_off_loop", 8.0, 0, -1, 9, 0, false, false, false)
                     
                     Ryan.FreeModel(topless)
                     Ryan.FreeModel(acult)
@@ -789,16 +794,16 @@ util.create_tick_handler(function()
                     Ryan.RequestModel(famfor); Ryan.RequestAnimations("missheistdockssetup1ig_13@main_action")
                     Ryan.RequestModel(cop); Ryan.RequestAnimations("move_m@intimidation@cop@unarmed")
 
-                    local heading = ENTITY.GET_ENTITY_HEADING(players.user_ped())
+                    local heading = GET_ENTITY_HEADING(players.user_ped())
 
                     civilians = {}
                     for i = 1, 3 do
                         local coords = raycast.hit_coords; coords:add(v3(i, math.random(-1, 1), 0))
                         local ped = entities.create_ped(0, famfor, coords, heading)
-                        PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, famfor)
-                        PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                        SET_PED_RELATIONSHIP_GROUP_HASH(ped, famfor)
+                        SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
                         animations = {"guard_beatup_mainaction_dockworker", "guard_beatup_mainaction_guard1", "guard_beatup_mainaction_guard2"}
-                        TASK.TASK_PLAY_ANIM(ped, "missheistdockssetup1ig_13@main_action", animations[i], 8.0, 0, -1, 9, 0, false, false, false)
+                        TASK_PLAY_ANIM(ped, "missheistdockssetup1ig_13@main_action", animations[i], 8.0, 0, -1, 9, 0, false, false, false)
                         
                         table.insert(civilians, ped)
                     end
@@ -809,28 +814,28 @@ util.create_tick_handler(function()
                     for i = 1, 3 do
                         local coords = raycast.hit_coords; coords:add(v3(3 + i, math.random(-1, 1), 0))
                         local ped = entities.create_ped(0, cop, coords, heading)
-                        PED.SET_PED_RELATIONSHIP_GROUP_HASH(ped, cop)
-                        PED.SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
-                        TASK.TASK_PLAY_ANIM(ped, "move_m@intimidation@cop@unarmed", "idle", 8.0, 0, -1, 9, 0, false, false, false)
+                        SET_PED_RELATIONSHIP_GROUP_HASH(ped, cop)
+                        SET_PED_COMPONENT_VARIATION(ped, 8, 1, -1, 0)
+                        TASK_PLAY_ANIM(ped, "move_m@intimidation@cop@unarmed", "idle", 8.0, 0, -1, 9, 0, false, false, false)
 
-                        WEAPON.GIVE_WEAPON_TO_PED(ped, util.joaat("weapon_appistol"), 1000, false, true)
-                        PED.SET_PED_COMBAT_ATTRIBUTES(ped, 5, true)
-                        PED.SET_PED_COMBAT_ATTRIBUTES(ped, 46, true)
+                        GIVE_WEAPON_TO_PED(ped, util.joaat("weapon_appistol"), 1000, false, true)
+                        SET_PED_COMBAT_ATTRIBUTES(ped, 5, true)
+                        SET_PED_COMBAT_ATTRIBUTES(ped, 46, true)
 
-                        local rotation = coords:lookAt(ENTITY.GET_ENTITY_COORDS(civilians[i]))
-                        ENTITY.SET_ENTITY_ROTATION(ped, rotation.x, rotation.y, rotation.z, 2, true)
-                        rotation = ENTITY.GET_ENTITY_COORDS(civilians[i]):lookAt(coords)
-                        ENTITY.SET_ENTITY_ROTATION(civilians[i], rotation.x, rotation.y, rotation.z, 2, true)
+                        local rotation = coords:lookAt(GET_ENTITY_COORDS(civilians[i]))
+                        SET_ENTITY_ROTATION(ped, rotation.x, rotation.y, rotation.z, 2, true)
+                        rotation = GET_ENTITY_COORDS(civilians[i]):lookAt(coords)
+                        SET_ENTITY_ROTATION(civilians[i], rotation.x, rotation.y, rotation.z, 2, true)
 
                         table.insert(cops, ped)
                     end
 
                     util.yield(750)
 
-                    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("g_m_y_famfor_01"), util.joaat("s_f_y_cop_01"))
-                    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("s_f_y_cop_01"), util.joaat("g_m_y_famfor_01"))
-                    PED.SET_RELATIONSHIP_BETWEEN_GROUPS(0, util.joaat("s_f_y_cop_01"), util.joaat("s_f_y_cop_01"))
-                    for i = 1, #cops do TASK.TASK_COMBAT_PED(cops[i], civilians[i], 0, 16) end
+                    SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("g_m_y_famfor_01"), util.joaat("s_f_y_cop_01"))
+                    SET_RELATIONSHIP_BETWEEN_GROUPS(5, util.joaat("s_f_y_cop_01"), util.joaat("g_m_y_famfor_01"))
+                    SET_RELATIONSHIP_BETWEEN_GROUPS(0, util.joaat("s_f_y_cop_01"), util.joaat("s_f_y_cop_01"))
+                    for i = 1, #cops do TASK_COMBAT_PED(cops[i], civilians[i], 0, 16) end
 
                     Ryan.FreeModel(famfor)
                     Ryan.FreeModel(cop)
@@ -843,8 +848,8 @@ util.create_tick_handler(function()
 
                     local juanstrickler = util.joaat("csb_juanstrickler"); Ryan.RequestModel(juanstrickler)
                     Ryan.RequestAnimations("mini@strip_club@pole_dance@pole_dance1")
-                    local ped = entities.create_ped(1, juanstrickler, raycast.hit_coords, ENTITY.GET_ENTITY_HEADING(Player:Self().ped_id))
-                    TASK.TASK_PLAY_ANIM(ped, "mini@strip_club@pole_dance@pole_dance1", "pd_dance_01", 8.0, 0, -1, 9, 0, false, false, false)
+                    local ped = entities.create_ped(1, juanstrickler, raycast.hit_coords, GET_ENTITY_HEADING(Player:Self().ped_id))
+                    TASK_PLAY_ANIM(ped, "mini@strip_club@pole_dance@pole_dance1", "pd_dance_01", 8.0, 0, -1, 9, 0, false, false, false)
                     Ryan.FreeModel(juanstrickler)
                 end
             end
@@ -853,8 +858,8 @@ util.create_tick_handler(function()
                 if util.current_time_millis() - god_finger_world_state.fire > 1000 then
                     god_finger_world_state.fire = util.current_time_millis()
 
-                    if raycast.hit_entity then FIRE.START_ENTITY_FIRE(raycast.hit_entity) end
-                    FIRE.ADD_EXPLOSION(
+                    if raycast.hit_entity then START_ENTITY_FIRE(raycast.hit_entity) end
+                    ADD_EXPLOSION(
                         raycast.hit_coords.x, raycast.hit_coords.y, raycast.hit_coords.z,
                         3, 100, false, false, 0, false
                     )
@@ -894,7 +899,7 @@ menu.list_select(self_character_root, "Ghost Mode", {"ryanghost"}, "Become entir
 end)
 
 menu.toggle_loop(self_character_root, "Beast Mode", {"ryanbeastmode"}, "Jump like a beast.", function(value)
-    MISC._SET_BEAST_MODE_ACTIVE(players.user())
+    SET_BEAST_JUMP_THIS_FRAME(players.user())
 end)
 
 menu.action(self_character_root, "Become Nude", {"ryannude"}, "Become a stripper with her tits out.", function()
@@ -903,14 +908,14 @@ menu.action(self_character_root, "Become Nude", {"ryannude"}, "Become a stripper
 
     local user = Player:Self()
     local seat = user:get_vehicle_seat()
-    local vehicle = if seat ~= nil then PED.GET_VEHICLE_PED_IS_IN(user.ped_id, false) else nil
+    local vehicle = if seat ~= nil then GET_VEHICLE_PED_IS_IN(user.ped_id, false) else nil
 
     local coords = user.coords; coords:add(v3(0, 0, 10))
     if vehicle ~= nil then Ryan.Teleport(coords) end
-    PLAYER.SET_PLAYER_MODEL(user.id, topless)
+    SET_PLAYER_MODEL(user.id, topless)
     util.yield(500)
-    PED.SET_PED_COMPONENT_VARIATION(user.ped_id, 8, 1, -1, 0)
-    if vehicle ~= nil then PED.SET_PED_INTO_VEHICLE(user.ped_id, vehicle, seat) end
+    SET_PED_COMPONENT_VARIATION(user.ped_id, 8, 1, -1, 0)
+    if vehicle ~= nil then SET_PED_INTO_VEHICLE(user.ped_id, vehicle, seat) end
 
     Ryan.FreeModel(topless)
 end)
@@ -932,25 +937,25 @@ local vehicle_parts = {}
 util.create_tick_handler(function()
     local vehicle_model = players.get_vehicle_model(players.user())
     if vehicle_model ~= 0 then
-        local vehicle_id = PED.GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
+        local vehicle_id = GET_VEHICLE_PED_IS_IN(players.user_ped(), true)
 
         -- Seats
         if self_vehicle_seats_root == nil then
             self_vehicle_seats_root = menu.list(self_vehicle_root, "Seats...", {"ryanseats"}, "Allows you to switch seats in your current vehicle.")
         end
 
-        local seat_count = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicle_model)
+        local seat_count = GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicle_model)
         if seat_count ~= #vehicle_seats then
             for _, action in pairs(vehicle_seats) do menu.delete(action) end
             vehicle_seats = {}
             for seat = -1, seat_count - 2 do
                 table.insert(vehicle_seats, menu.action(self_vehicle_seats_root, Ryan.SeatName(seat), {"ryanseat" .. (seat + 2)}, "Switch to " .. Ryan.SeatName(seat) .. ".", function()
-                    PED.SET_PED_INTO_VEHICLE(players.user_ped(), vehicle_id, seat)
+                    SET_PED_INTO_VEHICLE(players.user_ped(), vehicle_id, seat)
                 end))
             end
         else
             for seat = -1, seat_count - 2 do
-                if VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle_id, seat) ~= 0 then
+                if GET_PED_IN_VEHICLE_SEAT(vehicle_id, seat) ~= 0 then
                     menu.set_menu_name(vehicle_seats[seat + 2], Ryan.SeatName(seat) .. " [Taken]")
                 else
                     menu.set_menu_name(vehicle_seats[seat + 2], Ryan.SeatName(seat))
@@ -963,7 +968,7 @@ util.create_tick_handler(function()
             self_vehicle_parts_root = menu.list(self_vehicle_root, "Parts...", {"ryanparts"}, "Break or fix various parts of your vehicle.")
         end
 
-        local part_count = VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(vehicle_id) + 1
+        local part_count = GET_NUMBER_OF_VEHICLE_DOORS(vehicle_id) + 1
         if part_count ~= #vehicle_parts then
             for _, action in pairs(vehicle_parts) do menu.delete(action) end
             menu.divider(self_vehicle_parts_root, "Break")
@@ -977,13 +982,13 @@ util.create_tick_handler(function()
                 elseif part == part_count - 2 then part_name = "Trunk"
                 elseif part == part_count - 1 then part_name = "Windshield" end
                 table.insert(vehicle_parts, menu.action(self_vehicle_parts_root, part_name, {"ryanpart" .. (part + 1)}, "", function()
-                    if part == part_count - 1 then VEHICLE.POP_OUT_VEHICLE_WINDSCREEN(vehicle_id)
-                    else VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle_id, part, false) end
+                    if part == part_count - 1 then POP_OUT_VEHICLE_WINDSCREEN(vehicle_id)
+                    else SET_VEHICLE_DOOR_BROKEN(vehicle_id, part, false) end
                 end))
             end
             menu.divider(self_vehicle_parts_root, "Fix")
             menu.action(self_vehicle_parts_root, "All", {"ryanpartsfix"}, "Fix the car.", function()
-                VEHICLE.SET_VEHICLE_FIXED(vehicle_id)
+                SET_VEHICLE_FIXED(vehicle_id)
             end)
         end
 
@@ -991,7 +996,7 @@ util.create_tick_handler(function()
         if make_transparent == nil then
             make_transparent = menu.action(self_vehicle_root, "Make Transparent", {"ryantransparent"}, "Make the car transparent, but keep peds inside visible.\n(LOCAL ONLY)", function()
                 local vehicle = entities.get_user_vehicle_as_handle()
-                ENTITY.SET_ENTITY_ALPHA(vehicle, 1)
+                SET_ENTITY_ALPHA(vehicle, 1)
             end)
         end
 
@@ -1032,9 +1037,9 @@ end)
 --[[function shunt(side)
     local vehicle = entities.get_user_vehicle_as_handle()
     if vehicle == 0 then return end
-    local rotation = ENTITY.GET_ENTITY_ROTATION(vehicle)
+    local rotation = GET_ENTITY_ROTATION(vehicle)
     local multiplier = 35
-    pluto_switch side do
+    switch side do
         case "left":
             rotation:setZ(rotation.z + 90)
             break
@@ -1044,7 +1049,7 @@ end)
     end
     local direction = rotation:toDir()
     direction:mul(multiplier)
-    ENTITY.APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehicle, 1, direction.x, direction.y, direction.z, false, false, true, true)
+    APPLY_FORCE_TO_ENTITY_CENTER_OF_MASS(vehicle, 1, direction.x, direction.y, direction.z, false, false, true, true)
 end]]
 
 -- -- E-Brake
@@ -1057,9 +1062,9 @@ end)
 util.create_tick_handler(function()
     if ebrake then
         local our_ped = players.user_ped()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(our_ped, false)
-        if vehicle ~= 0 and VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == our_ped then
-            Objects.SetVehicleHasGrip(vehicle, not PAD.IS_CONTROL_PRESSED(0, Ryan.Controls.Sprint))
+        local vehicle = GET_VEHICLE_PED_IS_IN(our_ped, false)
+        if vehicle ~= 0 and GET_PED_IN_VEHICLE_SEAT(vehicle, -1) == our_ped then
+            Objects.SetVehicleHasGrip(vehicle, not IS_CONTROL_PRESSED(0, Ryan.Controls.Sprint))
         end
     end
 end)
@@ -1070,39 +1075,39 @@ menu.toggle_loop(self_root, "Auto-Repair", {"ryanautorepair"}, "Keeps your vehic
     if vehicle == 0 then return end
 
     local vehicle = entities.get_user_vehicle_as_handle()
-    if not VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
+    if not IS_VEHICLE_ON_ALL_WHEELS(vehicle) then
         return
     end
     
     local door_angles = 0
-    for door = 0, VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(vehicle) - 1 do
-        door_angles = door_angles + VEHICLE.GET_VEHICLE_DOOR_ANGLE_RATIO(vehicle, door)
+    for door = 0, GET_NUMBER_OF_VEHICLE_DOORS(vehicle) - 1 do
+        door_angles = door_angles + GET_VEHICLE_DOOR_ANGLE_RATIO(vehicle, door)
     end
     if door_angles > 0 then return end
 
-    VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
-    VEHICLE.SET_VEHICLE_FIXED(vehicle)
+    SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+    SET_VEHICLE_FIXED(vehicle)
 
     util.yield(10)
 end)
 
 -- -- Orbital Cannon
-local orbital_scaleform = GRAPHICS.REQUEST_SCALEFORM_MOVIE("ORBITAL_CANNON_CAM")
+local orbital_scaleform = REQUEST_SCALEFORM_MOVIE("ORBITAL_CANNON_CAM")
 local orbital_camera = nil
 local orbital_last_fire = 0
 
 function orbital_cleanup()
     if orbital_camera ~= nil then
-        CAM.RENDER_SCRIPT_CAMS(false, false, 0, true, false, 0)
-        CAM.SET_CAM_ACTIVE(orbital_camera, false)
-        CAM.DESTROY_CAM(orbital_camera, false)
+        RENDER_SCRIPT_CAMS(false, false, 0, true, false, 0)
+        SET_CAM_ACTIVE(orbital_camera, false)
+        DESTROY_CAM(orbital_camera, false)
         orbital_camera = nil
 
-        GRAPHICS.ANIMPOSTFX_STOP("MP_OrbitalCannon", 0, true)
-        GRAPHICS.CASCADE_SHADOWS_SET_AIRCRAFT_MODE(true)
+        ANIMPOSTFX_STOP("MP_OrbitalCannon", 0, true)
+        CASCADE_SHADOWS_SET_AIRCRAFT_MODE(true)
 
-        ENTITY.SET_ENTITY_ALPHA(players.user_ped(), 255)
-        ENTITY.SET_ENTITY_ALPHA(entities.get_user_vehicle_as_handle(), 255)
+        SET_ENTITY_ALPHA(players.user_ped(), 255)
+        SET_ENTITY_ALPHA(entities.get_user_vehicle_as_handle(), 255)
     end
 end
 
@@ -1112,11 +1117,11 @@ menu.toggle_loop(self_root, "Orbital Cannon", {"ryanorbital"}, "Turn your vehicl
         local player = Player:Self()
         local oppressor2 = util.joaat("oppressor2"); Ryan.RequestModel(oppressor2)
         local p_spinning_anus_s = util.joaat("hei_prop_carrier_radar_2"); Ryan.RequestModel(p_spinning_anus_s)
-        orbital_vehicle = entities.create_vehicle(oppressor2, player.coords, ENTITY.GET_ENTITY_HEADING(player.ped_id))
+        orbital_vehicle = entities.create_vehicle(oppressor2, player.coords, GET_ENTITY_HEADING(player.ped_id))
         orbital_vehicle_attachment = entities.create_object(p_spinning_anus_s, player.coords)
-        ENTITY.ATTACH_ENTITY_TO_ENTITY(orbital_vehicle_attachment, orbital_vehicle, -1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, false, false, true, false, 0, true)
+        ATTACH_ENTITY_TO_ENTITY(orbital_vehicle_attachment, orbital_vehicle, -1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, false, false, true, false, 0, true)
         while entities.get_user_vehicle_as_handle() ~= orbital_vehicle do
-            PED.SET_PED_INTO_VEHICLE(player.ped_id, orbital_vehicle, -1)
+            SET_PED_INTO_VEHICLE(player.ped_id, orbital_vehicle, -1)
             util.yield()
         end
     end]]
@@ -1126,60 +1131,60 @@ menu.toggle_loop(self_root, "Orbital Cannon", {"ryanorbital"}, "Turn your vehicl
         return
     end
 
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleAttack, true)
-    AUDIO.REQUEST_SCRIPT_AUDIO_BANK("DLC_CHRISTMAS2017/XM_ION_CANNON", false, -1)
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleAttack, true)
+    REQUEST_SCRIPT_AUDIO_BANK("DLC_CHRISTMAS2017/XM_ION_CANNON", false, -1)
 
     local vehicle = entities.get_user_vehicle_as_handle()
 
-    if PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SpecialAbilitySecondary) then       
+    if IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SpecialAbilitySecondary) then       
         if orbital_camera == nil then
-            orbital_camera = CAM.CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", false)
-            CAM.SET_CAM_FOV(orbital_camera, 75)
-            CAM.SET_CAM_ACTIVE(orbital_camera, true)
+            orbital_camera = CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", false)
+            SET_CAM_FOV(orbital_camera, 75)
+            SET_CAM_ACTIVE(orbital_camera, true)
 
-            GRAPHICS.ANIMPOSTFX_PLAY("MP_OrbitalCannon", 0, true)
-            GRAPHICS.CASCADE_SHADOWS_SET_AIRCRAFT_MODE(true)
-            AUDIO.PLAY_SOUND_FRONTEND(-1, "cannon_active", "dlc_xm_orbital_cannon_sounds", true)
+            ANIMPOSTFX_PLAY("MP_OrbitalCannon", 0, true)
+            CASCADE_SHADOWS_SET_AIRCRAFT_MODE(true)
+            PLAY_SOUND_FRONTEND(-1, "cannon_active", "dlc_xm_orbital_cannon_sounds", true)
         end
 
-        local coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+        local coords = GET_ENTITY_COORDS(vehicle)
         local ground_z = memory.alloc()
-        MISC.GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false, false)
+        GET_GROUND_Z_FOR_3D_COORD(coords.x, coords.y, coords.z, ground_z, false, false)
         if coords.z - memory.read_float(ground_z) < 25 then
             coords:setZ(memory.read_float(ground_z) + 25)
-            ENTITY.SET_ENTITY_ALPHA(players.user_ped(), 255)
-            ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
+            SET_ENTITY_ALPHA(players.user_ped(), 255)
+            SET_ENTITY_ALPHA(vehicle, 255)
         else
-            ENTITY.SET_ENTITY_ALPHA(players.user_ped(), 0)
-            ENTITY.SET_ENTITY_ALPHA(vehicle, 0)
+            SET_ENTITY_ALPHA(players.user_ped(), 0)
+            SET_ENTITY_ALPHA(vehicle, 0)
         end
 
-        CAM.SET_CAM_COORD(orbital_camera, coords.x, coords.y, coords.z)
-        CAM.SET_CAM_ROT(orbital_camera, -90, 0, ENTITY.GET_ENTITY_ROTATION(vehicle).z, 2)
-        CAM.RENDER_SCRIPT_CAMS(true, false, 0, true, false, 0)
-        HUD.HIDE_HUD_AND_RADAR_THIS_FRAME()
+        SET_CAM_COORD(orbital_camera, coords.x, coords.y, coords.z)
+        SET_CAM_ROT(orbital_camera, -90, 0, GET_ENTITY_ROTATION(vehicle).z, 2)
+        RENDER_SCRIPT_CAMS(true, false, 0, true, false, 0)
+        HIDE_HUD_AND_RADAR_THIS_FRAME()
 
-        GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_scaleform, "SET_STATE")
-        GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(4)
-        GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+        BEGIN_SCALEFORM_MOVIE_METHOD(orbital_scaleform, "SET_STATE")
+        SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(4)
+        END_SCALEFORM_MOVIE_METHOD()
         
-        GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_scaleform, "SET_CHARGING_LEVEL")
-        GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_FLOAT((util.current_time_millis() - orbital_last_fire) / 3000)
-        GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+        BEGIN_SCALEFORM_MOVIE_METHOD(orbital_scaleform, "SET_CHARGING_LEVEL")
+        SCALEFORM_MOVIE_METHOD_ADD_PARAM_FLOAT((util.current_time_millis() - orbital_last_fire) / 3000)
+        END_SCALEFORM_MOVIE_METHOD()
 
-        GRAPHICS.BEGIN_SCALEFORM_MOVIE_METHOD(orbital_scaleform, "SET_COUNTDOWN")
-        GRAPHICS.SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(3 - math.floor((util.current_time_millis() - orbital_last_fire) / 1000))
-        GRAPHICS.END_SCALEFORM_MOVIE_METHOD()
+        BEGIN_SCALEFORM_MOVIE_METHOD(orbital_scaleform, "SET_COUNTDOWN")
+        SCALEFORM_MOVIE_METHOD_ADD_PARAM_INT(3 - math.floor((util.current_time_millis() - orbital_last_fire) / 1000))
+        END_SCALEFORM_MOVIE_METHOD()
 
-        GRAPHICS.SET_SCRIPT_GFX_DRAW_ORDER(0)
-        GRAPHICS.DRAW_SCALEFORM_MOVIE_FULLSCREEN(orbital_scaleform, 255, 255, 255, 255, 0)
+        SET_SCRIPT_GFX_DRAW_ORDER(0)
+        DRAW_SCALEFORM_MOVIE_FULLSCREEN(orbital_scaleform, 255, 255, 255, 255, 0)
 
         for _, player in pairs(Player:List(false, true, true)) do
             Ryan.DrawBeacon(player.coords)
         end
 
-        if PAD.IS_DISABLED_CONTROL_JUST_PRESSED(0, Ryan.Controls.VehicleAttack) and util.current_time_millis() - orbital_last_fire >= 3000 then
-            Trolling.FireOrbitalCannon(ENTITY.GET_ENTITY_COORDS(players.user_ped()), orbital_camera)
+        if IS_DISABLED_CONTROL_JUST_PRESSED(0, Ryan.Controls.VehicleAttack) and util.current_time_millis() - orbital_last_fire >= 3000 then
+            Trolling.FireOrbitalCannon(GET_ENTITY_COORDS(players.user_ped()), orbital_camera)
             orbital_last_fire = util.current_time_millis()
         end
     else
@@ -1193,8 +1198,8 @@ end)
 menu.toggle_loop(self_root, "Loud Radio", {"ryanloudradio"}, "Makes your radio loud enough to hear outside.", function()
     local vehicle = entities.get_user_vehicle_as_handle()
     if vehicle ~= 0 then
-        VEHICLE.SET_VEHICLE_KEEP_ENGINE_ON_WHEN_ABANDONED(vehicle, true)
-        AUDIO.SET_VEHICLE_RADIO_LOUD(vehicle, true)
+        SET_VEHICLE_KEEP_ENGINE_ON_WHEN_ABANDONED(vehicle, true)
+        SET_VEHICLE_RADIO_LOUD(vehicle, true)
     end
 end)
 
@@ -1220,7 +1225,7 @@ UI.CreateNPCEffectList(world_all_npcs_root, "ryanallnpcs", all_npcs_effects, fal
 util.create_tick_handler(function()
     if all_npcs_mode ~= "Off" then
         local scenario = ""
-        pluto_switch all_npcs_mode do
+        switch all_npcs_mode do
             case "Musician":
                 scenario = "WORLD_HUMAN_MUSICIAN"
                 break
@@ -1235,13 +1240,13 @@ util.create_tick_handler(function()
                 break
         end
 
-        local player_coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+        local player_coords = GET_ENTITY_COORDS(players.user_ped())
         for _, ped in pairs(Objects.GetAllNearCoords(player_coords, 250, Objects.Type.Ped)) do
-            local vehicle = PED.GET_VEHICLE_PED_IS_IN(ped, false)
-            if not PED.IS_PED_A_PLAYER(ped) and (all_npcs_include_drivers or vehicle == 0) then
+            local vehicle = GET_VEHICLE_PED_IS_IN(ped, false)
+            if not IS_PED_A_PLAYER(ped) and (all_npcs_include_drivers or vehicle == 0) then
                 if vehicle ~= 0 then
-                    ENTITY.SET_ENTITY_VELOCITY(vehicle, 0.0, 0.0, 0.0)
-                    TASK.TASK_EVERYONE_LEAVE_VEHICLE(vehicle)
+                    SET_ENTITY_VELOCITY(vehicle, 0.0, 0.0, 0.0)
+                    TASK_EVERYONE_LEAVE_VEHICLE(vehicle)
                 end
 
                 UI.ApplyNPCEffectList(ped, all_npcs_effects, all_npcs_state, false)
@@ -1285,12 +1290,12 @@ UI.CreateTeleportList(world_usb_sticks_root, "USB Stick", Ryan.USBSticks)
 -- -- All Entities Visible
 menu.toggle_loop(world_root, "All Entities Visible", {"ryannoinvisible"}, "Makes all invisible entities visible again.", function()
     for _, player in pairs(Player:List(false, true, true)) do
-        ENTITY.SET_ENTITY_ALPHA(player.ped_id, 255)
-        ENTITY.SET_ENTITY_VISIBLE(player.ped_id, true, 0)
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id, true)
+        SET_ENTITY_ALPHA(player.ped_id, 255)
+        SET_ENTITY_VISIBLE(player.ped_id, true, 0)
+        local vehicle = GET_VEHICLE_PED_IS_IN(player.ped_id, true)
         if vehicle ~= 0 then
-            ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
-            ENTITY.SET_ENTITY_VISIBLE(vehicle, true, 0)
+            SET_ENTITY_ALPHA(vehicle, 255)
+            SET_ENTITY_VISIBLE(vehicle, true, 0)
         end
     end
 end)
@@ -1298,7 +1303,7 @@ end)
 -- -- Fireworks
 firework_coords = nil
 menu.toggle(world_root, "Fireworks Show", {"ryanfireworkshow"}, "A nice display of liberty where you're standing.", function(value)
-    firework_coords = if value then ENTITY.GET_ENTITY_COORDS(players.user_ped()) else nil
+    firework_coords = if value then GET_ENTITY_COORDS(players.user_ped()) else nil
 end)
 util.create_tick_handler(function()
     if firework_coords ~= nil then
@@ -1331,7 +1336,7 @@ menu.toggle(world_root, "Tiny People", {"ryantinypeople"}, "Makes everyone tiny 
 end)
 util.create_tick_handler(function()
     for _, ped in pairs(entities.get_all_peds_as_handles()) do
-        PED.SET_PED_CONFIG_FLAG(ped, 223, world_tiny_people)
+        SET_PED_CONFIG_FLAG(ped, 223, world_tiny_people)
     end
     util.yield(100)
 end)
@@ -1342,15 +1347,15 @@ UI.CreateList(world_root, "Remove", "ryanremove", "Clears the world of certain t
     remove_mode = value
 end)
 util.create_tick_handler(function()
-    if not CUTSCENE.IS_CUTSCENE_ACTIVE() then
-        local coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+    if not IS_CUTSCENE_ACTIVE() then
+        local coords = GET_ENTITY_COORDS(players.user_ped())
         if remove_mode ~= "None" then util.draw_debug_text("Removing " .. remove_mode) end
         for _, entity in pairs(Objects.GetAllNearCoords(coords, 500, Objects.Type.Ped)) do
-            if ENTITY.IS_ENTITY_A_PED(entity) then
-                pluto_switch remove_mode do
+            if IS_ENTITY_A_PED(entity) then
+                switch remove_mode do
                     case "Cops":
                         for _, ped_type in pairs(Ryan.PedGroups.LawEnforcement) do
-                            if PED.GET_PED_TYPE(entity) == ped_type then
+                            if GET_PED_TYPE(entity) == ped_type then
                                 Objects.RequestControl(entity)
                                 entities.delete_by_handle(entity)
                             end
@@ -1358,21 +1363,21 @@ util.create_tick_handler(function()
                         break
                     case "Cayo Perico Guards":
                         for _, ped_hash in pairs(Ryan.PedModels.CayoPericoHeist) do
-                            if ENTITY.GET_ENTITY_MODEL(entity) == ped_hash then
+                            if GET_ENTITY_MODEL(entity) == ped_hash then
                                 Objects.RequestControl(entity)
                                 entities.delete_by_handle(entity)
                             end
                         end
                     case "Casino Guards":
                         for _, ped_hash in pairs(Ryan.PedModels.CasinoHeist) do
-                            if ENTITY.GET_ENTITY_MODEL(entity) == ped_hash then
+                            if GET_ENTITY_MODEL(entity) == ped_hash then
                                 Objects.RequestControl(entity)
                                 entities.delete_by_handle(entity)
                             end
                         end
                     case "Doomsday Guards":
                         for _, ped_hash in pairs(Ryan.PedModels.DoomsdayHeist) do
-                            if ENTITY.GET_ENTITY_MODEL(entity) == ped_hash then
+                            if GET_ENTITY_MODEL(entity) == ped_hash then
                                 Objects.RequestControl(entity)
                                 entities.delete_by_handle(entity)
                             end
@@ -1428,13 +1433,13 @@ util.create_tick_handler(function()
     end
     if not is_any_effect_enabled then return end
 
-    local player_coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
-    local player_vehicle = PED.GET_VEHICLE_PED_IS_IN(players.user_ped())
+    local player_coords = GET_ENTITY_COORDS(players.user_ped())
+    local player_vehicle = GET_VEHICLE_PED_IS_IN(players.user_ped())
 
     local vehicles = Objects.GetAllNearCoords(player_coords, 250, Objects.Type.Vehicle)
     for _, vehicle in pairs(vehicles) do
-        local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
-        local player = if PED.IS_PED_A_PLAYER(driver) then Player:ByPedId(driver) else nil
+        local driver = GET_PED_IN_VEHICLE_SEAT(vehicle, -1)
+        local player = if IS_PED_A_PLAYER(driver) then Player:ByPedId(driver) else nil
         local friend = if player ~= nil then player:is_a_friend() else false
 
         if all_vehicles_include_own or vehicle ~= entities.get_user_vehicle_as_handle() then
@@ -1445,7 +1450,7 @@ util.create_tick_handler(function()
 
                 -- Flee
                 if all_vehicles_effects.flee and player == nil and all_vehicles_state[vehicle].flee ~= true then
-                    TASK.TASK_SMART_FLEE_PED(driver, players.user_ped(), 500.0, -1, false, false)
+                    TASK_SMART_FLEE_PED(driver, players.user_ped(), 500.0, -1, false, false)
                     all_vehicles_state[vehicle].flee = true
                 end
 
@@ -1464,20 +1469,20 @@ end)
 -- -- Enter Closest Vehicle
 enter_closest_vehicle = menu.action(world_root, "Enter Closest Vehicle", {"ryandrivevehicle"}, "Teleports into the closest vehicle.", function()
     local closest_vehicle = Objects.GetAllNearCoords(Player:Self().coords, 100, Objects.Type.Vehicle, false)[1]
-    local driver = VEHICLE.GET_PED_IN_VEHICLE_SEAT(closest_vehicle, -1)
+    local driver = GET_PED_IN_VEHICLE_SEAT(closest_vehicle, -1)
     
-    if VEHICLE.IS_VEHICLE_SEAT_FREE(closest_vehicle, -1) then
-        PED.SET_PED_INTO_VEHICLE(players.user_ped(), closest_vehicle, -1)
+    if IS_VEHICLE_SEAT_FREE(closest_vehicle, -1) then
+        SET_PED_INTO_VEHICLE(players.user_ped(), closest_vehicle, -1)
         Ryan.Toast("Teleported into the closest vehicle.")
     else
-        if PED.GET_PED_TYPE(driver) >= 4 then
+        if GET_PED_TYPE(driver) >= 4 then
             entities.delete_by_handle(driver)
-            PED.SET_PED_INTO_VEHICLE(players.user_ped(), closest_vehicle, -1)
+            SET_PED_INTO_VEHICLE(players.user_ped(), closest_vehicle, -1)
             Ryan.Toast("Teleported into the closest vehicle.")
-        elseif VEHICLE.ARE_ANY_VEHICLE_SEATS_FREE(closest_vehicle) then
+        elseif ARE_ANY_VEHICLE_SEATS_FREE(closest_vehicle) then
             for i = 0, 10 do
-                if VEHICLE.IS_VEHICLE_SEAT_FREE(closest_vehicle, i) then
-                    PED.SET_PED_INTO_VEHICLE(players.user_ped(), closest_vehicle, i)
+                if IS_VEHICLE_SEAT_FREE(closest_vehicle, i) then
+                    SET_PED_INTO_VEHICLE(players.user_ped(), closest_vehicle, i)
                     break
                 end
             end
@@ -1669,7 +1674,7 @@ util.create_tick_handler(function()
                     if antihermit_mode ~= "Off" then
                         Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Anti-Hermit", player.name .. " has been inside for 5 minutes. Now doing: " .. antihermit_mode .. "!")
                         player:spam_sms("You've been inside too long. Stop being weird and play the game!", 1500)
-                        pluto_switch antihermit_mode do
+                        switch antihermit_mode do
                             case "Teleport Outside":
                                 menu.trigger_commands("apt1" .. player.name)
                                 break
@@ -1797,7 +1802,7 @@ end)
 
 menu.toggle_loop(session_vehicle_trolling_root, "Delete", {"ryandelete"}, "Deletes their vehicle.", function()
     for _, player_id in pairs(players.list()) do
-        local vehicle = if players.get_vehicle_model(player_id) ~= 0 then PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player_id), false) else 0
+        local vehicle = if players.get_vehicle_model(player_id) ~= 0 then GET_VEHICLE_PED_IS_IN(GET_PLAYER_PED_SCRIPT_INDEX(player_id), false) else 0
         if vehicle ~= 0 then
             Objects.RequestControl(vehicle, false)
             entities.delete_by_handle(vehicle)
@@ -1819,7 +1824,7 @@ UI.CreateList(session_root, "Mk II", "ryanmk2", "How Oppressor Mk IIs are handle
 end)
 
 util.create_tick_handler(function()
-    pluto_switch mk2_mode do
+    switch mk2_mode do
         case "Banned":
             if util.current_time_millis() - mk2_ban_notice >= 300000 then
                 Ryan.SendChatMessage("This session is in Mk II Ban mode! Go ahead, try and use one.")
@@ -1827,9 +1832,9 @@ util.create_tick_handler(function()
             end
 
             local oppressor2 = util.joaat("oppressor2")
-            local coords = ENTITY.GET_ENTITY_COORDS(players.user_ped())
+            local coords = GET_ENTITY_COORDS(players.user_ped())
             for _, vehicle in pairs(Objects.GetAllNearCoords(coords, 9999, Objects.Type.Vehicle)) do
-                if VEHICLE.IS_VEHICLE_MODEL(vehicle, oppressor2) then
+                if IS_VEHICLE_MODEL(vehicle, oppressor2) then
                     Objects.RequestControl(vehicle, false)
                     entities.delete_by_handle(vehicle)
                 end
@@ -1865,14 +1870,14 @@ util.create_tick_handler(function()
 
                 for _, player in Player:List(true, true, true) do
                     local coords = v3(player.coords)
-                    local direction = ENTITY.GET_ENTITY_ROTATION(player.ped_id, 2):toDir()
+                    local direction = GET_ENTITY_ROTATION(player.ped_id, 2):toDir()
                     direction:mul(7.5); coords:add(direction)
-                    local vehicle = entities.create_vehicle(oppressor2, coords, ENTITY.GET_ENTITY_HEADING(player.ped_id))
+                    local vehicle = entities.create_vehicle(oppressor2, coords, GET_ENTITY_HEADING(player.ped_id))
                     Objects.RequestControl(vehicle, true)
                     Objects.SetVehicleFullyUpgraded(vehicle, true)
-                    ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
-                    VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
-                    VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
+                    SET_ENTITY_INVINCIBLE(vehicle, false)
+                    SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
+                    SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
                 end
 
                 Ryan.FreeModel(oppressor2)
@@ -2030,7 +2035,7 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
 
                     -- Handle Command
                     if not has_error then
-                        pluto_switch command[1] do
+                        switch command[1] do
                             case "help":
                                 local cmd_list = ""
                                 for i, cmd in ipairs(chat_commands) do
@@ -2053,17 +2058,17 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
 
                                 local player = Player:Get(sender)
                                 local coords = v3(player.coords)
-                                local direction = ENTITY.GET_ENTITY_ROTATION(player.ped_id, 2):toDir()
+                                local direction = GET_ENTITY_ROTATION(player.ped_id, 2):toDir()
                                 direction:mul(7.5); coords:add(direction)
                                 Objects.RequestControl(vehicle, true)
                                 Objects.SetVehicleFullyUpgraded(vehicle, true)
-                                ENTITY.SET_ENTITY_INVINCIBLE(vehicle, false)
-                                VEHICLE.SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
-                                VEHICLE.SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
+                                SET_ENTITY_INVINCIBLE(vehicle, false)
+                                SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
+                                SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
 
                                 Ryan.FreeModel(oppressor2)
                                 break
-                            pluto_default:
+                            default:
                                 local raw_command = command[4]
                                 for i, arg_type in pairs(command[2]) do
                                     if arg_type == "player" then raw_command = raw_command:gsub("{" .. i .. "}", players.get_name(args[i])) end
@@ -2100,7 +2105,7 @@ end)
 menu.divider(settings_root, "Updates")
 menu.action(settings_root, "Version: " .. VERSION, {}, "The currently installed version.", function() end)
 menu.action(settings_root, "Reinstall", {"ryanreinstall"}, "Force update the script for patches and troubleshooting.", function() Ryan.CheckForUpdates(true) end)
-menu.hyperlink(settings_root, "Website", "https://gta.ryanmade.site/", "Opens the official website, for downloading the installer and viewing the changelog.")
+menu.hyperlink(settings_root, "GitHub", "https://github.com/RyanGarber/Ryans-Menu", "Ryan's Menu on GitHub. Contains the source code, changelog, and a download link for the installer.")
 
 menu.divider(settings_root, "HUD")
 hud_color = menu.colour(settings_root, "Color", {"ryanhudcolor"}, "The color of on-screen ESP.", 0.29, 0.69, 1.0, 1.0, false, function(value)
@@ -2115,40 +2120,6 @@ menu.toggle(settings_root, "Text Keybinds", {"ryantextkeybinds"}, "Enable this t
     Ryan.TextKeybinds = value
 end)
 
-menu.divider(settings_root, "Other")
-settings_friend_spoofs_root = menu.list(settings_root, "Friend Spoofs", {"ryanspoofs"}, "Add friends' RIDs spoofs in order to keep from affecting them.")
-menu.text_input(settings_friend_spoofs_root, "Add RID", {"ryanspoofsadd"}, "Add a player's RID.", function(value)
-    if value:len() == 0 then return end
-    Ryan.FriendSpoofs = Ryan.ReadJSON(Ryan.FriendSpoofsFile)
-    if Ryan.FindItemInTable(Ryan.FriendSpoofs, value) == nil then
-        table.insert(Ryan.FriendSpoofs, value)
-        Ryan.WriteJSON(Ryan.FriendSpoofsFile, Ryan.FriendSpoofs)
-        update_friend_spoofs()
-        util.toast("Added an RID.")
-    else
-        util.toast("That RID already exists.")
-    end
-end)
-
-menu.divider(settings_friend_spoofs_root, "RIDs")
-local rid_list = {}
-function update_friend_spoofs()
-    Ryan.FriendSpoofs = Ryan.ReadJSON(Ryan.FriendSpoofsFile)
-    for _, toggle in pairs(rid_list) do menu.delete(toggle) end; rid_list = {}
-    for i, rid in pairs(Ryan.FriendSpoofs) do
-        rid_list[i] = menu.action(settings_friend_spoofs_root, rid, {"ryanspoofs" .. rid}, "Click to delete this RID.", function(value, click_type)
-            menu.show_warning(rid_list[i], click_type, "Are you sure you want to delete this RID?", function()
-                Ryan.FriendSpoofs = Ryan.ReadJSON(Ryan.FriendSpoofsFile)
-                table.remove(Ryan.FriendSpoofs, Ryan.FindItemInTable(Ryan.FriendSpoofs, value))
-                Ryan.WriteJSON(Ryan.FriendSpoofsFile, Ryan.FriendSpoofs)
-                update_friend_spoofs()
-                util.toast("Removed an RID.")
-            end)
-        end)
-    end
-end
-update_friend_spoofs()
-
 hud_preview = 0
 menu.on_focus(hud_color, function() hud_preview = hud_preview + 1 end)
 menu.on_focus(hud_use_beacons, function() hud_preview = hud_preview + 1 end)
@@ -2157,7 +2128,7 @@ menu.on_blur(hud_use_beacons, function() hud_preview = hud_preview - 1 end)
 
 util.create_tick_handler(function()
     if hud_preview > 0 then
-        if Ryan.HUDUseBeacon then Ryan.DrawBeacon(ENTITY.GET_ENTITY_COORDS(players.user_ped()))
+        if Ryan.HUDUseBeacon then Ryan.DrawBeacon(GET_ENTITY_COORDS(players.user_ped()))
         else Objects.DrawESP(players.user_ped()) end
     end
 end)
@@ -2207,20 +2178,20 @@ function Player:OnJoin(player)
 
     menu.toggle_loop(player_trolling_kill_root, "Kill (Kiddions)", {"ryankillstungun"}, "Use this to kill players using Kiddions godmode. May also work in some buildings.", function()
         local stun_gun = util.joaat("weapon_stungun")
-        local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
-		WEAPON.REQUEST_WEAPON_ASSET(stun_gun)
-		WEAPON.GIVE_WEAPON_TO_PED(players.user_ped(), stun_gun, 1, false, true)
+        local coords = GET_ENTITY_COORDS(player.ped_id)
+		REQUEST_WEAPON_ASSET(stun_gun)
+		GIVE_WEAPON_TO_PED(players.user_ped(), stun_gun, 1, false, true)
         player:remove_godmode()
-        MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z + 1, coords.x, coords.y, coords.z, 1000, true, stun_gun, 0, false, true, 1.0)
+        SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z + 1, coords.x, coords.y, coords.z, 1000, true, stun_gun, 0, false, true, 1.0)
     end)
 
     menu.toggle_loop(player_trolling_kill_root, "Kill (Interior)", {"ryankillsnowball"}, "Use this to kill players inside buildings. May also work on some menus' godmodes.", function()
 		local snowball = util.joaat("weapon_snowball")
-        local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id)
-		WEAPON.REQUEST_WEAPON_ASSET(snowball)
-		WEAPON.GIVE_WEAPON_TO_PED(players.user_ped(), snowball, 10, false, true)
+        local coords = GET_ENTITY_COORDS(player.ped_id)
+		REQUEST_WEAPON_ASSET(snowball)
+		GIVE_WEAPON_TO_PED(players.user_ped(), snowball, 10, false, true)
         player:remove_godmode()
-		MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z - 2, 200, 0, snowball, 0, true, false, 2500.0)
+		SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z - 2, 200, 0, snowball, 0, true, false, 2500.0)
     end)
 
     menu.action(player_trolling_kill_root, "Kill (Squish)", {"ryankillphysics1"}, "Use this when removing godmode does not work.", function()
@@ -2264,12 +2235,12 @@ function Player:OnJoin(player)
 
     menu.divider(player_teleport_root, "Vehicle")
     menu.action(player_teleport_root, "Under the Map", {"ryantpunder"}, "Teleport this under the map; potentially kills modders.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id, true)
+        local vehicle = GET_VEHICLE_PED_IS_IN(player.ped_id, true)
         if vehicle == 0 then
             Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Teleport", player.name .. " doesn't have a vehicle.")
             return
         end
-        local coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+        local coords = GET_ENTITY_COORDS(vehicle)
         coords:setZ(coords.z - 10)
         player:teleport_vehicle(coords)
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Teleport", "Teleported " .. player.name .. " under the map!")
@@ -2301,7 +2272,7 @@ function Player:OnJoin(player)
     end)
     
     menu.action(player_vehicle_root, "Steal", {"ryanvsteal"}, "Steals their vehicle.", function()
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(player.ped_id)
+        local vehicle = GET_VEHICLE_PED_IS_IN(player.ped_id)
         if vehicle ~= 0 then Objects.StealVehicle(vehicle)
         else Ryan.ShowTextMessage(Ryan.BackgroundColors.Red, "Steal Vehicle", player.name .. " is not in a vehicle.") end
     end)
@@ -2450,7 +2421,7 @@ function Player:OnJoin(player)
                 local coords = v3(player.coords)
                 coords:add(v3(math.random(-5, 5), math.random(-5, 5), math.random(-1, 0)))
 	            trafficLights[#trafficLights + 1] = entities.create_object(-655644382, coords)
-	            ENTITY.SET_ENTITY_ROTATION(trafficLights[#trafficLights + 1], 0, 0, math.random(0, 360), 1, true)
+	            SET_ENTITY_ROTATION(trafficLights[#trafficLights + 1], 0, 0, math.random(0, 360), 1, true)
 	        end
 
 	        local stopLights = false
@@ -2458,16 +2429,16 @@ function Player:OnJoin(player)
 	            if stopLights then
 	                return false
 	            end
-	            ENTITY.SET_ENTITY_TRAFFICLIGHT_OVERRIDE(trafficLights[math.random(1, #trafficLights)], math.random(0, 3))
+	            SET_ENTITY_TRAFFICLIGHT_OVERRIDE(trafficLights[math.random(1, #trafficLights)], math.random(0, 3))
 	        end)
 
 	        Ryan.RequestModel(3253274834)
 	        local vehicles = {}
 	        
             vehicles[1] = entities.create_vehicle(3253274834, player.coords, 0)
-	        VEHICLE.SET_VEHICLE_MOD_KIT(vehicles[1], 0)
-	        VEHICLE.SET_VEHICLE_NUMBER_PLATE_TEXT(vehicles[1], "ICRASHU")
-	        VEHICLE.SET_VEHICLE_MOD(vehicles[1], 34, 3)
+	        SET_VEHICLE_MOD_KIT(vehicles[1], 0)
+	        SET_VEHICLE_NUMBER_PLATE_TEXT(vehicles[1], "ICRASHU")
+	        SET_VEHICLE_MOD(vehicles[1], 34, 3)
             local vehicle_data = Objects.GetVehicleData(vehicles[1])
 
 	        for i = 2, 11 do
@@ -2501,9 +2472,9 @@ function Player:OnJoin(player)
             for i = 1, 10 do
                 local vehicle_id = entities.create_vehicle(taxi, player.coords, 0)
                 local ped_id = entities.create_ped(2, mp_m_freemode_01, player.coords, 0)
-                PED.SET_PED_INTO_VEHICLE(ped_id, vehicle_id, -1)
+                SET_PED_INTO_VEHICLE(ped_id, vehicle_id, -1)
                 util.yield(100)
-                TASK.TASK_VEHICLE_HELI_PROTECT(ped_id, vehicle_id, player.ped_id, 10.0, 0, 10, 0, 0)
+                TASK_VEHICLE_HELI_PROTECT(ped_id, vehicle_id, player.ped_id, 10.0, 0, 10, 0, 0)
                 util.yield(1000)
                 entities.delete_by_handle(ped_id)
                 entities.delete_by_handle(vehicle_id)
@@ -2518,15 +2489,15 @@ function Player:OnJoin(player)
         player:spam_sms_and_block_joins(removal_block_joins, removal_message, function()
             local player_zero = util.joaat("player_zero"); Ryan.RequestModel(player_zero)
             local ped_id = entities.create_ped(0, player_zero, player.coords, 0)
-            PED.SET_PED_COMPONENT_VARIATION(ped_id, 0, 0, 6, 0)
-            PED.SET_PED_COMPONENT_VARIATION(ped_id, 0, 0, 7, 0)
+            SET_PED_COMPONENT_VARIATION(ped_id, 0, 0, 6, 0)
+            SET_PED_COMPONENT_VARIATION(ped_id, 0, 0, 7, 0)
             util.yield()
 
-            ENTITY.SET_ENTITY_COORDS(ped_id, player.coords.x, player.coords.y, player.coords.z, true, false, false, true)
+            SET_ENTITY_COORDS(ped_id, player.coords.x, player.coords.y, player.coords.z, true, false, false, true)
             util.yield(500)
 
             local node = Ryan.GetClosestNode(player.coords, false)
-            ENTITY.SET_ENTITY_COORDS(ped_id, node.x, node.y, node.z, true, false, false, true)
+            SET_ENTITY_COORDS(ped_id, node.x, node.y, node.z, true, false, false, true)
             util.yield(500)
 
             entities.delete_by_handle(ped_id)
@@ -2547,7 +2518,7 @@ function Player:OnJoin(player)
             tracked_player = player.id
         else
             tracked_player = nil
-            HUD.SET_WAYPOINT_OFF()
+            SET_WAYPOINT_OFF()
         end
     end)
     menu.action(player_root, "Divorce", {"div"}, "Kicks the player, then blocks future joins by them.", function()
@@ -2560,8 +2531,8 @@ tracked_player = nil
 util.create_tick_handler(function()
     if tracked_player ~= nil then
         local player = Player:Get(tracked_player)
-        HUD.SET_NEW_WAYPOINT(player.coords.x, player.coords.y)
-        if ENTITY.HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), player.ped_id, 17) then
+        SET_NEW_WAYPOINT(player.coords.x, player.coords.y)
+        if HAS_ENTITY_CLEAR_LOS_TO_ENTITY(players.user_ped(), player.ped_id, 17) then
             Objects.DrawESP(player.ped_id)
         else
             Ryan.DrawBeacon(player.coords)
@@ -2596,20 +2567,20 @@ end
 
 util.create_tick_handler(function()
     for _, player in pairs(Player:List(true, true, true)) do
-        local vehicle = PED.GET_VEHICLE_PED_IS_IN(PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(player.id), true)
+        local vehicle = GET_VEHICLE_PED_IS_IN(GET_PLAYER_PED_SCRIPT_INDEX(player.id), true)
         if vehicle ~= 0 and vehicle_effects[player.id] ~= nil then
             UI.ApplyVehicleEffectList(vehicle, vehicle_effects[player.id], vehicle_state, true, false)
 
             -- Leash
             if vehicle_effects[player.id].leash == true then
-                local vehicle_coords = ENTITY.GET_ENTITY_COORDS(vehicle)
+                local vehicle_coords = GET_ENTITY_COORDS(vehicle)
                 local coords = v3(Player:Self().coords)
                 if vehicle_coords:distance(coords) > 5 then
                     coords:sub(vehicle_coords); coords:normalise()
                     Objects.RequestControl(vehicle)
-                    ENTITY.APPLY_FORCE_TO_ENTITY(vehicle, 1, coords.x * 5, coords.y * 5, coords.z * 5, 0, 0, 0.5, 0, false, false, true)
+                    APPLY_FORCE_TO_ENTITY(vehicle, 1, coords.x * 5, coords.y * 5, coords.z * 5, 0, 0, 0.5, 0, false, false, true)
                 else
-                    ENTITY.SET_ENTITY_VELOCITY(vehicle, 0, 0, 0)
+                    SET_ENTITY_VELOCITY(vehicle, 0, 0, 0)
                 end
             end
         end
@@ -2636,44 +2607,44 @@ util.create_tick_handler(function()
             util.create_thread(function()
                 local glitch_type = glitch[player.id]
                 while glitch[player.id] == glitch_type do
-                    pluto_switch glitch_type do
+                    switch glitch_type do
                         case "Off":
                             break
                         case "Default":
                             local shuttering = util.joaat("prop_shuttering03")
                             Ryan.RequestModel(shuttering)
                             
-                            local coords = ENTITY.GET_ENTITY_COORDS(player.ped_id, false)
+                            local coords = GET_ENTITY_COORDS(player.ped_id, false)
                             local objects = {
-                                entities.create_object(shuttering, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, 0, 1, 0)),
-                                entities.create_object(shuttering, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, 0, 0, 0))
+                                entities.create_object(shuttering, GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, 0, 1, 0)),
+                                entities.create_object(shuttering, GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, 0, 0, 0))
                             }
 
-                            ENTITY.SET_ENTITY_VISIBLE(objects[1], false)
-                            ENTITY.SET_ENTITY_VISIBLE(objects[2], false)
+                            SET_ENTITY_VISIBLE(objects[1], false)
+                            SET_ENTITY_VISIBLE(objects[2], false)
                             util.yield()
                             entities.delete_by_handle(objects[1])
                             entities.delete_by_handle(objects[2])
 
                             Ryan.FreeModel(shuttering)
                             break
-                        pluto_default:
+                        default:
                             local glitch_object, rallytruck = util.joaat(glitch[player.id]), util.joaat("rallytruck")
                             Ryan.RequestModel(glitch_object)
                             Ryan.RequestModel(rallytruck)
 
-                            local player_coords = ENTITY.GET_ENTITY_COORDS(player.ped_id, false)
+                            local player_coords = GET_ENTITY_COORDS(player.ped_id, false)
 
                             local objects = {
                                 entities.create_object(glitch_object, player_coords),
                                 entities.create_vehicle(rallytruck, player_coords, 0)
                             }
 
-                            ENTITY.SET_ENTITY_VISIBLE(objects[1], false)
-                            ENTITY.SET_ENTITY_VISIBLE(objects[2], false)
-                            ENTITY.SET_ENTITY_INVINCIBLE(objects[1], true)
-                            ENTITY.SET_ENTITY_COLLISION(objects[1], true, true)
-                            ENTITY.APPLY_FORCE_TO_ENTITY(objects[2], 1, 0.0, 10, 10, 0.0, 0.0, 0.0, 0, 1, 1, 1, 0, 1)
+                            SET_ENTITY_VISIBLE(objects[1], false)
+                            SET_ENTITY_VISIBLE(objects[2], false)
+                            SET_ENTITY_INVINCIBLE(objects[1], true)
+                            SET_ENTITY_COLLISION(objects[1], true, true)
+                            APPLY_FORCE_TO_ENTITY(objects[2], 1, 0.0, 10, 10, 0.0, 0.0, 0.0, 0, 1, 1, 1, 0, 1)
 
                             util.yield(50)
                             entities.delete_by_handle(objects[1])

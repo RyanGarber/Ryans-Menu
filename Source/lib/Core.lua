@@ -2,7 +2,6 @@ local _waiting_for_session = false
 local _waiting_for_coords = nil
 
 Ryan.GhostMode = 1
-Ryan.FriendSpoofsFile = filesystem.store_dir() .. SUBFOLDER_NAME .. "\\FriendSpoofs.json"
 
 -- Initialize globals.
 Ryan.Init = function()
@@ -11,9 +10,6 @@ Ryan.Init = function()
     Ryan.RequestModel(util.joaat("p_poly_bag_01_s"))
 	if not filesystem.exists(filesystem.store_dir() .. SUBFOLDER_NAME) then
 		filesystem.mkdirs(filesystem.store_dir() .. SUBFOLDER_NAME)
-	end
-	if not filesystem.exists(Ryan.FriendSpoofsFile) then
-		Ryan.WriteJSON(Ryan.FriendSpoofsFile, {})
 	end
 end
 
@@ -29,8 +25,6 @@ Ryan.WriteJSON = function(file, contents)
 	destination:write(JSON.Encode(contents))
 	assert(destination:close())
 end
-
-Ryan.FriendSpoofs = {}
 
 -- HUD settings.
 Ryan.HUDColor = {r = 0.29, g = 0.69, b = 1.0}
@@ -410,15 +404,6 @@ Ryan.ShuffleItemsInTable = function(table)
 	return shuffled
 end
 
-Ryan.FindItemInTable = function(table, item)
-	for key, value in pairs(table) do
-		if item == value then
-			return key
-		end
-	end
-	return nil
-end
-
 -- Get the name of a seat by its index.
 Ryan.SeatName = function(index)
 	return if index == -1 then "Driver" else ("Seat " .. (index + 2))
@@ -472,8 +457,8 @@ Ryan.RaycastFlags = {
 
 -- Do a raycast from the center of the camera. TODO: raycast further from camera
 Ryan.RaycastFromCamera = function(distance, flags)
-	local origin = CAM.GET_FINAL_RENDERED_CAM_COORD()
-	local direction = CAM.GET_FINAL_RENDERED_CAM_ROT(2):toDir()
+	local origin = GET_FINAL_RENDERED_CAM_COORD()
+	local direction = GET_FINAL_RENDERED_CAM_ROT(2):toDir()
 	return Ryan.Raycast(origin, direction, distance, flags, false)
 end
 
@@ -487,8 +472,8 @@ Ryan.Raycast = function(origin, direction, distance, flags, include_self)
 	direction:mul(distance)
 	destination:add(direction)
 
-	SHAPETEST.GET_SHAPE_TEST_RESULT(
-		SHAPETEST.START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
+	GET_SHAPE_TEST_RESULT(
+		START_EXPENSIVE_SYNCHRONOUS_SHAPE_TEST_LOS_PROBE(
 			origin.x, origin.y, origin.z,
 			destination.x, destination.y, destination.z,
 			flags or -1, if include_self then 0 else players.user_ped(), 1
@@ -505,9 +490,9 @@ end
 
 -- Request a model and wait until it loads.
 Ryan.RequestModel = function(model)
-	if STREAMING.IS_MODEL_VALID(model) then
-		STREAMING.REQUEST_MODEL(model)
-		while not STREAMING.HAS_MODEL_LOADED(model) do
+	if IS_MODEL_VALID(model) then
+		REQUEST_MODEL(model)
+		while not HAS_MODEL_LOADED(model) do
 			util.yield()
 		end
 	else
@@ -517,33 +502,33 @@ end
 	
 -- Free a model that has been requested.
 Ryan.FreeModel = function(model)
-	STREAMING.SET_MODEL_AS_NO_LONGER_NEEDED(model)
+	SET_MODEL_AS_NO_LONGER_NEEDED(model)
 end
 
 -- Request an animation set.
 Ryan.RequestAnimations = function(animation_group)
-	STREAMING.REQUEST_ANIM_DICT(animation_group)
-	while not STREAMING.HAS_ANIM_DICT_LOADED(animation_group) do
+	REQUEST_ANIM_DICT(animation_group)
+	while not HAS_ANIM_DICT_LOADED(animation_group) do
 		util.yield()
 	end
 end
 
 -- Show a text message on-screen.
 Ryan.ShowTextMessage = function(color, subtitle, message)
-	HUD._THEFEED_SET_NEXT_POST_BACKGROUND_COLOR(color)
-	GRAPHICS.REQUEST_STREAMED_TEXTURE_DICT("DIA_JESUS", 0)
-	while not GRAPHICS.HAS_STREAMED_TEXTURE_DICT_LOADED("DIA_JESUS") do
+	THEFEED_SET_BACKGROUND_COLOR_FOR_NEXT_POST(color)
+	REQUEST_STREAMED_TEXTURE_DICT("DIA_JESUS", 0)
+	while not HAS_STREAMED_TEXTURE_DICT_LOADED("DIA_JESUS") do
 		util.yield()
 	end
 	util.BEGIN_TEXT_COMMAND_THEFEED_POST(message)
-	HUD.END_TEXT_COMMAND_THEFEED_POST_MESSAGETEXT("DIA_JESUS", "DIA_JESUS", true, 4, "Ryan's Menu", subtitle)
-	HUD.END_TEXT_COMMAND_THEFEED_POST_TICKER(true, false)
+	END_TEXT_COMMAND_THEFEED_POST_MESSAGETEXT("DIA_JESUS", "DIA_JESUS", true, 4, "Ryan's Menu", subtitle)
+	END_TEXT_COMMAND_THEFEED_POST_TICKER(true, false)
 end
 
 -- Translate a message between languages.
 Ryan.Translate = function(message, language, latin, on_result)
 	Ryan.Toast("Translating...")
-	async_http.init("gta.ryanmade.site", "/translate?text=" .. message .. "&language=" .. language, function(result)
+	async_http.init("ryan.software", "/translate?text=" .. message .. "&to=" .. language, function(result)
 		if latin then
 			for from, to in pairs(Ryan.CyrillicAlphabet) do
 				result = result:gsub(from, to)
@@ -564,11 +549,11 @@ Ryan.DoFireworks = function(coords, offset)
 	local player_ped = players.user_ped()
 	local firework = util.joaat("weapon_firework")
 
-	WEAPON.REQUEST_WEAPON_ASSET(firework)
-	WEAPON.GIVE_WEAPON_TO_PED(player_ped, firework, 20, false, true)
-	WEAPON.SET_CURRENT_PED_WEAPON(player_ped, util.joaat("weapon_unarmed"), false)
-	MISC.SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z + 100, 0, false, firework, player_ped, true, false, 500.0)
-	WEAPON.REFILL_AMMO_INSTANTLY(player_ped)
+	REQUEST_WEAPON_ASSET(firework)
+	GIVE_WEAPON_TO_PED(player_ped, firework, 20, false, true)
+	SET_CURRENT_PED_WEAPON(player_ped, util.joaat("weapon_unarmed"), false)
+	SHOOT_SINGLE_BULLET_BETWEEN_COORDS(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z + 100, 0, false, firework, player_ped, true, false, 500.0)
+	REFILL_AMMO_INSTANTLY(player_ped)
 end
 
 -- Teleport with or without our vehicle.
@@ -576,10 +561,10 @@ Ryan.Teleport = function(coords, with_vehicle)
 	Ryan.Toast("Teleporting...")
 	local player_ped = players.user_ped()
 	if with_vehicle and players.get_vehicle_model(players.user()) ~= 0 then
-		local vehicle = PED.GET_VEHICLE_PED_IS_IN(player_ped, false)
-		ENTITY.SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
+		local vehicle = GET_VEHICLE_PED_IS_IN(player_ped, false)
+		SET_ENTITY_COORDS(vehicle, coords.x, coords.y, coords.z)
 	else
-		ENTITY.SET_ENTITY_COORDS(player_ped, coords.x, coords.y, coords.z)
+		SET_ENTITY_COORDS(player_ped, coords.x, coords.y, coords.z)
 	end
 end
 
@@ -615,7 +600,7 @@ Ryan.OpenThirdEye = function(coords, with_vehicle)
 	_starting_seat = user:get_vehicle_seat()
 	_starting_vehicle = if _starting_seat ~= nil then entities.get_user_vehicle_as_handle() else nil
 	_starting_in_ghost_mode = Ryan.GhostMode > 1
-	_starting_can_ragdoll = PED.CAN_PED_RAGDOLL(user.ped_id)
+	_starting_can_ragdoll = CAN_PED_RAGDOLL(user.ped_id)
 	Ryan.Teleport(coords, with_vehicle)
 end
 
@@ -624,8 +609,8 @@ Ryan.CloseThirdEye = function()
 	if not _starting_in_ghost_mode then menu.trigger_command(menu.ref_by_rel_path(ghost_menu, "Off")) end
 
 	if _starting_coords ~= nil then Ryan.Teleport(_starting_coords, false) end -- why?
-	if _starting_vehicle ~= nil then PED.SET_PED_INTO_VEHICLE(players.user_ped(), _starting_vehicle, _starting_seat) end
-	PED.SET_PED_CAN_RAGDOLL(players.user_ped(), _starting_can_ragdoll)
+	if _starting_vehicle ~= nil then SET_PED_INTO_VEHICLE(players.user_ped(), _starting_vehicle, _starting_seat) end
+	SET_PED_CAN_RAGDOLL(players.user_ped(), _starting_can_ragdoll)
 
 	return _starting_coords
 end
@@ -680,23 +665,23 @@ end
 -- Get an integer stat.
 Ryan.GetStatInt = function(key)
 	local value = memory.alloc_int()
-	STATS.STAT_GET_INT(key, value, -1)
+	STAT_GET_INT(key, value, -1)
 	return memory.read_int(value)
 end
 
 -- Play a sound locally in 2D.
 Ryan.PlaySound = function(sound_group, sound_name)
-    AUDIO.PLAY_SOUND_FRONTEND(-1, sound_name, sound_group)
+    PLAY_SOUND_FRONTEND(-1, sound_name, sound_group)
 end
 
 -- Play a sound coming from an entity in 3D.
 Ryan.PlaySoundFromEntity = function(entity, sound_group, sound_name)
-    AUDIO.PLAY_SOUND_FROM_ENTITY(-1, sound_name, entity, sound_group, true, true)
+    PLAY_SOUND_FROM_ENTITY(-1, sound_name, entity, sound_group, true, true)
 end
 
 -- Play a sound coming from a position in 3D.
 Ryan.PlaySoundAtCoords = function(coords, sound_group, sound_name, range)
-    AUDIO.PLAY_SOUND_FROM_COORD(-1, sound_name, coords.x, coords.y, coords.z, sound_group, true, range, true)
+    PLAY_SOUND_FROM_COORD(-1, sound_name, coords.x, coords.y, coords.z, sound_group, true, range, true)
 end
 
 -- Play a sound on all players at once.

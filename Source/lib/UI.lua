@@ -89,33 +89,33 @@ UI.GodFingerActivationModes = {
 
 UI.GetGodFingerActivation = function(key)
     local activated = false
-    pluto_switch key do
+    switch key do
         case "Off":    activated = 0                                                                      break
         case "Look":   activated = 1                                                                      break
-        case "Hold Q": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.Cover);               break
-        case "Hold E": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.VehicleHorn);         break
-        case "Hold R": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.Reload);              break
-        case "Hold F": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.Enter);               break
-        case "Hold C": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.LookBehind);          break
-        case "Hold X": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.VehicleDuck);         break
-        case "Hold Z": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.HudSpecial);          break
-        case "Hold 1": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponUnarmed); break
-        case "Hold 2": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponMelee);   break
-        case "Hold 3": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponShotgun); break
-        case "Hold 4": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponHeavy);   break
-        case "Hold 5": activated = PAD.IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponSpecial); break
+        case "Hold Q": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.Cover);               break
+        case "Hold E": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.VehicleHorn);         break
+        case "Hold R": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.Reload);              break
+        case "Hold F": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.Enter);               break
+        case "Hold C": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.LookBehind);          break
+        case "Hold X": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.VehicleDuck);         break
+        case "Hold Z": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.HudSpecial);          break
+        case "Hold 1": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponUnarmed); break
+        case "Hold 2": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponMelee);   break
+        case "Hold 3": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponShotgun); break
+        case "Hold 4": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponHeavy);   break
+        case "Hold 5": activated = IS_DISABLED_CONTROL_PRESSED(0, Ryan.Controls.SelectWeaponSpecial); break
     end
-    pluto_switch activated do
+    switch activated do
         case true: return 2
         case false: return 0
-        pluto_default: return activated
+        default: return activated
     end
 end
 
 UI.DisplayGodFingerKeybind = function(mode)
     if Ryan.TextKeybinds then return "<b>" .. mode:sub(6) .. "</b>]" end
 
-    pluto_switch mode do
+    switch mode do
         case "Hold Q": return "~INPUT_COVER~"
         case "Hold E": return "~INPUT_VEH_HORN~"
         case "Hold R": return "~INPUT_RELOAD~"
@@ -128,7 +128,7 @@ UI.DisplayGodFingerKeybind = function(mode)
         case "Hold 3": return "~INPUT_SELECT_WEAPON_SHOTGUN~"
         case "Hold 4": return "~INPUT_SELECT_WEAPON_HEAVY~"
         case "Hold 5": return "~INPUT_SELECT_WEAPON_SPECIAL~"
-        pluto_default: return "<b>" .. mode:sub(6) .. "</b>]"
+        default: return "<b>" .. mode:sub(6) .. "</b>]"
     end
 end
 
@@ -161,26 +161,26 @@ UI.GetGodFingerKeybinds = function(effects)
 end
 
 UI.DisableGodFingerKeybinds = function()
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.CharacterWheel, true)         -- Alt
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.CharacterWheel, true)         -- Alt
 
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.Cover, true)                  -- Q
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleRadioWheel, true)      -- Q
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleHorn, true)            -- E
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.Reload, true)                 -- R
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.MeleeAttackLight, true)       -- R
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleCinematicCamera, true) -- R
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.Enter, true)                  -- F
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleExit, true)            -- F
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.LookBehind, true)             -- C
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleLookBehind, true)      -- C
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleDuck, true)            -- X
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.MultiplayerInfo, true)        -- Z
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.HudSpecial, true)             -- Z
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponUnarmed, true)    -- 1
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponMelee, true)      -- 2
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponShotgun, true)    -- 3
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponHeavy, true)      -- 4
-    PAD.DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponSpecial, true)    -- 5
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.Cover, true)                  -- Q
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleRadioWheel, true)      -- Q
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleHorn, true)            -- E
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.Reload, true)                 -- R
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.MeleeAttackLight, true)       -- R
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleCinematicCamera, true) -- R
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.Enter, true)                  -- F
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleExit, true)            -- F
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.LookBehind, true)             -- C
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleLookBehind, true)      -- C
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.VehicleDuck, true)            -- X
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.MultiplayerInfo, true)        -- Z
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.HudSpecial, true)             -- Z
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponUnarmed, true)    -- 1
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponMelee, true)      -- 2
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponShotgun, true)    -- 3
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponHeavy, true)      -- 4
+    DISABLE_CONTROL_ACTION(0, Ryan.Controls.SelectWeaponSpecial, true)    -- 5
 end
 
 UI.ParseEffectList = function(effects, god_finger)
@@ -223,26 +223,26 @@ UI.ApplyNPCEffectList = function(npc, effects, state, god_finger)
     local parsed = UI.ParseEffectList(effects, god_finger)
 
     if parsed.scenario and parsed.scenario.musician and state[npc].scenario ~= "musician" then
-        TASK.CLEAR_PED_TASKS_IMMEDIATELY(npc)
-        TASK.TASK_START_SCENARIO_IN_PLACE(npc, "WORLD_HUMAN_MUSICIAN", 0, false)
+        CLEAR_PED_TASKS_IMMEDIATELY(npc)
+        TASK_START_SCENARIO_IN_PLACE(npc, "WORLD_HUMAN_MUSICIAN", 0, false)
         state[npc].scenario = "musician"
         if god_finger then Ryan.PlaySelectSound() end
     end
     if parsed.scenario and parsed.scenario.janitor and state[npc].scenario ~= "janitor" then
-        TASK.CLEAR_PED_TASKS_IMMEDIATELY(npc)
-        TASK.TASK_START_SCENARIO_IN_PLACE(npc, "WORLD_HUMAN_JANITOR", 0, false)
+        CLEAR_PED_TASKS_IMMEDIATELY(npc)
+        TASK_START_SCENARIO_IN_PLACE(npc, "WORLD_HUMAN_JANITOR", 0, false)
         state[npc].scenario = "janitor"
         if god_finger then Ryan.PlaySelectSound() end
     end
     if parsed.scenario and parsed.scenario.paparazzi and state[npc].scenario ~= "paparazzi" then
-        TASK.CLEAR_PED_TASKS_IMMEDIATELY(npc)
-        TASK.TASK_START_SCENARIO_IN_PLACE(npc, "WORLD_HUMAN_PAPARAZZI", 0, false)
+        CLEAR_PED_TASKS_IMMEDIATELY(npc)
+        TASK_START_SCENARIO_IN_PLACE(npc, "WORLD_HUMAN_PAPARAZZI", 0, false)
         state[npc].scenario = "paparazzi"
         if god_finger then Ryan.PlaySelectSound() end
     end
     if parsed.scenario and parsed.scenario.human_statue and state[npc].scenario ~= "human_statue" then
-        TASK.CLEAR_PED_TASKS_IMMEDIATELY(ped)
-        TASK.TASK_START_SCENARIO_IN_PLACE(ped, "WORLD_HUMAN_HUMAN_STATUE", 0, false)
+        CLEAR_PED_TASKS_IMMEDIATELY(ped)
+        TASK_START_SCENARIO_IN_PLACE(ped, "WORLD_HUMAN_HUMAN_STATUE", 0, false)
         state[npc].scenario = "human_statue"
         if god_finger then Ryan.PlaySelectSound() end
     end
@@ -251,35 +251,35 @@ UI.ApplyNPCEffectList = function(npc, effects, state, god_finger)
         if god_finger or math.random(1, 25) == 1 then
             Ryan.RequestModel(util.joaat("a_f_y_topless_01"))
 
-            local coords = ENTITY.GET_ENTITY_COORDS(npc)
-            local heading = ENTITY.GET_ENTITY_HEADING(npc)
+            local coords = GET_ENTITY_COORDS(npc)
+            local heading = GET_ENTITY_HEADING(npc)
             
             entities.delete_by_handle(npc)
             npc = entities.create_ped(0, util.joaat("a_f_y_topless_01"), coords, heading)
             state[npc] = {}
 
-            PED.SET_PED_COMPONENT_VARIATION(npc, 8, 1, -1, 0)
-            TASK.CLEAR_PED_TASKS_IMMEDIATELY(npc)
-            TASK.TASK_WANDER_STANDARD(npc, 10.0, 10)
+            SET_PED_COMPONENT_VARIATION(npc, 8, 1, -1, 0)
+            CLEAR_PED_TASKS_IMMEDIATELY(npc)
+            TASK_WANDER_STANDARD(npc, 10.0, 10)
         end
         state[npc].nude = true
         if god_finger then Ryan.PlaySelectSound() end
     end
 
     if parsed.flee and not state[npc].flee then
-        TASK.TASK_SMART_FLEE_PED(npc, players.user_ped(), 500.0, -1, false, false)
-        PED.SET_PED_KEEP_TASK(npc, true)
+        TASK_SMART_FLEE_PED(npc, players.user_ped(), 500.0, -1, false, false)
+        SET_PED_KEEP_TASK(npc, true)
         state[npc].flee = true
         if god_finger then Ryan.PlaySelectSound() end
     end
 
     if parsed.ragdoll then
-        PED.SET_PED_TO_RAGDOLL(npc, 1000, 1000, 0, 0, 0, 0)
+        SET_PED_TO_RAGDOLL(npc, 1000, 1000, 0, 0, 0, 0)
     end
     if god_finger then Ryan.ToggleSelectSound(parsed, state, "ragdoll") end
 
     if parsed.skydive and util.current_time_millis() - (state[npc].skydive or 0) >= 2500 then
-        TASK.TASK_SKY_DIVE(npc, true)
+        TASK_SKY_DIVE(npc, true)
         state[npc].skydive = util.current_time_millis()
     end
     if god_finger then Ryan.ToggleSelectSound(parsed, state, "skydive") end
@@ -311,7 +311,7 @@ UI.CreateVehicleEffectList = function(root, command_prefix, player_name, effects
 end
 
 UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_finger)
-    if not ENTITY.IS_ENTITY_A_VEHICLE(vehicle) then return end
+    if not IS_ENTITY_A_VEHICLE(vehicle) then return end
     if state[vehicle] == nil then state[vehicle] = {} end
     local parsed = UI.ParseEffectList(effects, god_finger)
 
@@ -346,16 +346,16 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
 
     if parsed.parts and parsed.parts.break and state[vehicle].parts ~= "break" then
         Objects.RequestControl(vehicle, is_a_player)
-        local door_count = VEHICLE._GET_NUMBER_OF_VEHICLE_DOORS(vehicle)
+        local door_count = GET_NUMBER_OF_VEHICLE_DOORS(vehicle)
         for i = 0, door_count - 1 do
-            VEHICLE.SET_VEHICLE_DOOR_BROKEN(vehicle, i, false)
+            SET_VEHICLE_DOOR_BROKEN(vehicle, i, false)
         end
-        VEHICLE.POP_OUT_VEHICLE_WINDSCREEN(vehicle_id)
+        POP_OUT_VEHICLE_WINDSCREEN(vehicle_id)
         state[vehicle].parts = "break"
         if god_finger then Ryan.PlaySelectSound() end
     elseif parsed.parts and parsed.parts.fix and state[vehicle].parts ~= "fix" then
         Objects.RequestControl(vehicle, is_a_player)
-        VEHICLE.SET_VEHICLE_FIXED(vehicle)
+        SET_VEHICLE_FIXED(vehicle)
         state[vehicle].parts = "fix"
         if god_finger then Ryan.PlaySelectSound() end
     end
@@ -386,12 +386,12 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
 
     if parsed.engine and parsed.engine.kill and state[vehicle].engine ~= "kill" then
         Objects.RequestControl(vehicle, is_a_player)
-        VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
+        SET_VEHICLE_ENGINE_HEALTH(vehicle, -4000)
         state[vehicle].engine = "kill"
         if god_finger then Ryan.PlaySelectSound() end
     elseif parsed.engine and parsed.engine.fix and state[vehicle].engine ~= "fix" then
         Objects.RequestControl(vehicle, is_a_player)
-        VEHICLE.SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
+        SET_VEHICLE_ENGINE_HEALTH(vehicle, 1000)
         state[vehicle].engine = "fix"
         if god_finger then Ryan.PlaySelectSound() end
     end
@@ -410,56 +410,57 @@ UI.ApplyVehicleEffectList = function(vehicle, effects, state, is_a_player, god_f
 
     if parsed.godmode and parsed.godmode.on and state[vehicle].godmode ~= "on" then
         Objects.RequestControl(vehicle, is_a_player)
-        ENTITY.SET_ENTITY_PROOFS(vehicle, true, true, true, true, true, 0, 0, true)
-        ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
-        VEHICLE.SET_VEHICLE_FIXED(vehicle)
+        SET_ENTITY_PROOFS(vehicle, true, true, true, true, true, 0, 0, true)
+        SET_ENTITY_CAN_BE_DAMAGED(vehicle, false)
+        SET_VEHICLE_FIXED(vehicle)
         state[vehicle].godmode = "on"
         if god_finger then Ryan.PlaySelectSound() end
     elseif parsed.godmode and parsed.godmode.off and state[vehicle].godmode ~= "off" then
         Objects.RequestControl(vehicle, is_a_player)
-        ENTITY.SET_ENTITY_PROOFS(vehicle, false, false, false, false, false, 0, 0, false)
-        ENTITY.SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
+        SET_ENTITY_PROOFS(vehicle, false, false, false, false, false, 0, 0, false)
+        SET_ENTITY_CAN_BE_DAMAGED(vehicle, true)
         state[vehicle].godmode = "off"
         if god_finger then Ryan.PlaySelectSound() end
     end
 
     if parsed.gravity and parsed.gravity.none and state[vehicle].gravity ~= "none" then
         Objects.RequestControl(vehicle, is_a_player)
-        ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, false)
-        VEHICLE.SET_VEHICLE_GRAVITY(vehicle, false)
+        SET_ENTITY_HAS_GRAVITY(vehicle, false)
+        SET_VEHICLE_GRAVITY(vehicle, false)
         state[vehicle].gravity = "none"
         if god_finger then Ryan.PlaySelectSound() end
     elseif parsed.gravity and parsed.gravity.normal and state[vehicle].gravity ~= "normal" then
         Objects.RequestControl(vehicle, is_a_player)
-        ENTITY.SET_ENTITY_HAS_GRAVITY(vehicle, true)
-        VEHICLE.SET_VEHICLE_GRAVITY(vehicle, true)
+        SET_ENTITY_HAS_GRAVITY(vehicle, true)
+        SET_VEHICLE_GRAVITY(vehicle, true)
         state[vehicle].gravity = "normal"
         if god_finger then Ryan.PlaySelectSound() end
     end
 
     if parsed.visibility and parsed.visibility.invisible and state[vehicle].visibility ~= "invisible" then
         Objects.RequestControl(vehicle, is_a_player)
-        ENTITY.SET_ENTITY_VISIBLE(vehicle, false)
-        ENTITY.SET_ENTITY_ALPHA(vehicle, 1)
+        SET_ENTITY_VISIBLE(vehicle, false)
+        SET_ENTITY_ALPHA(vehicle, 1)
         state[vehicle].visibility = "invisible"
         if god_finger then Ryan.PlaySelectSound() end
     elseif parsed.visibility and parsed.visibility.visible and state[vehicle].visibility ~= "visible" then
         Objects.RequestControl(vehicle, is_a_player)
-        ENTITY.SET_ENTITY_VISIBLE(vehicle, true)
-        ENTITY.SET_ENTITY_ALPHA(vehicle, 255)
+        SET_ENTITY_VISIBLE(vehicle, true)
+        SET_ENTITY_ALPHA(vehicle, 255)
         state[vehicle].visibility = "visible"
         if god_finger then Ryan.PlaySelectSound() end
     end
 
-    if parsed.theft_alarm and not VEHICLE.IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
+    if parsed.theft_alarm and not IS_VEHICLE_ALARM_ACTIVATED(vehicle) then
         Objects.RequestControl(vehicle, is_a_player)
-        VEHICLE.SET_VEHICLE_ALARM(vehicle, true)
-        VEHICLE.START_VEHICLE_ALARM(vehicle)
+        SET_VEHICLE_ALARM(vehicle, true)
+        START_VEHICLE_ALARM(vehicle)
     end
     if god_finger then Ryan.ToggleSelectSound(parsed, state, "theft_alarm") end
 
+    -- TODO - test
     if parsed.catapult then
-        if not state[vehicle].catapult or VEHICLE.IS_VEHICLE_ON_ALL_WHEELS(vehicle) and util.current_time_millis() - state[vehicle].catapult >= 500 then
+        if not state[vehicle].catapult or IS_VEHICLE_ON_ALL_WHEELS(vehicle) and util.current_time_millis() - state[vehicle].catapult >= 500 then
             Objects.RequestControl(vehicle, is_a_player)
             Objects.Catapult(vehicle)
             state[vehicle].catapult = util.current_time_millis()
@@ -486,13 +487,13 @@ function _get_deaths()
 end
 
 function _set_kills(kills)
-    STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Global, "KILLS_PLAYERS"), kills, true)
-    STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "KILLS_PLAYERS"), kills)
+    STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Global, "KILLS_PLAYERS"), kills, true)
+    STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "KILLS_PLAYERS"), kills)
 end
 
 function _set_deaths(deaths)
-    STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Global, "DEATHS_PLAYER"), deaths)
-    STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "DEATHS_PLAYER"), deaths)
+    STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Global, "DEATHS_PLAYER"), deaths)
+    STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "DEATHS_PLAYER"), deaths)
 end
 
 UI.UpdateKDMenu = function(root)
@@ -538,11 +539,11 @@ end)
 UI.CreateOfficeMoneyButton = function(root, percentage, amount)
     menu.action(root, percentage .. "% Full", {"ryanofficemoney" .. percentage}, "Make the office " .. percentage .. "% full with money.", function(click_type)
         menu.show_warning(menu.ref_by_command_name("ryanofficemoney" .. percentage), click_type, "Make sure you have at least 1 crate of Special Cargo to sell before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell that cargo.", function()
-            STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_CONTRA_EARNINGS"), amount, true)
-            STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BUY_COMPLETE"), 1000, true)
-            STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_SELL_COMPLETE"), 1000, true)
-            STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000, true)
-            STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000, true)
+            STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_CONTRA_EARNINGS"), amount, true)
+            STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BUY_COMPLETE"), 1000, true)
+            STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_SELL_COMPLETE"), 1000, true)
+            STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000, true)
+            STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BUY_UNDERTAKEN"), 1000, true)
             Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "CEO Office Money", "Done! Switch sessions and start a Special Cargo sale to apply your changes.")
         end)
     end)
@@ -552,11 +553,11 @@ UI.CreateMCClutterButton = function(root, percentage, amount)
     local command = menu.action(root, percentage .. "% Full", {"ryanmcclutter" .. percentage}, "Add drugs, money, and other clutter to your M.C. clubhouse.", function(click_type)
         menu.show_warning(menu.ref_by_command_name("ryanmcclutter" .. percentage), click_type, "Make sure you have at least 1 unit of stock to sell, in every business, before proceeding.\n\nIf you do, press Proceed, then switch sessions and sell all of those, one by one.", function()
             for i = 0, 5 do
-                STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BKR_SELL_EARNINGS" .. i), amount, true)
-                STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BIKER_BUY_COMPLET" .. (if i == 0 then "" else i)), 1000, true)
-                STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BIKER_BUY_UNDERTA" .. (if i == 0 then "" else i)), 1000, true)
-                STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BIKER_SELL_COMPLET" .. (if i == 0 then "" else i)), 1000, true)
-                STATS.STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BIKER_SELL_UNDERTA" .. (if i == 0 then "" else i)), 1000, true)
+                STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BKR_SELL_EARNINGS" .. i), amount, true)
+                STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BIKER_BUY_COMPLET" .. (if i == 0 then "" else i)), 1000, true)
+                STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BIKER_BUY_UNDERTA" .. (if i == 0 then "" else i)), 1000, true)
+                STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BIKER_SELL_COMPLET" .. (if i == 0 then "" else i)), 1000, true)
+                STAT_SET_INT(Ryan.GetStatHash(Ryan.StatType.Character, "LIFETIME_BIKER_SELL_UNDERTA" .. (if i == 0 then "" else i)), 1000, true)
             end
             Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "M.C. Clubhouse Clutter", "Done! Switch sessions and start a sale in every business to apply changes.")
         end)

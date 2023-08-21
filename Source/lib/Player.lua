@@ -115,8 +115,8 @@ end
 function Player.update(self)
     if util.current_time_millis() - self.last_update > 0 then
         self.name = players.get_name(self.id)
-        self.ped_id = PLAYER.GET_PLAYER_PED_SCRIPT_INDEX(self.id)
-        self.coords = ENTITY.GET_ENTITY_COORDS(self.ped_id)
+        self.ped_id = GET_PLAYER_PED_SCRIPT_INDEX(self.id)
+        self.coords = GET_ENTITY_COORDS(self.ped_id)
         self.last_update = util.current_time_millis()
     end
 end
@@ -128,7 +128,7 @@ end
 
 -- Get whether the player is a friend of the user.
 function Player.is_a_friend(self)
-    return players.get_tags_string(self.id):find("F") or Ryan.FindItemInTable(Ryan.FriendSpoofs, tostring(players.get_rockstar_id(self.id))) ~= nil
+    return players.get_tags_string(self.id):find("F") ~= nil
 end
 
 -- Kick a player using Stand's Smart kick, using Breakup if that fails.
@@ -137,7 +137,7 @@ function Player.kick(self)
     for i = 1, 10 do
         util.yield(100)
         if Player:ByName(self.name) == nil then break end
-        menu.trigger_commands((if menu.get_edition() >= 2 then "breakup" else "kick") .. self.name)
+        menu.trigger_commands("kick" .. self.name)
     end
 end
 
@@ -161,14 +161,14 @@ function Player.super_crash(self, block_syncs)
 
         for attempt = 1, 2 do
             local coords = Ryan.GetClosestNode(self.coords, attempt == 1)
-            ENTITY.SET_ENTITY_COORDS(user.ped_id, coords.x, coords.y, coords.z, false, false, false)
+            SET_ENTITY_COORDS(user.ped_id, coords.x, coords.y, coords.z, false, false, false)
             if attempt == 1 then util.yield(500) end
             
-            PLAYER.SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id, bush)
-            PED.SET_PED_COMPONENT_VARIATION(user.ped_id, 5, 8, 0, 0)
+            SET_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id, bush)
+            SET_PED_COMPONENT_VARIATION(user.ped_id, 5, 8, 0, 0)
             util.yield(500)
 
-            PLAYER.CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id)
+            CLEAR_PLAYER_PARACHUTE_PACK_MODEL_OVERRIDE(user.id)
             if attempt == 1 then util.yield(500)
             else util.yield(2000) end
         end
@@ -176,8 +176,8 @@ function Player.super_crash(self, block_syncs)
         for i = 1, 5 do util.spoof_script("freemode", SYSTEM.WAIT) end
 
         local starting_coords = Ryan.CloseThirdEye()
-        ENTITY.SET_ENTITY_HEALTH(user.ped_id, 0)
-        NETWORK.NETWORK_RESURRECT_LOCAL_PLAYER(starting_coords.x, starting_coords.y, starting_coords.z, 0, false, false, 0)
+        SET_ENTITY_HEALTH(user.ped_id, 0)
+        NETWORK_RESURRECT_LOCAL_PLAYER(starting_coords.x, starting_coords.y, starting_coords.z, 0, false, false, 0)
 
         Ryan.ShowTextMessage(Ryan.BackgroundColors.Purple, "Super Crash", "Done!")
     end
@@ -209,7 +209,7 @@ end
 function Player.get_vehicle(self)
     local vehicle_model = players.get_vehicle_model(self.id)
     if vehicle_model ~= 0 then
-        return PED.GET_VEHICLE_PED_IS_IN(self.ped_id, true)
+        return GET_VEHICLE_PED_IS_IN(self.ped_id, true)
     end
     return nil
 end
@@ -218,10 +218,10 @@ end
 function Player.get_vehicle_seat(self)
     local vehicle_model = players.get_vehicle_model(self.id)
     if vehicle_model ~= 0 then
-        local vehicle_id = PED.GET_VEHICLE_PED_IS_IN(self.ped_id, true)
-        local seats = VEHICLE.GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicle_model)
+        local vehicle_id = GET_VEHICLE_PED_IS_IN(self.ped_id, true)
+        local seats = GET_VEHICLE_MODEL_NUMBER_OF_SEATS(vehicle_model)
         for seat = -1, seats - 2 do
-            if VEHICLE.GET_PED_IN_VEHICLE_SEAT(vehicle_id, seat) == self.ped_id then return seat end
+            if GET_PED_IN_VEHICLE_SEAT(vehicle_id, seat) == self.ped_id then return seat end
         end
     end
     return nil
@@ -239,19 +239,19 @@ end
 
 -- Teleport a player's vehicle.
 function Player.teleport_vehicle(self, coords)
-    local vehicle = PED.GET_VEHICLE_PED_IS_IN(self.ped_id, true)
+    local vehicle = GET_VEHICLE_PED_IS_IN(self.ped_id, true)
     if vehicle ~= 0 then
         Objects.RequestControl(vehicle, true)
         for i = 1, 3 do
-            ENTITY.SET_ENTITY_COORDS_NO_OFFSET(vehicle, coords.x, coords.y, coords.z, false, false, false)
+            SET_ENTITY_COORDS_NO_OFFSET(vehicle, coords.x, coords.y, coords.z, false, false, false)
         end
     end
 end
 
 -- Explode a player with or without Bed Sound.
 function Player.explode(self, with_earrape)
-    local coords = ENTITY.GET_ENTITY_COORDS(self.ped_id)
-    FIRE.ADD_EXPLOSION(
+    local coords = GET_ENTITY_COORDS(self.ped_id)
+    ADD_EXPLOSION(
         coords.x, coords.y, coords.z,
         59, 100, true, false, 150, false
     )
@@ -268,25 +268,25 @@ end
 function Player.squish(self)
     Ryan.Toast("Attempting to kill " .. self.name .. "...")
 
-    local coords = ENTITY.GET_ENTITY_COORDS(self.id)
-    local distance = if TASK.IS_PED_STILL(self.ped_id) then 0 else 3
+    local coords = GET_ENTITY_COORDS(self.id)
+    local distance = if IS_PED_STILL(self.ped_id) then 0 else 3
     local vehicle = {["name"] = "Khanjali", ["height"] = 2.8, ["offset"] = 0}  -- {["name"] = "APC", ["height"] = 3.4, ["offset"] = -1.5}
     local vehicle_hash = util.joaat(vehicle.name)
 
     Ryan.RequestModel(vehicle_hash)    
     local vehicles = {
         -- TODO: use v3
-        entities.create_vehicle(vehicle_hash, ENTITY.GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(self.ped_id, vehicle.offset, distance, vehicle.height), ENTITY.GET_ENTITY_HEADING(self.ped_id)),
+        entities.create_vehicle(vehicle_hash, GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(self.ped_id, vehicle.offset, distance, vehicle.height), GET_ENTITY_HEADING(self.ped_id)),
         entities.create_vehicle(vehicle_hash, coords, 0),
         entities.create_vehicle(vehicle_hash, coords, 0),
         entities.create_vehicle(vehicle_hash, coords, 0)
     }
     for i = 1, #vehicles do Objects.RequestControl(vehicles[i]) end  
     
-    ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicles[2], vehicles[1], 0, 0, 3, 0, 0, 0, -180, 0, false, true, false, 0, true)
-    ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicles[3], vehicles[1], 0, 3, 3, 0, 0, 0, -180, 0, false, true, false, 0, true)
-    ENTITY.ATTACH_ENTITY_TO_ENTITY(vehicles[4], vehicles[1], 0, 3, 0, 0, 0, 0, 0, 0, false, true, false, 0, true)
-    ENTITY.SET_ENTITY_VISIBLE(vehicles[1], false)
+    ATTACH_ENTITY_TO_ENTITY(vehicles[2], vehicles[1], 0, 0, 3, 0, 0, 0, -180, 0, false, true, false, 0, true)
+    ATTACH_ENTITY_TO_ENTITY(vehicles[3], vehicles[1], 0, 3, 3, 0, 0, 0, -180, 0, false, true, false, 0, true)
+    ATTACH_ENTITY_TO_ENTITY(vehicles[4], vehicles[1], 0, 3, 0, 0, 0, 0, 0, 0, false, true, false, 0, true)
+    SET_ENTITY_VISIBLE(vehicles[1], false)
 
     util.yield(7500)
     for i = 1, #vehicles do entities.delete_by_handle(vehicles[i]) end
@@ -335,12 +335,12 @@ end
 
 -- Drop a fake money bag on the player.
 function Player.drop_fake_money(self)
-    local coords = ENTITY.GET_ENTITY_COORDS(self.ped_id); coords:add(v3(0, 0, 2))
+    local coords = GET_ENTITY_COORDS(self.ped_id); coords:add(v3(0, 0, 2))
     local bag = entities.create_object(2628187989, coords)
-    ENTITY.APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -20, 0.0, 0.0, 0.0, true, true)
+    APPLY_FORCE_TO_ENTITY(bag, 3, 0, 0, -20, 0.0, 0.0, 0.0, true, true)
     
     util.yield(333)
     menu.trigger_commands("notifybanked" .. self.name .. " " .. math.random(100, 5000))
-    AUDIO.PLAY_SOUND_FROM_COORD(-1, "LOCAL_PLYR_CASH_COUNTER_COMPLETE", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true, 2, false)
+    PLAY_SOUND_FROM_COORD(-1, "LOCAL_PLYR_CASH_COUNTER_COMPLETE", coords.x, coords.y, coords.z, "DLC_HEISTS_GENERAL_FRONTEND_SOUNDS", true, 2, false)
     entities.delete_by_handle(bag)
 end

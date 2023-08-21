@@ -50,8 +50,8 @@ PTFX.Types = {
 }
 
 PTFX.Request = function(asset)
-    STREAMING.REQUEST_NAMED_PTFX_ASSET(asset)
-    while not STREAMING.HAS_NAMED_PTFX_ASSET_LOADED(asset) do
+    REQUEST_NAMED_PTFX_ASSET(asset)
+    while not HAS_NAMED_PTFX_ASSET_LOADED(asset) do
         util.yield()
     end
 end
@@ -73,9 +73,9 @@ end
 
 PTFX.PlayAtCoords = function(coords, ptfx_group, ptfx_name, color)
     PTFX.Request(ptfx_group)
-    GRAPHICS.USE_PARTICLE_FX_ASSET(ptfx_group)
-    if color then GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(color.r, color.g, color.b) end
-    GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(
+    USE_PARTICLE_FX_ASSET(ptfx_group)
+    if color then SET_PARTICLE_FX_NON_LOOPED_COLOUR(color.r, color.g, color.b) end
+    START_NETWORKED_PARTICLE_FX_NON_LOOPED_AT_COORD(
         ptfx_name, coords.x, coords.y, coords.z,
         0.0, 0.0, 0.0, 1.0, 
         false, false, false
@@ -84,9 +84,9 @@ end
 
 PTFX.PlayOnEntity = function(entity, ptfx_group, ptfx_name, color)
     PTFX.Request(ptfx_group)
-    GRAPHICS.USE_PARTICLE_FX_ASSET(ptfx_group)
-    if color then GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(color.r, color.g, color.b) end
-    GRAPHICS.START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY(
+    USE_PARTICLE_FX_ASSET(ptfx_group)
+    if color then SET_PARTICLE_FX_NON_LOOPED_COLOUR(color.r, color.g, color.b) end
+    START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY(
         ptfx_name, entity, 
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 
         false, false, false
@@ -95,14 +95,15 @@ end
 
 PTFX.PlayOnEntityBones = function(entity, bones, ptfx_group, ptfx_name, color)
     PTFX.Request(ptfx_group)
-    GRAPHICS.USE_PARTICLE_FX_ASSET(ptfx_group)
+    USE_PARTICLE_FX_ASSET(ptfx_group)
     for _, bone in pairs(bones) do
-        local bone_index = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
-        local coords = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(entity, bone_index)
+        local bone_index = GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
+        local coords = GET_WORLD_POSITION_OF_ENTITY_BONE(entity, bone_index)
         if coords:magnitude() > 0 then
-            GRAPHICS.USE_PARTICLE_FX_ASSET(ptfx_group)
-            if color then GRAPHICS.SET_PARTICLE_FX_NON_LOOPED_COLOUR(color.r, color.g, color.b) end
-            GRAPHICS._START_NETWORKED_PARTICLE_FX_NON_LOOPED_ON_ENTITY_BONE(
+            USE_PARTICLE_FX_ASSET(ptfx_group)
+            if color then SET_PARTICLE_FX_NON_LOOPED_COLOUR(color.r, color.g, color.b) end
+            -- TODO - test
+            START_PARTICLE_FX_NON_LOOPED_ON_ENTITY_BONE(
                 ptfx_name, entity,
                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 bone_index,
@@ -115,8 +116,8 @@ end
 
 PTFX.PlayAtEntityBoneCoords = function(entity, bones, ptfx_group, name, color)
     for _, bone in pairs(bones) do
-        local bone_index = ENTITY.GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
-        local coords = ENTITY.GET_WORLD_POSITION_OF_ENTITY_BONE(entity, bone_index)
+        local bone_index = GET_ENTITY_BONE_INDEX_BY_NAME(entity, bone)
+        local coords = GET_WORLD_POSITION_OF_ENTITY_BONE(entity, bone_index)
         if coords:magnitude() > 0.0 then
             PTFX.PlayAtCoords(coords, ptfx_group, name, color)
         end
