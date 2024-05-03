@@ -1,7 +1,7 @@
 -- TODO:
 -- * use menu.get_activation_key_hash() to verify friends
 
-VERSION = "0.11.5a"
+VERSION = "0.11.5b"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
@@ -16,7 +16,7 @@ SUBFOLDER_NAME = "Ryan's Menu" .. (if DEV_ENVIRONMENT then " (Dev)" else "")
 -- Initialize --
 Ryan = {}
 
-util.require_natives("2944b", "g")
+util.require_natives("3095a", "g")
 function exists(name) return filesystem.exists(filesystem.scripts_dir() .. name) end
 for directory, files in pairs(MANIFEST) do
     for _, file in pairs(files) do

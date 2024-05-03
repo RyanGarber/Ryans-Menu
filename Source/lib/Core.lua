@@ -342,7 +342,7 @@ Ryan.CheckForUpdates = function(force)
 				Ryan.PlaySoundFromEntity(players.user_ped(), "GTAO_FM_Events_Soundset", "Object_Dropped_Remote")
 			end
 		end, function()
-			Ryan.ShowTextMessage(6, "Auto-Update", "Failed to get the latest version. Use the installer instead.")
+			Ryan.ShowTextMessage(6, "Auto-Update", "Failed to check the latest version. Confirm that 'Disable Internet Access' is unchecked and try again.")
 		end)
 
 		async_http.dispatch()
@@ -676,7 +676,7 @@ end
 
 -- Play a sound coming from an entity in 3D.
 Ryan.PlaySoundFromEntity = function(entity, sound_group, sound_name)
-    PLAY_SOUND_FROM_ENTITY(-1, sound_name, entity, sound_group, true, true)
+    PLAY_SOUND_FROM_ENTITY(-1, sound_name, entity, sound_group, true, 0)
 end
 
 -- Play a sound coming from a position in 3D.
