@@ -1,11 +1,13 @@
 -- TODO:
 -- * use menu.get_activation_key_hash() to verify friends
 
-VERSION = "0.11.5"
+VERSION = "0.11.5a"
 MANIFEST = {
     lib = {"Core.lua", "JSON.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"},
     resources = {"Crosshair.png", "Logo.png"}
 }
+
+REQUIRED_FILES = {"Core.lua", "JSON.lua"}
 
 DEV_ENVIRONMENT = debug.getinfo(1, "S").source:lower():find("dev")
 SUBFOLDER_NAME = "Ryan's Menu" .. (if DEV_ENVIRONMENT then " (Dev)" else "")
@@ -14,21 +16,23 @@ SUBFOLDER_NAME = "Ryan's Menu" .. (if DEV_ENVIRONMENT then " (Dev)" else "")
 -- Initialize --
 Ryan = {}
 
-util.require_natives("2944a", "g")
+util.require_natives("2944b", "g")
 function exists(name) return filesystem.exists(filesystem.scripts_dir() .. name) end
-for required_directory, required_files in pairs(MANIFEST) do
-    for _, required_file in pairs(required_files) do
-        if not exists(required_directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. required_file) then
-            if required_file == "Core.lua" or required_file == "Natives.lua" or required_file == "JSON.lua" then
-                while not exists(required_directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. required_file) do
-                    Ryan.Toast("Ryan's Menu is missing a required file and must be reinstalled.")
-                    util.yield(2000)
+for directory, files in pairs(MANIFEST) do
+    for _, file in pairs(files) do
+        if not exists(directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. file) then
+            for _, required_file in pairs(REQUIRED_FILES) do
+                if required_file == file then
+                    util.toast("Checking for file: " .. file)
+                    while not exists(directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. file) do
+                        util.toast("Ryan's Menu is missing a required file and must be reinstalled.")
+                        util.yield(2000)
+                    end
                 end
-            else
-                VERSION = "-1"
             end
-        elseif required_directory == 'lib' then
-            require(required_directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. required_file:sub(0, -5))
+            VERSION = "-1"
+        elseif directory == 'lib' then
+            require(directory .. "\\" .. SUBFOLDER_NAME .. "\\" .. file:sub(0, -5))
         end
     end
 end
@@ -340,114 +344,113 @@ util.create_tick_handler(function()
         local nearby = Objects.GetAllNearCoords(user.coords, forcefield_size, Objects.Type.All)
         for _, entity in pairs(nearby) do
             if (players.get_vehicle_model(players.user()) == 0 or entity ~= entities.get_user_vehicle_as_handle()) and entity ~= players.user_ped() then
-            switch forcefield_type do
-                    case "Push": -- Push entities away
-                        local force = GET_ENTITY_COORDS(entity)
-                        force:sub(user.coords); force:normalise()
-                        force:mul(forcefield_force * 0.25)
-                        if IS_ENTITY_A_PED(entity) then
-                            if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
-                                Objects.RequestControl(entity)
-                                SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-                            end
-                        else
+                if forcefield_type == "Push" then
+                    -- Push entities away
+                    local force = GET_ENTITY_COORDS(entity)
+                    force:sub(user.coords); force:normalise()
+                    force:mul(forcefield_force * 0.25)
+                    if IS_ENTITY_A_PED(entity) then
+                        if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
                             Objects.RequestControl(entity)
+                            SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
                             APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                         end
-                        break
-                    case "Pull": -- Pull entities in
-                        local force = GET_ENTITY_COORDS(entity)
-                        force:sub(user.coords); force:normalise()
-                        force:mul(forcefield_force * 0.25)
-                        if IS_ENTITY_A_PED(entity) then
-                            if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
-                                Objects.RequestControl(entity)
-                                SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                APPLY_FORCE_TO_ENTITY(entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
-                            end
-                        else
+                    else
+                        Objects.RequestControl(entity)
+                        APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                    end
+                elseif forcefield_type == "Push" then
+                    -- Pull entities in
+                    local force = GET_ENTITY_COORDS(entity)
+                    force:sub(user.coords); force:normalise()
+                    force:mul(forcefield_force * 0.25)
+                    if IS_ENTITY_A_PED(entity) then
+                        if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
                             Objects.RequestControl(entity)
+                            SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
                             APPLY_FORCE_TO_ENTITY(entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
                         end
-                        break
-                    case "Spin": -- Spin entities around
-                        if not IS_ENTITY_A_PED(entity) and entity ~= entities.get_user_vehicle_as_handle() then
+                    else
+                        Objects.RequestControl(entity)
+                        APPLY_FORCE_TO_ENTITY(entity, 1, -force.x, -force.y, -force.z, 0, 0, 0.5, 0, false, false, true)
+                    end
+                elseif forcefield_type == "Spin" then
+                    -- Spin entities around
+                    if not IS_ENTITY_A_PED(entity) and entity ~= entities.get_user_vehicle_as_handle() then
+                        Objects.RequestControl(entity)
+                        SET_ENTITY_HEADING(entity, GET_ENTITY_HEADING(entity) + 2.5 * forcefield_force)
+                    end
+                elseif forcefield_type == "Up" then
+                    -- Force entities into air
+                    local force = v3(0, 0, forcefield_force * 0.5)
+                    if IS_ENTITY_A_PED(entity) then
+                        if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
                             Objects.RequestControl(entity)
-                            SET_ENTITY_HEADING(entity, GET_ENTITY_HEADING(entity) + 2.5 * forcefield_force)
+                            SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
                         end
-                        break
-                    case "Up": -- Force entities into air
-                        local force = v3(0, 0, forcefield_force * 0.5)
+                    else
+                        Objects.RequestControl(entity)
+                        APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                    end
+                elseif forcefield_type == "Down" then
+                    -- Force entities into ground
+                    local force = v3(0, 0, forcefield_force * -2)
+                    if IS_ENTITY_A_PED(entity) then
+                        if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
+                            Objects.RequestControl(entity)
+                            SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                        end
+                    else
+                        Objects.RequestControl(entity)
+                        APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                    end
+                elseif forcefield_type == "Smash" then
+                    -- Smash entities into ground
+                    local direction = if util.current_time_millis() % 3000 >= 1250 then -2 else 0.5
+                    local force = v3(0, 0, direction * forcefield_force)
+                    if IS_ENTITY_A_PED(entity) then
+                        if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
+                            Objects.RequestControl(entity)
+                            SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
+                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                        end
+                    else
+                        Objects.RequestControl(entity)
+                        APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
+                    end
+                elseif forcefield_type == "Chaos" then
+                    -- Chaotic entities
+                    if entities_chaosed[entity] == nil or util.current_time_millis() - entities_chaosed[entity] > 1000 then
+                        local amount = forcefield_force * 10
+                        local force = {
+                            x = if math.random(0, 1) == 0 then -amount else amount,
+                            y = if math.random(0, 1) == 0 then -amount else amount,
+                            z = 0
+                        }
                         if IS_ENTITY_A_PED(entity) then
                             if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
                                 Objects.RequestControl(entity)
                                 SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-                            end
-                        else
-                            Objects.RequestControl(entity)
-                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-                        end
-                        break
-                    case "Down": -- Force entities into ground
-                        local force = v3(0, 0, forcefield_force * -2)
-                        if IS_ENTITY_A_PED(entity) then
-                            if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
-                                Objects.RequestControl(entity)
-                                SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-                            end
-                        else
-                            Objects.RequestControl(entity)
-                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-                        end
-                        break
-                    case "Smash": -- Smash entities into ground
-                        local direction = if util.current_time_millis() % 3000 >= 1250 then -2 else 0.5
-                        local force = v3(0, 0, direction * forcefield_force)
-                        if IS_ENTITY_A_PED(entity) then
-                            if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
-                                Objects.RequestControl(entity)
-                                SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-                            end
-                        else
-                            Objects.RequestControl(entity)
-                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0.5, 0, false, false, true)
-                        end
-                        break
-                    case "Chaos": -- Chaotic entities
-                        if entities_chaosed[entity] == nil or util.current_time_millis() - entities_chaosed[entity] > 1000 then
-                            local amount = forcefield_force * 10
-                            local force = {
-                                x = if math.random(0, 1) == 0 then -amount else amount,
-                                y = if math.random(0, 1) == 0 then -amount else amount,
-                                z = 0
-                            }
-                            if IS_ENTITY_A_PED(entity) then
-                                if not IS_PED_A_PLAYER(entity) and not IS_PED_IN_ANY_VEHICLE(entity, true) then
-                                    Objects.RequestControl(entity)
-                                    SET_PED_TO_RAGDOLL(entity, 1000, 1000, 0, 0, 0, 0)
-                                    APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
-                                end
-                            else
-                                Objects.RequestControl(entity)
                                 APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
                             end
-                            entities_chaosed[entity] = util.current_time_millis()
+                        else
+                            Objects.RequestControl(entity)
+                            APPLY_FORCE_TO_ENTITY(entity, 1, force.x, force.y, force.z, 0, 0, 0, 0, false, false, true)
                         end
-                        break
-                    case "Explode": -- Explode entities
-                        if entities_exploded[entity] == nil then
-                            local coords = GET_ENTITY_COORDS(entity)
-                            ADD_EXPLOSION(
-                                coords.x, coords.y, coords.z,
-                                7, 5.0, false, true, 0, false
-                            )
-                            entities_exploded[entity] = true
-                        end
-                        break
+                        entities_chaosed[entity] = util.current_time_millis()
+                    end
+                elseif forcefield_type == "Explode" then
+                    -- Explode entities
+                    if entities_exploded[entity] == nil then
+                        local coords = GET_ENTITY_COORDS(entity)
+                        ADD_EXPLOSION(
+                            coords.x, coords.y, coords.z,
+                            7, 5.0, false, true, 0, false
+                        )
+                        entities_exploded[entity] = true
+                    end
                 end
             end
         end
@@ -1824,65 +1827,62 @@ UI.CreateList(session_root, "Mk II", "ryanmk2", "How Oppressor Mk IIs are handle
 end)
 
 util.create_tick_handler(function()
-    switch mk2_mode do
-        case "Banned":
-            if util.current_time_millis() - mk2_ban_notice >= 300000 then
-                Ryan.SendChatMessage("This session is in Mk II Ban mode! Go ahead, try and use one.")
-                mk2_ban_notice = util.current_time_millis()
-            end
+    if mk2_mode == "Banned" then
+        if util.current_time_millis() - mk2_ban_notice >= 300000 then
+            Ryan.SendChatMessage("This session is in Mk II Ban mode! Go ahead, try and use one.")
+            mk2_ban_notice = util.current_time_millis()
+        end
 
-            local oppressor2 = util.joaat("oppressor2")
-            local coords = GET_ENTITY_COORDS(players.user_ped())
-            for _, vehicle in pairs(Objects.GetAllNearCoords(coords, 9999, Objects.Type.Vehicle)) do
-                if IS_VEHICLE_MODEL(vehicle, oppressor2) then
-                    Objects.RequestControl(vehicle, false)
-                    entities.delete_by_handle(vehicle)
-                end
+        local oppressor2 = util.joaat("oppressor2")
+        local coords = GET_ENTITY_COORDS(players.user_ped())
+        for _, vehicle in pairs(Objects.GetAllNearCoords(coords, 9999, Objects.Type.Vehicle)) do
+            if IS_VEHICLE_MODEL(vehicle, oppressor2) then
+                Objects.RequestControl(vehicle, false)
+                entities.delete_by_handle(vehicle)
             end
+        end
 
-            for _, player_id in pairs(players.list()) do
-                if players.get_vehicle_model(player_id) == oppressor2 then
-                    if mk2_ban_evaders[player_id] == nil then
-                        mk2_ban_evaders[player_id] = util.current_time_millis()
-                    elseif util.current_time_millis() - mk2_ban_evaders[player_id] >= 2000 and mk2_ban_warnings[player_id] == nil then
-                        Ryan.Toast(players.get_name(player_id) .. " is still on a Mk II. Sending them a warning.")
-                        Player:Get(player_id):send_sms("WARNING: Get off of your Mk II or you will be kicked!")
-                        mk2_ban_warnings[player_id] = true
-                    elseif util.current_time_millis() - mk2_ban_evaders[player_id] >= 10000 then
-                        Ryan.Toast("Kicking " .. players.get_name(player_id) .. " for not getting off their Mk II.")
-                        Player:Get(player_id):kick()
-                        mk2_ban_evaders[player_id] = nil
-                        mk2_ban_warnings[player_id] = nil
-                    end
-                else
+        for _, player_id in pairs(players.list()) do
+            if players.get_vehicle_model(player_id) == oppressor2 then
+                if mk2_ban_evaders[player_id] == nil then
+                    mk2_ban_evaders[player_id] = util.current_time_millis()
+                elseif util.current_time_millis() - mk2_ban_evaders[player_id] >= 2000 and mk2_ban_warnings[player_id] == nil then
+                    Ryan.Toast(players.get_name(player_id) .. " is still on a Mk II. Sending them a warning.")
+                    Player:Get(player_id):send_sms("WARNING: Get off of your Mk II or you will be kicked!")
+                    mk2_ban_warnings[player_id] = true
+                elseif util.current_time_millis() - mk2_ban_evaders[player_id] >= 10000 then
+                    Ryan.Toast("Kicking " .. players.get_name(player_id) .. " for not getting off their Mk II.")
+                    Player:Get(player_id):kick()
                     mk2_ban_evaders[player_id] = nil
                     mk2_ban_warnings[player_id] = nil
                 end
+            else
+                mk2_ban_evaders[player_id] = nil
+                mk2_ban_warnings[player_id] = nil
             end
-            break
-        case "Chaos":
-            if util.current_time_millis() - mk2_chaos_notice >= 300000 then
-                mk2_chaos_notice = util.current_time_millis()
-                Ryan.SendChatMessage("This session is in Mk II Chaos mode! Type \"!mk2\" in chat at any time to get one. Good luck.")
-                
-                local oppressor2 = util.joaat("oppressor2")
-                Ryan.RequestModel(oppressor2)
+        end
+    elseif mk2_mode == "Chaos" then
+        if util.current_time_millis() - mk2_chaos_notice >= 300000 then
+            mk2_chaos_notice = util.current_time_millis()
+            Ryan.SendChatMessage("This session is in Mk II Chaos mode! Type \"!mk2\" in chat at any time to get one. Good luck.")
+            
+            local oppressor2 = util.joaat("oppressor2")
+            Ryan.RequestModel(oppressor2)
 
-                for _, player in Player:List(true, true, true) do
-                    local coords = v3(player.coords)
-                    local direction = GET_ENTITY_ROTATION(player.ped_id, 2):toDir()
-                    direction:mul(7.5); coords:add(direction)
-                    local vehicle = entities.create_vehicle(oppressor2, coords, GET_ENTITY_HEADING(player.ped_id))
-                    Objects.RequestControl(vehicle, true)
-                    Objects.SetVehicleFullyUpgraded(vehicle, true)
-                    SET_ENTITY_INVINCIBLE(vehicle, false)
-                    SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
-                    SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
-                end
-
-                Ryan.FreeModel(oppressor2)
+            for _, player in Player:List(true, true, true) do
+                local coords = v3(player.coords)
+                local direction = GET_ENTITY_ROTATION(player.ped_id, 2):toDir()
+                direction:mul(7.5); coords:add(direction)
+                local vehicle = entities.create_vehicle(oppressor2, coords, GET_ENTITY_HEADING(player.ped_id))
+                Objects.RequestControl(vehicle, true)
+                Objects.SetVehicleFullyUpgraded(vehicle, true)
+                SET_ENTITY_INVINCIBLE(vehicle, false)
+                SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
+                SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
             end
-            break
+
+            Ryan.FreeModel(oppressor2)
+        end
     end
 end)
 
@@ -2035,47 +2035,44 @@ chat.on_message(function(packet_sender, sender, message, is_team_chat)
 
                     -- Handle Command
                     if not has_error then
-                        switch command[1] do
-                            case "help":
-                                local cmd_list = ""
-                                for i, cmd in ipairs(chat_commands) do
-                                    if i > 1 then
-                                        local cmd_args = ""
-                                        local cmd_is_specific = #args > 0 and cmd[1] == args[1]
-                                        for _, arg in pairs(cmd[2]) do cmd_args = cmd_args .. " [" .. arg .. "]" end
-                                        if #args == 0 or cmd_is_specific then
-                                            cmd_list = cmd_list .. "!" .. cmd[1] .. cmd_args .. (if cmd_is_specific then ": " .. cmd[3] else "") .. ", "
-                                        end
-                                    end 
-                                end
-                                
-                                if cmd_list:len() > 0 then reply(cmd_list:sub(1, cmd_list:len() - 2))
-                                else reply("Unknown command. Use !help for a list of them.") end
-                                break
-                            case "mk2":
-                                local oppressor2 = util.joaat("oppressor2")
-                                Ryan.RequestModel(oppressor2)
+                        if command[1] == "help" then
+                            local cmd_list = ""
+                            for i, cmd in ipairs(chat_commands) do
+                                if i > 1 then
+                                    local cmd_args = ""
+                                    local cmd_is_specific = #args > 0 and cmd[1] == args[1]
+                                    for _, arg in pairs(cmd[2]) do cmd_args = cmd_args .. " [" .. arg .. "]" end
+                                    if #args == 0 or cmd_is_specific then
+                                        cmd_list = cmd_list .. "!" .. cmd[1] .. cmd_args .. (if cmd_is_specific then ": " .. cmd[3] else "") .. ", "
+                                    end
+                                end 
+                            end
+                            
+                            if cmd_list:len() > 0 then reply(cmd_list:sub(1, cmd_list:len() - 2))
+                            else reply("Unknown command. Use !help for a list of them.") end
+                        elseif command[1] == "mk2" then
+                            local oppressor2 = util.joaat("oppressor2")
+                            Ryan.RequestModel(oppressor2)
 
-                                local player = Player:Get(sender)
-                                local coords = v3(player.coords)
-                                local direction = GET_ENTITY_ROTATION(player.ped_id, 2):toDir()
-                                direction:mul(7.5); coords:add(direction)
-                                Objects.RequestControl(vehicle, true)
-                                Objects.SetVehicleFullyUpgraded(vehicle, true)
-                                SET_ENTITY_INVINCIBLE(vehicle, false)
-                                SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
-                                SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
+                            local player = Player:Get(sender)
+                            local coords = v3(player.coords)
+                            local direction = GET_ENTITY_ROTATION(player.ped_id, 2):toDir()
+                            direction:mul(7.5); coords:add(direction)
+                            Objects.RequestControl(vehicle, true)
+                            Objects.SetVehicleFullyUpgraded(vehicle, true)
+                            SET_ENTITY_INVINCIBLE(vehicle, false)
+                            SET_VEHICLE_DOOR_OPEN(vehicle, 0, false, true)
+                            SET_VEHICLE_DOOR_LATCHED(vehicle, 0, false, false, true)
 
-                                Ryan.FreeModel(oppressor2)
-                                break
-                            default:
-                                local raw_command = command[4]
-                                for i, arg_type in pairs(command[2]) do
-                                    if arg_type == "player" then raw_command = raw_command:gsub("{" .. i .. "}", players.get_name(args[i])) end
-                                end
+                            Ryan.FreeModel(oppressor2)
+                        else
+                            local raw_command = command[4]
+                            for i, arg_type in pairs(command[2]) do
+                                if arg_type == "player" then raw_command = raw_command:gsub("{" .. i .. "}", players.get_name(args[i])) end
+                            end
 
-                                menu.trigger_commands(raw_command)
-                                reply("Successfully executed command!")
+                            menu.trigger_commands(raw_command)
+                            reply("Successfully executed command!")
                         end
                     end
                 end
@@ -2607,52 +2604,48 @@ util.create_tick_handler(function()
             util.create_thread(function()
                 local glitch_type = glitch[player.id]
                 while glitch[player.id] == glitch_type do
-                    switch glitch_type do
-                        case "Off":
-                            break
-                        case "Default":
-                            local shuttering = util.joaat("prop_shuttering03")
-                            Ryan.RequestModel(shuttering)
-                            
-                            local coords = GET_ENTITY_COORDS(player.ped_id, false)
-                            local objects = {
-                                entities.create_object(shuttering, GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, 0, 1, 0)),
-                                entities.create_object(shuttering, GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, 0, 0, 0))
-                            }
+                    if glitch_type == "Default" then
+                        local shuttering = util.joaat("prop_shuttering03")
+                        Ryan.RequestModel(shuttering)
+                        
+                        local coords = GET_ENTITY_COORDS(player.ped_id, false)
+                        local objects = {
+                            entities.create_object(shuttering, GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, 0, 1, 0)),
+                            entities.create_object(shuttering, GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(player.ped_id, 0, 0, 0))
+                        }
 
-                            SET_ENTITY_VISIBLE(objects[1], false)
-                            SET_ENTITY_VISIBLE(objects[2], false)
-                            util.yield()
-                            entities.delete_by_handle(objects[1])
-                            entities.delete_by_handle(objects[2])
+                        SET_ENTITY_VISIBLE(objects[1], false)
+                        SET_ENTITY_VISIBLE(objects[2], false)
+                        util.yield()
+                        entities.delete_by_handle(objects[1])
+                        entities.delete_by_handle(objects[2])
 
-                            Ryan.FreeModel(shuttering)
-                            break
-                        default:
-                            local glitch_object, rallytruck = util.joaat(glitch[player.id]), util.joaat("rallytruck")
-                            Ryan.RequestModel(glitch_object)
-                            Ryan.RequestModel(rallytruck)
+                        Ryan.FreeModel(shuttering)
+                    elseif glitch_type ~= "Off" then
+                        local glitch_object, rallytruck = util.joaat(glitch[player.id]), util.joaat("rallytruck")
+                        Ryan.RequestModel(glitch_object)
+                        Ryan.RequestModel(rallytruck)
 
-                            local player_coords = GET_ENTITY_COORDS(player.ped_id, false)
+                        local player_coords = GET_ENTITY_COORDS(player.ped_id, false)
 
-                            local objects = {
-                                entities.create_object(glitch_object, player_coords),
-                                entities.create_vehicle(rallytruck, player_coords, 0)
-                            }
+                        local objects = {
+                            entities.create_object(glitch_object, player_coords),
+                            entities.create_vehicle(rallytruck, player_coords, 0)
+                        }
 
-                            SET_ENTITY_VISIBLE(objects[1], false)
-                            SET_ENTITY_VISIBLE(objects[2], false)
-                            SET_ENTITY_INVINCIBLE(objects[1], true)
-                            SET_ENTITY_COLLISION(objects[1], true, true)
-                            APPLY_FORCE_TO_ENTITY(objects[2], 1, 0.0, 10, 10, 0.0, 0.0, 0.0, 0, 1, 1, 1, 0, 1)
+                        SET_ENTITY_VISIBLE(objects[1], false)
+                        SET_ENTITY_VISIBLE(objects[2], false)
+                        SET_ENTITY_INVINCIBLE(objects[1], true)
+                        SET_ENTITY_COLLISION(objects[1], true, true)
+                        APPLY_FORCE_TO_ENTITY(objects[2], 1, 0.0, 10, 10, 0.0, 0.0, 0.0, 0, 1, 1, 1, 0, 1)
 
-                            util.yield(50)
-                            entities.delete_by_handle(objects[1])
-                            entities.delete_by_handle(objects[2])
+                        util.yield(50)
+                        entities.delete_by_handle(objects[1])
+                        entities.delete_by_handle(objects[2])
 
-                            util.yield(49)
-                            Ryan.FreeModel(glitch_object)
-                            Ryan.FreeModel(rallytruck)
+                        util.yield(49)
+                        Ryan.FreeModel(glitch_object)
+                        Ryan.FreeModel(rallytruck)
                     end
                     util.yield()
                 end

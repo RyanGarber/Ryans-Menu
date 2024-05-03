@@ -1,4 +1,4 @@
-0.11.5
+0.11.5a
 {
     "main": "Ryan's Menu.lua",
     "lib": ["Core.lua", "JSON.lua", "Objects.lua", "Player.lua", "PTFX.lua", "Trolling.lua", "UI.lua"],
